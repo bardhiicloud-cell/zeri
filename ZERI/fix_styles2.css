@@ -1,0 +1,15 @@
+/* Extra Google Translate Hide Rules */
+body {
+  top: 0px !important;
+  position: static !important;
+}
+.goog-te-banner-frame {
+  display: none !important;
+}
+.skiptranslate {
+  display: none !important;
+}
+/* except for our own classes that might use skiptranslate for ignoring */
+div#google_translate_element {
+  display: none !important;
+}

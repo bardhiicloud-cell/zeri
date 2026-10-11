@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://zeriqytetare.republiks/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://zeriqytetare.republiks/raporto</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://zeriqytetare.republiks/lajme</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://zeriqytetare.republiks/harta</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://zeriqytetare.republiks/detailed-registry</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://zeriqytetare.republiks/komunat</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://zeriqytetare.republiks/sherbimet</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://zeriqytetare.republiks/shendetesia</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://zeriqytetare.republiks/statistikat</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://zeriqytetare.republiks/sondazhet</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://zeriqytetare.republiks/projektet</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://zeriqytetare.republiks/Idea</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://zeriqytetare.republiks/donacion</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://zeriqytetare.republiks/forum</loc><changefreq>hourly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://zeriqytetare.republiks/kontakt-numrat</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://zeriqytetare.republiks/ndihma</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://zeriqytetare.republiks/kontakt</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://zeriqytetare.republiks/rreth-projektit</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://zeriqytetare.republiks/privatesia</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://zeriqytetare.republiks/kushtet-e-perdorimit</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>

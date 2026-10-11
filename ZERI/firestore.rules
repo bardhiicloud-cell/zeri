@@ -1,0 +1,741 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ──────────────────────────────────────────────
+    // Helper functions
+    // ──────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Role checks via custom claims (set server-side via Admin SDK)
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (request.auth.token.admin == true || request.auth.token.superadmin == true);
+    }
+
+    function isApprover() {
+      return isAuthenticated() && request.auth.token.approver == true;
+    }
+
+    function isAdsAdmin() {
+      return isAuthenticated() && request.auth.token.adsadmin == true;
+    }
+
+    function isNewsAdmin() {
+      return isAuthenticated() && request.auth.token.newsadmin == true;
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.superadmin == true ||
+        request.auth.token.approver == true ||
+        request.auth.token.adsadmin == true ||
+        request.auth.token.newsadmin == true ||
+        request.auth.token.agent == true
+      );
+    }
+
+    /**
+     * A paying municipality account.
+     *
+     * Deliberately NOT part of isStaff(). A municipality is a customer of the
+     * transparency system, not platform staff, and it is the subject of the
+     * reporting it would otherwise be able to see the whole of. Keeping it out
+     * of isStaff() means every existing rule that grants staff access continues
+     * to exclude it — which is the safe default.
+     */
+    function isMunicipality() {
+      return isAuthenticated() && request.auth.token.municipality_account == true;
+    }
+
+    /** The municipality this account represents, from its token claim. */
+    function ownMunicipality() {
+      return request.auth.token.municipality;
+    }
+
+    /**
+     * Statuses a municipal account may see.
+     *
+     * One boundary rather than a per-status list: from 'Approved' onward the
+     * report is public record; before that it is unverified material about the
+     * municipality itself, including complaints later dismissed. None of that
+     * reaches the municipality it concerns.
+     */
+    function isMunicipalityVisibleStatus(status) {
+      return status in ['Approved', 'Assigned', 'In Progress', 'Resolved', 'Overdue'];
+    }
+
+    function isBanned() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBanned == true;
+    }
+
+    // Ensure a non-banned, authenticated user
+    function canAct() {
+      return isAuthenticated() && !isBanned();
+    }
+
+    function isGuest() {
+      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // ──────────────────────────────────────────────
+    // Users collection — PII is private
+    // ──────────────────────────────────────────────
+    // Reading the whole users collection is forbidden outright. The old rule
+    // said `allow read: if isAuthenticated()`, which let any citizen pull every
+    // profile in the country in one call and exposed emails and phone numbers.
+    // A user reads only their own document; staff read what their role needs.
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId || isStaff()
+      );
+
+      // A citizen creates their own profile on first sign-in. The role check
+      // stops a client from writing `role: "admin"` into its own document,
+      // which the previous rule happily allowed.
+      allow create: if (isAuthenticated() && request.auth.uid == userId
+                        && request.resource.data.id == request.auth.uid
+                        && !request.resource.data.keys().hasAny(['role', 'isBanned']))
+                    || isSuperAdmin();
+
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == userId
+         // Self-service: role and ban status are not self-assignable.
+         && !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['role', 'isBanned', 'points', 'isVerified']))
+        || isAdmin()
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Reports collection
+    // ──────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Anyone can look up a report by Track ID (public tracking).
+      // PII (email) is not exposed in the TrackIdPage response.
+      allow read: if true;
+
+      // Anyone authenticated can create a report.
+      // authorId MUST be the authenticated uid — no spoofing allowed.
+      allow create: if canAct() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.status == 'Pending Review' &&
+                    request.resource.data.title is string &&
+                    request.resource.data.description is string &&
+                    request.resource.data.category is string &&
+                    request.resource.data.location is map &&
+                    request.resource.data.createdAt == request.time;
+
+      // Update: the author may edit the *content* of their own still-pending
+      // report; nobody may change the pipeline fields from the client.
+      //
+      // ── Why status/timeline are now denied to everyone ────────────────────
+      //
+      // The approval pipeline (agent → municipality → staff) is a set of gates.
+      // It was enforced only in the UI, so any client holding a staff token
+      // could write `status: 'Resolved'` straight to Firestore and skip every
+      // gate. Moving the state machine to `POST /api/v1/reports/:id/transition`
+      // means these fields must not be writable here at all — the endpoint uses
+      // the Admin SDK, which bypasses these rules, so a legitimate transition is
+      // unaffected while a direct write is refused.
+      allow update: if isAuthenticated() && !isBanned() && (
+        (
+          resource.data.authorId == request.auth.uid
+          && resource.data.status in ['Draft', 'Pending Review']
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.authorId == resource.data.authorId
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'status', 'timeline', 'assignedTo', 'resolvedAt', 'resolvedImage',
+            'upvotes', 'commentsCount', 'authorId', 'createdAt'
+          ])
+        )
+        || isSuperAdmin()
+      );
+
+      allow delete: if isSuperAdmin();
+
+      match /comments/{commentId} {
+        // Only show comments on reports visible to the reader
+        allow read: if true;
+        allow create: if canAct() &&
+                      request.resource.data.authorId == request.auth.uid &&
+                      request.resource.data.content is string &&
+                      request.resource.data.createdAt == request.time;
+        allow update, delete: if isCommentOwnerOrStaff();
+      }
+    }
+
+    /**
+     * Retained for the read path and for the create rule's neighbour, but no
+     * longer used to authorise a write: status changes go through the server.
+     */
+    function isReportOwnerOrStaff() {
+      return (isAuthenticated() && !isBanned() && (
+        resource.data.authorId == request.auth.uid ||
+        request.auth.token.admin == true ||
+        request.auth.token.approver == true ||
+        request.auth.token.superadmin == true
+      ));
+    }
+
+    function isCommentOwnerOrStaff() {
+      return (isAuthenticated() && !isBanned() && (
+        resource.data.authorId == request.auth.uid ||
+        isAdmin()
+      ));
+    }
+
+    // ──────────────────────────────────────────────
+    // Polls
+    // ──────────────────────────────────────────────
+    // `hasAll(['options'])` alone is not a meaningful guard: every poll already
+    // has an `options` field, so the condition was true for writes that also
+    // replaced the question or the expiry. The rule now requires that only
+    // `options` actually changed, and that the totals are not rewritten wholesale.
+    match /polls/{pollId} {
+      allow read: if true;
+      allow create: if isAdmin() || isNewsAdmin();
+      allow update: if isAdmin() || isNewsAdmin()
+                    || (isAuthenticated() &&
+                        request.resource.data.diff(resource.data)
+                              .affectedKeys().hasOnly(['options']));
+      allow delete: if isSuperAdmin();
+    }
+
+    // Published news is public; drafts and editorial writes are restricted.
+    match /newsArticles/{articleId} {
+      allow read: if resource.data.published == true ||
+                  isNewsAdmin() || isAdmin() || isSuperAdmin();
+      allow create: if (isNewsAdmin() || isAdmin() || isSuperAdmin()) &&
+                    request.resource.data.title is string &&
+                    request.resource.data.summary is string &&
+                    request.resource.data.content is string &&
+                    request.resource.data.category is string &&
+                    request.resource.data.published is bool;
+      allow update: if (isNewsAdmin() || isAdmin() || isSuperAdmin()) &&
+                    request.resource.data.title is string &&
+                    request.resource.data.summary is string &&
+                    request.resource.data.content is string &&
+                    request.resource.data.category is string &&
+                    request.resource.data.published is bool;
+      allow delete: if isNewsAdmin() || isAdmin() || isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Ads — admin-only writes
+    // ──────────────────────────────────────────────
+    match /ads/{adId} {
+      allow read: if true;
+      allow create, update, delete: if isAdsAdmin() || isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Notifications — public broadcasts or recipient-only private messages
+    // ──────────────────────────────────────────────
+    // A broadcast carries a lifecycle `state` (draft/published/archived/
+    // disabled). Legacy documents have no `state` and are treated as published
+    // so nothing disappears on upgrade. Only published broadcasts are world
+    // readable; staff see every state so they can manage the queue.
+    function isPublishedBroadcast(data) {
+      return data.audience == 'all' &&
+             (!('state' in data) || data.state == 'published');
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isPublishedBroadcast(resource.data) ||
+                  (isAuthenticated() &&
+                   (resource.data.userId == request.auth.uid || isStaff()));
+      allow create: if canAct() && (
+        isAdmin() || isStaff() ||
+        (request.resource.data.audience == 'user' && request.resource.data.actorId == request.auth.uid)
+      );
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                      isAdmin() || isStaff();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Per-user read state for public broadcasts
+    // ──────────────────────────────────────────────
+    // A broadcast document is shared by everyone, so "read" cannot live on it.
+    // Each reader owns a tiny `${uid}_${notificationId}` marker. This scales to
+    // millions of readers without ever writing to the broadcast itself, and the
+    // bell queries only the current user's markers.
+    match /notificationReads/{readId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.notificationId is string;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ──────────────────────────────────────────────
+    // Report lifecycle events — cross-report activity feed
+    // ──────────────────────────────────────────────
+    // Written only by the server transition endpoint (Admin SDK), which bypasses
+    // these rules; clients may never forge an event. Public events feed the news
+    // sidebar's live commune-response activity; staff see the full history.
+    match /report_events/{eventId} {
+      allow read: if resource.data.isPublic == true || isStaff();
+      allow create, update, delete: if false;
+    }
+
+    // Support requests — registered citizens can start a bot session and request an agent.
+    // The requester can see their own conversation; support staff handle replies.
+    match /supportChats/{chatId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create: if canAct() && !isGuest() &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.status in ['bot', 'waiting_agent'];
+      allow update: if isStaff() || (isAuthenticated() &&
+                    resource.data.userId == request.auth.uid &&
+                    request.resource.data.userId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Categories — public read, admin write
+    // ──────────────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() || isStaff();
+    }
+
+    // ──────────────────────────────────────────────
+    // Donation Causes — public read, admin write
+    // ──────────────────────────────────────────────
+    match /donationCauses/{causeId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Forum Posts — authenticated create, ownership-based write
+    // ──────────────────────────────────────────────
+    match /forumStories/{storyId} {
+      allow read: if true;
+      allow create: if canAct() &&
+                    !isGuest() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.authorName is string &&
+                    request.resource.data.mediaUrl is string &&
+                    request.resource.data.mediaType in ['image', 'video'] &&
+                    request.resource.data.createdAt == request.time &&
+                    request.resource.data.expiresAt is timestamp &&
+                    request.resource.data.expiresAt > request.time &&
+                    request.resource.data.keys().hasOnly([
+                      'authorId', 'authorName', 'authorAvatar', 'mediaUrl',
+                      'mediaType', 'textOverlay', 'effect', 'createdAt', 'expiresAt',
+                      // Live story-editor fields (overlay placement + styling).
+                      'overlayX', 'overlayY', 'overlayColor', 'overlaySize',
+                      // Full editor: image adjustments, layers, badges, links,
+                      // and the draft/publish/schedule lifecycle.
+                      'adjustments', 'filters', 'layers', 'stickers', 'gradient',
+                      'font', 'hashtags', 'mentions', 'link', 'logo', 'badge',
+                      'status', 'scheduledAt', 'publishedAt', 'title'
+                    ]);
+      // The author may edit their own story (Save Draft → Publish, reschedule);
+      // staff (moderators/agents) may hide or annotate any story. Authorship and
+      // timestamps are fixed for everyone, so moderation can only add flags.
+      allow update: if isAuthenticated() && !isBanned() && (
+        (resource.data.authorId == request.auth.uid
+         && !request.resource.data.diff(resource.data)
+              .affectedKeys().hasAny(['authorId', 'createdAt']))
+        || isStaff()
+      );
+      allow delete: if isAuthenticated() &&
+                    (resource.data.authorId == request.auth.uid || isStaff());
+    }
+
+    match /forumPosts/{postId} {
+      allow read: if true;
+      allow create: if canAct() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.content is string &&
+                    request.resource.data.content.size() <= 5000;
+      allow update: if isAuthenticated() && !isBanned() && (
+        (resource.data.authorId == request.auth.uid
+         && !request.resource.data.diff(resource.data)
+              .affectedKeys().hasAny(['authorId', 'createdAt']))
+        || isAdmin()
+        || (canAct() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'reposts', 'comments', 'reactions', 'poll']))
+      );
+      allow delete: if isSuperAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    // ──────────────────────────────────────────────
+    // Direct Messages (forum_conversations & messages subcollection)
+    // ──────────────────────────────────────────────
+    match /forum_conversations/{convId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if canAct() && !isGuest() && request.auth.uid in request.resource.data.participants;
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if canAct() && !isGuest() && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if isSuperAdmin() || (isAuthenticated() && resource.data.senderId == request.auth.uid);
+      }
+    }
+
+    // ──────────────────────────────────────────────
+    // Official Profiles — public read, admin write
+    // ──────────────────────────────────────────────
+    match /officialProfiles/{profileId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Verified public work contacts used by the admin report-routing tool.
+    // The directory is not public because the admin controls its contents.
+    match /reportRoutingContacts/{contactId} {
+      allow read, create, update, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // System Settings — public read, superadmin write
+    // ──────────────────────────────────────────────
+    // The settings document is world-readable because the public site reads
+    // `showReels` and the ad contact details on every page load. That same
+    // document also carried the AdSense publisher id, slot and ad code, so a
+    // blanket `read: if true` published credentials that are enough to serve
+    // or spoof the platform's ads. The credentials moved to `ads-private`
+    // below; only the fields the public site genuinely needs stay here.
+    match /settings/general {
+      allow read: if true;
+      allow create, update: if isSuperAdmin() &&
+                             !request.resource.data.diff(resource.data)
+                               .affectedKeys().hasAny([
+                                 'adSenseEnabled', 'adSenseClientId',
+                                 'adSenseSlot', 'adSenseCode'
+                               ]);
+      allow delete: if isSuperAdmin();
+    }
+
+    // AdSense credentials — staff-only read, superadmin write.
+    // These are secrets, not public-interest data: an exposed client id and
+    // slot let anyone point ad traffic at the platform's account, and the ad
+    // code field is injected into the page. Kept in its own document so the
+    // public settings read cannot leak it.
+    match /settings/ads-private {
+      allow read: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // Any other settings document keeps the original public-read contract,
+    // except for writes, which remain superadmin-only.
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Budget Allocations — authenticated create, admin write
+    // ──────────────────────────────────────────────
+    // Public read was removed: these documents carry per-district financial
+    // figures that are not public-interest disclosures, so they are read
+    // through the server (which is authenticated) or by staff.
+    match /budgetAllocations/{allocationId} {
+      allow read: if isAuthenticated();
+      allow create: if canAct();
+      allow update, delete: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Chats — ONLY participants can read/write
+    // ──────────────────────────────────────────────
+    match /chats/{chatId} {
+      allow read, update: if isChatParticipant() || isAdmin();
+      allow create: if canAct() &&
+                    request.resource.data.userId == request.auth.uid;
+      allow delete: if isChatParticipant() || isAdmin();
+
+      match /messages/{messageId} {
+        allow read, create: if isChatParticipant() || isAdmin();
+        allow update, delete: if isChatParticipant() || isAdmin();
+      }
+    }
+
+    function isChatParticipant() {
+      return isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.participants.hasAny([request.auth.uid])
+      );
+    }
+
+    // ──────────────────────────────────────────────
+    // Live Messages — public create/read, admin moderate
+    // ──────────────────────────────────────────────
+    // Unbounded public reads here are a direct billing hazard: one page that
+    // subscribes to the whole collection is one read per document per listener.
+    match /liveMessages/{messageId} {
+      allow read: if true;
+      allow create: if request.resource.data.userId is string &&
+                    request.resource.data.text is string &&
+                    request.resource.data.text.size() <= 1000 &&
+                    request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Health Registry — SENSITIVE PII, admin/owner ONLY
+    // ──────────────────────────────────────────────
+    match /healthRegistry/{recordId} {
+      // NO public read. Only the owner or staff can read.
+      allow read: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        isStaff()
+      );
+      // Authenticated owners retain private records; unauthenticated submissions
+      // are accepted only as bounded, unverified requests with explicit consent.
+      allow create: if (
+        isAuthenticated() && !isGuest() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.fullName is string &&
+        request.resource.data.healthCondition is string &&
+        request.resource.data.contactVisibility == 'admin_only'
+      ) || (
+        (!isAuthenticated() || isGuest()) &&
+        request.resource.data.keys().hasOnly([
+          'trackingId', 'expiresAt', 'fullName', 'age', 'gender', 'municipality',
+          'neighborhood', 'category', 'diagnosis', 'healthCondition',
+          'diagnosedYear', 'urgency', 'needs', 'description', 'contactPhone',
+          'contactName', 'isAnonymous', 'contactVisibility',
+          'hospitalPrivacyNotice', 'supportAmountNeeded', 'supportAmountRaised',
+          'hospitalNotified', 'status', 'createdAt', 'consentToProcessing',
+          'authorId'
+        ]) &&
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() <= 120 &&
+        request.resource.data.age is int &&
+        request.resource.data.age >= 0 &&
+        request.resource.data.age <= 120 &&
+        request.resource.data.gender in ['Mashkull', 'Femër', 'Tjetër'] &&
+        request.resource.data.municipality is string &&
+        request.resource.data.municipality.size() <= 80 &&
+        request.resource.data.neighborhood is string &&
+        request.resource.data.neighborhood.size() <= 120 &&
+        request.resource.data.category is string &&
+        request.resource.data.category.size() <= 80 &&
+        request.resource.data.diagnosis is string &&
+        request.resource.data.diagnosis.size() > 0 &&
+        request.resource.data.diagnosis.size() <= 300 &&
+        request.resource.data.healthCondition == request.resource.data.diagnosis &&
+        request.resource.data.diagnosedYear is int &&
+        request.resource.data.diagnosedYear >= 1900 &&
+        request.resource.data.diagnosedYear <= 2100 &&
+        request.resource.data.urgency in ['Urgjente', 'Mesatare', 'Kronike e Stabilizuar'] &&
+        request.resource.data.needs is list &&
+        request.resource.data.needs.size() <= 10 &&
+        (request.resource.data.needs.size() < 1 ||
+          (request.resource.data.needs[0] is string && request.resource.data.needs[0].size() <= 120)) &&
+        (request.resource.data.needs.size() < 2 ||
+          (request.resource.data.needs[1] is string && request.resource.data.needs[1].size() <= 120)) &&
+        (request.resource.data.needs.size() < 3 ||
+          (request.resource.data.needs[2] is string && request.resource.data.needs[2].size() <= 120)) &&
+        (request.resource.data.needs.size() < 4 ||
+          (request.resource.data.needs[3] is string && request.resource.data.needs[3].size() <= 120)) &&
+        (request.resource.data.needs.size() < 5 ||
+          (request.resource.data.needs[4] is string && request.resource.data.needs[4].size() <= 120)) &&
+        (request.resource.data.needs.size() < 6 ||
+          (request.resource.data.needs[5] is string && request.resource.data.needs[5].size() <= 120)) &&
+        (request.resource.data.needs.size() < 7 ||
+          (request.resource.data.needs[6] is string && request.resource.data.needs[6].size() <= 120)) &&
+        (request.resource.data.needs.size() < 8 ||
+          (request.resource.data.needs[7] is string && request.resource.data.needs[7].size() <= 120)) &&
+        (request.resource.data.needs.size() < 9 ||
+          (request.resource.data.needs[8] is string && request.resource.data.needs[8].size() <= 120)) &&
+        (request.resource.data.needs.size() < 10 ||
+          (request.resource.data.needs[9] is string && request.resource.data.needs[9].size() <= 120)) &&
+        request.resource.data.description is string &&
+        request.resource.data.description.size() <= 2000 &&
+        request.resource.data.contactPhone is string &&
+        request.resource.data.contactPhone.size() <= 40 &&
+        request.resource.data.contactName is string &&
+        request.resource.data.contactName.size() <= 120 &&
+        request.resource.data.trackingId is string &&
+        request.resource.data.trackingId.size() <= 40 &&
+        request.resource.data.expiresAt is string &&
+        request.resource.data.hospitalPrivacyNotice is string &&
+        request.resource.data.hospitalPrivacyNotice.size() <= 500 &&
+        request.resource.data.isAnonymous is bool &&
+        request.resource.data.contactVisibility == 'admin_only' &&
+        request.resource.data.supportAmountNeeded is number &&
+        request.resource.data.supportAmountNeeded >= 0 &&
+        request.resource.data.supportAmountNeeded <= 1000000 &&
+        request.resource.data.supportAmountRaised == 0 &&
+        request.resource.data.hospitalNotified == false &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.createdAt is string &&
+        request.resource.data.consentToProcessing == true &&
+        (
+          (request.resource.data.isAnonymous == true &&
+            request.resource.data.fullName == '' &&
+            request.resource.data.contactPhone == '' &&
+            request.resource.data.contactName == '') ||
+          (request.resource.data.isAnonymous == false &&
+            request.resource.data.fullName.size() > 0)
+        ) &&
+        (
+          request.auth == null ||
+          request.resource.data.authorId == request.auth.uid
+        )
+      );
+      allow update: if isStaff() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow delete: if isSuperAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    // ──────────────────────────────────────────────
+    // Medicine shortages — moderated, public once verified
+    // ──────────────────────────────────────────────
+    // Citizens and institutions report which medicines are missing where. A
+    // report is `pending` until staff/municipality verify it; only VERIFIED
+    // shortages are world-readable, so an unverified claim (which can name a
+    // pharmacy) never reaches the public feed. The owner can always see their
+    // own report; staff see the whole queue. Carries no medical PII about the
+    // reporter beyond their uid, and the UI honours `isAnonymous`.
+    match /medicineShortages/{shortageId} {
+      allow read: if resource.data.status == 'verified' ||
+                  isStaff() ||
+                  (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow create: if canAct() && !isGuest() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.medicineName is string &&
+                    request.resource.data.municipality is string &&
+                    request.resource.data.reportedDate is string &&
+                    request.resource.data.isAnonymous is bool &&
+                    request.resource.data.status == 'pending';
+      allow update: if isStaff() ||
+                    (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow delete: if isAdmin() || isSuperAdmin() ||
+                    (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    // ──────────────────────────────────────────────
+    // Ad Requests — authenticated create, admin read
+    // ──────────────────────────────────────────────
+    match /adRequests/{requestId} {
+      // Only authenticated users can read their own requests
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if canAct() &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.phone is string &&
+                    request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Banned IPs — admin only
+    // ──────────────────────────────────────────────
+    match /bannedIPs/{ipId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Audit Logs — append-only
+    // ──────────────────────────────────────────────
+    // Update and delete are denied to everyone, including superadmin. An audit
+    // log that the most privileged account can rewrite answers none of the
+    // questions an audit log exists to answer, and this is the one collection
+    // where that matters most. The previous rule let a superadmin delete
+    // entries, which would have made the log useless as evidence.
+    match /auditLogs/{logId} {
+      allow read, create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    // ──────────────────────────────────────────────
+    // Editorial Log — append-only, staff-readable
+    // ──────────────────────────────────────────────
+    // Every editorial action attempted by a municipal account, including the
+    // ones the firewall refused. Append-only for the same reason as auditLogs,
+    // and more pointedly: a municipality is the subject of roughly half these
+    // entries, so an editable log would let the party under scrutiny edit the
+    // evidence.
+    //
+    // Read is staff-only and deliberately not available to a municipality even
+    // for entries about itself. A municipality cannot request a copy of the
+    // record of its own denied attempts; the annual transparency report
+    // summarises it instead, which is the accountability that was promised.
+    match /editorialLog/{entryId} {
+      allow read: if isStaff();
+      // Written by the server (Admin SDK), which bypasses rules. The client path
+      // exists only so a failed request can still be recorded, and it must not
+      // be able to forge another municipality's entry.
+      allow create: if isAuthenticated() &&
+                      request.resource.data.actorUserId == request.auth.uid &&
+                      request.resource.data.at == request.time;
+      allow update, delete: if false;
+    }
+
+    // ──────────────────────────────────────────────
+    // Work Facts — municipality-authored, staff-verified
+    // ──────────────────────────────────────────────
+    // What a municipality says it fixed. The load-bearing rule is the update
+    // line: a municipality is not in isStaff(), so it cannot change `review` at
+    // all. Without that, a municipality could file an entry and immediately mark
+    // it `confirmed`, which is the same power as editing the citizen's report,
+    // just slower.
+    match /workFacts/{factId} {
+      // Public read for confirmed entries only. An unverified claim is the
+      // municipality's assertion, not a fact, and publishing it as one would
+      // misrepresent the record. Staff see everything in order to review it.
+      allow read: if resource.data.review == 'confirmed' || isStaff();
+
+      // A municipality may file only against its own name, only with the review
+      // state the server expects, and only inside its own jurisdiction — the
+      // municipality field must match its token claim, so it cannot file on
+      // behalf of a neighbouring authority.
+      allow create: if isAuthenticated() && !isBanned() && (
+        (isMunicipality() &&
+          request.resource.data.municipality == ownMunicipality() &&
+          request.resource.data.authorUserId == request.auth.uid &&
+          request.resource.data.review == 'pending' &&
+          request.resource.data.description is string &&
+          request.resource.data.description.size() >= 20 &&
+          request.resource.data.description.size() <= 800 &&
+          request.resource.data.createdAt == request.time &&
+          request.resource.data.keys().hasOnly([
+            'reportId', 'description', 'completedAt', 'performedBy', 'cost',
+            'attachments', 'municipality', 'authorUserId', 'authorEmail',
+            'review', 'createdAt'
+          ]))
+        || isAdmin()
+      );
+
+      // Only staff may move an entry between review states. The claim text,
+      // author and timestamp are never editable — by anyone — so the record of
+      // who said what and when survives even if the claim is later disproved.
+      allow update: if isStaff() &&
+                      request.resource.data.diff(resource.data)
+                        .affectedKeys().hasOnly(['review', 'reviewedBy', 'reviewedAt']);
+
+      // A municipality may retract its own unverified entry; once confirmed it
+      // is part of the public record and only a superadmin can remove it.
+      allow delete: if (isMunicipality() &&
+                        resource.data.authorUserId == request.auth.uid &&
+                        resource.data.review == 'pending')
+                    || isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Deny all other access by default
+    // ──────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

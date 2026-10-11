@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\bardh\OneDrive\Desktop\ZERI\ZERI\test_mul.py", line 4, in <module>
+    from mul_bridge import get_pipe
+ImportError: cannot import name 'get_pipe' from 'mul_bridge' (C:\Users\bardh\OneDrive\Desktop\ZERI\ZERI\mul_bridge.py)

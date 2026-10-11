@@ -1,0 +1,18 @@
+{
+  "kind": "identitytoolkit#SetAccountInfoResponse",
+  "localId": "xaz6PwKDMOUiLHEGxp6K3XtaQvE3",
+  "email": "bardhiicloud@gmail.com",
+  "displayName": "Bardh Berisha",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "displayName": "Bardh Berisha",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLjw9aYpYUfLTbwWX_2MdgYTrnxuL6WbaaVQw_r9f4VODwDEA=s96-c",
+      "federatedId": "111169291895969315168",
+      "email": "bardhiicloud@gmail.com",
+      "rawId": "111169291895969315168"
+    }
+  ],
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLjw9aYpYUfLTbwWX_2MdgYTrnxuL6WbaaVQw_r9f4VODwDEA=s96-c",
+  "emailVerified": true
+}

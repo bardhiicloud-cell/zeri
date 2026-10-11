@@ -1,0 +1,758 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+@import "tailwindcss";
+/* Base marker-cluster stylesheet: react-leaflet-cluster does not import it for us.
+   Only the fly-in/spiderfy transition rules are needed - the colours below are
+   overridden with the platform palette. */
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * Night-mode foundations.
+ *
+ * The platform ships a large number of "light by default" utility classes
+ * (`bg-white`, `text-slate-900`, `border-slate-200`) paired with `dark:`
+ * counterparts written by hand. Wherever a pair was forgotten, the element kept
+ * its light surface on a near-black page — a white card, or mid-grey text on a
+ * dark background — and that is exactly the "white colours in night mode"
+ * report. Two guards below make the failure mode impossible instead of
+ * per-element:
+ *
+ *  1. A colour transition so flipping the theme does not snap between two
+ *     palettes (which reads as a flash and made the switch feel broken).
+ *  2. `color-scheme` so native controls — selects, scrollbars, date pickers —
+ *     are rendered dark by the engine rather than forcing a white dropdown
+ *     panel over the dark UI.
+ */
+html.dark {
+  color-scheme: dark;
+  --color-page: #0b1220;
+  --color-surface: #111c2f;
+  --color-surface-elevated: #17253a;
+  --color-surface-subtle: #1e2f47;
+  --color-surface-hover: #1b2a41;
+  --color-surface-active: #223450;
+  --color-border-soft: #475569;
+  --color-text: #f8fafc;
+  --color-text-muted: #cbd5e1;
+  --shadow-control: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-surface: 0 14px 30px -16px rgba(0, 0, 0, 0.65);
+  --shadow-floating: 0 20px 40px -18px rgba(0, 0, 0, 0.75);
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/*
+ * Theme cross-fade. Only background/border/text colours are transitioned, and
+ * only on the containers that carry them, so hovering a card still animates at
+ * the speed the component asked for rather than being flattened to 220ms.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  header,
+  aside,
+  nav,
+  main,
+  footer,
+  section,
+  article,
+  div,
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+  }
+
+  /*
+   * ...but never for elements that already declare their own transition, and
+   * never for the map, where a colour transition makes panning smear.
+   */
+  [class*="transition-"],
+  .leaflet-container,
+  .leaflet-container * {
+    transition-property: revert-layer;
+  }
+}
+
+/**
+ * Native form controls under night mode.
+ *
+ * `color-scheme: dark` covers Chromium's dropdown surface, but Firefox and a
+ * few Android WebViews still paint an unstyled `<select>`/`<option>` white. The
+ * explicit rules below close that gap so a select opened in night mode never
+ * drops a white panel into the middle of the dark UI.
+ */
+html.dark select,
+html.dark option,
+html.dark optgroup {
+  background-color: #1e293b;
+  color: #F8FAFC;
+}
+
+/*
+ * Dark-mode form-text guard.
+ *
+ * A dozen admin panels write `text-slate-800`/`text-slate-900` on inputs with
+ * only a `dark:` counterpart — and where that pair was forgotten, the input
+ * rendered near-black text on the near-black night surface. This fallback pins
+ * every form control to the night palette unless a `dark:text-*` class already
+ * wins by specificity (Tailwind utilities beat element selectors, so
+ * `dark:text-white` on a white submit button keeps working).
+ */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #F1F5F9;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94A3B8;
+}
+
+/*
+ * Light-mode text guard for the admin content area.
+ *
+ * The admin's sidebar is permanently dark while the content pane follows the
+ * theme. Components written against the dark pane (white text) were invisible
+ * on the light pane. These rules do the reverse pin: a light theme gets dark
+ * text on form controls unless an explicit utility overrides it.
+ */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  color: #0F172A;
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #64748B;
+}
+/*
+ * Hover-wipe guard: several admin surfaces used `hover:bg-white`, which under
+ * night mode repaints the row white under white text — the text vanishes.
+ * Night-mode hovers always darken instead of lightening.
+ */
+html.dark .hover-bg-white-fix:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/*
+ * Global night-mode hover guard.
+ *
+ * Hundreds of rows and buttons declare a light hover tint (`hover:bg-white`,
+ * `hover:bg-slate-50`, `hover:bg-blue-50`, ...) and most — but not all — pair it
+ * with a `dark:hover:bg-*` counterpart. Wherever the counterpart was forgotten,
+ * hovering in night mode repaints the row near-white under near-white text and
+ * the label vanishes. Rather than chase every occurrence by hand, this guard
+ * re-tints any light hover that has NO dark hover counterpart to the canonical
+ * `--color-surface-hover` token.
+ *
+ * The `:not([class*="dark:hover:bg-"])` is what makes it safe: an element that
+ * did specify its own dark hover is excluded and keeps exactly what its author
+ * wrote. Only the forgotten ones are corrected.
+ */
+html.dark [class*="hover:bg-white"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-slate-50"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-slate-100"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-blue-50"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-indigo-50"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-rose-50"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-amber-50"]:not([class*="dark:hover:bg-"]):hover,
+html.dark [class*="hover:bg-emerald-50"]:not([class*="dark:hover:bg-"]):hover {
+  background-color: var(--color-surface-hover);
+}
+
+/*
+ * Global night-mode hover-TEXT guard: the other half of the same bug.
+ *
+ * The background guard above re-tints a forgotten light hover surface, but a
+ * row can equally declare a light hover *label* (`hover:text-slate-900`,
+ * `hover:text-slate-800`, ...) with no `dark:hover:text-*` counterpart. In night
+ * mode that paints near-black text over the (now correctly dark) hover surface
+ * and the label disappears on hover — the same vanishing-text report, arriving
+ * through the colour property instead of the background. This re-tints any light
+ * hover text that has NO dark hover-text counterpart to the night text token.
+ *
+ * Same safety rule as the background guard: `:not([class*="dark:hover:text-"])`
+ * excludes every element whose author did specify a dark hover label, so only
+ * the forgotten ones are corrected. (`group-hover:text-*` shares the
+ * "hover:text-" substring and is corrected too, which is the same fix — a light
+ * group-hover label is just as invisible on a dark surface.)
+ */
+html.dark [class*="hover:text-slate-900"]:not([class*="dark:hover:text-"]):hover,
+html.dark [class*="hover:text-slate-800"]:not([class*="dark:hover:text-"]):hover,
+html.dark [class*="hover:text-slate-700"]:not([class*="dark:hover:text-"]):hover,
+html.dark [class*="hover:text-gray-900"]:not([class*="dark:hover:text-"]):hover,
+html.dark [class*="hover:text-neutral-900"]:not([class*="dark:hover:text-"]):hover,
+html.dark [class*="hover:text-black"]:not([class*="dark:hover:text-"]):hover {
+  color: var(--color-text);
+}
+
+/*
+ * group-hover variant of the same guard. `group-hover:text-*` activates when the
+ * ANCESTOR `.group` is hovered, not the labelled element itself, so these select
+ * on `.group:hover` and carry no `:hover` of their own.
+ */
+html.dark .group:hover [class*="group-hover:text-slate-900"]:not([class*="dark:group-hover:text-"]),
+html.dark .group:hover [class*="group-hover:text-slate-800"]:not([class*="dark:group-hover:text-"]),
+html.dark .group:hover [class*="group-hover:text-slate-700"]:not([class*="dark:group-hover:text-"]) {
+  color: var(--color-text);
+}
+
+/* Autofill in Chromium paints its own light-yellow background over dark inputs. */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #F8FAFC;
+  -webkit-box-shadow: 0 0 0 1000px #343a40 inset;
+  caret-color: #F8FAFC;
+}
+
+.map-tiles-dark {
+  filter: invert(0.88) hue-rotate(180deg) brightness(0.78) contrast(1.08) saturate(0.8);
+}
+
+.dashboard-map-filters select {
+  height: 34px;
+  min-height: 34px;
+  padding: 6px 28px 6px 10px;
+  font-size: 12px;
+}
+
+.dashboard-map-filters button {
+  min-height: 34px;
+}
+@theme {
+  /* Fonts */
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: "Merriweather", Georgia, serif;
+
+  /* Core Colors — Kosovo flag palette (blue & gold) */
+  --color-brand-primary: #1E40AF;
+  --color-brand-primary-hover: #1E3A8A;
+  --color-brand-accent: #D28A35;
+  --color-brand-success: #16A34A;
+  --color-brand-error: #DC2626;
+  --color-brand-dark: #1E3A5F;
+  --color-brand-muted: #64748B;
+  --color-brand-light: #F0F7FF;
+
+  /* Semantic Colors */
+  --color-primary: var(--color-brand-primary);
+  --color-secondary: var(--color-brand-dark);
+  --color-success: var(--color-brand-success);
+  --color-error: var(--color-brand-error);
+  --color-warning: var(--color-brand-accent);
+  --color-info: #0284C7;
+
+  --color-page: #F0F7FF;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FAFCFF;
+  --color-surface-subtle: #EFF7FF;
+  /** Canonical interactive-surface tints: what a row/card turns into on hover/press. */
+  --color-surface-hover: #EEF4FB;
+  --color-surface-active: #E2ECF8;
+  --color-surface-dark: #0F2A44;
+  --color-border-soft: #D1E4F2;
+  --color-brand-navy: #1E40AF;
+  --color-action-report: #2563EB;
+  --color-action-report-hover: #1D4ED8;
+  --color-sponsor-surface: #E0F2FE;
+  --color-text: #0F1E2E;
+  --color-text-muted: #64748B;
+
+  /* Elevation */
+  --shadow-control: 0 1px 3px rgba(15, 23, 42, 0.10);
+  --shadow-surface: 0 14px 30px -16px rgba(30, 64, 175, 0.45);
+  --shadow-floating: 0 20px 40px -18px rgba(15, 23, 42, 0.28);
+
+  /* Typography Tokens */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+  --text-5xl: 48px;
+  --text-6xl: 60px;
+  
+  /* Spacing Tokens */
+  --spacing-1: 0.25rem; /* 4px */
+  --spacing-2: 0.5rem;  /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
+  --spacing-4: 1rem;    /* 16px */
+  --spacing-5: 1.25rem; /* 20px */
+  --spacing-6: 1.5rem;  /* 24px */
+  --spacing-8: 2rem;    /* 32px */
+
+  /* Component Tokens */
+  --radius-card: 14px;
+  --radius-button: 10px;
+}
+
+@utility mobile-bottom-safe {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+@utility mobile-top-safe {
+  padding-top: calc(4rem + env(safe-area-inset-top));
+}
+
+@utility mobile-assistant-safe {
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+/**
+ * Desktop shell grid.
+ *
+ * Written as plain CSS rather than `md:grid-cols-[248px_minmax(0,1fr)]`
+ * `md:grid-rows-[56px_minmax(0,1fr)]` because Tailwind's arbitrary-value parser
+ * splits on the comma inside `minmax(0,1fr)` and silently drops the whole
+ * declaration — the class was present in the DOM and absent from the stylesheet,
+ * so the shell kept an auto-sized single row and the sticky header had nowhere to
+ * travel.
+ *
+ * Two explicit rows are what the shell actually needs:
+ *   row 1 — the 56px top bar, spanning both columns;
+ *   row 2 — the sidebar beside the routed page.
+ *
+ * Without a declared row 2, `main` was auto-placed into an implicit row sized by
+ * the sidebar's own height, which pushed the entire centre column below the fold
+ * on a 900px viewport and made the page look blank while the DOM was complete.
+ */
+@media (min-width: 768px) {
+  /*
+   * `grid-template-columns`/`rows` are declared here rather than as Tailwind
+   * arbitrary values because the comma inside `minmax(0, 1fr)` is a separator to
+   * Tailwind's parser: the class sat in the DOM and the rule never reached the
+   * stylesheet, so the shell fell back to a single auto row.
+   *
+   * The padding reset is part of the same rule on purpose. `mobile-bottom-safe`
+   * is a plain utility that always applies, and padding on a grid container
+   * creates an extra row — the trace read `56px 3171px 36px`, where that trailing
+   * 36px is dock clearance on a screen that has no dock. A later utility cannot
+   * reliably cancel it, so the override lives with the grid that depends on it.
+   */
+  .app-shell-desktop {
+    grid-template-columns: 248px minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    /* The fixed bar occupies the top 56px, so the grid starts below it. */
+    padding-top: 56px !important;
+    padding-bottom: 0 !important;
+  }
+
+  /*
+   * The top bar is fixed, not sticky.
+   *
+   * `sticky` travels only inside its containing block, and inside a grid every
+   * cell is exactly as tall as the bar — so it had nowhere to go and simply
+   * scrolled off with the page. `fixed` removes it from flow entirely, which is
+   * what a persistent application bar actually needs. The `padding-top` above is
+   * the matching offset, so the two must be changed together.
+   */
+  .app-shell-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+  }
+
+  /*
+   * Sidebar and page share the single remaining row.
+   *
+   * `grid-row: 1 / -1` is what lets the sidebar's `sticky` work: the cell spans
+   * the whole row, so the column has room to travel and pins under the fixed bar
+   * instead of scrolling away. Anything else inside this grid would be
+   * auto-placed and claim a track of its own — overlays are therefore siblings of
+   * the grid, not children of it.
+   */
+  .app-shell-desktop > .app-shell-sidebar {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  .app-shell-desktop > .app-shell-main {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-page);
+    /**
+     * Reduced-motion is honoured first: `prefers-reduced-motion: reduce` is a
+     * real accessibility setting, and some citizens set it because animation
+     * triggers migraines or vestibular symptoms. Overriding it with a JS
+     * smooth-scroll would be hostile to them.
+     */
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-page);
+    color: var(--color-text);
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    /**
+     * `clip`, not `hidden`. A single-axis `hidden` turns the body into a scroll
+     * container, which makes it — not the viewport — the element `position:
+     * sticky` resolves against, and that is what stopped the left navigation
+     * from staying pinned on long pages. `clip` suppresses horizontal overflow
+     * without creating a scroll container, so sticky keeps working.
+     */
+    overflow-x: clip;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.dark body {
+    background-color: var(--color-brand-dark);
+    color: var(--color-surface);
+  }
+
+  h1, .h1 { font-size: 32px; font-weight: 700; }
+  h2, .h2 { font-size: 24px; font-weight: 700; }
+  h3, .h3 { font-size: 20px; font-weight: 700; }
+  h4, .h4 { font-size: 18px; font-weight: 700; }
+  p, .body-text { font-size: 16px; }
+  small, .small-text { font-size: 14px; }
+  .caption { font-size: 12px; }
+
+  /* Input globals */
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"], textarea, select {
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-button);
+    padding: 8px 12px;
+    font-size: 16px;
+    color: var(--color-text);
+    background-color: var(--color-surface-elevated);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  html.dark input[type="text"], html.dark input[type="email"], html.dark input[type="password"], html.dark input[type="number"], html.dark textarea, html.dark select {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #F8F9FA;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.22);
+  }
+  input.error:focus, textarea.error:focus, select.error:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+  }
+}
+
+@layer components {
+  /* Reusable public-page foundations: the layout stays calm while content carries hierarchy. */
+  .page-shell {
+    width: 100%;
+    min-height: 100%;
+    background: var(--color-page);
+  }
+
+  .section-card {
+    border: 1px solid color-mix(in srgb, var(--color-border-soft) 75%, transparent);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface);
+  }
+
+  .luxury-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(248, 251, 255, 1) 0%, rgba(235, 244, 255, 1) 38%, rgba(240, 248, 250, 1) 100%);
+    border: 1px solid rgba(96, 165, 250, 0.26);
+    box-shadow: 0 26px 58px -32px rgba(30, 64, 175, 0.45);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+
+  .luxury-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 32%),
+      radial-gradient(circle at bottom left, rgba(45, 212, 191, 0.12), transparent 28%);
+    pointer-events: none;
+  }
+
+  .dark .luxury-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(17, 38, 60, 0.94), rgba(15, 23, 42, 0.96));
+    border-color: rgba(96, 165, 250, 0.24);
+    box-shadow: 0 26px 58px -32px rgba(14, 116, 144, 0.5);
+  }
+
+  .luxury-search {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(230, 240, 255, 1) 52%, rgba(228, 247, 255, 1) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.24);
+    box-shadow: 0 18px 40px -26px rgba(37, 99, 235, 0.62);
+  }
+
+  .dark .luxury-search {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 38, 60, 0.96), rgba(15, 23, 42, 0.98));
+    border-color: rgba(96, 165, 250, 0.18);
+  }
+
+  .luxury-hero {
+    position: relative;
+    border: 1px solid rgba(147, 197, 253, 0.3);
+    box-shadow: 0 32px 90px -36px rgba(15, 23, 42, 0.8);
+    background: linear-gradient(135deg, rgba(6, 17, 33, 0.9), rgba(17, 52, 90, 0.78));
+    overflow: hidden;
+  }
+
+  .luxury-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(96, 165, 250, 0.28), transparent 20%),
+      radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.18), transparent 22%),
+      linear-gradient(120deg, rgba(37, 99, 235, 0.28), rgba(14, 116, 144, 0.04), rgba(15, 23, 42, 0.2));
+    pointer-events: none;
+  }
+
+  .luxury-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .luxury-hero-title {
+    text-shadow: 0 8px 28px rgba(15, 23, 42, 0.35);
+    letter-spacing: -0.05em;
+  }
+
+  .luxury-pill {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(191, 219, 254, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+  }
+
+  .luxury-cta {
+    box-shadow: 0 18px 32px -18px rgba(37, 99, 235, 0.9);
+    letter-spacing: 0.01em;
+  }
+
+  .luxury-stat-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.52), rgba(30, 64, 175, 0.28), rgba(15, 118, 110, 0.22));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 24px -18px rgba(15, 23, 42, 0.8);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-primary);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/**
+ * `overflow-x: hidden` lived in a base rule and read as harmless, but its
+ * computed value is `overflow-x: hidden; overflow-y: auto` — an element with a
+ * non-visible axis on one side becomes a **scroll container on both**. That made
+ * `#root` the scrolling ancestor for the whole app instead of the window, which
+ * had two consequences that were both reported as separate bugs:
+ *
+ *   • `position: sticky` on the left sidebar resolved against `#root`, not the
+ *     viewport, so the column scrolled away with the page and the left edge
+ *     went blank.
+ *   • `window.scrollTo(...)` and anchor scrolling did nothing, because the
+ *     window was not the thing that scrolled.
+ *
+ * `clip` contains the overflow without establishing a scroll container, which
+ * is exactly the behaviour the rule was written for in the first place. `body`
+ * carries the same guarantee for mobile browsers that scroll the body element.
+ */
+#root {
+  overflow-x: clip;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-brand-primary) 22%, transparent);
+  color: var(--color-text);
+}
+.title-serif {
+  font-family: var(--font-serif);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-soft);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/*
+ * The scrollbar was the one element that never received a dark variant: it kept
+ * a #D1E4F2 (light blue) thumb on a near-black page, which was the most visible
+ * "white thing" in night mode on a long page.
+ */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+html.dark ::selection {
+  background: rgba(59, 130, 246, 0.4);
+  color: #F8FAFC;
+}
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/**
+ * Pages that own a fixed-height shell (Forum, Map, Admin) scroll an inner
+ * container, not the window. `scroll-behavior` is inherited, so the smooth
+ * setting on `html` does not reach them and every flick jumped instantly.
+ * This gives those containers the same behaviour as the rest of the site.
+ */
+.forum-scroll,
+.map-scroll,
+.admin-scroll {
+  scroll-behavior: smooth;
+  /* Keep an anchored or focused heading clear of the sticky header. */
+  scroll-padding-top: 5rem;
+  scroll-padding-bottom: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forum-scroll,
+  .map-scroll,
+  .admin-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-border-soft); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@media (max-width: 768px) {
+  .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+.animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 25s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+.leaflet-tile-container img { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.leaflet-tile { box-shadow: 0 0 1px rgba(0, 0, 0, 0.05); }
+.leaflet-container {
+  touch-action: none !important;
+  /* Neutral canvas while tiles stream in. Without this the blue fallback image
+     behind the map showed through as a "blue flash" on every load. */
+  background: #e2e8f0;
+}
+
+html.dark .leaflet-container {
+  background: #0c162c;
+}
+
+html.dark .leaflet-popup-content-wrapper, html.dark .leaflet-popup-tip {
+  background-color: #212529;
+  color: #F8F9FA;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+html.dark .leaflet-container a.leaflet-popup-close-button { color: #6C757D; }
+html.dark .leaflet-container a.leaflet-popup-close-button:hover { color: #F8F9FA; }
+
+/* Leaflet Cluster Overrides for Design System */
+.marker-cluster-small { background-color: rgba(23, 162, 184, 0.6); } /* Info/Teal */
+.marker-cluster-small div { background-color: rgba(23, 162, 184, 0.9); color: white; }
+.marker-cluster-medium { background-color: rgba(240, 173, 78, 0.6); } /* Warning/Orange */
+.marker-cluster-medium div { background-color: rgba(240, 173, 78, 0.9); color: white; }
+.marker-cluster-large { background-color: rgba(217, 83, 79, 0.6); } /* Error/Red */
+.marker-cluster-large div { background-color: rgba(217, 83, 79, 0.9); color: white; }
+.marker-cluster { background-clip: padding-box; border-radius: 20px; }
+.marker-cluster div { 
+  width: 30px; height: 30px; 
+  margin-left: 5px; margin-top: 5px; 
+  text-align: center; border-radius: 15px; 
+  font: 12px var(--font-sans); 
+  font-weight: bold; 
+}
+.dashboard-popup-clean .leaflet-popup-content-wrapper {
+  padding: 8px 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.dashboard-popup-clean .leaflet-popup-content {
+  margin: 0;
+  line-height: normal;
+}
+.dashboard-popup-clean .leaflet-popup-tip {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.marker-cluster span { line-height: 30px; }

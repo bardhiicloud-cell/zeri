@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="160" height="600" viewBox="0 0 160 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="160" height="600" fill="#F8FAFC"/>
+
+  <!-- Mint gradient background -->
+  <defs>
+    <linearGradient id="mintGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8F5F0" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#F1F5F9" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="600" fill="url(#mintGrad)"/>
+
+  <!-- Professional cleaner icon -->
+  <g transform="translate(80, 150)">
+    <!-- Spray bottle -->
+    <rect x="-8" y="0" width="16" height="28" rx="8" fill="#2DD36F"/>
+    <rect x="2" y="4" width="12" height="6" rx="2" fill="#16A34A"/>
+    <!-- Cloth -->
+    <rect x="-12" y="28" width="24" height="8" rx="4" fill="#CBD5E1"/>
+    <!-- Sparkle stars -->
+    <circle cx="-22" cy="8" r="2" fill="#38BDF1"/>
+    <circle cx="22" cy="12" r="1.5" fill="#38BDF1"/>
+    <circle cx="-18" cy="24" r="1.5" fill="#60A5FA"/>
+  </g>
+
+  <!-- Clean streak marks -->
+  <path d="M20 200 L50 210 L70 195" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>
+  <path d="M75 220 L100 230 L115 215" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>
+
+  <!-- Headline -->
+  <text x="80" text-anchor="middle" y="290"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="20" font-weight="700" fill="#0F172A" letter-spacing="-0.4">
+    Shtëpi e pastër.
+  </text>
+  <text x="80" text-anchor="middle" y="314"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="20" font-weight="700" fill="#0F172A" letter-spacing="-0.4">
+    Mendje e qetë.
+  </text>
+
+  <!-- Supporting -->
+  <text x="80" text-anchor="middle" y="375"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="400" fill="#64748B" letter-spacing="0.3">
+    Pastrime profesionale për
+  </text>
+  <text x="80" text-anchor="middle" y="391"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="400" fill="#64748B" letter-spacing="0.3">
+    shtëpi dhe biznese.
+  </text>
+
+  <!-- CTA -->
+  <g transform="translate(80, 470)">
+    <rect x="-46" y="-12" width="92" height="24" rx="12"
+          fill="#2DD36F"/>
+    <text x="0" y="5"
+          font-family="'Helvetica Neue', Arial, sans-serif"
+          font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">
+      Rezervo tani
+    </text>
+  </g>
+</svg>

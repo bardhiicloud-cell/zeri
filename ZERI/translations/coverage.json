@@ -1,0 +1,75 @@
+{
+  "totalStrings": 2086,
+  "languages": {
+    "ar": {
+      "done": 356,
+      "missing": 1730,
+      "percent": 17.07
+    },
+    "fr": {
+      "done": 8,
+      "missing": 2078,
+      "percent": 0.38
+    },
+    "it": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "es": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "pt": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "gsw": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "mk": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "sl": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "hr": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "ro": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "sv": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "nb": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "hy": {
+      "done": 0,
+      "missing": 2086,
+      "percent": 0
+    },
+    "nl": {
+      "done": 12,
+      "missing": 2074,
+      "percent": 0.58
+    }
+  }
+}

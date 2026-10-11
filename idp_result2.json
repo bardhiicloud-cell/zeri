@@ -1,0 +1,139 @@
+{
+  "name": "projects/910442095323/config",
+  "signIn": {
+    "email": {
+      "enabled": true,
+      "passwordRequired": true
+    },
+    "phoneNumber": {},
+    "anonymous": {},
+    "allowDuplicateEmails": true,
+    "hashConfig": {
+      "algorithm": "SCRYPT",
+      "signerKey": "HY9eEBrfE69SRBNrGugVNBN1yidcSplfAlRgY63yCrbOKmdaZxLAsYOsGEUzqYc/aWL5On7GYApmb0bDvU3BHw==",
+      "saltSeparator": "Bw==",
+      "rounds": 8,
+      "memoryCost": 14
+    }
+  },
+  "notification": {
+    "sendEmail": {
+      "method": "DEFAULT",
+      "callbackUri": "https://gen-lang-client-0907710011.firebaseapp.com/__/auth/action",
+      "dnsInfo": {
+        "customDomainState": "NOT_STARTED",
+        "domainVerificationRequestTime": "1970-01-01T00:00:00Z"
+      }
+    },
+    "sendSms": {
+      "smsTemplate": {
+        "content": "%LOGIN_CODE% is your verification code for %APP_NAME%."
+      }
+    },
+    "defaultLocale": "en"
+  },
+  "quota": {
+    "signUpQuotaConfig": {
+      "quota": "1000",
+      "startTime": "2026-06-18T20:49:00Z",
+      "quotaDuration": "86400s"
+    }
+  },
+  "monitoring": {
+    "requestLogging": {}
+  },
+  "multiTenant": {},
+  "authorizedDomains": [
+    "gen-lang-client-0907710011.firebaseapp.com",
+    "gen-lang-client-0907710011.web.app",
+    "ais-dev-iiomqoocl7mbngj5awwk3f-254123316694.europe-west2.run.app",
+    "ais-shared-iiomqoocl7mbngj5awwk3f-254123316694.europe-west2.run.app",
+    "ais-pre-iiomqoocl7mbngj5awwk3f-254123316694.europe-west2.run.app",
+    "ais-dev-porxvwdeia4jcefeb62xuw-254123316694.europe-west2.run.app",
+    "ais-shared-porxvwdeia4jcefeb62xuw-254123316694.europe-west2.run.app",
+    "ais-pre-porxvwdeia4jcefeb62xuw-254123316694.europe-west2.run.app",
+    "ais-mob-porxvwdeia4jcefeb62xuw-254123316694.europe-west2.run.app",
+    "ais-dev-2s665ejur7lokolnaha6um-254123316694.europe-west2.run.app",
+    "ais-shared-2s665ejur7lokolnaha6um-254123316694.europe-west2.run.app",
+    "ais-pre-2s665ejur7lokolnaha6um-254123316694.europe-west2.run.app",
+    "ais-mob-2s665ejur7lokolnaha6um-254123316694.europe-west2.run.app",
+    "ais-dev-7mydyi4fjarupwrg2kdh43-254123316694.europe-west2.run.app",
+    "ais-shared-7mydyi4fjarupwrg2kdh43-254123316694.europe-west2.run.app",
+    "ais-pre-7mydyi4fjarupwrg2kdh43-254123316694.europe-west2.run.app",
+    "ais-mob-7mydyi4fjarupwrg2kdh43-254123316694.europe-west2.run.app",
+    "zeri-qytetarve.com",
+    "ais-dev-mwnnnkh7pd5natu2wt2m6b-254123316694.europe-west2.run.app",
+    "ais-shared-mwnnnkh7pd5natu2wt2m6b-254123316694.europe-west2.run.app",
+    "ais-pre-mwnnnkh7pd5natu2wt2m6b-254123316694.europe-west2.run.app",
+    "ais-mob-mwnnnkh7pd5natu2wt2m6b-254123316694.europe-west2.run.app",
+    "localhost"
+  ],
+  "subtype": "IDENTITY_PLATFORM",
+  "client": {
+    "apiKey": "AIzaSyABHsGey8wTC4-VAZwMgJ-oPBjDzGY5T24",
+    "permissions": {},
+    "firebaseSubdomain": "gen-lang-client-0907710011"
+  },
+  "mfa": {
+    "state": "ENABLED",
+    "enabledProviders": [
+      "PHONE_SMS"
+    ]
+  },
+  "blockingFunctions": {},
+  "smsRegionConfig": {
+    "allowlistOnly": {
+      "allowedRegions": [
+        "RS",
+        "AG",
+        "AI",
+        "AM",
+        "AQ",
+        "AO",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BI",
+        "BH",
+        "BJ",
+        "IR",
+        "RU"
+      ]
+    }
+  },
+  "autodeleteAnonymousUsers": true,
+  "passwordPolicyConfig": {
+    "passwordPolicyEnforcementState": "ENFORCE",
+    "passwordPolicyVersions": [
+      {
+        "customStrengthOptions": {
+          "minPasswordLength": 8,
+          "maxPasswordLength": 4096,
+          "containsLowercaseCharacter": false,
+          "containsUppercaseCharacter": true,
+          "containsNumericCharacter": true,
+          "containsNonAlphanumericCharacter": false
+        },
+        "schemaVersion": 1
+      }
+    ],
+    "lastUpdateTime": "2026-10-07T10:23:58.171318Z"
+  },
+  "emailPrivacyConfig": {
+    "enableImprovedEmailPrivacy": true
+  },
+  "mobileLinksConfig": {
+    "domain": "HOSTING_DOMAIN"
+  },
+  "defaultHostingSite": "gen-lang-client-0907710011"
+}

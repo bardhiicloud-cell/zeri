@@ -1,0 +1,201 @@
+{
+  "indexes": [
+    {
+      "//": "Newsroom review queue: list work facts awaiting verification, newest first. The app queries workFacts where review == 'pending' and orders by createdAt.",
+      "collectionGroup": "workFacts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Confirmed work facts for one report, in submission order. The report detail view shows what a municipality says it fixed, oldest first.",
+      "collectionGroup": "workFacts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "reportId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Editorial audit log, newest first. The admin panel and the yearly transparency report both read this collection ordered by `at`.",
+      "collectionGroup": "editorialLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Denied editorial attempts, for the public transparency report. Queries editorialLog where denied == true.",
+      "collectionGroup": "editorialLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "denied",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Denied attempts grouped by the municipality that made them, which is the figure the transparency report publishes.",
+      "collectionGroup": "editorialLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "denied",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "actorMunicipality",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "A municipality's own report queue: reports for one municipality in a public-record status, newest first. Mirrors the server query in GET /api/v1/municipality/reports.",
+      "collectionGroup": "reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "location.municipality",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "News sidebar live activity: the newest public report events across all communes. Backs the 'Njoftime Live' feed.",
+      "collectionGroup": "report_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublic",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Live activity filtered to one of the 38 communes, newest first. Backs the sidebar commune filter.",
+      "collectionGroup": "report_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "municipality",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isPublic",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Full lifecycle history for a single report, oldest first. Backs the Track ID timeline and admin detail view.",
+      "collectionGroup": "report_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "reportId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "//": "Public broadcasts, published first, newest first. Backs the bell's general-notifications tab with pagination.",
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "audience",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "A recipient's personal notifications, newest first. Backs the bell's report-notifications tab.",
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "//": "A user's read markers for broadcasts, so the bell can page through what they have already seen.",
+      "collectionGroup": "notificationReads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

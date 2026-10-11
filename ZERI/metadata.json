@@ -1,0 +1,6 @@
+{
+  "name": "RaportoKosova",
+  "description": "Platformë për raportimin e problemeve qytetare, demokraci digjitale dhe bashkëpunim komunitar.",
+  "requestFramePermissions": ["geolocation", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

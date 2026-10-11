@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Prototype-only rules. This file is referenced only by firebase.prototype.json
+    // and is never used by the deployed firebase.json configuration.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
