@@ -5,9 +5,9 @@ import { useStore } from '../lib/store';
 import { Shield, ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
-import { auth, db } from '../lib/firebase';
+import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
 import { getOrCreateGuestUser } from '../lib/session';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { canAccessAdmin } from '../lib/adminPermissions';
 
@@ -24,6 +24,54 @@ export default function LoginPage() {
   const login = useStore(state => state.login);
   const addAuditLog = useStore(state => state.addAuditLog);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // A redirect Google sign-in lands back on this page with the result
+    // waiting in the auth session. Complete it here, then run the same
+    // backend sync and login the popup path performs.
+    let cancelled = false;
+    readGoogleRedirectResult()
+      .then(async (credential) => {
+        if (!credential || cancelled) return;
+        const user = credential.user;
+        const token = await user.getIdToken();
+        const response = await fetch('/api/v1/auth/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: user.displayName || '',
+            avatar: user.photoURL || '',
+          }),
+        });
+        if (!response.ok) throw new Error('Backend sync failed');
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        login({
+          id: user.uid,
+          name: userData.name || user.displayName || '',
+          email: user.email || '',
+          role: userData.role || 'citizen',
+          points: userData.points || 0,
+          badges: userData.badges || [],
+          isVerified: true,
+          phone: userData.phone,
+          avatar: userData.avatar || user.photoURL || '',
+          trustScore: userData.trustScore,
+          permissions: userData.permissions,
+          isBanned: userData.isBanned,
+        });
+      })
+      .catch((err) => {
+        if (!cancelled && err?.code && err.code !== 'auth/no-auth-event') {
+          console.error('[LOGIN] Google redirect sign-in failed:', err?.code, err?.message);
+          setError(`Hyrja me Google dështoi (${err?.code}). Provoni përsëri.`);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     // The app creates an anonymous guest session on first load. Keep guests on
@@ -154,7 +202,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithGoogle(provider);
       const user = credential.user;
       const token = await user.getIdToken();
 

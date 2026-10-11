@@ -5,8 +5,8 @@ import { useStore } from '../lib/store';
 import { UserPlus, ShieldAlert, Phone, ArrowLeft, Mail, Lock, User, Shield, CheckCircle2, Calendar } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
-import { auth, db } from '../lib/firebase';
-import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth, db, signInWithGoogle } from '../lib/firebase';
+import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import {
@@ -150,7 +150,7 @@ export default function RegisterPage() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithGoogle(provider);
       const user = credential.user;
       const token = await user.getIdToken();
 

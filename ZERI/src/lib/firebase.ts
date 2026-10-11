@@ -1,5 +1,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import {
+  connectAuthEmulator,
+  getAuth,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  AuthProvider,
+} from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, doc, getDoc } from 'firebase/firestore';
 import { connectStorageEmulator, getBlob, getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import appletConfig from '../../firebase-applet-config.json';
@@ -100,6 +107,45 @@ export const MAX_UPLOAD_BYTES: Record<UploadKind, number> = {
 
 export const formatBytes = (bytes: number): string =>
   `${Math.round(bytes / (1024 * 1024))}MB`;
+
+/**
+ * Google sign-in with popup, falling back to a full-page redirect.
+ *
+ * `auth/internal-error` from a popup almost always means the popup could not
+ * talk back to the opener — third-party cookies blocked, private browsing, or
+ * an embedded browser. The redirect flow does not need that handshake, so it
+ * succeeds where the popup fails. The result of a redirect flow is picked up
+ * once on the next load by `readGoogleRedirectResult`.
+ */
+let redirectFlowStarted = false;
+
+export async function signInWithGoogle(provider: AuthProvider): Promise<import('firebase/auth').UserCredential> {
+  try {
+    return await signInWithPopup(auth, provider);
+  } catch (err: any) {
+    const code = err?.code || '';
+    const userCancelled =
+      code === 'auth/popup-closed-by-user' ||
+      code === 'auth/cancelled-popup-request';
+    const popupUnusable =
+      code === 'auth/internal-error' ||
+      code === 'auth/popup-blocked' ||
+      code === 'auth/popup-blocked-by-browsers' ||
+      code === 'auth/operation-not-supported-in-this-environment';
+    if (!userCancelled && popupUnusable && !redirectFlowStarted) {
+      redirectFlowStarted = true;
+      await signInWithRedirect(auth, provider);
+      // Control leaves this page; the promise never settles in practice.
+      return new Promise(() => {});
+    }
+    throw err;
+  }
+}
+
+/** Resolves a pending redirect sign-in on page load, if one is in flight. */
+export function readGoogleRedirectResult() {
+  return getRedirectResult(auth);
+}
 
 export async function getUserIdTokenResult(): Promise<any> {
   const u = auth.currentUser;
