@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import {
   Camera,
+  Eye,
+  Send,
   ChevronLeft,
   ChevronRight,
   CirclePlay,
@@ -26,6 +28,7 @@ import {
 import toast from 'react-hot-toast';
 import { auth, db, MAX_UPLOAD_BYTES, uploadFileToStorage } from '../../lib/firebase';
 import type { User } from '../../types';
+import { fetchStoryViewersApi, recordStoryViewApi, replyToStoryApi, type StoryViewer } from '../../lib/storyApi';
 
 
 import { dt } from '@/src/lib/dt';
@@ -91,6 +94,10 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
   const [activeStoryGroup, setActiveStoryGroup] = useState<ForumStory[] | null>(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
+  const [viewers, setViewers] = useState<{ count: number; list: StoryViewer[] } | null>(null);
+  const [showViewers, setShowViewers] = useState(false);
   const previewUrl = useMemo(
     () => (selectedFile ? URL.createObjectURL(selectedFile) : ''),
     [selectedFile],
@@ -142,7 +149,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
   useEffect(() => {
     if (!activeStoryGroup) return;
     const story = activeStoryGroup[activeStoryIndex];
-    if (!story || story.mediaType === 'video') return;
+    if (!story || story.mediaType === 'video' || replyText || showViewers) return;
     const timer = window.setTimeout(() => {
       if (activeStoryIndex < activeStoryGroup.length - 1) {
         setActiveStoryIndex((index) => index + 1);
@@ -151,7 +158,38 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
       }
     }, 6000);
     return () => window.clearTimeout(timer);
-  }, [activeStoryGroup, activeStoryIndex]);
+  }, [activeStoryGroup, activeStoryIndex, replyText, showViewers]);
+
+  const currentStory = activeStoryGroup?.[activeStoryIndex] ?? null;
+  const viewerUid = auth.currentUser?.uid ?? currentUser?.id ?? '';
+  const isOwnActiveStory = !!currentStory && currentStory.authorId === viewerUid;
+  useEffect(() => {
+    setReplyText('');
+    setShowViewers(false);
+    setViewers(null);
+    if (!currentStory || !currentUser || currentUser.role === 'guest') return;
+    if (isOwnActiveStory) {
+      let cancelled = false;
+      fetchStoryViewersApi(currentStory.id).then((r) => { if (!cancelled) setViewers({ count: r.count, list: r.viewers }); }).catch(() => undefined);
+      return () => { cancelled = true; };
+    }
+    // Best effort: a failed view mark must never get in the way of watching.
+    void recordStoryViewApi(currentStory.id).catch(() => undefined);
+  }, [currentStory?.id, isOwnActiveStory, currentUser?.id]);
+
+  const sendReply = async () => {
+    if (!currentStory || isReplying || !replyText.trim()) return;
+    setIsReplying(true);
+    try {
+      await replyToStoryApi(currentStory.id, replyText.trim());
+      setReplyText('');
+      toast.success(dt('Përgjigjja u dërgua.'));
+    } catch (error: any) {
+      toast.error(error?.message || dt('Përgjigjja nuk u dërgua.'));
+    } finally {
+      setIsReplying(false);
+    }
+  };
 
   const visibleStories = useMemo(
     () => stories.filter((story) => !story.isHidden && toMillis(story.expiresAt) > now),
@@ -566,6 +604,36 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
               >
                 {activeStory.textOverlay}
               </p>
+            )}
+            {currentUser && currentUser.role !== 'guest' && (
+              <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
+                {isOwnActiveStory ? (
+                  <>
+                    {showViewers && (
+                      <ul className="mb-2 max-h-48 space-y-1 overflow-y-auto rounded-2xl bg-black/70 p-2 text-white" aria-label={dt('Shikuesit')}>
+                        {viewers?.list.length === 0 && <li className="p-2 text-xs text-white/70">{dt('Askush nuk e ka parë ende.')}</li>}
+                        {viewers?.list.map((v) => (
+                          <li key={v.id} className="flex items-center gap-2 p-1 text-sm">
+                            <img src={v.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(v.name)}`} alt="" className="h-7 w-7 rounded-full object-cover" />
+                            <span className="truncate">{v.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <button type="button" onClick={() => setShowViewers((v) => !v)} aria-expanded={showViewers}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-sm font-bold text-white">
+                      <Eye className="h-4 w-4" aria-hidden="true" /> {viewers ? viewers.count : '…'} {dt('shikues')}
+                    </button>
+                  </>
+                ) : (
+                  <form onSubmit={(e) => { e.preventDefault(); void sendReply(); }} className="flex items-center gap-2">
+                    <input value={replyText} onChange={(e) => setReplyText(e.target.value.slice(0, 500))} placeholder={dt('Përgjigju…')} aria-label={dt('Përgjigju story-t')}
+                      className="min-h-11 flex-1 rounded-full border border-white/40 bg-black/40 px-4 text-base text-white placeholder:text-white/60 outline-none focus:border-white" />
+                    <button type="submit" disabled={isReplying || !replyText.trim()} aria-label={dt('Dërgo')}
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white disabled:opacity-50"><Send className="h-4 w-4" aria-hidden="true" /></button>
+                  </form>
+                )}
+              </div>
             )}
             <button type="button" onClick={() => goToStory(-1)} aria-label="Story e mëparshme" className="absolute inset-y-16 left-0 z-10 flex w-1/4 items-center justify-start pl-2 text-white/70 hover:text-white">
               <ChevronLeft className="h-7 w-7" />

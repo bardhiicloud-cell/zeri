@@ -24,6 +24,7 @@ import { classifyRisk } from '../lib/moderationCenter';
 import ReviewCard from '../components/review/ReviewCard';
 import { stageOf, STAGE_LABELS, STAGE_TONES, type Transition } from '../lib/approvalPipeline';
 import { BAD_WORDS } from '../lib/moderation';
+import TeamOverviewPanel from '../components/admin/TeamOverviewPanel';
 import { isSpecificScope, scopeKey, ALL_SCOPE } from '../lib/municipalityScope';
 import {
   Inbox, ClipboardList, Activity, ScrollText, Scale, Search, ArrowRight,
@@ -252,6 +253,16 @@ export default function AgentPanelPage() {
     return n > 0 ? Math.round(sum / n / 36e5) : 0;
   }, [mine]);
 
+  // Hooks stay above the access check below: the number of hooks must not depend on who is looking.
+  /**
+   * The report open in the detailed review screen, resolved from the current
+   * scope so an update elsewhere in the app is reflected immediately.
+   */
+  const reviewReport = useMemo(
+    () => (reviewId ? inScope.find((r) => r.id === reviewId) ?? null : null),
+    [reviewId, inScope]
+  );
+
   if (!allowed) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
@@ -263,15 +274,6 @@ export default function AgentPanelPage() {
       </div>
     );
   }
-
-  /**
-   * The report open in the detailed review screen, resolved from the current
-   * scope so an update elsewhere in the app is reflected immediately.
-   */
-  const reviewReport = useMemo(
-    () => (reviewId ? inScope.find((r) => r.id === reviewId) ?? null : null),
-    [reviewId, inScope]
-  );
 
   /** Merr një punë përsipër dhe e shënon në regjistrin e pandryshueshëm. */
   const claim = async (report: Report) => {
@@ -428,6 +430,12 @@ export default function AgentPanelPage() {
         <>
 
       {/* ============ INBOX ============ */}
+      {tab === 'inbox' && currentUser?.role === 'dispatcher' && (
+        <section className="mb-6" aria-label={dt('Ngarkesa e ekipit')}>
+          <TeamOverviewPanel />
+        </section>
+      )}
+
       {tab === 'inbox' && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">

@@ -2,6 +2,7 @@ import { dynamicTranslations } from './dynamicTranslations';
 import { uiTranslations } from './uiTranslations';
 import { newLanguageTranslations } from './newLanguageTranslations';
 import { siteTranslations } from './siteTranslations';
+import { publicPagesTranslations } from './publicPagesTranslations';
 import {
   DEFAULT_LANGUAGE,
   isSupportedLanguage,
@@ -50,6 +51,9 @@ export function dt(text: string, forcedLang?: string): string {
    * needed and an English fix reaches all three at once.
    */
   lang = translationLanguageFor(lang);
+
+  const publicPage = publicPagesTranslations[text]?.[lang];
+  if (publicPage) return publicPage;
 
   // The added languages live in their own overlay; check it first so an
   // entry there always wins for its language.

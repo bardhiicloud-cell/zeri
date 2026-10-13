@@ -40,6 +40,7 @@ function sanitizeAdHtml(html: string): string {
   });
 }
 import toast from 'react-hot-toast';
+import { realContactOrEmpty } from '../lib/placeholderContacts';
 
 interface AdBannerProps {
   position: any;
@@ -356,12 +357,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
   if (['floating', 'modal', 'auth', 'map', 'banner'].includes(position)) return null;
 
   // Contact Info from System Settings (administered in Admin panel) - NO PRICES
-  const contactPhone = systemSettings?.adContactPhone || '+383 44 123 456';
-  const contactEmail = systemSettings?.adContactEmail || 'reklama@qytetari.ks';
+  const contactPhone = realContactOrEmpty(systemSettings?.adContactPhone);
+  const contactEmail = realContactOrEmpty(systemSettings?.adContactEmail);
   const companyName = systemSettings?.adContactCompanyName || 'Platforma Qytetare Reklama';
   const adSlogan = systemSettings?.adSlogan || 'Përzgjidhni hapësirën që i përshtatet biznesit tuaj dhe promovoni shërbimet tuaja në platformë.';
   const cleanPhone = contactPhone.replace(/\s+/g, '');
-  const cleanWhatsApp = (systemSettings?.adWhatsApp || contactPhone).replace(/[^0-9+]/g, '');
+  const cleanWhatsApp = (realContactOrEmpty(systemSettings?.adWhatsApp) || contactPhone || '').replace(/[^0-9+]/g, '');
 
   const isCompact = ['sidebar', 'mobile-nav'].includes(pos);
 
@@ -402,7 +403,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-brand-primary)"></span>
                 </span>
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  {dt('Reklamoni Këtu')}
+                  {dt('Hapësirë reklamimi')}
                 </span>
               </div>
               {municipality && municipality !== 'Të gjitha Komunat' && (
@@ -414,15 +415,25 @@ export default function AdBanner({ position, className, municipality }: AdBanner
             
             <div className="mt-0.5">
               <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 leading-tight">
-                {dt('Lidheni Biznesin Tuaj Këtu')}
+                {dt('Arrini qytetarët që lexojnë lajmet lokale')}
               </h4>
-              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-2">
-                {dt('Arritni qytetarët lokalë me një prezencë premium.')}
-              </p>
+              <ul className="mt-1.5 space-y-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                <li className="flex gap-1.5"><span aria-hidden="true" className="text-emerald-600">✓</span>{dt('Synim sipas komunës suaj')}</li>
+                <li className="flex gap-1.5"><span aria-hidden="true" className="text-emerald-600">✓</span>{dt('Pranë përmbajtjes që lexohet çdo ditë')}</li>
+                <li className="flex gap-1.5"><span aria-hidden="true" className="text-emerald-600">✓</span>{dt('Fushatë e shënuar qartë si reklamë')}</li>
+              </ul>
             </div>
 
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <a
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowInquiryModal(true); }}
+              className="mt-1.5 min-h-9 w-full rounded-lg bg-blue-700 px-3 py-1.5 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-blue-800"
+            >
+              {dt('Kërko ofertë')}
+            </button>
+            <div className="flex items-center gap-1.5">
+              {cleanPhone && (
+<a
                 href={`tel:${cleanPhone}`}
                 onClick={(e) => e.stopPropagation()}
                 className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
@@ -430,7 +441,9 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <Phone className="w-3 h-3" aria-hidden="true" />
                 <span>{dt('Kliko e thirr')}</span>
               </a>
-              <a
+)}
+              {cleanWhatsApp && (
+<a
                 href={`https://wa.me/${cleanWhatsApp.replace('+', '')}?text=${encodeURIComponent(dt('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.'))}`}
                 onClick={(e) => e.stopPropagation()}
                 target="_blank"
@@ -440,6 +453,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <MessageCircle className="w-3 h-3" aria-hidden="true" />
                 <span>{dt('WhatsApp')}</span>
               </a>
+)}
             </div>
           </div>
         ) : (
@@ -456,7 +470,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-brand-primary)"></span>
                     </span>
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      {dt('Hapësira Reklamimi e Lirë')}
+                      {dt('Hapësirë reklamimi')}
                     </span>
                   </div>
                   {municipality && municipality !== 'Të gjitha Komunat' && (
@@ -466,14 +480,22 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                   )}
                 </div>
                 <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight mt-0.5">
-                  {dt('Promovoni Biznesin Tuaj Këtu – Bëhuni Pjesë e Komunës')}
+                  {dt('Vendosni biznesin tuaj para qytetarëve të komunës suaj')}
                 </h4>
                 <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600 dark:text-slate-300">{adSlogan}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <a
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowInquiryModal(true); }}
+                className="flex-1 sm:flex-none min-h-10 px-4 py-2 rounded-lg bg-blue-700 text-xs font-black text-white shadow-sm transition-colors hover:bg-blue-800"
+              >
+                {dt('Kërko ofertë')}
+              </button>
+              {cleanPhone && (
+<a
                 href={`tel:${cleanPhone}`}
                 onClick={(e) => e.stopPropagation()}
                 className="flex-1 sm:flex-none min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
@@ -482,7 +504,9 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <span className="hidden sm:inline">{contactPhone}</span>
                 <span className="inline sm:hidden">{dt('Kliko e thirr')}</span>
               </a>
-              <a
+)}
+              {cleanWhatsApp && (
+<a
                 href={`https://wa.me/${cleanWhatsApp.replace('+', '')}?text=${encodeURIComponent(dt('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.'))}`}
                 onClick={(e) => e.stopPropagation()}
                 target="_blank"
@@ -492,6 +516,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{dt('WhatsApp')}</span>
               </a>
+)}
             </div>
           </div>
         )}

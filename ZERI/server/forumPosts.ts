@@ -15,7 +15,7 @@
  */
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, type Firestore, type Transaction } from 'firebase-admin/firestore';
-import { extractMentions, toHandle } from '../src/lib/forumTrends';
+import { extractHashtags, extractMentions, toHandle } from '../src/lib/forumTrends';
 import { createRateLimiter } from './directMessages';
 import { audienceAllows, normalizeForumPrefs, wantsNotification } from '../src/lib/forumPrefs';
 
@@ -229,7 +229,9 @@ export async function addComment(fs: Firestore, input: AddCommentInput): Promise
       notifyUser = String(data.authorId ?? '');
     }
     const notifyDoc = !notifyUser ? null : notifyUser === postAuthorId ? postAuthorDoc : await tx.get(fs.collection('users').doc(notifyUser));
-    tx.update(ref, { comments: next });
+    // The ids of everyone who commented live in a queryable array, so that erasing an account can
+    // find and anonymise their comments (they are array elements inside the post and cannot be queried).
+    tx.update(ref, { comments: next, commentAuthorIds: FieldValue.arrayUnion(input.uid) });
 
     const notified = new Set<string>([input.uid]);
     if (notifyUser && !notified.has(notifyUser) && (!notifyDoc || wantsNotification(notifyDoc.data(), 'forum_reply', parentId ? 'reply' : 'comment'))) {
@@ -327,7 +329,7 @@ export async function editPost(fs: Firestore, input: { postId: string; uid: stri
     // Moderators can read the history; it is trimmed so it cannot grow without bound.
     tx.create(editsRef.doc(), { content: String(data.content ?? ''), at: FieldValue.serverTimestamp(), by: input.uid });
     previous.docs.slice(MAX_EDIT_HISTORY - 1).forEach((d) => tx.delete(d.ref));
-    tx.update(ref, { content: text, editedAt: FieldValue.serverTimestamp() });
+    tx.update(ref, { content: text, hashtags: extractHashtags(text).slice(0, 10), editedAt: FieldValue.serverTimestamp() });
   });
   return { content: text };
 }

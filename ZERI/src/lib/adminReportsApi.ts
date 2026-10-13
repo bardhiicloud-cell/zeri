@@ -26,6 +26,8 @@ export interface ReportListParams {
   assignee?: 'me';
   /** `oldest`: longest-waiting first (status and municipality filters only). */
   order?: 'oldest';
+  /** Reports waiting for the citizen's answer, or escalated. Used alone. */
+  flag?: 'awaitingInfo' | 'escalated';
 }
 
 export interface ReportPage {

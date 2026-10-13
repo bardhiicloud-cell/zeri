@@ -9,6 +9,22 @@ import { applyTransition } from './adminApi';
 import { canAccessAdmin } from './adminPermissions';
 import { stageOf, type Transition } from './approvalPipeline';
 
+/**
+ * A write that fails must say so. These actions used to log to the console and
+ * nothing else, so a poll, category, ad or account that could not be saved or
+ * deleted (a permission, an offline browser) looked as if it had worked.
+ * The toast library is loaded on demand to keep it out of the first bundle.
+ */
+async function reportStoreFailure(message: string, error: unknown): Promise<void> {
+  console.error(error);
+  try {
+    const { default: toast } = await import('react-hot-toast');
+    toast.error(message);
+  } catch {
+    // The console line above is all that is left if the toast cannot load.
+  }
+}
+
 export const DEMO_CITIZEN_USER: User = {
   id: 'demo-bardh',
   name: 'Bardh Qytetar',
@@ -881,11 +897,11 @@ export const useStore = create<AppState>()(
       notifications: [],
       systemSettings: { 
         showReels: true,
-        adContactPhone: '+383 44 123 456',
-        adContactEmail: 'reklama@qytetari.ks',
+        adContactPhone: '',
+        adContactEmail: '',
         adContactCompanyName: 'Platforma Qytetare Reklama',
         adSlogan: 'Maksimalizoni shikueshmërinë e biznesit tuaj me promovim të synuar në komunën tuaj',
-        adWhatsApp: '+38344123456'
+        adWhatsApp: ''
       },
       // No built-in demo campaigns: only ads from Firestore are ever shown, with their real counters.
       ads: [] as AdCampaign[],
@@ -1047,6 +1063,20 @@ export const useStore = create<AppState>()(
       loadMoreReports: async () => {
         const state = get();
         if (!state.hasMoreReports || !state.lastVisibleReport) return;
+
+        // The public feed pages by date through the server, not by Firestore document.
+        const publicCursor = (state.lastVisibleReport as { publicFeedCursor?: string }).publicFeedCursor;
+        if (publicCursor) {
+          try {
+            const { fetchPublicReports } = await import('./publicReportsApi');
+            const page = await fetchPublicReports({ cursor: publicCursor });
+            state.appendReports(page.items);
+            set({ lastVisibleReport: page.nextCursor ? { publicFeedCursor: page.nextCursor } : null, hasMoreReports: Boolean(page.nextCursor) });
+          } catch (err) {
+            console.error('Error loading more reports', err);
+          }
+          return;
+        }
         
         try {
           const { db } = await import('./firebase');
@@ -1169,6 +1199,12 @@ export const useStore = create<AppState>()(
       logout: () => {
         const email = get().currentUser?.email || 'Unknown';
         set({ currentUser: null });
+        // Every logout button ends the Firebase session too; otherwise a refresh
+        // restores the account from the persisted token.
+        void Promise.all([import('./firebase'), import('firebase/auth')])
+          .then(([{ auth }, { signOut }]) => signOut(auth))
+          .catch(() => undefined);
+        try { localStorage.removeItem('zq-demo-user'); } catch { /* storage unavailable */ }
         get().addAuditLog('User Logout', 'success', `User logged out: ${email}`);
       },
 
@@ -1530,7 +1566,7 @@ export const useStore = create<AppState>()(
             createdAt: new Date().toISOString()
           };
           await setDoc(doc(db, 'polls', id), newPoll);
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Sondazhi nuk u krijua. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
 
       deletePoll: async (id) => {
@@ -1538,7 +1574,7 @@ export const useStore = create<AppState>()(
           const { db } = await import('./firebase');
           const { doc, deleteDoc } = await import('firebase/firestore');
           await deleteDoc(doc(db, 'polls', id));
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Sondazhi nuk u fshi. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
 
       updatePoll: async (id, updatedPoll) => {
@@ -1546,7 +1582,7 @@ export const useStore = create<AppState>()(
           const { db } = await import('./firebase');
           const { doc, updateDoc } = await import('firebase/firestore');
           await updateDoc(doc(db, 'polls', id), updatedPoll);
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Sondazhi nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
       
       updateUser: async (id, updatedUser) => {
@@ -1603,7 +1639,7 @@ export const useStore = create<AppState>()(
           const { doc, setDoc } = await import('firebase/firestore');
           const id = Math.random().toString(36).substr(2, 9);
           await setDoc(doc(db, 'categories', id), { ...category, id });
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Kategoria nuk u shtua. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
 
       deleteCategory: async (id) => {
@@ -1611,7 +1647,7 @@ export const useStore = create<AppState>()(
           const { db } = await import('./firebase');
           const { doc, deleteDoc } = await import('firebase/firestore');
           await deleteDoc(doc(db, 'categories', id));
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Kategoria nuk u fshi. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
       
       createAd: async (ad) => {
@@ -1641,14 +1677,14 @@ export const useStore = create<AppState>()(
           const { db } = await import('./firebase');
           const { doc, deleteDoc } = await import('firebase/firestore');
           await deleteDoc(doc(db, 'ads', id));
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Reklama nuk u fshi. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
       updateAdStatus: async (id, status) => {
         try {
           const { db } = await import('./firebase');
           const { doc, updateDoc } = await import('firebase/firestore');
           await updateDoc(doc(db, 'ads', id), { status });
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Statusi i reklamës nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
       incrementAdView: async (id) => {
         try {
@@ -1670,7 +1706,7 @@ export const useStore = create<AppState>()(
           const { db } = await import('./firebase');
           const { doc, deleteDoc } = await import('firebase/firestore');
           await deleteDoc(doc(db, 'users', id));
-        } catch(e) { console.error(e); }
+        } catch(e) { void reportStoreFailure('Llogaria nuk u fshi. Kontrolloni lejet dhe provoni përsëri.', e); }
       },
 
       addComment: (reportId, content, user) => {

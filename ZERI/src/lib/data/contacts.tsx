@@ -43,7 +43,6 @@ export const MINISTRY_CONTACTS = [
   { name: 'Ministria e Industrisë dhe Tregtisë (MINT)', department: 'Industria', phone: '038 200 36 000', email: 'mint@rks-gov.net', description: 'Biznesi, industria dhe tregtia.', icon: Factory },
   { name: 'Ministria e Kulturës, Rinisë dhe Sportit (MKRS)', department: 'Kultura', phone: '038 200 22 000', email: 'mkrs@rks-gov.net', description: 'Për artin, rininë dhe sportin.', icon: Users },
   { name: 'Ministria për Komunitete dhe Kthim (MKK)', department: 'Komunitetet', phone: '038 200 32 000', email: 'mkk@rks-gov.net', description: 'Për të drejtat e komuniteteve dhe minoriteteve.', icon: Globe },
-  { name: 'Zëri i Qytetarëve (Koordinimi i Komunave)', department: 'Administrata & Komuniteti', phone: '038 200 35 555', email: 'info@zeriqytetareve.rks-gov.net', description: 'Platforma qendrore për qytetarët dhe 38 komunat e Kosovës.', icon: Building },
   { name: 'Ministria e Zhvillimit Rajonal (MZHR)', department: 'Administrata', phone: '038 200 13 000', email: 'mzhr@rks-gov.net', description: 'Për zhvillimin e balancuar rajonal.', icon: Building },
   { name: 'Ministria e Mbrojtjes', department: 'Siguria', phone: '038 200 32204', email: 'mm.info@rks-gov.net', description: 'Për forcën e sigurisë së Kosovës.', icon: ShieldAlert },
   { name: 'Gjykata Kushtetuese e Kosovës', department: 'Drejtësia', phone: '038 606 019', email: 'gjk-info@rks-gov.net', description: 'Mbrojtja e kushtetutshmërisë.', icon: Scale },

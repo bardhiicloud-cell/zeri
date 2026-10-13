@@ -353,3 +353,15 @@ Serveri i zbaton: lista shëndetësore, vendimet shëndetësore, faktet e punime
 **Menaxheri (`/menagjer`).** Skeda e re "Ekipi": sa presin, sa s'i ka marrë askush, sa janë të vonuara, ngarkesa e secilit agjent dhe kush mban raporte por ka heshtur 3+ ditë. Numërohet te serveri (`/api/v1/admin/team-overview`), jo duke ngarkuar raporte; kërkon indeksin `auditLogs` (`actorUid`, `createdAt`).
 
 **Kufiri i kërkesave.** Trafiku i kyçur ka kovën e vet (900/min për IP); trafiku anonim mbetet 120.
+
+## Vendosja në prodhim — gjendja (13 tetor 2026)
+
+- **Indekset Firestore: të ngritura.** Projekti `gen-lang-client-0907710011`, baza `ai-studio-ba83412d-…`. Të 35 indekset kompozite ekzistojnë; ato të reja po ndërtohen (gjendja `CREATING`, minuta deri në orë). Komanda raporton gabim për `fieldOverrides` ("Enterprise Edition does not support updating field index configuration"): kjo bazë nuk e mbështet atë pjesë të skedarit; nuk ndikon indekset kompozite. Për një deploy pa gabim, `fieldOverrides` duhet hequr nga `firestore.indexes.json` ose të deployohet vetëm pjesa kompozite.
+- **Rregullat Firestore: NUK janë ngritur.** Ndryshimet e reja (moderimi i lajmeve dhe forumit përmes vendimeve, leximi i stafit nga menaxheri) janë vetëm lokale. Ngrihen me `firebase deploy --only firestore:rules` pasi të rishikohen.
+- **Emaili: pret çelësin.** Pas vendosjes së `MAIL_PROVIDER`, `MAIL_API_KEY`, `MAIL_FROM` në mjedisin e prodhimit, provë e vërtetë: `npm run mail:test -- adresa@juaj.com`.
+
+## Matrica e lejeve dhe verifikimi përfundimtar
+
+- `docs/PERMISSIONS_MATRIX.md` gjenerohet nga funksionet e vërteta të vendimit (`server/permissionsMatrix.ts`, `npm run matrix:write`). `tests/server/permissionsMatrix.test.ts` dështon nëse dokumenti ndryshon nga kodi, dhe mban invariantet: qytetari s'ka asnjë veprim, menaxheri vetëm lexon, plani kufizon komunën, agjenti s'refuzon dhe s'ricakton.
+- Kontrollet e gjalla (emulator lokal): raportet, moderimi, media, caktimi, vendimet, desku i komunës, prerja e fotos, rendi i kutisë, emaili, ekipi, transparenca, biseda e rastit (përfshirë numrin e ndjekjes) — të gjitha kalojnë. Njësitë: `tests/server` + `tests/lib` 692 teste.
+- Kufizime të njohura: PDF mujore/vjetore është print-to-PDF nga shfletuesi; departamentet brenda komunës nuk janë të modeluara; auditimi i përkthimeve për 20 gjuhët nuk është bërë; rregullat Firestore dhe `MAIL_*` s'janë vendosur në prodhim.

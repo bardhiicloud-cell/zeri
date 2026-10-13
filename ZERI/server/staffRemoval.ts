@@ -2,6 +2,7 @@ import type { Express, Request, RequestHandler, Response } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { Auth } from 'firebase-admin/auth';
 import { MAX_REASON, MIN_REASON } from './userModeration';
+import { releaseHeldReports } from './reportAssignment';
 
 /**
  * Removing a staff or municipal account, done on the server.
@@ -86,8 +87,8 @@ export function registerStaffRemovalRoutes(app: Express, deps: StaffRemovalDeps)
         const target = await deps.authAdmin().getUser(targetUid);
         targetRole = String((target.customClaims as Record<string, unknown> | undefined)?.role ?? '');
         targetEmail = target.email ?? '';
-      } catch (error: any) {
-        if (error?.code === 'auth/user-not-found') return res.status(404).json({ error: 'Llogaria nuk u gjet.' });
+      } catch (error) {
+        if ((error as { code?: string })?.code === 'auth/user-not-found') return res.status(404).json({ error: 'Llogaria nuk u gjet.' });
         throw error;
       }
 
@@ -113,7 +114,18 @@ export function registerStaffRemovalRoutes(app: Express, deps: StaffRemovalDeps)
       await deps.authAdmin().deleteUser(targetUid);
       await ref.delete();
 
+      // Their unfinished front-of-queue work must not stay with an account that no longer exists.
+      // The account is already closed; if this step fails we say so instead of claiming success.
+      let handback: { released: number; remaining: boolean } | null = null;
+      try {
+        handback = await releaseHeldReports(deps.db(), targetUid, actor.uid, 'Llogaria e mbajtësit u hoq nga platforma.');
+      } catch (error) {
+        console.error('[ADMIN] releasing reports of removed account failed:', error instanceof Error ? error.message : error);
+      }
+
       deps.audit('admin.staff.remove', req, {
+        releasedReports: handback?.released ?? null,
+        releaseIncomplete: handback === null || handback.remaining,
         targetUid,
         targetEmail,
         targetRole,
@@ -121,9 +133,9 @@ export function registerStaffRemovalRoutes(app: Express, deps: StaffRemovalDeps)
         // Enough to answer "who was this?" later, without the contact details.
         profile: { name: snapshot.name ?? null, role: snapshot.role ?? null, municipality: snapshot.municipality ?? null, permissions: snapshot.permissions ?? [] },
       });
-      return res.json({ ok: true });
-    } catch (error: any) {
-      console.error('[ADMIN] staff removal failed:', error?.message);
+      return res.json({ ok: true, releasedReports: handback?.released ?? 0, releaseIncomplete: handback === null || handback.remaining });
+    } catch (error) {
+      console.error('[ADMIN] staff removal failed:', error instanceof Error ? error.message : error);
       return res.status(500).json({ error: 'Llogaria nuk u hoq. Provoni përsëri.' });
     }
   });

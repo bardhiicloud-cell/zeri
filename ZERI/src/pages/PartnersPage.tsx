@@ -6,10 +6,13 @@ import {
   ShieldCheck, Languages, Send, BadgeCheck, Upload, Rocket, Film, Image as ImageIcon,
 } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
+import { AuraHero, AuraStats, AuraOrbit } from '../components/aura/Aura';
 import { useStore } from '../lib/store';
 import { formatEur, getPaymentConfig, type PaymentConfig } from '../lib/debateApi';
 import { AdRequestModal, AD_PACKAGES } from '../components/AdRequestModal';
 import { AD_POSITION_SPECS, AD_MAX_BYTES, formatMb } from '../lib/adSpecs';
+import { LANGUAGE_OPTIONS } from '../lib/languageConstants';
+import { realContactOrEmpty } from '../lib/placeholderContacts';
 
 /**
  * Public "Partners & Advertising" page.
@@ -46,9 +49,8 @@ const PARTNER_TYPES = [
 
 const FACTS = [
   { icon: MapPin, value: '38', label: 'komuna të Kosovës' },
-  { icon: Languages, value: '22', label: 'gjuhë të platformës' },
+  { icon: Languages, value: String(LANGUAGE_OPTIONS.length), label: 'gjuhë të platformës' },
   { icon: LayoutTemplate, value: String(Object.keys(AD_POSITION_SPECS).length), label: 'pozicione reklamimi' },
-  { icon: ShieldCheck, value: '100%', label: 'kreativë të shqyrtuar' },
 ] as const;
 
 const STEPS = [
@@ -78,9 +80,10 @@ export default function PartnersPage() {
     getPaymentConfig().then(setConfig).catch(() => setConfig(null));
   }, []);
 
-  const phone = systemSettings?.adContactPhone || '+383 44 123 456';
-  const email = systemSettings?.adContactEmail || 'reklama@qytetari.ks';
-  const whatsapp = (systemSettings?.adWhatsApp || phone).replace(/[^0-9]/g, '');
+  // No invented fallbacks: a contact the owner has not set is simply not shown.
+  const phone = realContactOrEmpty(systemSettings?.adContactPhone);
+  const email = realContactOrEmpty(systemSettings?.adContactEmail);
+  const whatsapp = (realContactOrEmpty(systemSettings?.adWhatsApp) || phone).replace(/[^0-9]/g, '');
   const tel = phone.replace(/\s+/g, '');
   const waText = encodeURIComponent(dt('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.'));
 
@@ -102,63 +105,26 @@ export default function PartnersPage() {
 
   const contactBtn =
     'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
-  const sectionTitle = 'title-serif text-2xl font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white';
-  const eyebrow = 'text-[11px] font-black uppercase tracking-[0.16em] text-blue-700 dark:text-blue-300';
+  const sectionTitle = 'text-[20px] font-semibold leading-tight sm:text-[24px]';
+  const eyebrow = 'text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--au-accent)]';
 
   return (
-    <div className="page-shell min-h-screen bg-(--color-page) px-4 py-6 text-slate-800 sm:px-6 lg:px-8 dark:bg-(--color-brand-dark) dark:text-slate-100">
-      <div className="mx-auto max-w-6xl space-y-14">
-        {/* Hero */}
-        <section className="luxury-hero overflow-hidden rounded-[28px] p-6 text-white sm:p-10">
-          <div className="relative z-10 grid gap-8 xl:grid-cols-[1.5fr_1fr] xl:items-end">
-            <div className="max-w-3xl">
-              <span className="luxury-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-blue-200">
-                <Handshake className="h-3.5 w-3.5" aria-hidden="true" />
-                {dt('Partnerët & Reklama')}
-              </span>
-              <h1 className="title-serif mt-4 text-3xl font-black leading-tight tracking-tight sm:text-4xl xl:text-5xl">
-                {dt('Bëhuni partner i platformës qytetare')}
-              </h1>
-              <p className="mt-4 text-sm leading-relaxed text-slate-200 sm:text-base">
-                {dt('Arrini qytetarët e Kosovës ku ata informohen, raportojnë dhe marrin pjesë. Kontaktoni ekipin për partneritet ose reklamim.')}
-              </p>
-
-              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className={`${contactBtn} bg-white text-slate-900 hover:bg-slate-100`}
-                >
-                  <Megaphone className="h-4 w-4" aria-hidden="true" />
-                  {dt('Apliko online')}
-                </button>
-                <a href={`tel:${tel}`} className={`${contactBtn} border border-white/30 text-white hover:bg-white/10`}>
-                  <Phone className="h-4 w-4" aria-hidden="true" />
-                  <span dir="ltr">{phone}</span>
-                </a>
-                <a
-                  href={`https://wa.me/${whatsapp}?text=${waText}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`${contactBtn} bg-emerald-500 text-white hover:bg-emerald-600`}
-                >
-                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                  {dt('WhatsApp')}
-                </a>
-              </div>
-            </div>
-
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2">
-              {FACTS.map(({ icon: Icon, value, label }) => (
-                <li key={label} className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
-                  <Icon className="h-4 w-4 text-blue-200" aria-hidden="true" />
-                  <p className="mt-2 text-2xl font-black tracking-tight">{value}</p>
-                  <p className="text-xs text-slate-300">{dt(label)}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
+    <div className="au-page min-h-screen px-3 pb-24 pt-3 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
+        <AuraHero
+          visual={<AuraOrbit core={Handshake} icons={[Megaphone, Landmark, GraduationCap, HeartPulse, Newspaper, Store]} />}
+          tone="green"
+          eyebrow={dt('Partnerët & Reklama')}
+          icon={Handshake}
+          title={dt('Bëhuni partner i platformës qytetare')}
+          subtitle={dt('Arrini qytetarët e Kosovës ku ata informohen, raportojnë dhe marrin pjesë. Kontaktoni ekipin për partneritet ose reklamim.')}
+          actions={<>
+            <button type="button" onClick={() => setIsModalOpen(true)} className="au-btn au-btn-light"><Megaphone className="h-4 w-4" aria-hidden="true" />{dt('Apliko online')}</button>
+            {phone && <a href={`tel:${tel}`} className="au-btn au-btn-glass"><Phone className="h-4 w-4" aria-hidden="true" /><span dir="ltr">{phone}</span></a>}
+            {whatsapp && <a href={`https://wa.me/${whatsapp}?text=${waText}`} target="_blank" rel="noreferrer" className="au-btn au-btn-glass"><MessageCircle className="h-4 w-4" aria-hidden="true" />{dt('WhatsApp')}</a>}
+          </>}
+          aside={<AuraStats items={FACTS.map(f => ({ value: f.value, label: dt(f.label) }))} />}
+        />
 
         {/* Current partners */}
         <section aria-labelledby="partners-heading">
@@ -177,11 +143,8 @@ export default function PartnersPage() {
                 const isImage = (ad.mediaType === 'image' || ad.mediaType === 'gif') && ad.mediaUrl;
                 const isVideo = ad.mediaType === 'video' && ad.mediaUrl;
                 return (
-                  <li
-                    key={ad.id}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-white/10 dark:bg-slate-900"
-                  >
-                    <div className="relative aspect-[16/9] overflow-hidden bg-slate-50 dark:bg-slate-800">
+                  <li key={ad.id} className="au-tile au-tile-link group flex flex-col overflow-hidden">
+                    <div className="relative aspect-[16/9] overflow-hidden bg-[var(--au-card-2)]">
                       {isImage ? (
                         // Logos and banner creatives come in every proportion, so the
                         // image is contained, never cropped.
@@ -201,10 +164,10 @@ export default function PartnersPage() {
                       )}
                       <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm rtl:left-auto rtl:right-3">
                         <BadgeCheck className="h-3 w-3 text-blue-600" aria-hidden="true" />
-                        {dt('Partner zyrtar')}
+                        {dt('Partner')}
                       </span>
                     </div>
-                    <div className="flex flex-1 flex-col p-5">
+                    <div className="flex flex-1 flex-col p-3.5">
                       <h3 className="text-base font-black text-slate-900 dark:text-white">{ad.title}</h3>
                       <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
                         <MapPin className="h-3 w-3" aria-hidden="true" />
@@ -219,7 +182,7 @@ export default function PartnersPage() {
                           target="_blank"
                           rel="noopener noreferrer sponsored"
                           onClick={() => incrementAdClick(ad.id)}
-                          className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-800 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-white/10 dark:text-slate-100 dark:hover:bg-blue-950/40"
+                          className="au-btn au-btn-soft mt-3 w-full !h-9 !text-[13px]"
                         >
                           {dt('Vizito')} {host}
                           <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -254,7 +217,7 @@ export default function PartnersPage() {
           <h2 id="process-heading" className={`${sectionTitle} mt-1`}>{dt('Nga kërkesa te publikimi në katër hapa')}</h2>
           <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map(({ icon: Icon, title, desc }, index) => (
-              <li key={title} className="relative rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+              <li key={title} className="au-tile relative p-4">
                 <span className="absolute right-4 top-4 text-3xl font-black text-slate-100 rtl:left-4 rtl:right-auto dark:text-slate-800" aria-hidden="true">
                   {index + 1}
                 </span>
@@ -281,29 +244,25 @@ export default function PartnersPage() {
             {AD_PACKAGES.map((pkg, index) => (
               <div
                 key={pkg.id}
-                className={`relative flex flex-col rounded-2xl border p-6 shadow-sm ${
-                  index === 1
-                    ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-500/20 dark:border-blue-400 dark:bg-blue-950/30'
-                    : 'border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900'
-                }`}
+                className={`au-tile relative flex flex-col p-5 ${index === 1 ? '!border-[var(--au-accent)] ring-1 ring-[var(--au-accent)]' : ''}`}
               >
                 {index === 1 && (
                   <span className="absolute -top-2.5 right-4 rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white rtl:left-4 rtl:right-auto">
                     {dt('Më i zgjedhuri')}
                   </span>
                 )}
-                <div className="text-sm font-bold text-slate-600 dark:text-slate-300">{dt(pkg.name)}</div>
-                <div className="mt-1 text-3xl font-black text-slate-900 dark:text-white">
+                <div className="au-sub text-[13px] font-semibold">{dt(pkg.name)}</div>
+                <div className="mt-1 text-[28px] font-semibold tabular-nums">
                   {config?.adPackagePrices[pkg.id] !== undefined ? formatEur(config.adPackagePrices[pkg.id]) : <span className="text-lg">{dt('Çmimi sipas ofertës')}</span>}
                 </div>
                 {pkg.reach && (
                   <div className="mt-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</div>
                 )}
-                <p className="mt-3 flex-1 text-sm text-slate-600 dark:text-slate-300">{dt(pkg.desc)}</p>
+                <p className="au-sub mt-2 flex-1 text-[13px]">{dt(pkg.desc)}</p>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  className={index === 1 ? 'au-btn au-btn-primary mt-4' : 'au-btn au-btn-dark mt-4'}
                 >
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                   {dt('Zgjidh paketën')}
@@ -395,8 +354,8 @@ export default function PartnersPage() {
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {PARTNER_TYPES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+              <div key={title} className="au-tile p-4">
+                <span className="au-ico">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <h3 className="mt-3 text-sm font-black text-slate-900 dark:text-white">{dt(title)}</h3>
@@ -424,14 +383,18 @@ export default function PartnersPage() {
                 <Megaphone className="h-4 w-4" aria-hidden="true" />
                 {dt('Apliko online')}
               </button>
-              <a href={`mailto:${email}`} className={`${contactBtn} border border-slate-200 text-slate-800 hover:bg-slate-50 dark:border-white/15 dark:text-white dark:hover:bg-white/5`}>
-                <Mail className="h-4 w-4" aria-hidden="true" />
-                <span dir="ltr">{email}</span>
-              </a>
-              <a href={`tel:${tel}`} className={`${contactBtn} border border-slate-200 text-slate-800 hover:bg-slate-50 dark:border-white/15 dark:text-white dark:hover:bg-white/5`}>
-                <Phone className="h-4 w-4" aria-hidden="true" />
-                <span dir="ltr">{phone}</span>
-              </a>
+              {email && (
+                <a href={`mailto:${email}`} className={`${contactBtn} border border-slate-200 text-slate-800 hover:bg-slate-50 dark:border-white/15 dark:text-white dark:hover:bg-white/5`}>
+                  <Mail className="h-4 w-4" aria-hidden="true" />
+                  <span dir="ltr">{email}</span>
+                </a>
+              )}
+              {phone && (
+                <a href={`tel:${tel}`} className={`${contactBtn} border border-slate-200 text-slate-800 hover:bg-slate-50 dark:border-white/15 dark:text-white dark:hover:bg-white/5`}>
+                  <Phone className="h-4 w-4" aria-hidden="true" />
+                  <span dir="ltr">{phone}</span>
+                </a>
+              )}
             </div>
           </div>
         </section>

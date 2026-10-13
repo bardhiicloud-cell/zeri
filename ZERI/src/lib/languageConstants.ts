@@ -118,6 +118,10 @@ export const isSupportedLanguage = (
 export function readStoredLanguage(): SupportedLanguageCode {
   if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
 
+  // Staff consoles are written and run in Albanian; a citizen's chosen language
+  // must not leak machine-translated text into them.
+  if (/^\/(admin|agent|menagjer|komuna|debatiwp)(\/|$)/.test(window.location.pathname)) return DEFAULT_LANGUAGE;
+
   let saved: string | null = null;
   try {
     saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);

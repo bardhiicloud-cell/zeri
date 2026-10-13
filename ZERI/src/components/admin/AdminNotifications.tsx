@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import toast from 'react-hot-toast';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Bell, Send, Trash2, Search, CheckSquare, Square, X, ArrowRight, Newspaper,
@@ -181,7 +182,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
       closeForm();
     } catch (error) {
       console.error('Gabim gjatë ruajtjes së njoftimit', error);
-      alert('Pati një gabim gjatë ruajtjes së njoftimit.');
+      toast.error('Njoftimi nuk u ruajt. Provoni përsëri.');
     } finally {
       setSaving(false);
     }
@@ -190,8 +191,10 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
   const changeState = useCallback(async (id: string, state: NotificationState) => {
     try {
       await setDoc(doc(db, 'notifications', id), { state }, { merge: true });
+      toast.success('Gjendja e njoftimit u ndryshua.');
     } catch (err) {
       console.error('Gabim gjatë ndryshimit të gjendjes', err);
+      toast.error('Gjendja nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.');
     }
   }, []);
 
@@ -199,21 +202,31 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
     if (!window.confirm('A jeni i sigurt që dëshironi ta fshini këtë njoftim?')) return;
     try {
       await deleteDoc(doc(db, 'notifications', id));
+      toast.success('Njoftimi u fshi.');
     } catch (err) {
       console.error('Gabim gjatë fshirjes', err);
+      toast.error('Njoftimi nuk u fshi. Kontrolloni lejet dhe provoni përsëri.');
     }
   }, []);
 
   const handleBulkDelete = async () => {
     if (!window.confirm(`A jeni të sigurt që dëshironi të fshini ${selectedIds.size} njoftime?`)) return;
+    // Count what really happened: "deleted" must never mean "tried".
+    let deleted = 0;
+    const kept = new Set<string>();
     for (const id of selectedIds) {
       try {
         await deleteDoc(doc(db, 'notifications', id));
+        deleted += 1;
       } catch (err) {
         console.error('Failed to delete notification', id, err);
+        kept.add(id);
       }
     }
-    setSelectedIds(new Set());
+    // Whatever could not be deleted stays selected so it can be tried again.
+    setSelectedIds(kept);
+    if (kept.size === 0) toast.success(`${deleted} njoftime u fshinë.`);
+    else toast.error(`U fshinë ${deleted}; ${kept.size} nuk u fshinë (kontrolloni lejet).`);
   };
 
   const toggleSelect = (id: string) => {

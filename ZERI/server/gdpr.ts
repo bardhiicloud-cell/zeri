@@ -104,6 +104,23 @@ export function privateStoragePrefixes(uid: string): string[] {
   ];
 }
 
+/** Replaces a person's identity on their comments and replies (top-level and nested); content stays. */
+export function anonymiseComments(comments: unknown, uid: string): { comments: unknown[]; changed: number } {
+  let changed = 0;
+  type Comment = Record<string, unknown>;
+  const scrub = (c: unknown): unknown => {
+    if (!c || typeof c !== 'object') return c;
+    const node = c as Comment;
+    const mine = node.authorId === uid;
+    if (mine) changed += 1;
+    const base: Comment = mine ? { ...node, authorId: DELETED_AUTHOR_ID, authorName: DELETED_AUTHOR_NAME, authorAvatar: '' } : { ...node };
+    if (Array.isArray(node.replies)) base.replies = node.replies.map(scrub);
+    return base;
+  };
+  const list = Array.isArray(comments) ? comments.map(scrub) : [];
+  return { comments: list, changed };
+}
+
 export async function eraseUserData(
   firestore: Firestore,
   bucket: FileBucket | null,
@@ -181,6 +198,19 @@ export async function eraseUserData(
     if (snap.exists) await ref.delete();
     return snap.exists ? 1 : 0;
   });
+  // Their comments inside other people's posts: found through `commentAuthorIds` (kept by the server),
+  // then their name and avatar are replaced in place. The text stays, like any anonymised public content.
+  await run('postComments', () =>
+    eachPage(col('forumPosts').where('commentAuthorIds', 'array-contains', uid), async (docs) => {
+      for (const doc of docs) {
+        const { comments, changed } = anonymiseComments(doc.get('comments'), uid);
+        await doc.ref.update({
+          ...(changed > 0 ? { comments } : {}),
+          commentAuthorIds: FieldValue.arrayRemove(uid),
+        });
+      }
+    })
+  );
   // Their likes, reposts and reel likes live in other people's documents as ids: take the id out.
   for (const [name, collection, field] of [
     ['postLikes', 'forumPosts', 'likes'],

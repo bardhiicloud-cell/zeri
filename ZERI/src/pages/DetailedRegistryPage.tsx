@@ -1,24 +1,67 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import {
+  ChevronLeft, ChevronRight, Download, FilePlus2, Filter, LayoutGrid, List, Rows3, Search, ShieldCheck,
+  SlidersHorizontal, WifiOff, X, ArrowRight, FileSearch,
+} from 'lucide-react';
 import { useStore } from '../lib/store';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { useLanguage } from '../lib/LanguageContext';
-import { format } from 'date-fns';
-import { sq } from 'date-fns/locale';
-import { Filter, Search, ChevronLeft, ChevronRight, SlidersHorizontal, X, Download, WifiOff, FilePlus2, RefreshCw, ShieldCheck, Clock, CheckSquare } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import { cn } from '../lib/utils';
+import { getReportTopic, getReportTopicLabel, REPORT_TOPICS } from '../lib/reportTopics';
+import { statusLabel } from '../lib/reportStatus';
 import ReportDetailModal from '../components/ReportDetailModal.tsx';
-
 import { StatePanel } from '../components/ui/StatePanel.tsx';
 import AdBanner from '../components/AdBanner.tsx';
 import { AdvancedFilterDrawer } from '../components/registry/AdvancedFilterDrawer.tsx';
 import { FilterChip } from '../components/registry/FilterChip';
 import { RegistryRow } from '../components/registry/RegistryRow';
-import { getReportTopic, getReportTopicLabel, REPORT_TOPICS } from '../lib/reportTopics';
+import { RegistryCard, formatReportDate, trackingIdOf } from '../components/registry/RegistryCard';
+import { RegistryTable } from '../components/registry/RegistryTable';
+import { RegistryInsights } from '../components/registry/RegistryInsights';
+import { PageHero, heroPrimaryClass, heroSecondaryClass } from '../components/layout/PageHero';
 
-import { dt } from '@/src/lib/dt';
-const ITEMS_PER_PAGE = 5;
+type View = 'cards' | 'list' | 'table';
+type StatusFilter = 'all' | 'open' | 'resolved' | 'critical';
+type SortKey = 'recent' | 'oldest' | 'voted';
+type DrawerSort = 'dash_all' | 'dash_recent' | 'dash_most_voted' | 'dash_critical' | 'dash_resolved';
+type DatePreset = 'all' | 'today' | 'week' | 'month' | 'custom';
+
+const PAGE_SIZES = [12, 24, 48] as const;
+const VIEWS: Array<{ id: View; label: string; icon: typeof LayoutGrid }> = [
+  { id: 'cards', label: 'Kartela', icon: LayoutGrid },
+  { id: 'list', label: 'Listë', icon: List },
+  { id: 'table', label: 'Tabelë', icon: Rows3 },
+];
+const STATUS_FILTERS: Array<{ id: StatusFilter; label: string }> = [
+  { id: 'all', label: 'Të gjitha' },
+  { id: 'open', label: 'Në proces' },
+  { id: 'resolved', label: 'Të zgjidhura' },
+  { id: 'critical', label: 'Kritike' },
+];
+const SORTS: Array<{ id: SortKey; label: string }> = [
+  { id: 'recent', label: 'Më të rejat' },
+  { id: 'oldest', label: 'Më të vjetrat' },
+  { id: 'voted', label: 'Më të mbështetura' },
+];
+
+/** Old links used one `status=dash_*` value for both filter and sort; keep them working. */
+function legacyTab(value: string | null): { status: StatusFilter; sort: SortKey } | null {
+  switch (value) {
+    case 'dash_resolved': return { status: 'resolved', sort: 'recent' };
+    case 'dash_critical': return { status: 'critical', sort: 'recent' };
+    case 'dash_most_voted': return { status: 'all', sort: 'voted' };
+    case 'dash_recent': case 'dash_all': return { status: 'all', sort: 'recent' };
+    default: return null;
+  }
+}
+
+const oneOf = <T extends string>(value: string | null, allowed: readonly T[], fallback: T): T =>
+  (allowed as readonly string[]).includes(value ?? '') ? (value as T) : fallback;
+
+const isoDay = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const csvCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
 export default function DetailedRegistryPage() {
   const { dt } = useLanguage();
@@ -26,492 +69,399 @@ export default function DetailedRegistryPage() {
   const reportsStatus = useStore(state => state.reportsStatus);
   const reportsError = useStore(state => state.reportsError);
   const userMunicipality = useStore(state => state.userMunicipality);
+  const setUserMunicipality = useStore(state => state.setUserMunicipality);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const legacy = legacyTab(searchParams.get('status'));
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedTopic, setSelectedTopic] = useState('');
-  /**
-   * A deep link that names a municipality wins, and it also *sets* the global
-   * scope rather than keeping a private copy. Before, `?municipality=Gjilan`
-   * produced a registry filtered to Gjilan while the sidebar, the map and the
-   * forum still showed Prishtinë — a link that silently disagreed with the rest
-   * of the platform.
-   */
-  const [selectedMunicipality, setSelectedMunicipality] = useState(() =>
-    isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : ''
-  );
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [datePreset, setDatePreset] = useState('all');
-  const [activeTab, setActiveTab] = useState(searchParams.get('status') || 'dash_all');
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const setUserMunicipality = useStore((state) => state.setUserMunicipality);
-
-  useEffect(() => {
-    const routeMunicipality = searchParams.get('municipality') || '';
-    if (routeMunicipality) {
-      setUserMunicipality(routeMunicipality);
-      setSelectedMunicipality(scopeKey(routeMunicipality));
-    } else {
-      setSelectedMunicipality(isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : '');
-    }
-    setCurrentPage(1);
-  }, [userMunicipality, searchParams, setUserMunicipality]);
-
-  const handleDownloadCSV = () => {
-    const headers = ['ID', 'Tema', 'Sektori / institucioni', 'Komuna', 'Lagjja', 'Adresa', 'Statusi', 'Data e Krijimit', 'Pëlqime'];
-    const csvRows = [headers.join(',')];
-
-    filteredReports.forEach(r => {
-      const row = [
-        r.id,
-        getReportTopicLabel(r),
-        r.category,
-        r.location?.municipality || '',
-        '', // Neighborhood placeholder
-        `"${(r.location?.address || '').replace(/"/g, '""')}"`,
-        r.status,
-        format(new Date(r.createdAt), 'dd.MM.yyyy', { locale: sq }),
-        r.upvotes
-      ];
-      csvRows.push(row.join(','));
-    });
-
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Regjistri_Raportimeve_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const applyDatePreset = (preset: string) => {
-    setDatePreset(preset);
-    const today = new Date();
-    if (preset === 'today') {
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      setDateFrom(`${yyyy}-${mm}-${dd}`);
-      setDateTo(`${yyyy}-${mm}-${dd}`);
-    } else if (preset === 'week') {
-      const lastWeek = new Date();
-      lastWeek.setDate(today.getDate() - 7);
-      const yyyyF = lastWeek.getFullYear();
-      const mmF = String(lastWeek.getMonth() + 1).padStart(2, '0');
-      const ddF = String(lastWeek.getDate()).padStart(2, '0');
-
-      const yyyyT = today.getFullYear();
-      const mmT = String(today.getMonth() + 1).padStart(2, '0');
-      const ddT = String(today.getDate()).padStart(2, '0');
-
-      setDateFrom(`${yyyyF}-${mmF}-${ddF}`);
-      setDateTo(`${yyyyT}-${mmT}-${ddT}`);
-    } else if (preset === 'month') {
-      const lastMonth = new Date();
-      lastMonth.setDate(today.getDate() - 30);
-      const yyyyF = lastMonth.getFullYear();
-      const mmF = String(lastMonth.getMonth() + 1).padStart(2, '0');
-      const ddF = String(lastMonth.getDate()).padStart(2, '0');
-
-      const yyyyT = today.getFullYear();
-      const mmT = String(today.getMonth() + 1).padStart(2, '0');
-      const ddT = String(today.getDate()).padStart(2, '0');
-
-      setDateFrom(`${yyyyF}-${mmF}-${ddF}`);
-      setDateTo(`${yyyyT}-${mmT}-${ddT}`);
-    } else {
-      setDateFrom('');
-      setDateTo('');
-    }
-    setCurrentPage(1);
-  };
-
-  const resetFilters = () => {
-    setSearchQuery('');
-    setSelectedTopic('');
-    setSelectedMunicipality('');
-    setDateFrom('');
-    setDateTo('');
-    setDatePreset('all');
-    setActiveTab('dash_all');
-    setCurrentPage(1);
-    setIsFilterDrawerOpen(false);
-  };
-
-  const applyDatePresetAndResetPage = (preset: 'all' | 'today' | 'week' | 'month' | 'custom') => {
-    if (preset === 'custom') {
-      setDatePreset('custom');
-      setCurrentPage(1);
-      return;
-    }
-    applyDatePreset(preset);
-  };
-
-  useEffect(() => {
-    const rId = searchParams.get('report');
-    if (rId) {
-      setSelectedReportId(rId);
-    }
-  }, [searchParams]);
-
-  // Filter for visibility
-  const visibleReports = reports.filter(r => {
-    if (r.status === 'Pending Review' || r.status === 'Rejected') {
-      return false;
-    }
-    return true;
+  const [selectedTopic, setSelectedTopic] = useState(searchParams.get('topic') || '');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => legacy?.status ?? oneOf(searchParams.get('st'), ['all', 'open', 'resolved', 'critical'] as const, 'all'));
+  const [sort, setSort] = useState<SortKey>(() => legacy?.sort ?? oneOf(searchParams.get('sort'), ['recent', 'oldest', 'voted'] as const, 'recent'));
+  const [view, setView] = useState<View>(() => oneOf(searchParams.get('view'), ['cards', 'list', 'table'] as const, 'cards'));
+  const [perPage, setPerPage] = useState<number>(() => {
+    const n = Number(searchParams.get('per'));
+    return (PAGE_SIZES as readonly number[]).includes(n) ? n : PAGE_SIZES[0];
   });
+  const [currentPage, setCurrentPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
+  const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
+  const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
+  const [datePreset, setDatePreset] = useState<DatePreset>(() => (searchParams.get('from') || searchParams.get('to') ? 'custom' : 'all'));
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(searchParams.get('report'));
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [selectedMunicipality, setSelectedMunicipality] = useState(() => (isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : ''));
+
+  // A link that names a municipality wins, and it sets the platform-wide scope
+  // rather than a private copy, so the sidebar and the map agree with it.
+  // (Komunat links with `?komuna=`, other pages with `?municipality=`.)
+  useEffect(() => {
+    const named = searchParams.get('municipality') || searchParams.get('komuna');
+    if (named) {
+      setUserMunicipality(named);
+      setSelectedMunicipality(scopeKey(named));
+    }
+    // Only the first render consumes the link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get('municipality') || searchParams.get('komuna')) return;
+    setSelectedMunicipality(isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : '');
+    setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userMunicipality]);
+
+  // Keep the address bar in step with the filters, so a filtered view can be
+  // bookmarked, shared and survives a reload. `replace` keeps Back usable.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (searchQuery.trim()) next.set('q', searchQuery.trim());
+    if (selectedTopic) next.set('topic', selectedTopic);
+    if (statusFilter !== 'all') next.set('st', statusFilter);
+    if (sort !== 'recent') next.set('sort', sort);
+    if (view !== 'cards') next.set('view', view);
+    if (perPage !== PAGE_SIZES[0]) next.set('per', String(perPage));
+    if (currentPage > 1) next.set('page', String(currentPage));
+    if (dateFrom) next.set('from', dateFrom);
+    if (dateTo) next.set('to', dateTo);
+    if (selectedReportId) next.set('report', selectedReportId);
+    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedTopic, statusFilter, sort, view, perPage, currentPage, dateFrom, dateTo, selectedReportId]);
+
+  // Reports in review or rejected are not public record.
+  const visibleReports = useMemo(() => reports.filter(report => report.status !== 'Pending Review' && report.status !== 'Rejected' && report.status !== 'Draft'), [reports]);
+
+  /** Everything except the status filter, so the tab counts describe what each tab would show. */
+  const baseFiltered = useMemo(() => {
+    let result = visibleReports;
+    const q = searchQuery.trim().toLocaleLowerCase('sq-AL');
+    if (q) {
+      result = result.filter(report => {
+        const topic = getReportTopic(report);
+        return (
+          report.title?.toLocaleLowerCase('sq-AL').includes(q) ||
+          report.description?.toLocaleLowerCase('sq-AL').includes(q) ||
+          report.trackingId?.toLocaleLowerCase('sq-AL').includes(q) ||
+          report.location?.address?.toLocaleLowerCase('sq-AL').includes(q) ||
+          report.location?.municipality?.toLocaleLowerCase('sq-AL').includes(q) ||
+          report.category?.toLocaleLowerCase('sq-AL').includes(q) ||
+          Boolean(topic && (topic.label.toLocaleLowerCase('sq-AL').includes(q) || topic.keywords.some(keyword => keyword.includes(q) || q.includes(keyword))))
+        );
+      });
+    }
+    if (selectedTopic) result = result.filter(report => getReportTopic(report)?.id === selectedTopic);
+    if (selectedMunicipality) result = result.filter(report => report.location?.municipality && scopeKey(report.location.municipality) === scopeKey(selectedMunicipality));
+    if (dateFrom) { const from = new Date(dateFrom); result = result.filter(report => new Date(report.createdAt) >= from); }
+    if (dateTo) { const to = new Date(dateTo); to.setHours(23, 59, 59, 999); result = result.filter(report => new Date(report.createdAt) <= to); }
+    return result;
+  }, [visibleReports, searchQuery, selectedTopic, selectedMunicipality, dateFrom, dateTo]);
+
+  const counts = useMemo(() => ({
+    all: baseFiltered.length,
+    open: baseFiltered.filter(report => report.status !== 'Resolved' && report.status !== 'Closed').length,
+    resolved: baseFiltered.filter(report => report.status === 'Resolved' || report.status === 'Closed').length,
+    critical: baseFiltered.filter(report => report.urgency === 'Kritike' || report.urgency === 'E lartë').length,
+  }), [baseFiltered]);
 
   const filteredReports = useMemo(() => {
-    let result = [...visibleReports];
-    if (searchQuery) {
-      const q = searchQuery.toLocaleLowerCase('sq-AL');
-      result = result.filter(r =>
-        r.title?.toLocaleLowerCase('sq-AL').includes(q) ||
-        r.description?.toLocaleLowerCase('sq-AL').includes(q) ||
-        r.trackingId?.toLocaleLowerCase('sq-AL').includes(q) ||
-        r.location?.address?.toLocaleLowerCase('sq-AL').includes(q) ||
-        r.category?.toLocaleLowerCase('sq-AL').includes(q) ||
-        (() => {
-          const topic = getReportTopic(r);
-          return Boolean(topic && (topic.label.toLocaleLowerCase('sq-AL').includes(q) || topic.keywords.some(keyword => keyword.includes(q) || q.includes(keyword))));
-        })()
-      );
-    }
-    if (selectedTopic) result = result.filter(r => getReportTopic(r)?.id === selectedTopic);
-    if (selectedMunicipality) {
-      result = result.filter(r =>
-        r.location?.municipality &&
-        scopeKey(r.location.municipality) === scopeKey(selectedMunicipality)
-      );
-    }
-
-    if (dateFrom) {
-      result = result.filter(r => new Date(r.createdAt) >= new Date(dateFrom));
-    }
-    if (dateTo) {
-      const toDate = new Date(dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      result = result.filter(r => new Date(r.createdAt) <= toDate);
-    }
-
-    // Sort based on active tab
-    if (activeTab === 'dash_recent') {
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (activeTab === 'dash_resolved') {
-      result = result.filter(r => r.status === 'Resolved');
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (activeTab === 'dash_most_voted') {
-      result.sort((a, b) => b.upvotes - a.upvotes);
-    } else if (activeTab === 'dash_critical') {
-      result = result.filter(r => r.urgency === 'E lartë' || r.urgency === 'Kritike');
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else {
-      // dash_all defaults to newest
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
+    let result = [...baseFiltered];
+    if (statusFilter === 'open') result = result.filter(report => report.status !== 'Resolved' && report.status !== 'Closed');
+    if (statusFilter === 'resolved') result = result.filter(report => report.status === 'Resolved' || report.status === 'Closed');
+    if (statusFilter === 'critical') result = result.filter(report => report.urgency === 'Kritike' || report.urgency === 'E lartë');
+    const time = (report: { createdAt: string }) => new Date(report.createdAt).getTime() || 0;
+    if (sort === 'voted') result.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0) || time(b) - time(a));
+    else if (sort === 'oldest') result.sort((a, b) => time(a) - time(b));
+    else result.sort((a, b) => time(b) - time(a));
     return result;
-  }, [visibleReports, searchQuery, selectedTopic, selectedMunicipality, activeTab, dateFrom, dateTo]);
+  }, [baseFiltered, statusFilter, sort]);
 
-  const activeFilterChips = useMemo(() => {
-    const chips: Array<{ id: string; label: string; onRemove: () => void }> = [];
-    if (searchQuery.trim()) chips.push({ id: 'search', label: `${dt('Kërko')}: ${searchQuery.trim()}`, onRemove: () => { setSearchQuery(''); setCurrentPage(1); } });
-    if (selectedMunicipality) chips.push({ id: 'municipality', label: selectedMunicipality, onRemove: () => { setSelectedMunicipality(''); setCurrentPage(1); } });
+  const totalPages = Math.max(1, Math.ceil(filteredReports.length / perPage));
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const pageReports = useMemo(() => filteredReports.slice((currentPage - 1) * perPage, currentPage * perPage), [filteredReports, currentPage, perPage]);
+
+  const resolvedShare = visibleReports.length
+    ? Math.round((visibleReports.filter(report => report.status === 'Resolved' || report.status === 'Closed').length / visibleReports.length) * 100)
+    : 0;
+  const municipalitiesCovered = useMemo(() => new Set(visibleReports.map(report => report.location?.municipality).filter(Boolean)).size, [visibleReports]);
+
+  const applyDatePreset = useCallback((preset: DatePreset) => {
+    setDatePreset(preset);
+    const today = new Date();
+    if (preset === 'today') { setDateFrom(isoDay(today)); setDateTo(isoDay(today)); }
+    else if (preset === 'week' || preset === 'month') {
+      const from = new Date(); from.setDate(today.getDate() - (preset === 'week' ? 7 : 30));
+      setDateFrom(isoDay(from)); setDateTo(isoDay(today));
+    } else if (preset === 'all') { setDateFrom(''); setDateTo(''); }
+    setCurrentPage(1);
+  }, []);
+
+  const resetFilters = () => {
+    setSearchQuery(''); setSelectedTopic(''); setSelectedMunicipality(''); setDateFrom(''); setDateTo('');
+    setDatePreset('all'); setStatusFilter('all'); setSort('recent'); setCurrentPage(1); setIsFilterDrawerOpen(false);
+  };
+
+  const chips = useMemo(() => {
+    const list: Array<{ id: string; label: string; onRemove: () => void }> = [];
+    if (searchQuery.trim()) list.push({ id: 'search', label: `${dt('Kërko')}: ${searchQuery.trim()}`, onRemove: () => { setSearchQuery(''); setCurrentPage(1); } });
+    if (selectedMunicipality) list.push({ id: 'municipality', label: selectedMunicipality, onRemove: () => { setSelectedMunicipality(''); setCurrentPage(1); } });
     if (selectedTopic) {
       const topic = REPORT_TOPICS.find(item => item.id === selectedTopic);
-      if (topic) chips.push({ id: 'topic', label: `${topic.icon} ${topic.label}`, onRemove: () => { setSelectedTopic(''); setCurrentPage(1); } });
+      if (topic) list.push({ id: 'topic', label: `${topic.icon} ${topic.label}`, onRemove: () => { setSelectedTopic(''); setCurrentPage(1); } });
     }
     if (datePreset !== 'all' || dateFrom || dateTo) {
-      const label = datePreset === 'today' ? 'Sot' : datePreset === 'week' ? '7 ditët e fundit' : datePreset === 'month' ? '30 ditët e fundit' : `${dateFrom || '—'} → ${dateTo || '—'}`;
-      chips.push({ id: 'date', label, onRemove: () => { setDateFrom(''); setDateTo(''); setDatePreset('all'); setCurrentPage(1); } });
+      const label = datePreset === 'today' ? dt('Sot') : datePreset === 'week' ? dt('7 ditët e fundit') : datePreset === 'month' ? dt('30 ditët e fundit') : `${dateFrom || '—'} → ${dateTo || '—'}`;
+      list.push({ id: 'date', label, onRemove: () => applyDatePreset('all') });
     }
-    if (activeTab !== 'dash_all') {
-      const labels: Record<string, string> = {
-        dash_recent: 'Së fundmi',
-        dash_most_voted: 'Më të votuarat',
-        dash_critical: 'Kritike',
-        dash_resolved: 'Të zgjidhura',
-      };
-      chips.push({ id: 'sort', label: labels[activeTab] || activeTab, onRemove: () => { setActiveTab('dash_all'); setCurrentPage(1); } });
-    }
-    return chips;
-  }, [activeTab, dateFrom, datePreset, dateTo, dt, searchQuery, selectedMunicipality, selectedTopic]);
+    if (statusFilter !== 'all') list.push({ id: 'status', label: dt(STATUS_FILTERS.find(item => item.id === statusFilter)!.label), onRemove: () => { setStatusFilter('all'); setCurrentPage(1); } });
+    return list;
+  }, [applyDatePreset, datePreset, dateFrom, dateTo, dt, searchQuery, selectedMunicipality, selectedTopic, statusFilter]);
 
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
-
-  const currentReports = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredReports.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredReports, currentPage]);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  const drawerSort: DrawerSort = statusFilter === 'resolved' ? 'dash_resolved' : statusFilter === 'critical' ? 'dash_critical' : sort === 'voted' ? 'dash_most_voted' : 'dash_all';
+  const onDrawerSort = (value: DrawerSort) => {
+    setStatusFilter(value === 'dash_resolved' ? 'resolved' : value === 'dash_critical' ? 'critical' : 'all');
+    setSort(value === 'dash_most_voted' ? 'voted' : 'recent');
+    setCurrentPage(1);
   };
 
-  const handleShare = (e: React.MouseEvent, title: string, id: string) => {
-    e.stopPropagation();
+  const downloadCSV = () => {
+    const headers = ['Track ID', 'Titulli', 'Tema', 'Kategoria', 'Komuna', 'Adresa', 'Statusi', 'Urgjenca', 'Institucioni', 'Data', 'Pëlqime', 'Lidhja'];
+    const rows = filteredReports.map(report => [
+      trackingIdOf(report), report.title, getReportTopicLabel(report), report.category, report.location?.municipality, report.location?.address,
+      statusLabel(report.status), report.urgency, report.responsibleInstitution, formatReportDate(report.createdAt), report.upvotes || 0,
+      `${window.location.origin}/detailed-registry?report=${encodeURIComponent(report.id)}`,
+    ].map(csvCell).join(','));
+    // BOM so Excel reads the Albanian letters (ë, ç) correctly.
+    const blob = new Blob(['﻿' + [headers.map(csvCell).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Regjistri_Raportimeve_${isoDay(new Date())}.csv`;
+    document.body.appendChild(link); link.click(); link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success(`${filteredReports.length} ${dt('raportime u eksportuan')}`);
+  };
+
+  const share = (event: React.MouseEvent, title: string, id: string) => {
+    event.stopPropagation();
     const url = `${window.location.origin}/detailed-registry?report=${encodeURIComponent(id)}`;
     if (navigator.share) {
-      navigator.share({
-        title: `Raportim: ${title}`,
-        text: `Shikoni këtë raportim qytetar: "${title}"`,
-        url: url
-      }).catch(console.error);
+      navigator.share({ title: `Raportim: ${title}`, text: `Shikoni këtë raportim qytetar: "${title}"`, url }).catch(() => undefined);
     } else {
-      navigator.clipboard.writeText(url);
-      alert("Linku është kopjuar!");
+      navigator.clipboard.writeText(url).then(() => toast.success(dt('Linku u kopjua.')), () => toast.error(dt('Linku nuk u kopjua.')));
     }
   };
 
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    document.getElementById('registry-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const selectedReport = selectedReportId ? reports.find(report => report.id === selectedReportId) : undefined;
+  const loading = reportsStatus === 'loading';
+  const first = filteredReports.length ? (currentPage - 1) * perPage + 1 : 0;
+  const last = Math.min(currentPage * perPage, filteredReports.length);
+
   return (
-    <div className="relative mx-auto w-full max-w-6xl space-y-8 px-4 py-6 sm:px-6 lg:py-8">
+    <div className="page-shell relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <PageHero
+        eyebrow={dt('Regjistri publik · Të dhëna të moderuara')}
+        icon={ShieldCheck}
+        title={dt('Regjistri i Zgjeruar')}
+        subtitle={dt('Eksploro raportimet publike dhe ndiq statusin e çështjeve. Të dhënat personale dhe raportimet në pritje nuk shfaqen në regjistrin publik.')}
+        actions={
+          <>
+            <Link to="/raporto" className={heroPrimaryClass}>{dt('Raporto një problem')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+            <Link to="/trackid" className={heroSecondaryClass}><FileSearch className="h-4 w-4" aria-hidden="true" /> {dt('Gjej me Track ID')}</Link>
+          </>
+        }
+        stats={[
+          { value: visibleReports.length.toLocaleString('sq-AL'), label: dt('Raportime publike') },
+          { value: `${resolvedShare}%`, label: dt('Të zgjidhura') },
+          { value: visibleReports.filter(report => report.status !== 'Resolved' && report.status !== 'Closed').length.toLocaleString('sq-AL'), label: dt('Në proces') },
+          { value: String(municipalitiesCovered), label: dt('Komuna me raportime') },
+        ]}
+      />
+      <p className="-mt-3 px-1 text-[11px] text-slate-500 dark:text-slate-400">{dt('Përmbledhja bazohet në raportimet e ngarkuara aktualisht; përdor filtrat për të kufizuar rezultatet.')}</p>
 
-      <header className="relative isolate overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white p-5 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.4)] dark:border-white/10 dark:bg-slate-900 sm:p-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="relative flex flex-col gap-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <button onClick={() => navigate('/')} className="mb-4 inline-flex min-h-9 items-center gap-2 text-xs font-bold text-slate-500 transition-colors hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">
-                <ChevronLeft className="h-4 w-4" />{dt(`Kthehu tek Ballina`)}
-              </button>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/40 bg-cyan-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-900 dark:border-cyan-300/15 dark:bg-cyan-300/10 dark:text-cyan-200">
-                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                {dt('Regjistri publik · Të dhëna të moderuara')}
-              </div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">{dt(`Regjistri i Zgjeruar`)}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">{dt(`Eksploro raportimet publike dhe ndiq statusin e çështjeve. Të dhënat personale dhe raportimet në pritje nuk shfaqen në regjistrin publik.`)}</p>
-            </div>
-
-            <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
-              <div className="relative w-full sm:min-w-72 sm:flex-1 md:w-[22rem]">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+      {/* Toolbar */}
+      <section aria-label={dt('Kërkimi dhe filtrat')} className="space-y-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               type="search"
               value={searchQuery}
-              onChange={(event) => { setSearchQuery(event.target.value); setCurrentPage(1); }}
-              placeholder={dt('Kërko raporte, adresa ose ID...')}
+              onChange={event => { setSearchQuery(event.target.value); setCurrentPage(1); }}
+              placeholder={dt('Kërko raporte, adresa, komuna ose ID...')}
               aria-label={dt('Kërko raporte, adresa ose ID...')}
-              className="min-h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950"
+              className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950"
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setIsFilterDrawerOpen((open) => !open)}
-            aria-expanded={isFilterDrawerOpen}
-            className={cn('inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition-colors', isFilterDrawerOpen || activeFilterChips.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200')}
-          >
-            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-            {dt('Filtra të avancuar')}
-            {activeFilterChips.length > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-(--color-brand-primary) px-1 text-[10px] text-white">{activeFilterChips.length}</span>}
-          </button>
-        </div>
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(open => !open)}
+              aria-expanded={isFilterDrawerOpen}
+              className={cn('inline-flex min-h-12 items-center gap-2 rounded-2xl border px-4 text-sm font-black transition-colors', isFilterDrawerOpen || chips.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200')}
+            >
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              {dt('Filtra')}
+              {chips.length > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-blue-700 px-1 text-[10px] text-white">{chips.length}</span>}
+            </button>
+            <button type="button" onClick={downloadCSV} disabled={filteredReports.length === 0} className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+              <Download className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">{dt('Eksporto CSV')}</span><span className="sm:hidden">CSV</span>
+            </button>
+          </div>
         </div>
 
-        <div className="relative mt-6 grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-5 dark:border-white/10 sm:grid-cols-3">
-          {[
-            { label: 'Raportime publike', value: visibleReports.length, icon: FilePlus2, tone: 'text-blue-700 dark:text-blue-300' },
-            { label: 'Në proces', value: visibleReports.filter(report => report.status !== 'Resolved').length, icon: Clock, tone: 'text-amber-600 dark:text-amber-300' },
-            { label: 'Të zgjidhura', value: visibleReports.filter(report => report.status === 'Resolved').length, icon: CheckSquare, tone: 'text-emerald-600 dark:text-emerald-300' },
-          ].map(({ label, value, icon: Icon, tone }) => (
-            <div key={label} className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-white/5 dark:bg-white/[0.03]">
-              <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-slate-800', tone)}><Icon className="h-4 w-4" aria-hidden="true" /></span>
-              <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt(label)}</p><p className={cn('text-xl font-black', tone)}>{value.toLocaleString('sq-AL')}</p></div>
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <div role="tablist" aria-label={dt('Statusi')} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {STATUS_FILTERS.map(item => {
+              const active = statusFilter === item.id;
+              return (
+                <button key={item.id} type="button" role="tab" aria-selected={active} onClick={() => { setStatusFilter(item.id); setCurrentPage(1); }}
+                  className={cn('inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition', active ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700')}>
+                  {dt(item.label)}
+                  <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', active ? 'bg-white/20' : 'bg-white text-slate-500 dark:bg-slate-900')}>{counts[item.id]}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="registry-sort">{dt('Rendit sipas')}</label>
+            <select id="registry-sort" value={sort} onChange={event => { setSort(event.target.value as SortKey); setCurrentPage(1); }} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+              {SORTS.map(item => <option key={item.id} value={item.id}>{dt(item.label)}</option>)}
+            </select>
+            <div role="group" aria-label={dt('Pamja')} className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              {VIEWS.map(item => (
+                <button key={item.id} type="button" onClick={() => setView(item.id)} aria-pressed={view === item.id} title={dt(item.label)}
+                  className={cn('inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-black transition', item.id === 'table' && 'max-lg:hidden', view === item.id ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-950 dark:text-blue-300' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400')}>
+                  <item.icon className="h-3.5 w-3.5" aria-hidden="true" /> <span className="hidden sm:inline">{dt(item.label)}</span>
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-        <p className="relative text-[11px] text-slate-500 dark:text-slate-400">{dt('Përmbledhja bazohet në raportimet e ngarkuara aktualisht; përdor filtrat për të kufizuar rezultatet.')}</p>
-      </header>
+      </section>
 
-      <div className="relative">
-        <AdvancedFilterDrawer
-          isOpen={isFilterDrawerOpen}
-          selectedMunicipality={selectedMunicipality}
-          selectedTopic={selectedTopic}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          datePreset={datePreset as 'all' | 'today' | 'week' | 'month' | 'custom'}
-          activeTab={activeTab as 'dash_all' | 'dash_recent' | 'dash_most_voted' | 'dash_critical' | 'dash_resolved'}
-          onMunicipalityChange={(value) => { setSelectedMunicipality(value); setCurrentPage(1); }}
-          onTopicChange={(value) => { setSelectedTopic(value); setCurrentPage(1); }}
-          onDatePresetChange={(value) => { if (value === 'custom') applyDatePresetAndResetPage(value); else applyDatePreset(value); }}
-          onDateFromChange={(value) => { setDateFrom(value); setDatePreset('custom'); setCurrentPage(1); }}
-          onDateToChange={(value) => { setDateTo(value); setDatePreset('custom'); setCurrentPage(1); }}
-          onSortChange={(value) => { setActiveTab(value); setCurrentPage(1); }}
-          onReset={resetFilters}
-          onClose={() => setIsFilterDrawerOpen(false)}
-        />
-      </div>
+      <AdvancedFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        selectedMunicipality={selectedMunicipality}
+        selectedTopic={selectedTopic}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        datePreset={datePreset}
+        activeTab={drawerSort}
+        onMunicipalityChange={value => { setSelectedMunicipality(value); setCurrentPage(1); }}
+        onTopicChange={value => { setSelectedTopic(value); setCurrentPage(1); }}
+        onDatePresetChange={value => { if (value === 'custom') { setDatePreset('custom'); setCurrentPage(1); } else applyDatePreset(value); }}
+        onDateFromChange={value => { setDateFrom(value); setDatePreset('custom'); setCurrentPage(1); }}
+        onDateToChange={value => { setDateTo(value); setDatePreset('custom'); setCurrentPage(1); }}
+        onSortChange={onDrawerSort}
+        onReset={resetFilters}
+        onClose={() => setIsFilterDrawerOpen(false)}
+      />
 
-      {activeFilterChips.length > 0 && (
+      {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2" aria-label={dt('Filtra aktivë')}>
           <span className="mr-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{dt('Filtra aktivë')}</span>
-          {activeFilterChips.map((chip) => <FilterChip key={chip.id} label={chip.label} onRemove={chip.onRemove} />)}
-          <button type="button" onClick={resetFilters} className="ml-auto inline-flex min-h-8 items-center gap-1 text-xs font-black text-(--color-brand-primary) hover:underline"><X className="h-3.5 w-3.5" aria-hidden="true" />{dt('Pastro filtrat')}</button>
+          {chips.map(chip => <FilterChip key={chip.id} label={chip.label} onRemove={chip.onRemove} />)}
+          <button type="button" onClick={resetFilters} className="ml-auto inline-flex min-h-8 items-center gap-1 text-xs font-black text-blue-700 hover:underline dark:text-blue-300"><X className="h-3.5 w-3.5" aria-hidden="true" />{dt('Pastro filtrat')}</button>
         </div>
       )}
 
-      {/* Results Summary */}
-      {!['loading', 'error'].includes(reportsStatus) && filteredReports.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
-          <p className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">
-            <span className="font-bold text-[var(--color-text)] dark:text-white">{filteredReports.length}</span> {dt(`raportime të gjitha`)} ({dt('nga')} {visibleReports.length} {dt('publike')})
-          </p>
-          {(searchQuery || selectedMunicipality || dateFrom || dateTo || activeTab !== 'dash_all') && (
-            <button
-              onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-            >
-              <X className="w-3 h-3" />{dt(`Pastro filtrat`)}
-            </button>
-          )}
-        </div>
-      )}
-
-      {filteredReports.length > 0 && (
-        <AdBanner
-          position="feed"
-          className="max-w-none"
-          municipality={selectedMunicipality || undefined}
+      {!loading && reportsStatus !== 'error' && (
+        <RegistryInsights
+          reports={filteredReports}
+          dt={dt}
+          activeMunicipality={selectedMunicipality}
+          activeTopic={selectedTopic}
+          onMunicipality={value => { setSelectedMunicipality(value); if (value) setUserMunicipality(value); setCurrentPage(1); }}
+          onTopic={value => { setSelectedTopic(value); setCurrentPage(1); }}
         />
       )}
 
-      <div className="space-y-6">
-        {reportsStatus === 'loading' ? (
-          <StatePanel
-            icon={<RefreshCw className="h-7 w-7 animate-spin" aria-hidden="true" />}
-            title={dt('Po ngarkohen raportimet')}
-            description={dt('Po marrim raportimet publike dhe statuset e tyre.')}
-            tone="info"
-          />
-        ) : reportsStatus === 'error' ? (
-          <StatePanel
-            icon={<WifiOff className="h-7 w-7" aria-hidden="true" />}
-            title={dt('Raportimet nuk mund të ngarkohen')}
-            description={reportsError || dt('Kontrolloni lidhjen ose lejet e qasjes dhe provoni përsëri.')}
-            actionLabel={dt('Provo përsëri')}
-            onAction={() => window.location.reload()}
-            tone="error"
-            secondaryAction={<Link to="/" className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-bold text-(--color-brand-primary) hover:underline">{dt('Kthehu në ballinë')}</Link>}
-          />
-        ) : reports.length === 0 ? (
-          <StatePanel
-            icon={<FilePlus2 className="h-7 w-7" aria-hidden="true" />}
-            title={dt('Nuk ka ende raportime publike')}
-            description={dt('Raportimet e miratuara do të shfaqen këtu sapo të publikohen.')}
-            actionLabel={dt('Raporto një problem')}
-            onAction={() => navigate('/raporto')}
-            tone="info"
-          />
-        ) : filteredReports.length === 0 ? (
-          <StatePanel
-            icon={<Filter className="h-7 w-7" aria-hidden="true" />}
-            title={dt('Nuk u gjetën raportime për filtrat e zgjedhur')}
-            description={dt('Ndryshoni kërkimin ose pastroni komunën, datën dhe statusin për të parë më shumë rezultate.')}
-            actionLabel={dt('Pastro të gjithë filtrat')}
-            onAction={resetFilters}
-          />
-        ) : (
-          <div className="overflow-hidden rounded-[14px] border border-(--color-border-soft) bg-(--color-surface) dark:border-white/10 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-(--color-border-soft) bg-(--color-surface-subtle) px-4 py-3 dark:border-white/10 dark:bg-slate-800/60 sm:px-5">
-              <div>
-                <p className="text-sm font-black text-(--color-text) dark:text-white">{dt('Regjistri i raportimeve')}</p>
-                <p className="mt-0.5 text-xs text-(--color-text-muted)">{filteredReports.length} {dt('raportime publike')}</p>
+      <section id="registry-results" aria-labelledby="registry-results-title" className="scroll-mt-24 space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="registry-results-title" className="font-serif text-2xl font-black text-slate-950 dark:text-white">{dt('Raportimet')}</h2>
+            {!loading && filteredReports.length > 0 && (
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400" aria-live="polite">
+                <span className="font-black text-slate-900 dark:text-white">{first}–{last}</span> {dt('nga')} <span className="font-black text-slate-900 dark:text-white">{filteredReports.length}</span> {dt('raportime')}
+                {filteredReports.length !== visibleReports.length && <> ({visibleReports.length} {dt('publike gjithsej')})</>}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <label htmlFor="registry-per">{dt('Për faqe')}</label>
+            <select id="registry-per" value={perPage} onChange={event => { setPerPage(Number(event.target.value)); setCurrentPage(1); }} className="min-h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-black text-slate-700 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+              {PAGE_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {loading ? (
+          <div role="status" aria-label={dt('Po ngarkohen raportimet')} className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="animate-pulse overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
+                <div className="aspect-[16/10] bg-slate-200 dark:bg-slate-800" />
+                <div className="space-y-3 p-5"><div className="h-3 w-1/3 rounded bg-slate-200 dark:bg-slate-800" /><div className="h-5 w-4/5 rounded bg-slate-200 dark:bg-slate-800" /><div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-800" /><div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-800" /></div>
               </div>
-              <span className="hidden text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:inline">{dt('ID i raportimit')}</span>
-            </div>
-            {currentReports.map((report) => (
-              <RegistryRow key={report.id} report={report} dt={dt} onOpen={() => setSelectedReportId(report.id)} onShare={handleShare} />
             ))}
           </div>
+        ) : reportsStatus === 'error' ? (
+          <StatePanel icon={<WifiOff className="h-7 w-7" aria-hidden="true" />} title={dt('Raportimet nuk mund të ngarkohen')} description={reportsError || dt('Kontrolloni lidhjen ose lejet e qasjes dhe provoni përsëri.')} actionLabel={dt('Provo përsëri')} onAction={() => window.location.reload()} tone="error"
+            secondaryAction={<Link to="/" className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-bold text-blue-700 hover:underline">{dt('Kthehu në ballinë')}</Link>} />
+        ) : reports.length === 0 ? (
+          <StatePanel icon={<FilePlus2 className="h-7 w-7" aria-hidden="true" />} title={dt('Nuk ka ende raportime publike')} description={dt('Raportimet e miratuara do të shfaqen këtu sapo të publikohen.')} actionLabel={dt('Raporto një problem')} onAction={() => navigate('/raporto')} tone="info" />
+        ) : filteredReports.length === 0 ? (
+          <StatePanel icon={<Filter className="h-7 w-7" aria-hidden="true" />} title={dt('Nuk u gjetën raportime për filtrat e zgjedhur')} description={dt('Ndryshoni kërkimin ose pastroni komunën, datën dhe statusin për të parë më shumë rezultate.')} actionLabel={dt('Pastro të gjithë filtrat')} onAction={resetFilters} />
+        ) : view === 'list' ? (
+          <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white dark:border-white/10 dark:bg-slate-900">
+            {pageReports.map(report => <RegistryRow key={report.id} report={report} dt={dt} onOpen={() => setSelectedReportId(report.id)} onShare={share} />)}
+          </div>
+        ) : view === 'table' ? (
+          <>
+            <div className="hidden lg:block"><RegistryTable reports={pageReports} dt={dt} onOpen={setSelectedReportId} onShare={share} /></div>
+            {/* Tables do not fit a phone: below lg the same data is shown as cards. */}
+            <div className="grid gap-5 sm:grid-cols-2 lg:hidden">{pageReports.map(report => <RegistryCard key={report.id} report={report} dt={dt} onOpen={() => setSelectedReportId(report.id)} onShare={share} />)}</div>
+          </>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {pageReports.map(report => <RegistryCard key={report.id} report={report} dt={dt} onOpen={() => setSelectedReportId(report.id)} onShare={share} />)}
+          </div>
         )}
-      </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="py-8 flex justify-center">
-          <nav className="flex items-center gap-2 bg-[var(--color-surface)] dark:bg-slate-900 px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none w-full md:w-auto overflow-x-auto">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-               className="p-2 rounded-xl border border-slate-200 dark:border-white/10 text-[var(--color-text-muted)] hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 hover:text-[var(--color-text)] dark:text-white dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-              aria-label={dt('Faqja e mëparshme')}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="flex gap-1.5 overflow-x-auto hide-scrollbar px-2">
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1;
-                // Show 5 pages around current page, or first/last
-                if (
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 2 && page <= currentPage + 2)
-                ) {
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={cn(
-                        "w-10 h-10 rounded-xl font-bold text-sm transition-all shrink-0",
-                        currentPage === page
-                          ? "bg-indigo-600 text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-indigo-200 border-none"
-                          : "bg-transparent text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:border-white/10"
-                      )}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (
-                  page === currentPage - 3 ||
-                  page === currentPage + 3
-                ) {
-                  return <span key={page} className="px-2 py-2 text-[var(--color-text-muted)] shrink-0">...</span>;
-                }
-                return null;
-              })}
-            </div>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-               className="p-2 rounded-xl border border-slate-200 dark:border-white/10 text-[var(--color-text-muted)] hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 hover:text-[var(--color-text)] dark:text-white dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-              aria-label={dt('Faqja tjetër')}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+        {!loading && filteredReports.length > 0 && <AdBanner position="feed" className="max-w-none" municipality={selectedMunicipality || undefined} />}
+
+        {totalPages > 1 && !loading && (
+          <nav aria-label={dt('Faqet e regjistrit')} className="flex flex-wrap items-center justify-center gap-2 pt-2">
+            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} aria-label={dt('Faqja e mëparshme')} className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-blue-400 disabled:opacity-40 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><ChevronLeft className="h-5 w-5" /></button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1)
+              .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+              .map((page, index, pages) => (
+                <React.Fragment key={page}>
+                  {index > 0 && page - pages[index - 1] > 1 && <span className="px-1 text-slate-400" aria-hidden="true">…</span>}
+                  <button type="button" onClick={() => goToPage(page)} aria-current={currentPage === page ? 'page' : undefined} aria-label={`${dt('Faqja')} ${page}`}
+                    className={cn('h-11 min-w-11 rounded-xl border px-3 text-sm font-black transition', currentPage === page ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300')}>{page}</button>
+                </React.Fragment>
+              ))}
+            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label={dt('Faqja tjetër')} className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-blue-400 disabled:opacity-40 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><ChevronRight className="h-5 w-5" /></button>
           </nav>
+        )}
+      </section>
+
+      <div className="pt-2"><AdBanner position="banner" className="mx-auto" /></div>
+
+      {selectedReportId && selectedReport && <ReportDetailModal report={selectedReport} onClose={() => setSelectedReportId(null)} />}
+      {selectedReportId && !selectedReport && !loading && (
+        <div role="alert" className="fixed inset-x-4 bottom-6 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-xl">
+          <span>{dt('Ky raportim nuk është publik ose nuk ekziston më.')}</span>
+          <button type="button" onClick={() => setSelectedReportId(null)} className="font-black underline">{dt('Mbyll')}</button>
         </div>
       )}
-
-      {/*
-        Strategic footer slot. The registry is a long paginated list, so this is
-        the one place a banner can sit without interrupting a citizen mid-scan —
-        after the last page control, below everything actionable. It renders
-        nothing when no campaign targets the `banner` position.
-      */}
-      <div className="mt-8">
-        <AdBanner position="banner" className="mx-auto" />
-      </div>
-
-      {selectedReportId && (
-        <ReportDetailModal
-           report={reports.find(r => r.id === selectedReportId)!}
-           onClose={() => setSelectedReportId(null)}
-        />
-      )}
-      
-      
     </div>
   );
 }

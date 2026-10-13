@@ -37,7 +37,6 @@ import {
   type AuditWindow,
 } from '../lib/actorAudit';
 import { collectAgents, collectMunicipalities, isModerationCenterUser } from '../lib/moderationCenter';
-import { sessionFacts } from '../lib/workFactQueue';
 import ActorAccessControl from '../components/admin/ActorAccessControl';
 import TeamOverviewPanel from '../components/admin/TeamOverviewPanel';
 import {
@@ -250,7 +249,6 @@ export default function MonitoringPage() {
 
   /* --- Repartet: një vështrim mbi çdo fushë pune --- */
   /** Fakte punimesh që presin verifikim — burimi i vetëm është radha e sesionit. */
-  const myWorkFactBacklog = useMemo(() => sessionFacts().filter((f) => f.review === 'pending').length, []);
   /**
    * The department board.
    *
@@ -291,17 +289,7 @@ export default function MonitoringPage() {
         breach: reportBreach,
         staff: agents.length,
         activeStaff: active,
-        note: `${reports.length} gjithsej`,
-      },
-      {
-        id: 'workfacts',
-        label: 'Faktet e punimeve',
-        backlog: myWorkFactBacklog,
-        flow: 0,
-        breach: 0,
-        staff: municipalities.length,
-        activeStaff: municipalityLoad.filter((m) => m.actions > 0).length,
-        note: 'verifikim nga redaksia',
+        note: `${reports.length} të ngarkuara`,
       },
       {
         id: 'moderation',
@@ -326,7 +314,7 @@ export default function MonitoringPage() {
     ];
 
     return { rows: buildDepartmentBoard(inputs), summary: summariseBoard(buildDepartmentBoard(inputs)) };
-  }, [reports, agents, agentActivity, municipalityLoad, municipalities, auditLogs, anomalies, myWorkFactBacklog, pulse.overdueReports, scoped, wanted]);
+  }, [reports, agents, agentActivity, municipalityLoad, municipalities, auditLogs, anomalies, pulse.overdueReports, scoped, wanted]);
 
   /**
    * The actor list, active first.

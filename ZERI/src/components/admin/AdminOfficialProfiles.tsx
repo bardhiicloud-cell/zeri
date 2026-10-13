@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, onSnapshot, deleteDoc, doc, addDoc, updateDoc, limit } from 'firebase/firestore';
@@ -36,8 +37,10 @@ export default function AdminOfficialProfiles() {
     if (window.confirm("A jeni të sigurt që dëshironi ta fshini këtë profil?")) {
       try {
         await deleteDoc(doc(db, 'officialProfiles', id));
+        toast.success('Profili u fshi.');
       } catch (err) {
         console.error(err);
+        toast.error('Profili nuk u fshi. Kontrolloni lejet dhe provoni përsëri.');
       }
     }
   };
@@ -45,8 +48,10 @@ export default function AdminOfficialProfiles() {
   const handleToggleVerify = async (id: string, verified: boolean) => {
     try {
       await updateDoc(doc(db, 'officialProfiles', id), { verified: !verified });
+      toast.success(verified ? 'Verifikimi u hoq.' : 'Profili u verifikua.');
     } catch (err) {
       console.error(err);
+      toast.error('Verifikimi nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.');
     }
   };
 
@@ -59,8 +64,10 @@ export default function AdminOfficialProfiles() {
       });
       setIsAdding(false);
       setNewProfile({ name: '', handle: '', initials: '', color: 'bg-blue-600', followers: '0', verified: true });
+      toast.success('Profili u shtua.');
     } catch (err) {
       console.error(err);
+      toast.error('Profili nuk u shtua. Kontrolloni lejet dhe provoni përsëri.');
     }
   };
 
@@ -79,8 +86,10 @@ export default function AdminOfficialProfiles() {
           createdAt: new Date().toISOString()
         });
       }
+      toast.success('Profilet e parazgjedhura u shtuan.');
     } catch (err) {
       console.error('Error seeding defaults:', err);
+      toast.error('Profilet e parazgjedhura nuk u shtuan të gjitha. Provoni përsëri.');
     }
   };
 

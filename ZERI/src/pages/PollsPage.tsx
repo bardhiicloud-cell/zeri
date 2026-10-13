@@ -2,6 +2,7 @@ import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { dt } from '@/src/lib/dt';
+import { AuraHero, AuraStats } from '../components/aura/Aura';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -157,31 +158,14 @@ export default function PollsPage() {
 
   return (
     <div className="page-shell min-h-screen bg-(--color-page) dark:bg-(--color-brand-dark) transition-colors pb-24 font-sans text-[var(--color-text)] dark:text-white dark:text-slate-100 selection:bg-rose-500/30">
-      <div className="bg-slate-900 relative overflow-hidden py-14 md:py-18 px-6 sm:px-10 lg:px-20 mb-8 md:mb-10">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute -top-[40%] -right-[10%] w-[720px] h-[720px] bg-rose-500/20 blur-[120px] rounded-full pointer-events-none" />
-          <div className="absolute -bottom-[35%] -left-[8%] w-[620px] h-[620px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none" />
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-4">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
-              <span className="text-[10px] font-bold text-white uppercase tracking-widest">{dt(`Platforma Zyrtare e Votimit Publik`)}</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-[-0.05em] leading-[0.96] title-serif">{dt(`Sondazhet &`)} <span className="text-rose-500">{dt(`Pjesëmarrja Qytetare`)}</span></h1>
-            <p className="text-slate-300 font-medium max-w-2xl text-sm leading-relaxed mt-3">{dt(`Vota juaj është thelbësore për vendimet tona. Merrni pjesë në sondazhet aktive, ndani mendimin tuaj mbi politikat e ardhshme dhe ndihmoni në përmirësimin e qytetit tonë me anë të demokracisë së drejtpërdrejtë. Të gjitha votimet janë plotësisht anonime dhe të sigurta.`)}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 min-w-[260px] md:max-w-[320px] w-full md:w-auto">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">{dt('Qytetarë')}</div>
-              <div className="mt-1 text-2xl font-black text-white">{polls.reduce((acc, p) => acc + (p.totalVotes || 0), 0).toLocaleString()}</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">{dt('Aktive')}</div>
-              <div className="mt-1 text-2xl font-black text-white">{polls.filter(p => new Date(p.expiresAt) >= new Date()).length}</div>
-            </div>
-          </div>
-        </div>
+      <div className="mx-auto mb-6 max-w-6xl px-3 pt-3 sm:px-6 lg:px-8">
+        <AuraHero tone="violet" live eyebrow={dt(`Votim publik`)} icon={Vote}
+          title={dt(`Sondazhet & Pjesëmarrja Qytetare`)}
+          subtitle={dt(`Votoni në sondazhet aktive. Çdo llogari voton një herë për sondazh. Rezultatet shfaqen si totale; zgjedhja juaj individuale nuk shfaqet publikisht, por sistemi ruan që keni votuar për të parandaluar votat e dyfishta.`)}
+          aside={<AuraStats items={[
+            { value: polls.reduce((acc, p) => acc + (p.totalVotes || 0), 0).toLocaleString(), label: dt('Vota gjithsej') },
+            { value: polls.filter(p => new Date(p.expiresAt) >= new Date()).length, label: dt('Aktive') },
+          ]} />} />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -207,7 +191,7 @@ export default function PollsPage() {
             {
               icon: Users,
               tone: 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400',
-              label: dt('Qytetarë Angazhuar'),
+              label: dt('Vota gjithsej'),
               value: polls.reduce((acc, p) => acc + (p.totalVotes || 0), 0).toLocaleString('de-DE'),
             },
             {
@@ -219,9 +203,9 @@ export default function PollsPage() {
             {
               icon: ShieldCheck,
               tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
-              label: dt('Siguria & Anonimiteti'),
-              value: dt('100% E Garantuar'),
-              // The privacy claim is a sentence, not a count, so it renders at
+              label: dt('Rregulli i votimit'),
+              value: dt('Një votë për llogari'),
+              // The voting rule is a sentence, not a count, so it renders at
               // the same optical size as the numbers above it.
               isText: true,
             },

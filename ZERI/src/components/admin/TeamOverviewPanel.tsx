@@ -14,7 +14,8 @@ import { loadTeamOverview, type TeamOverview } from '../../lib/teamOverviewApi';
  * full audit.
  */
 export interface TeamOverviewPanelProps {
-  onOpenPerson: (uid: string) => void;
+  /** Opens one person's activity. Left out where the viewer may see the workload but not individual audit (the dispatcher). */
+  onOpenPerson?: (uid: string) => void;
 }
 
 const ago = (iso: string | null) => {
@@ -96,7 +97,7 @@ export default function TeamOverviewPanel({ onOpenPerson }: TeamOverviewPanelPro
           <ul className="divide-y divide-slate-100 dark:divide-white/5">
             {data.agents.map(agent => (
               <li key={agent.uid}>
-                <button type="button" onClick={() => onOpenPerson(agent.uid)} className="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_auto] items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <button type="button" disabled={!onOpenPerson} onClick={() => onOpenPerson?.(agent.uid)} className="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_auto] items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <span className="min-w-0">
                     <span className="flex items-center gap-2">
                       <span className="truncate text-sm font-bold text-slate-900 dark:text-white">{agent.name}</span>

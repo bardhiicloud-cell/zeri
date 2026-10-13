@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, Flag, Heart, Loader2, MessageCircle, MoreVertical, Pencil, Play, Plus, RefreshCw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
+import { applySignal, loadProfile, rankReels, saveProfile, type Signal } from '../../lib/reelInterest';
+import { Eye, EyeOff, Flag, Heart, Loader2, MessageCircle, MoreVertical, Pencil, Play, Plus, RefreshCw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dt } from '@/src/lib/dt';
 import {
@@ -65,6 +66,14 @@ export function ReelsViewer({
   const [failed, setFailed] = useState<Record<string, true>>({});
   const [pendingLike, setPendingLike] = useState<Record<string, true>>({});
 
+  // What this person likes, kept on this device (src/lib/reelInterest.ts). Only the main feed is ranked.
+  const interestRef = useRef(loadProfile(currentUserId ?? 'anon'));
+  const learn = useCallback((reel: Reel, signal: Signal) => {
+    if (!currentUserId || reel.authorId === currentUserId) return;
+    interestRef.current = applySignal(interestRef.current, reel, signal);
+    saveProfile(currentUserId, interestRef.current);
+  }, [currentUserId]);
+
   const cursorRef = useRef<ReelsCursor>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef(new Map<string, HTMLVideoElement>());
@@ -90,7 +99,8 @@ export function ReelsViewer({
             cursor: null as ReelsCursor,
             done: true,
           };
-      const visibleReels = canViewAuthorReels ? page.reels.filter((r) => canViewAuthorReels(r.authorId)) : page.reels;
+      const allowed = canViewAuthorReels ? page.reels.filter((r) => canViewAuthorReels(r.authorId)) : page.reels;
+      const visibleReels = source.kind === 'feed' && currentUserId ? rankReels(allowed, interestRef.current) : allowed;
       cursorRef.current = page.cursor;
       setDone(page.done);
       setReels((prev) => {
@@ -191,6 +201,7 @@ export function ReelsViewer({
     if (!reel || !currentUserId || !canInteract) return;
     const timer = window.setTimeout(() => {
       trackInsight({ authorId: reel.authorId, type: 'reel_view', reelId: reel.id }, currentUserId);
+      learn(reel, 'watch');
       // The reel's own view counter (one per account, counted by the server).
       if (reel.authorId !== currentUserId) {
         void recordReelViewApi(reel.id).then((n) => {
@@ -303,12 +314,20 @@ export function ReelsViewer({
     }
   };
 
+  const notInterested = (reel: Reel) => {
+    if (!canInteract || !currentUserId) { onRequireAuth(); return; }
+    learn(reel, 'not_interested');
+    setReels((prev) => prev.filter((r) => r.id !== reel.id));
+    toast(dt('Do të shohësh më pak si ky.'), { icon: '👍' });
+  };
+
   const handleLike = async (reel: Reel) => {
     if (!canInteract || !currentUserId) { onRequireAuth(); return; }
     if (pendingLike[reel.id]) return;
     const nowLiked = !reel.likedBy.includes(currentUserId);
     const apply = (likedBy: string[]) => setReels((prev) => prev.map((r) => (r.id === reel.id ? { ...r, likedBy } : r)));
     apply(toggleLike(reel.likedBy, currentUserId));
+    if (nowLiked) learn(reel, 'like');
     setPendingLike((p) => ({ ...p, [reel.id]: true }));
     try {
       await setReelLiked(reel.id, nowLiked);
@@ -558,6 +577,12 @@ export function ReelsViewer({
                         </div>
                       )}
                     </div>
+                  )}
+                  {!isOwn && source.kind === 'feed' && (
+                    <button type="button" onClick={() => notInterested(reel)} aria-label={dt('Nuk më intereson')} title={dt('Nuk më intereson')}
+                      className="mt-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/25">
+                      <EyeOff className="h-5 w-5" aria-hidden="true" />
+                    </button>
                   )}
                   {!isOwn && (
                     <button type="button" onClick={() => (canInteract ? setReporting(reel) : onRequireAuth())}

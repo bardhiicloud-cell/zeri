@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import {
-  DmError, blockUser, conversationId, markConversationRead, respondToRequest, sendDirectMessage, setDmPrivacy, unblockUser,
+  DmError, blockUser, conversationId, markConversationRead, respondToRequest, sendDirectMessage, setConversationPrefs, setDmPrivacy, unblockUser,
 } from '../../server/directMessages';
 
 /**
@@ -173,5 +173,38 @@ describe('privacy and read state', () => {
     expect((await errorOf(markConversationRead(db, C, CONV))).code).toBe('forbidden');
     await markConversationRead(db, B, CONV);
     expect((await conv()).unreadCount[B]).toBe(0);
+  });
+});
+
+describe('mute and delete (hide) a conversation', () => {
+  beforeEach(async () => { await db.collection('users').doc(B).update({ followingIds: [A] }); });
+
+  it('a muted conversation sends no notification, and unmuting restores it', async () => {
+    await send(A, B);
+    expect(await notes(B)).toHaveLength(1);
+    expect(await setConversationPrefs(db, B, CONV, { muted: true })).toEqual({ muted: true, hidden: false });
+    await markConversationRead(db, B, CONV);
+    await send(A, B, 'Edhe një');
+    expect(await notes(B)).toHaveLength(1); // nothing new
+    await setConversationPrefs(db, B, CONV, { muted: false });
+    await markConversationRead(db, B, CONV);
+    await send(A, B, 'Tani');
+    expect(await notes(B)).toHaveLength(2);
+  });
+
+  it('hiding affects only my list, and a new message brings it back', async () => {
+    await send(A, B);
+    expect(await setConversationPrefs(db, B, CONV, { hidden: true })).toMatchObject({ hidden: true });
+    expect((await conv()).hiddenBy).toEqual([B]);
+    expect((await messages()).length).toBe(1); // nothing deleted
+    await send(A, B, 'Je aty?');
+    expect((await conv()).hiddenBy ?? []).toEqual([]);
+  });
+
+  it('refuses outsiders, unknown threads and empty changes', async () => {
+    await send(A, B);
+    expect((await errorOf(setConversationPrefs(db, C, CONV, { muted: true }))).code).toBe('forbidden');
+    expect((await errorOf(setConversationPrefs(db, A, 'nope_x', { muted: true }))).code).toBe('not_found');
+    expect((await errorOf(setConversationPrefs(db, A, CONV, {}))).code).toBe('bad_prefs');
   });
 });

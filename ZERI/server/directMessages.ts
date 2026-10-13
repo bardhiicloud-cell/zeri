@@ -210,6 +210,8 @@ export async function sendDirectMessage(
       },
       lastMessage: text || '📷 Foto',
       lastMessageAt: FieldValue.serverTimestamp(),
+      // A new message brings back a conversation either person had deleted from their own list.
+      hiddenBy: FieldValue.arrayRemove(senderId, receiverId),
       status: allowed.status,
       // Counters are server-owned: the receiver's goes up, the sender's resets.
       unreadCount: { [receiverId]: FieldValue.increment(1), [senderId]: 0 },
@@ -221,7 +223,8 @@ export async function sendDirectMessage(
 
     // One notification per burst: only when the recipient had nothing unread, or
     // when a request first arrives. Ten messages in a row are one bell.
-    if (receiverUnreadBefore === 0 || allowed.isRequestStart) {
+    const mutedByReceiver = Array.isArray((convSnap.data() as any)?.mutedBy) && (convSnap.data() as any).mutedBy.includes(receiverId);
+    if (!mutedByReceiver && (receiverUnreadBefore === 0 || allowed.isRequestStart)) {
       tx.create(firestore.collection('notifications').doc(), {
         title: allowed.status === 'request' ? `Kërkesë e re për mesazh nga ${senderName}` : `Mesazh i ri nga ${senderName}`,
         message: (text || '📷 Ju ka dërguar një foto.').slice(0, 200),
@@ -282,6 +285,32 @@ export async function markConversationRead(firestore: Firestore, uid: string, co
     const participants = (snap.data() as any)?.participants;
     if (!Array.isArray(participants) || !participants.includes(uid)) throw new DmError('Nuk keni qasje në këtë bisedë.', 403, 'forbidden');
     tx.update(ref, { [`unreadCount.${uid}`]: 0 });
+  });
+}
+
+/**
+ * Per-person conversation settings. `muted` silences the notification bell for new messages;
+ * `hidden` removes the thread from my list only (the other person keeps theirs, and a new
+ * message from either side brings it back).
+ */
+export async function setConversationPrefs(
+  firestore: Firestore, uid: string, convId: string, prefs: { muted?: unknown; hidden?: unknown },
+): Promise<{ muted: boolean; hidden: boolean }> {
+  if (!isSafeId(uid) || !isSafeId(convId)) throw new DmError('Biseda nuk është e vlefshme.', 400, 'bad_conversation');
+  if (typeof prefs.muted !== 'boolean' && typeof prefs.hidden !== 'boolean') throw new DmError('Asgjë për të ndryshuar.', 400, 'bad_prefs');
+  const ref = firestore.collection('forum_conversations').doc(convId);
+  return firestore.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new DmError('Biseda nuk u gjet.', 404, 'not_found');
+    const data = snap.data() as any;
+    if (!Array.isArray(data.participants) || !data.participants.includes(uid)) throw new DmError('Nuk keni qasje në këtë bisedë.', 403, 'forbidden');
+    const update: Record<string, unknown> = {};
+    let muted = Array.isArray(data.mutedBy) && data.mutedBy.includes(uid);
+    let hidden = Array.isArray(data.hiddenBy) && data.hiddenBy.includes(uid);
+    if (typeof prefs.muted === 'boolean') { update.mutedBy = prefs.muted ? FieldValue.arrayUnion(uid) : FieldValue.arrayRemove(uid); muted = prefs.muted; }
+    if (typeof prefs.hidden === 'boolean') { update.hiddenBy = prefs.hidden ? FieldValue.arrayUnion(uid) : FieldValue.arrayRemove(uid); hidden = prefs.hidden; }
+    tx.update(ref, update);
+    return { muted, hidden };
   });
 }
 
@@ -362,6 +391,16 @@ export function registerDirectMessageRoutes(app: Express, deps: DirectMessageDep
       return res.json({ ok: true });
     } catch (error) {
       return fail(res, error, 'read');
+    }
+  });
+
+  app.put('/api/v1/forum/dm/:convId/prefs', deps.requireAuth, async (req: Request, res: Response) => {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+      return res.json(await setConversationPrefs(deps.db(), uid, req.params.convId, { muted: req.body?.muted, hidden: req.body?.hidden }));
+    } catch (error) {
+      return fail(res, error, 'prefs');
     }
   });
 

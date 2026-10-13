@@ -40,3 +40,10 @@ describe('composerState', () => {
     expect(composerState({ status: 'request', requestedBy: 'me', requestMessages: 1 }, 'me', false)).toEqual({ canSend: false, reason: 'request_pending' });
   });
 });
+
+describe('viewOfConversation: deleted threads', () => {
+  it('hides a thread I removed from my list, but not for the other person', () => {
+    expect(viewOfConversation({ status: 'active', hiddenBy: ['me'] }, 'me')).toBe('hidden');
+    expect(viewOfConversation({ status: 'active', hiddenBy: ['me'] }, 'you')).toBe('inbox');
+  });
+});

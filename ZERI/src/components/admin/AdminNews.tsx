@@ -14,6 +14,7 @@ import { STAFF_LIMITS } from '../../lib/loadLimits';
 import toast from 'react-hot-toast';
 import { NEWS_CATEGORIES } from '../../lib/newsCategories';
 import { DEMO_NEWS } from '../../lib/demoNews';
+import NewsPlacementPreview from './NewsPlacementPreview';
 
 interface AdminNewsItem {
   id: string;
@@ -294,9 +295,9 @@ export default function AdminNews() {
             <input value={form.inlineImageUrl} onChange={e => setForm({ ...form, inlineImageUrl: e.target.value })} placeholder="URL e fotos BRENDA lajmit (opsionale)" className={fieldClass} />
             <input value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} placeholder="URL e videos (YouTube ose mp4, opsionale)" className={fieldClass} />
             <select value={form.position} onChange={e => setForm({ ...form, position: e.target.value as typeof form.position })} className={fieldClass}>
-              <option value="featured">Ballina — lajm kryesor</option>
-              <option value="feed">Arkivi — kartë lajmi</option>
-              <option value="sidebar">Kolona anësore — të fundit</option>
+              <option value="featured">Ballina — lajm kryesor (zë vendin e madh)</option>
+              <option value="feed">Rrjedhë — sipas datës (majtas, titujt, arkivi)</option>
+              <option value="sidebar">Kolona anësore — përparësi djathtas</option>
             </select>
           </div>
           <label className={cn(
@@ -331,6 +332,12 @@ export default function AdminNews() {
               <p className="mt-1">Ky pozicion përcakton vendin e lajmit në faqen publike. Përdorni imazh të qartë dhe të paktën 1200 px gjerësi për ballinën.</p>
             </div>
           </div>
+          <NewsPlacementPreview
+            items={items}
+            editingId={editingId}
+            draft={{ title: form.title, category: form.category, position: form.position, imageUrl: form.imageUrl }}
+            willBePublic={editingId ? items.find(item => item.id === editingId)?.published === true : form.published}
+          />
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
             <fieldset className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
               <legend className="px-1 text-sm font-bold text-slate-900 dark:text-white">

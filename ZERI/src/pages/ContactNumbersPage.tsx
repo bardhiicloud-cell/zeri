@@ -77,9 +77,13 @@ export default function ContactNumbersPage() {
         subtitle={t('contact_direct_channels')}
         stats={[
           { value: '112', label: dt('Emergjenca Qendrore · 24/7') },
-          { value: '38', label: dt('komuna me kontakt të drejtpërdrejtë') },
         ]}
       />
+
+      <div role="note" className="mb-8 rounded-2xl border border-amber-200/80 bg-amber-50/80 p-4 text-xs leading-relaxed text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
+        <strong className="font-black">{dt('Kujdes: kontaktet nuk janë verifikuar.')}</strong>{' '}
+        {dt('Numrat e emergjencës 112, 192, 193 dhe 194 janë numrat kombëtarë. Të gjitha kontaktet e tjera më poshtë (numra dhe email) janë të dhëna referuese që platforma nuk i ka verifikuar me institucionet. Para se të telefononi ose shkruani, kontrolloni faqen zyrtare të institucionit.')}
+      </div>
 
       {/* Emergency Numbers Grid - Highly Prominent, Accessible & High Contrast */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">

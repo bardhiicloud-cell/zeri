@@ -4,7 +4,7 @@ import { dt } from '@/src/lib/dt';
 import {
   Newspaper, Search, Calendar, MapPin, Share2,
   ArrowRight, Link2, ArrowLeft, Clock3, Mail, Copy, Info,
-  Sun, Moon,
+  Sun, Moon, Play, Pause,
 } from 'lucide-react';
 import { useThemePreference } from '../lib/themePreference';
 import { MunicipalityShield } from '../components/MunicipalityShield';
@@ -20,9 +20,22 @@ import { useStore, type AdCampaign } from '../lib/store';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { NEWS_CATEGORIES } from '../lib/newsCategories';
 import { DEMO_NEWS } from '../lib/demoNews';
+import { layoutNews } from '../lib/newsPlacement';
 import { HTML_LANG_TAGS, readStoredLanguage } from '../lib/languageConstants';
+import { AuraHero, AuraStats, AuraOrbit } from '../components/aura/Aura';
 
 const ALBANIAN_MONTHS = ['janar', 'shkurt', 'mars', 'prill', 'maj', 'qershor', 'korrik', 'gusht', 'shtator', 'tetor', 'nëntor', 'dhjetor'];
+
+const ALBANIAN_WEEKDAYS = ['e diel', 'e hënë', 'e martë', 'e mërkurë', 'e enjte', 'e premte', 'e shtunë'];
+
+/** The dateline. Browsers lack the sq-AL locale and fall back to English, so Albanian is spelled out. */
+function todayLine(): string {
+  const lang = readStoredLanguage();
+  const now = new Date();
+  if (lang !== 'sq') return now.toLocaleDateString(HTML_LANG_TAGS[lang], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const weekday = ALBANIAN_WEEKDAYS[now.getDay()];
+  return `${weekday[0].toUpperCase()}${weekday.slice(1)}, ${now.getDate()} ${ALBANIAN_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+}
 
 /**
  * Article dates are stored as Albanian text ("05 tetor 2026"). For every other
@@ -72,6 +85,7 @@ export default function LajmePage() {
   const ads = useStore((state) => state.ads);
   const incrementAdClick = useStore((state) => state.incrementAdClick);
   const [searchQuery, setSearchQuery] = useState('');
+  const [tickerPaused, setTickerPaused] = useState(false);
   const [selectedStream, setSelectedStream] = useState<'all' | 'news' | 'notices'>('all');
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [archivePage, setArchivePage] = useState(1);
@@ -191,10 +205,8 @@ export default function LajmePage() {
     navigate('/lajme');
   };
 
-  const leadArticle = filteredNews.find(item => item.position === 'featured') ?? filteredNews[0];
-  const feedArticles = leadArticle ? filteredNews.filter(item => item.id !== leadArticle.id) : filteredNews;
-  const latestArticles = feedArticles.slice(0, 3);
-  const trendingArticles = [...feedArticles].filter(item => item.position === 'sidebar').concat(feedArticles.filter(item => item.position !== 'sidebar')).slice(0, 5);
+  // The same function the admin editor's placement preview uses.
+  const { lead: leadArticle, feed: feedArticles, latest: latestArticles, rail: trendingArticles } = layoutNews(filteredNews);
   const archivePageCount = Math.max(1, Math.ceil(filteredNews.length / ARCHIVE_PAGE_SIZE));
   const archiveArticles = filteredNews.slice(
     (archivePage - 1) * ARCHIVE_PAGE_SIZE,
@@ -377,53 +389,32 @@ export default function LajmePage() {
   };
 
   return (
-    <div className="page-shell min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+    <div className="au-page min-h-screen">
       <div className="mx-auto max-w-[1280px] space-y-7 px-4 pb-14 pt-3 sm:px-7 sm:pt-5 lg:px-10">
-        <header className="border-b border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950">
-          {/*
-            Brand row only.
+        <AuraHero
+          visual={<AuraOrbit core={Newspaper} icons={[MapPin, Link2, Calendar, Share2, Search, Info]} />}
+          tone="blue"
+          eyebrow={dt('Informim publik · Komuniteti · Transparencë')}
+          icon={Newspaper}
+          live
+          title={dt('Lajmet kryesore')}
+          subtitle={dt('Lajme nga redaksia, njoftime zyrtare nga komunat dhe përgjigje ndaj raportimeve të qytetarëve, të renditura sipas temës dhe komunës.')}
+          actions={<>
+            <Link to="/" className="au-btn au-btn-glass !h-9 !text-[13px]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te platforma')}</Link>
+            <ThemeToggle />
+          </>}
+          aside={allNews.length > 0 ? (
+            <AuraStats items={[
+              { value: allNews.length, label: dt('Publikime') },
+              { value: allNews.filter(item => item.category === 'Njoftim Zyrtar').length, label: dt('Njoftime zyrtare') },
+              { value: new Set(allNews.map(item => item.municipality).filter(name => name && name !== 'Gjithë Kosova')).size, label: dt('Komuna') },
+            ]} />
+          ) : undefined}
+        />
 
-            The two shortcut links that used to sit here ("Të fundit", "Lajme
-            lokale") have been removed: they duplicated the category rail below
-            and pushed the brand off-centre, which made a first-time reader
-            wonder whether they were categories, tabs or something else. Their
-            two jobs — recency and locality — are now the rail's "Të gjitha" and
-            "Lokale" entries, one click away in the same place as every other
-            filter.
-          */}
-          <div className="relative flex min-h-12 flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-2 dark:border-white/10">
-            <Link to="/" className="inline-flex items-center gap-2 text-sm font-black tracking-tight text-slate-950 dark:text-white sm:mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-700 text-white"><Newspaper className="h-4 w-4" aria-hidden="true" /></span>
-              {dt('Zëri i Qytetarëve')} <span className="font-medium text-blue-700 dark:text-blue-300">/ {dt('Lajme')}</span>
-            </Link>
-            <div className="ml-auto flex items-center gap-2">
-              <ThemeToggle />
-              <Link to="/" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:text-slate-300">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te platforma')}
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4 py-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700 dark:text-blue-300">{dt('Informim publik · Komuniteti · Transparencë')}</p>
-              <h1 className="mt-2 font-serif text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">{dt('Lajmet kryesore')}</h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{dt('Përditësime të rëndësishme për qytetarët, të renditura sipas temës dhe komunës.')}</p>
-            </div>
-          </div>
-
-          {/*
-            Integrated filter bar.
-
-            One row, three controls: the category rail scrolls horizontally, the
-            search field filters by title/topic/municipality, and "Filtra" opens
-            the advanced panel. The old layout spent a separate vertical row on a
-            "Filtro sipas temës" dropdown that required two clicks for what the
-            rail now does in one, and cost more than 50% of the header height.
-          */}
-          <div className="space-y-3 border-y border-slate-100 py-3 dark:border-white/10">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              {/* Category rail: every filter is a pill, one click each. */}
+        {/* Filter bar: stays on screen while the reader scrolls. */}
+        <div className="au-tile sticky top-16 z-20 !bg-[color-mix(in_srgb,var(--au-card)_88%,transparent)] p-2.5 backdrop-blur-xl sm:p-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <nav
                 aria-label={dt('Kategoritë e publikimeve')}
                 className="-mx-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-1 pb-1 pe-8 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-2.5rem),transparent)]"
@@ -434,41 +425,22 @@ export default function LajmePage() {
                     type="button"
                     onClick={() => selectRailItem(item)}
                     aria-pressed={activeRailId === item.id}
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition-colors',
-                      activeRailId === item.id
-                        ? 'bg-blue-700 text-white shadow-sm dark:bg-blue-500'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
-                    )}
+                    className="au-chip"
                   >
                     {item.kind === 'local' && <MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
                     {dt(item.label)}
-                    <span className={cn(
-                      'rounded-full px-1.5 py-0.5 text-[10px] tabular-nums',
-                      activeRailId === item.id ? 'bg-white/15 text-white' : 'bg-white text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                    )}>{item.count}</span>
+                    <span className="au-count">{item.count}</span>
                   </button>
                 ))}
               </nav>
-
-              {/* Search + advanced filters, kept on the same row as the rail. */}
-              <div className="flex shrink-0 items-center gap-2">
-                <div className="relative flex-1 lg:w-64">
-                  <input
-                    type="search"
-                    aria-label={dt('Kërko lajme dhe njoftime')}
-                    placeholder={dt('Kërko...')}
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    className="min-h-10 w-full rounded-full border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
-                  />
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                </div>
-              </div>
+            <div className="relative lg:w-64">
+              <label htmlFor="news-search" className="sr-only">{dt('Kërko lajme dhe njoftime')}</label>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" aria-hidden="true" />
+              <input id="news-search" type="search" placeholder={dt('Kërko...')} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
+                className="au-input !pl-9 !h-9 !rounded-full !text-[14px]" />
             </div>
           </div>
-
-          <details className="border-t border-slate-100 py-2.5 dark:border-white/10">
+          <details className="px-1 py-2">
             <summary className="flex min-h-9 cursor-pointer list-none items-center gap-2 text-[11px] font-bold text-slate-500 marker:hidden">
               <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
               {dt('Filtra të avancuar')}
@@ -511,12 +483,12 @@ export default function LajmePage() {
               )}
             </div>
           </details>
-        </header>
+        </div>
 
         {/* Newspaper strip: dateline, breaking ticker and a leaderboard slot. */}
         <div className="-mt-2 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-900 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:border-white dark:text-slate-400">
-            <span>{new Date().toLocaleDateString('sq-AL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span>{todayLine()}</span>
             <span className="hidden sm:inline">{dt('Republika e Kosovës · 38 komuna')}</span>
             <span>{allNews.length} {dt('publikime')}</span>
           </div>
@@ -526,13 +498,35 @@ export default function LajmePage() {
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
                 {dt('Të fundit')}
               </span>
-              <div className="flex min-w-0 flex-1 items-center gap-6 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {allNews.slice(0, 8).map(item => (
-                  <button key={'ticker-' + item.id} type="button" onClick={() => openArticle(item)} className="shrink-0 whitespace-nowrap text-xs font-bold text-slate-700 transition hover:text-blue-700 dark:text-slate-200 dark:hover:text-blue-300">
-                    <span className="mr-2 text-rose-600">●</span>{item.title}
-                  </button>
-                ))}
+              <div
+                data-paused={tickerPaused}
+                className="news-ticker min-w-0 flex-1 overflow-hidden py-2.5 [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]"
+                style={{ ['--ticker-duration' as string]: `${Math.max(24, Math.min(allNews.length, 8) * 7)}s` }}
+                role="marquee"
+                aria-label={dt('Lajmet më të reja')}
+              >
+                <div className="news-ticker-track">
+                  {[0, 1].map(copy => (
+                    <div key={copy} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={copy === 1 ? true : undefined}>
+                      {allNews.slice(0, 8).map(item => (
+                        <button key={`ticker-${copy}-${item.id}`} type="button" tabIndex={copy === 1 ? -1 : 0} onClick={() => openArticle(item)} className="shrink-0 whitespace-nowrap text-xs font-bold text-slate-700 transition hover:text-blue-700 dark:text-slate-200 dark:hover:text-blue-300">
+                          <span className="mr-2 text-rose-600">●</span>{item.title}
+                          <span className="ml-2 font-medium text-slate-400">{item.municipality}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setTickerPaused(value => !value)}
+                aria-label={tickerPaused ? dt('Vazhdo lëvizjen e lajmeve') : dt('Ndalo lëvizjen e lajmeve')}
+                aria-pressed={tickerPaused}
+                className="flex w-9 shrink-0 items-center justify-center border-l border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-blue-700 dark:border-white/10 dark:hover:bg-slate-800"
+              >
+                {tickerPaused ? <Play className="h-3.5 w-3.5" aria-hidden="true" /> : <Pause className="h-3.5 w-3.5" aria-hidden="true" />}
+              </button>
             </div>
           )}
           <AdBanner position="feed" className="max-w-none" />
@@ -553,7 +547,7 @@ export default function LajmePage() {
           </div>
         )}
 
-        <section className="grid gap-x-7 gap-y-8 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_280px]" aria-label={dt('Lajmet kryesore dhe lajmet e fundit')}>
+        <section className="grid items-start gap-x-7 gap-y-8 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_280px]" aria-label={dt('Lajmet kryesore dhe lajmet e fundit')}>
           <aside className="hidden xl:order-1 xl:block">
             <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2 dark:border-white/10">
               <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">{dt('Të veçuara')}</h2>
@@ -582,21 +576,20 @@ export default function LajmePage() {
             </div>
             {leadArticle ? (
               <button type="button" onClick={() => openArticle(leadArticle)} className="group block w-full text-left">
-                <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800">
-                  {leadArticle.imageUrl ? (
-                    <img src={leadArticle.imageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-slate-300 via-blue-100 to-blue-300 dark:from-slate-800 dark:via-blue-950 dark:to-slate-700" />
-                  )}
-                  <span className="absolute left-3 top-3 rounded bg-rose-600 px-2 py-1 text-[10px] font-black uppercase text-white">{dt(leadArticle.category)}</span>
-                  {leadArticle.isDemo && <span className="absolute right-3 top-3 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-900">Demo</span>}
+                <div className="au-photo overflow-hidden rounded-2xl" style={{ aspectRatio: '16/10' }}>
+                  {leadArticle.imageUrl && <img src={leadArticle.imageUrl} alt="" decoding="async" />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                  <span className="absolute left-3 top-3 z-10 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white">{dt(leadArticle.category)}</span>
+                  {leadArticle.isDemo && <span className="absolute right-3 top-3 z-10 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-900">Demo</span>}
+                  <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5">
+                    <h3 className="text-[20px] font-semibold leading-tight text-white sm:text-[26px]">{leadArticle.title}</h3>
+                    <p className="mt-1.5 line-clamp-2 max-w-xl text-[13px] leading-relaxed text-white/80">{leadArticle.summary}</p>
+                    <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-white/70">{leadArticle.municipality} · {formatNewsDate(leadArticle.date)}</p>
+                  </div>
                 </div>
-                <h3 className="mt-4 font-serif text-2xl font-black leading-tight text-slate-950 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300 sm:text-3xl">{leadArticle.title}</h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{leadArticle.summary}</p>
-                <p className="mt-3 text-xs font-bold text-rose-600 dark:text-rose-400">{leadArticle.municipality} · {formatNewsDate(leadArticle.date)}</p>
                 {feedArticles[0] && (
-                  <span className="mt-4 flex items-center gap-2 border-y border-slate-200 py-3 text-xs font-extrabold text-slate-800 transition-colors hover:text-blue-700 dark:border-white/10 dark:text-slate-200 dark:hover:text-blue-300">
-                    <span className="text-rose-600">›</span>{feedArticles[0].title}
+                  <span className="au-tile mt-2.5 flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-medium">
+                    <span className="text-rose-500">›</span>{feedArticles[0].title}
                   </span>
                 )}
               </button>
@@ -788,15 +781,14 @@ export default function LajmePage() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {archiveArticles.map((news, index) => (
             <React.Fragment key={news.id}>
-            <article
-              className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-slate-900"
-            >
+            <article className="au-tile au-tile-link group flex flex-col justify-between overflow-hidden">
               {news.imageUrl && (
                 <button
                   type="button"
                   onClick={() => openArticle(news)}
                   aria-label={dt('Hap lajmin')}
-                  className="relative block w-full overflow-hidden bg-slate-100 dark:bg-slate-800"
+                  className="au-photo block w-full"
+                  style={{ aspectRatio: '16/9' }}
                 >
                   {/*
                     aspect-[16/9] rather than a fixed height.
@@ -808,12 +800,8 @@ export default function LajmePage() {
                     more of the image than necessary, and object-cover fills it
                     without stretching.
                   */}
-                  <img
-                    src={news.imageUrl}
-                    alt=""
-                    loading="lazy"
-                    className="aspect-[16/9] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
+                  <img src={news.imageUrl} alt="" loading="lazy" decoding="async" />
+                  <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">{dt(news.category)}</span>
                   {news.isDemo && (
                     <span className="absolute right-3 top-3 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-900">
                       Demo
@@ -821,7 +809,7 @@ export default function LajmePage() {
                   )}
                 </button>
               )}
-              <div className="flex flex-1 flex-col justify-between p-5">
+              <div className="flex flex-1 flex-col justify-between p-3.5">
               <div>
                 {/* Header: Municipality Crest + Category */}
                 <div className="flex items-center justify-between gap-3 mb-3">
@@ -832,13 +820,15 @@ export default function LajmePage() {
                     </span>
                   </div>
 
-                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900">
-                    {dt(news.category)}
-                  </span>
+                  {!news.imageUrl && (
+                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-bold text-cyan-800 dark:border-cyan-900 dark:bg-cyan-950/50 dark:text-cyan-200">
+                      {dt(news.category)}
+                    </span>
+                  )}
                 </div>
 
                 {/* News Title */}
-                <h3 className="mb-2 text-base font-black leading-snug text-slate-900 dark:text-white">
+                <h3 className="mb-1.5 text-[15px] font-semibold leading-snug">
                   <button
                     type="button"
                     onClick={() => openArticle(news)}
@@ -1112,7 +1102,7 @@ export default function LajmePage() {
                     <div aria-hidden="true" className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-300/20 blur-2xl" />
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">{dt('Zëri juaj ka rëndësi')}</p>
                     <h2 className="mt-2 font-serif text-2xl font-black leading-tight sm:text-3xl">{dt('Keni një problem në komunën tuaj?')}</h2>
-                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100">{dt('Raportojeni në 30 sekonda dhe ndiqeni me Track-ID derisa të zgjidhet.')}</p>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100">{dt('Raportojeni dhe ndiqeni me Track-ID derisa të zgjidhet.')}</p>
                     <div className="mt-5 flex flex-wrap gap-3">
                       <Link to="/raporto" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-xs font-black text-[#0b2b57] transition hover:bg-blue-50">{dt('Raporto një problem')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
                       <Link to="/harta" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold backdrop-blur transition hover:bg-white/20">{dt('Shiko hartën')}</Link>

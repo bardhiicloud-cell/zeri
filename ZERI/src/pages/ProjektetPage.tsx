@@ -1,406 +1,110 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Briefcase, Search, Filter, Calendar, MapPin, 
-  TrendingUp, CheckCircle2, Clock, AlertTriangle, 
-  Building, ArrowUpRight, DollarSign, Users, Layers
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Search, ArrowUpRight, FileText, MapPin, BarChart3, ScrollText, Landmark,
+  MessagesSquare, Vote, Lightbulb, Building, HeartPulse, HeartHandshake, Newspaper,
+  Phone, LifeBuoy, ListChecks, Info, Layers,
 } from 'lucide-react';
-import { MunicipalityShield } from '../components/MunicipalityShield';
-import { cn } from '../lib/utils';
-import { PageHero, heroPrimaryClass, heroSecondaryClass } from '../components/layout/PageHero';
+import type { LucideIcon } from 'lucide-react';
+import { AuraPage, AuraHero, AuraStats, AuraSection, AuraNote, AuraEmpty, AuraOrbit } from '../components/aura/Aura';
 
 import { dt } from '@/src/lib/dt';
-interface MunicipalProject {
-  id: string;
-  title: string;
-  municipality: string;
-  sector: string;
-  budget: string;
-  status: 'Në Zhvillim' | 'Përfunduar' | 'Në Prokurim';
-  progress: number;
-  startDate: string;
-  endDate: string;
-  contractor: string;
-  supervisor: string;
-  funder: string;
-  description: string;
-  impact: string;
-}
 
-const MUNICIPAL_PROJECTS_ARCHIVE: MunicipalProject[] = [
-  {
-    id: 'prj-1',
-    title: 'Ndërtimi i Rrugës "A" dhe Kolektorit të Madh Fekal',
-    municipality: 'Prishtinë',
-    sector: 'Infrastrukturë Rrugore',
-    budget: '8,420,000 €',
-    status: 'Në Zhvillim',
-    progress: 72,
-    startDate: 'Mars 2024',
-    endDate: 'Tetor 2026',
-    contractor: 'Konsorciumi "Prishtina Roads & Infra"',
-    supervisor: 'Drejtoria e Investimeve Kapitale',
-    funder: 'Buxheti i Komunës së Prishtinës',
-    description: 'Një nga projektet më madhore infrastrukturore që lidh lagjet Kalabria, Mati 1 dhe Prishtinën e Re me kolektor të mbyllur dhe 6 korsi moderne.',
-    impact: 'Zvogëlon ngarkesën e trafikut me mbi 35% dhe eliminon kundërmimin e ujërave të zeza në lagjet jugore.'
-  },
-  {
-    id: 'prj-2',
-    title: 'Impianti Modern për Trajtimin e Ujërave të Zeza',
-    municipality: 'Pejë',
-    sector: 'Mjedis & Kanalizim',
-    budget: '14,200,000 €',
-    status: 'Përfunduar',
-    progress: 100,
-    startDate: 'Janar 2023',
-    endDate: 'Maj 2026',
-    contractor: 'KfW & Hidro-Peja Consortium',
-    supervisor: 'Kompania Rajonale Ujësjellësi Hidrodrini',
-    funder: 'Granti Gjerman (KfW), Qeveria e Zvicrës dhe Komuna',
-    description: 'Teknologji e pastrimit biologjik dhe kimik të ujërave të shkarkuara të qytetit të Pejës para derdhjes në lumin Lumëbardh.',
-    impact: 'Mbron 100% ekosistemin e Lumëbardhit dhe garanton ujë të pastër për zonat bujqësore të Rrafshit të Dukagjinit.'
-  },
-  {
-    id: 'prj-3',
-    title: 'Revitalizimi dhe Këmbësorizimi i Qendrës Historike',
-    municipality: 'Prizren',
-    sector: 'Kulturë & Trashëgimi',
-    budget: '3,150,000 €',
-    status: 'Në Zhvillim',
-    progress: 65,
-    startDate: 'Tetor 2024',
-    endDate: 'Nëntor 2026',
-    contractor: 'Guri & Restaurim Sh.p.k.',
-    supervisor: 'Qendra Rajonale për Trashëgimi Kulturore',
-    funder: 'Komuna e Prizrenit & Bashkimi Evropian',
-    description: 'Shtrimi me kalldrëm tradicional të gurit, largimi i kabllove ajrore nëntokë dhe ndriçimi i ri arkitektonik i Shadërvanit.',
-    impact: 'Rrit tërheqjen turistike ndërkombëtare dhe mbron autenticitetin shekullor të Prizrenit.'
-  },
-  {
-    id: 'prj-4',
-    title: 'Ndërtimi i Parkut të Madh Urban dhe Zonës Rekreative',
-    municipality: 'Gjilan',
-    sector: 'Mjedis & Parqe',
-    budget: '2,800,000 €',
-    status: 'Në Zhvillim',
-    progress: 48,
-    startDate: 'Prill 2025',
-    endDate: 'Dhjetor 2026',
-    contractor: 'Green City Partners',
-    supervisor: 'Drejtoria e Shërbimeve Publike',
-    funder: 'Buxheti Komunal i Gjilanit',
-    description: 'Hapësirë e gjelbër prej mbi 12 hektarësh me shtigje ecjeje, pistë vrapimi, kënde lojërash për fëmijë dhe amfiteatër të hapur.',
-    impact: 'Krijon mushkërinë kryesore të gjelbër për mbi 90,000 qytetarë të Gjilanit.'
-  },
-  {
-    id: 'prj-5',
-    title: 'Modernizimi i Ndriçimit Publik me Efiçiencë LED në 24 Fshatra',
-    municipality: 'Ferizaj',
-    sector: 'Efiçiencë Energjetike',
-    budget: '1,200,000 €',
-    status: 'Përfunduar',
-    progress: 100,
-    startDate: 'Qershor 2024',
-    endDate: 'Gusht 2026',
-    contractor: 'Electro Kosova Group',
-    supervisor: 'Drejtoria e Infrastrukturës',
-    funder: 'Fondi i Kosovës për Efiçiencë të Energjisë & Komuna',
-    description: 'Zëvendësimi i 6,800 poçave të vjetër të merkurit me ndriçues inteligjentë LED dhe sistem tele-menaxhimi.',
-    impact: 'Zvogëlimi i shpenzimeve të energjisë elektrike për buxhetin komunal me 62% çdo vit.'
-  },
-  {
-    id: 'prj-6',
-    title: 'Ndërtimi i Çerdhes së Re Publike me Standarde Evropiane',
-    municipality: 'Mitrovicë',
-    sector: 'Edukimi & Shkollat',
-    budget: '950,000 €',
-    status: 'Në Zhvillim',
-    progress: 85,
-    startDate: 'Nëntor 2024',
-    endDate: 'Shtator 2026',
-    contractor: 'Ndërtimi MIT',
-    supervisor: 'Drejtoria Komunale e Arsimit',
-    funder: 'Komuna e Mitrovicës & MASHTI',
-    description: 'Objekt modern me kapacitet për 160 fëmijë, me kuzhinë qendrore, sallë psikologjike dhe hapësirë të jashtme edukative.',
-    impact: 'Zgjidh problemin e listave të pritjes për nënat e punësuara në zonën veriore të qytetit.'
-  },
-  {
-    id: 'prj-7',
-    title: 'Zgjerimi i Unazës Veriore me Shtigje Çiklizmi dhe Ndriçim',
-    municipality: 'Gjakovë',
-    sector: 'Infrastrukturë Rrugore',
-    budget: '4,500,000 €',
-    status: 'Në Zhvillim',
-    progress: 35,
-    startDate: 'Janar 2025',
-    endDate: 'Qershor 2027',
-    contractor: 'Dukagjini Asfalt',
-    supervisor: 'Drejtoria e Investimeve Kapitale',
-    funder: 'Buxheti Komunal dhe Ministria e Mjedisit',
-    description: 'Segment rrugor prej 4.8 km me 4 korsi, rrethrrotullime me siguri të lartë dhe shtigje të ndara për biçikleta.',
-    impact: 'Largon mjetet e rënda transportuese nga brendësia e zonës historike dhe qendrës.'
-  },
-  {
-    id: 'prj-8',
-    title: 'Rinovimi i Thellë Termik i Qendrës Kryesore të Mjekësisë Familjare',
-    municipality: 'Podujevë',
-    sector: 'Shëndetësi & Efiçiencë',
-    budget: '680,000 €',
-    status: 'Përfunduar',
-    progress: 100,
-    startDate: 'Tetor 2024',
-    endDate: 'Korrik 2026',
-    contractor: 'TermoIzolimi Kosova',
-    supervisor: 'Drejtoria e Shëndetësisë',
-    funder: 'Buxheti Komunal Podujevë',
-    description: 'Fasada ventiluese me izolim lesh guri, pompë termike ngrohje/ftohje dhe panele diellore fotovoltaike në kulm.',
-    impact: 'Kushte dinjitoze trajtimi për mbi 80,000 pacientë dhe kursim prej 40,000 € në vit për ngrohje.'
-  },
-  {
-    id: 'prj-9',
-    title: 'Rrjeti i Ri i Ujësjellësit dhe Furnizim 24/7 me Ujë të Pijshëm',
-    municipality: 'Vushtrri',
-    sector: 'Ujësjellës & Kanalizim',
-    budget: '1,900,000 €',
-    status: 'Në Zhvillim',
-    progress: 92,
-    startDate: 'Shkurt 2024',
-    endDate: 'Tetor 2026',
-    contractor: 'Hidro-Teknika',
-    supervisor: 'KRU Mitrovica',
-    funder: 'Komuna e Vushtrrisë & Donatorët Zviceranë',
-    description: 'Vendosja e mbi 32 km gypave të rinj duktil në 14 fshatra të Vushtrrisë dhe instalimi i ujëmatësve digjitalë.',
-    impact: 'Furnizim i pandërprerë me ujë cilësor sipas standardeve të OBSH-së për 18,000 banorë.'
-  }
-];
+/**
+ * No projects collection exists, so this page lists only what the product can prove:
+ * its own public modules, each linking to a real route. Municipal projects get an
+ * honest note until a verified data source exists.
+ */
+interface PlatformModule { to: string; title: string; field: string; description: string; icon: LucideIcon }
 
-const PROJECTS_DATA: MunicipalProject[] = [
-  {
-    id: 'platform-1', title: 'Qendra e Raportimeve Qytetare', municipality: 'Zëri Qytetarëve', sector: 'Raportime', budget: 'Platformë publike', status: 'Përfunduar', progress: 100,
-    startDate: 'Janar 2026', endDate: 'Aktive', contractor: 'Ekipi i Zërit Qytetarëve', supervisor: 'Administrimi i platformës', funder: 'Zëri Qytetarëve',
-    description: 'Kanal i vetëm ku qytetarët raportojnë probleme, bashkëngjisin dëshmi dhe marrin Track-ID për çdo rast.', impact: 'Raportime më të qarta dhe reagim i matshëm nga institucionet.'
-  },
-  {
-    id: 'platform-2', title: 'Harta Live e Problemeve në Kosovë', municipality: 'Zëri Qytetarëve', sector: 'Harta & Transparenca', budget: 'Platformë publike', status: 'Përfunduar', progress: 100,
-    startDate: 'Shkurt 2026', endDate: 'Aktive', contractor: 'Ekipi GIS', supervisor: 'Administrimi i platformës', funder: 'Zëri Qytetarëve',
-    description: 'Hartë publike me lokacionet reale të raportimeve të aprovuara dhe statusin e tyre në kohë reale.', impact: 'Çdo problem i aprovuar shihet në vendin e tij dhe mund të ndiqet.'
-  },
-  {
-    id: 'platform-3', title: 'Track-ID dhe Regjistri i Hapur', municipality: 'Zëri Qytetarëve', sector: 'Llogaridhënie', budget: 'Platformë publike', status: 'Në Zhvillim', progress: 82,
-    startDate: 'Mars 2026', endDate: 'Dhjetor 2026', contractor: 'Ekipi teknik', supervisor: 'Administrimi i platformës', funder: 'Zëri Qytetarëve',
-    description: 'Sistem transparent për gjurmimin e pranimit, shqyrtimit, caktimit dhe zgjidhjes së çdo raportimi.', impact: 'Qytetari nuk humb më informacionin pas dorëzimit të raportimit.'
-  },
-  {
-    id: 'platform-4', title: 'Paneli i Institucioneve dhe Agjentëve', municipality: 'Zëri Qytetarëve', sector: 'Institucione', budget: 'Platformë publike', status: 'Në Zhvillim', progress: 68,
-    startDate: 'Prill 2026', endDate: 'Janar 2027', contractor: 'Ekipi i produkteve', supervisor: 'Administrimi i platformës', funder: 'Zëri Qytetarëve',
-    description: 'Panel pune për agjentët, administratorët dhe institucionet që pranojnë, caktojnë dhe përditësojnë raportimet.', impact: 'Përgjegjësitë dhe afatet bëhen të dukshme për të gjithë.'
-  },
-  {
-    id: 'platform-5', title: 'Komuniteti dhe Debati Publik', municipality: 'Zëri Qytetarëve', sector: 'Pjesëmarrje qytetare', budget: 'Platformë publike', status: 'Në Zhvillim', progress: 55,
-    startDate: 'Maj 2026', endDate: 'Mars 2027', contractor: 'Ekipi komunitar', supervisor: 'Administrimi i platformës', funder: 'Zëri Qytetarëve',
-    description: 'Hapësirë për diskutime, sondazhe dhe bashkëpunim mes qytetarëve rreth çështjeve publike.', impact: 'Vendimmarrje më e informuar dhe pjesëmarrje aktive e komunitetit.'
-  },
-  {
-    id: 'platform-6', title: 'Asistenti Inteligjent për Raportime', municipality: 'Zëri Qytetarëve', sector: 'Teknologji qytetare', budget: 'Platformë publike', status: 'Në Zhvillim', progress: 44,
-    startDate: 'Qershor 2026', endDate: 'Prill 2027', contractor: 'Ekipi AI', supervisor: 'Administrimi i platformës', funder: 'Zëri Qytetarëve',
-    description: 'Ndihmës që orienton qytetarin te kategoria, urgjenca dhe institucioni i duhur pa zëvendësuar vendimmarrjen njerëzore.', impact: 'Raportime më të sakta dhe shpërndarje më e shpejtë te përgjegjësi.'
-  }
+const MODULES: PlatformModule[] = [
+  { to: '/raporto', title: 'Raporto problem', field: 'Raportime', description: 'Dërgoni një problem në qytetin tuaj me përshkrim, vendndodhje dhe foto. Merrni një Track-ID.', icon: FileText },
+  { to: '/trackid', title: 'Gjurmo raportin', field: 'Raportime', description: 'Shkruani Track-ID për të parë statusin publik dhe historikun e një raporti.', icon: Search },
+  { to: '/harta', title: 'Harta e raportimeve', field: 'Transparencë', description: 'Raportet e publikuara në hartë, sipas vendndodhjes dhe statusit.', icon: MapPin },
+  { to: '/detailed-registry', title: 'Regjistri i raportimeve', field: 'Transparencë', description: 'Lista e raporteve publike me kërkim dhe filtra.', icon: ListChecks },
+  { to: '/statistikat', title: 'Statistikat', field: 'Transparencë', description: 'Përmbledhje numerike e raportimeve në platformë.', icon: BarChart3 },
+  { to: '/transparenca', title: 'Transparenca', field: 'Transparencë', description: 'Si funksionon platforma dhe si trajtohen raportimet.', icon: ScrollText },
+  { to: '/komunat', title: 'Komunat', field: 'Institucione', description: 'Informacion sipas komunës.', icon: Landmark },
+  { to: '/kontakt-numrat', title: 'Numrat e institucioneve', field: 'Institucione', description: 'Regjistri i numrave zyrtarë kombëtarë dhe komunalë.', icon: Phone },
+  { to: '/sherbimet', title: 'Shërbimet publike', field: 'Shërbime', description: 'Udhëzues për shërbime publike dhe lidhje te portalet zyrtare.', icon: Building },
+  { to: '/shendetesia', title: 'Regjistri shëndetësor', field: 'Shërbime', description: 'Rastet shëndetësore që kanë nevojë për mbështetje, me të dhëna të kufizuara.', icon: HeartPulse },
+  { to: '/donacion', title: 'Fushata ndihme', field: 'Shërbime', description: 'Fushata të miratuara nga administratori; donacionet bëhen në faqe të jashtme.', icon: HeartHandshake },
+  { to: '/forum', title: 'Komuniteti', field: 'Pjesëmarrje', description: 'Diskutime dhe postime të qytetarëve (kërkon hyrje).', icon: MessagesSquare },
+  { to: '/sondazhet', title: 'Sondazhet', field: 'Pjesëmarrje', description: 'Votoni në sondazhe publike.', icon: Vote },
+  { to: '/Idea', title: 'Laboratori i ideve', field: 'Pjesëmarrje', description: 'Dërgoni një ide për përmirësimin e platformës.', icon: Lightbulb },
+  { to: '/lajme', title: 'Lajme', field: 'Informim', description: 'Lajme dhe njoftime të publikuara në platformë.', icon: Newspaper },
+  { to: '/ndihma', title: 'Qendra e ndihmës', field: 'Informim', description: 'Udhëzime hap pas hapi për përdorimin e platformës.', icon: LifeBuoy },
 ];
+const FIELDS = ['Raportime', 'Transparencë', 'Institucione', 'Shërbime', 'Pjesëmarrje', 'Informim'];
 
 export default function ProjektetPage() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedMunicipality, setSelectedMunicipality] = useState<string>('all');
-  const [selectedSector, setSelectedSector] = useState<string>('all');
+  const [query, setQuery] = useState('');
+  const [field, setField] = useState('all');
 
-  const sectors = [
-    'all', 'Raportime', 'Harta & Transparenca', 'Llogaridhënie', 'Institucione', 'Pjesëmarrje qytetare', 'Teknologji qytetare'
-  ];
-
-  const filteredProjects = useMemo(() => {
-    return PROJECTS_DATA.filter(prj => {
-      const matchStatus = selectedStatus === 'all' || prj.status === selectedStatus;
-      const matchMuni = selectedMunicipality === 'all' || prj.municipality === selectedMunicipality;
-      const matchSector = selectedSector === 'all' || prj.sector === selectedSector;
-      const matchSearch = prj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prj.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prj.municipality.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchStatus && matchMuni && matchSector && matchSearch;
-    });
-  }, [searchQuery, selectedStatus, selectedMunicipality, selectedSector]);
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return MODULES.filter(m => (field === 'all' || m.field === field) && (!q || `${m.title} ${m.description}`.toLowerCase().includes(q)));
+  }, [query, field]);
+  const countOf = (f: string) => MODULES.filter(m => m.field === f).length;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#070e1c] text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        <PageHero
-          eyebrow={dt('Zhvillimi i Platformës')}
-          icon={Briefcase}
-          title={dt('Projektet e Zërit Qytetarëve')}
-          subtitle={dt('Ndiqni iniciativat, modulet dhe zhvillimet që e bëjnë platformën Zëri Qytetarëve më të dobishme, më transparente dhe më afër qytetarëve.')}
-          stats={[
-            { value: String(PROJECTS_DATA.length), label: dt('Iniciativa aktive') },
-            { value: `${Math.round(PROJECTS_DATA.reduce((sum, prj) => sum + prj.progress, 0) / PROJECTS_DATA.length)}%`, label: dt('Progresi i platformës') },
-          ]}
-        />
+    <AuraPage>
+      <AuraHero
+        visual={<AuraOrbit core={Layers} icons={MODULES.slice(0, 8).map(m => m.icon)} links={MODULES.slice(0, 8).map(m => ({ to: m.to, label: dt(m.title) }))} />}
+        tone="blue"
+        eyebrow={dt('Projektet')}
+        icon={Layers}
+        title={dt('Modulet e platformës')}
+        subtitle={dt('Çfarë mund të bëni në Zëri i Qytetarëve: çdo modul më poshtë hapet te faqja e tij reale.')}
+        aside={<AuraStats items={[{ value: MODULES.length, label: dt('module') }, { value: FIELDS.length, label: dt('Fusha') }]} />}
+      />
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
-          {/* Search and Filters Bar */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
-              <input 
-                type="text" 
-                placeholder={dt('Kërkoni iniciativa sipas emrit, fushës apo përshkrimit...')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            </div>
+      <AuraNote tone="warn" icon={Info}>
+        <p className="font-semibold">{dt('Projektet komunale')}</p>
+        <p className="mt-0.5 opacity-90">
+          {dt('Platforma ende nuk ka një burim të verifikuar të dhënash për projektet kapitale komunale (buxhet, kontraktor, progres). Prandaj nuk shfaqim asnjë të tillë. Për projekte të një komune shihni faqen zyrtare të saj ose')}{' '}
+          <Link to="/kontakt-numrat" className="font-semibold underline">{dt('numrat e institucioneve')}</Link>.
+        </p>
+      </AuraNote>
 
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
-              {/* Status Select */}
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              >
-                <option value="all">{dt('Të gjitha Statuset')}</option>
-                <option value="Në Zhvillim">{dt('Në Zhvillim')}</option>
-                <option value="Përfunduar">{dt('Përfunduar')}</option>
-                <option value="Në Prokurim">{dt('Në Prokurim')}</option>
-              </select>
-
-              {/* Komuna Select */}
-              <select
-                value={selectedMunicipality}
-                onChange={(e) => setSelectedMunicipality(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              >
-                <option value="all">{dt('Të gjitha iniciativat')}</option>
-                <option value="Zëri Qytetarëve">{dt('Zëri Qytetarëve')}</option>
-              </select>
-
-              {/* Sektori Select */}
-              <select
-                value={selectedSector}
-                onChange={(e) => setSelectedSector(e.target.value)}
-                className="col-span-2 sm:col-span-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              >
-                <option value="all">{dt('Të gjitha fushat')}</option>
-                {sectors.slice(1).map(sector => <option key={sector} value={sector}>{sector}</option>)}
-              </select>
-            </div>
+      <AuraSection id="modules" title={dt('Hap një modul')} action={<span className="au-sub text-[12px]" role="status">{results.length} {dt('nga')} {MODULES.length} {dt('module')}</span>}>
+        <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+          <div className="relative sm:w-72">
+            <label htmlFor="mod-search" className="sr-only">{dt('Kërko modul')}</label>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" aria-hidden="true" />
+            <input id="mod-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={dt('Kërkoni sipas emrit ose përshkrimit')} className="au-input !pl-9" />
+          </div>
+          <div className="au-rail min-w-0 flex-1" role="group" aria-label={dt('Fusha')}>
+            <button type="button" aria-pressed={field === 'all'} onClick={() => setField('all')} className="au-chip">{dt('Të gjitha fushat')} <span className="au-count">{MODULES.length}</span></button>
+            {FIELDS.map(f => (
+              <button key={f} type="button" aria-pressed={field === f} onClick={() => setField(f)} className="au-chip">{dt(f)} <span className="au-count">{countOf(f)}</span></button>
+            ))}
           </div>
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((prj) => (
-            <div 
-              key={prj.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-5 group"
-            >
-              <div>
-                {/* Header: Municipality Crest + Status Badge */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <MunicipalityShield name={prj.municipality} size="sm" />
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block leading-tight">
-                        {prj.municipality}
-                      </span>
-                      <span className="text-[10px] font-semibold text-slate-500 block">
-                        {prj.sector}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className={cn(
-                    "px-2.5 py-1 rounded-md text-[10px] font-bold border shrink-0",
-                    prj.status === 'Përfunduar' && "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900",
-                    prj.status === 'Në Zhvillim' && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900",
-                    prj.status === 'Në Prokurim' && "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900"
-                  )}>
-                    {prj.status}
-                  </span>
-                </div>
-
-                {/* Project Title */}
-                <h3 className="text-base font-black text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-blue-600 transition-colors">
-                  {prj.title}
-                </h3>
-
-                {/* Description */}
-                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
-                  {prj.description}
-                </p>
-
-                {/* Progress Bar */}
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-white/5 mb-4">
-                  <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                    <span className="text-slate-600 dark:text-slate-400">Ecuria Fizike</span>
-                    <span className={cn(
-                      prj.progress === 100 ? "text-emerald-600" : "text-blue-600"
-                    )}>
-                      {prj.progress}%
+        {results.length === 0 ? (
+          <AuraEmpty icon={Search} title={dt('Nuk u gjet asnjë modul')} text={dt('Provoni një kërkim tjetër ose zgjidhni “Të gjitha fushat”.')}
+            action={<button type="button" onClick={() => { setQuery(''); setField('all'); }} className="au-btn au-btn-primary">{dt('Pastro filtrat')}</button>} />
+        ) : (
+          <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {results.map(({ to, title, field: f, description, icon: Icon }) => (
+              <li key={to}>
+                <Link to={to} className="au-tile au-tile-link flex h-full items-start gap-3 p-4">
+                  <span className="au-ico"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-[15px] font-semibold">{dt(title)}</span>
+                      <ArrowUpRight className="h-4 w-4 shrink-0 opacity-40" aria-hidden="true" />
                     </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      className={cn(
-                        "h-full rounded-full transition-all duration-1000",
-                        prj.progress === 100 ? "bg-emerald-500" : "bg-blue-600"
-                      )}
-                      style={{ width: `${prj.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Budget & Timeline */}
-                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400">Lloji:</span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-white">{prj.budget}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400">Afati:</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{prj.startDate} - {prj.endDate}</span>
-                  </div>
-                  <div className="flex items-center justify-between truncate">
-                    <span className="text-[11px] text-slate-400 shrink-0">{dt('Përgjegjësi:')}</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate ml-2">{prj.contractor}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Footer Impact Note */}
-              <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-                <span className="text-[10px] text-slate-500 font-medium italic truncate max-w-[200px]">
-                  {prj.funder}
-                </span>
-                <button
-                  onClick={() => navigate(`/detailed-registry?q=${encodeURIComponent(prj.municipality)}`)}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Raportet</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filteredProjects.length === 0 && (
-          <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 p-8">
-            <Briefcase className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{dt('Nuk u gjet asnjë projekt')}</h3>
-            <p className="text-xs text-slate-500 mt-1">{dt('Provoni të ndryshoni fushën ose kërkimin.')}</p>
-          </div>
+                    <span className="au-sub mt-0.5 block text-[13px] leading-snug">{dt(description)}</span>
+                    <span className="au-sub mt-2 block text-[11px] font-semibold uppercase tracking-wide">{dt(f)}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
-
-      </div>
-    </div>
+      </AuraSection>
+    </AuraPage>
   );
 }

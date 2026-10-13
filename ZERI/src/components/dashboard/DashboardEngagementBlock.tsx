@@ -3,12 +3,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText, ArrowRight,
-  Lightbulb, Star, MapPin, TrendingUp,
+  Lightbulb,
 } from 'lucide-react';
-import { useStore } from '../../lib/store';
 import AdBanner from '../AdBanner.tsx';
 
-const SAMPLE_TRACK_IDS = ['ZQ-4587', 'ZQ-4586', 'ZQ-4584'];
 
 /**
  * Two-level engagement block: the sponsorship strip, then the two working
@@ -22,14 +20,12 @@ const SAMPLE_TRACK_IDS = ['ZQ-4587', 'ZQ-4586', 'ZQ-4584'];
  */
 export function DashboardEngagementBlock({ municipality }: { municipality?: string }) {
   const navigate = useNavigate();
-  const donationCauses = useStore((state) => state.donationCauses ?? []);
-
   const [trackId, setTrackId] = useState('');
 
   /**
    * Normalised to upper case and stripped of the leading '#', because a citizen
-   * copying the number off a paper receipt will type any of "ZQ-4587",
-   * "#ZQ-4587" or "zq 4587". Sending all three to the registry as-is means the
+   * copying the number off a paper receipt will type any of "ZQ-20260101-ABC123",
+   * "#ZQ-20260101-ABC123" or "zq 20260101 ABC123". Sending all three to the registry as-is means the
    * search silently returns nothing on two out of three attempts.
    */
   const submitTrackId = (value: string) => {
@@ -37,24 +33,6 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
     if (!cleaned) return;
     navigate(`/trackid?id=${encodeURIComponent(cleaned)}`);
   };
-
-  /**
-   * The store has no dedicated ideas collection, so the most recent donation
-   * causes stand in as the featured civic proposals. This keeps the card
-   * populated from data the app already holds instead of opening another
-   * Firestore listener for a card most visitors scroll past.
-   */
-  const featuredIdeas = donationCauses.length >= 2
-    ? donationCauses.slice(0, 2).map((cause: any, index: number) => ({
-        id: cause.id ?? `idea-${index}`,
-        title: cause.title ?? cause.name ?? 'Projekt qytetar',
-        municipality: cause.municipality ?? 'Kosovë',
-        votes: Number(cause.backers ?? cause.votes ?? 0),
-      }))
-    : [
-        { id: 'idea-sample-1', title: 'Korsi e dedikuar biçikletash në Rrugën B', municipality: 'Prishtinë', votes: 184 },
-        { id: 'idea-sample-2', title: 'Ndriçim inteligjent dhe Wi-Fi publik në Shadërvan', municipality: 'Prizren', votes: 142 },
-      ];
 
   return (
     <div className="space-y-5">
@@ -84,7 +62,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
             </h3>
 
             <p className="mt-2 text-xs leading-relaxed text-slate-300">
-              {dt('Futni numrin unik të referencës (p.sh. ZQ-4587) për të kontrolluar statusin në kohë reale, zyrtarin përgjegjës dhe hapat e ndërmarrë.')}
+              {dt('Futni Track-ID që morët kur dërguat raportin për të parë statusin publik dhe historikun e veprimeve.')}
             </p>
 
             <form
@@ -103,7 +81,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
                   type="text"
                   value={trackId}
                   onChange={(event) => setTrackId(event.target.value)}
-                  placeholder={dt('SHËNO NUMRIN E TRACK ID (P.SH. ZQ-4587)...')}
+                  placeholder={dt('SHËNO TRACK-ID (P.SH. ZQ-20260101-ABC123)')}
                   aria-label={dt('Numri i Track ID')}
                   className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 font-mono text-sm uppercase tracking-wider text-white outline-none transition-colors placeholder:font-sans placeholder:text-[11px] placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-500 focus:border-blue-500/60 focus:bg-white/10"
                 />
@@ -119,24 +97,9 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
               </button>
             </form>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-white/10 pt-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {dt('Shembuj të shpejtë:')}
-              </span>
-              {SAMPLE_TRACK_IDS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => {
-                    setTrackId(id);
-                    submitTrackId(id);
-                  }}
-                  className="rounded-lg bg-white/5 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-300 transition-colors hover:bg-white/10 hover:text-blue-200"
-                >
-                  #{id}
-                </button>
-              ))}
-            </div>
+            <p className="mt-4 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-slate-400">
+              {dt('Track-ID merret pasi të dërgoni një raport, p.sh. ZQ-20260101-ABC123.')}
+            </p>
           </div>
         </section>
 
@@ -150,52 +113,19 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
               <Lightbulb className="h-3 w-3" aria-hidden="true" />
               {dt('Iniciativa Qytetare')}
             </span>
-            <Link
-              to="/Idea"
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400"
-            >
-              {dt('Shiko të gjitha idetë')}
-              <ArrowRight className="h-3 w-3" aria-hidden="true" />
-            </Link>
           </div>
 
           <h3 className="title-serif mt-3 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-            {dt('Banka e Ideve Qytetare')}
+            {dt('Laboratori i ideve')}
           </h3>
 
           <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            {dt('Keni një ide për parqe të reja, transport publik apo digjitalizim? Propozoni projektin tuaj dhe mblidhni mbështetjen e komunitetit.')}
+            {dt('Keni një ide për të përmirësuar platformën ose shërbimet qytetare? Dërgojeni; ekipi i platformës i lexon idetë.')}
           </p>
 
-          <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {featuredIdeas.map((idea: any) => (
-              <li key={idea.id}>
-                <Link
-                  to="/Idea"
-                  className="group flex h-full flex-col rounded-2xl border border-slate-200 p-3.5 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50/40 dark:border-white/10 dark:hover:border-amber-500/40 dark:hover:bg-amber-950/20"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                      <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-                      <span className="truncate">{idea.municipality ?? 'Kosovë'}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1 text-[10px] font-black text-amber-600 dark:text-amber-400">
-                      <Star className="h-3 w-3 fill-current" aria-hidden="true" />
-                      {idea.votes ?? 0}
-                    </span>
-                  </div>
-                  <p className="mt-1.5 line-clamp-3 text-[11px] font-bold leading-snug text-slate-800 dark:text-slate-200">
-                    {idea.title}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-
           <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-            <span className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-              <TrendingUp className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
-              {dt('Mbi 24 ide të pranuara këtë muaj')}
+            <span className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+              {dt('Idea nuk është raport zyrtar dhe nuk garanton zbatim.')}
             </span>
             <Link
               to="/Idea"

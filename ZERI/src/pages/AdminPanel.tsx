@@ -226,6 +226,12 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
         setLinkParams(paramsFromHash(window.location.hash));
         return;
       }
+      // A link to a section this person cannot open lands on their own start page;
+      // the address is rewritten to say so instead of keeping the refused section.
+      if (window.location.hash) {
+        const target = `${window.location.pathname}${window.location.search}${hashForSection(activeTab)}`;
+        window.history.replaceState(window.history.state, '', target);
+      }
     }
 
     // A staffer whose role cannot open the current section is moved to the first

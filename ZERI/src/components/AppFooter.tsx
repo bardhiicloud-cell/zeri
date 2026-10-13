@@ -37,6 +37,7 @@ const COLUMNS = [
   {
     title: 'Ligji & Transparenca',
     links: [
+      { to: '/transparenca', label: 'Qendra e Transparencës' },
       { to: '/privatesia', label: 'Politika e Privatësisë' },
       { to: '/kushtet-e-perdorimit', label: 'Kushtet e Përdorimit' },
       { to: '/trackid', label: 'Gjej Raportin Tim' },
@@ -79,20 +80,20 @@ export function AppFooter() {
             </p>
 
             <div className="mt-4 space-y-1.5 text-xs">
-              <a
-                href="mailto:privatisi@zeriqytetare.republiks"
+              <Link
+                to="/kontakt"
                 className="flex items-center gap-2 text-slate-500 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                privatisi@zeriqytetare.republiks
-              </a>
-              <a
-                href="tel:+38344123456"
+                Na shkruani (formulari i kontaktit)
+              </Link>
+              <Link
+                to="/kontakt-numrat"
                 className="flex items-center gap-2 text-slate-500 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                +383 44 123 456
-              </a>
+                Numrat e institucioneve
+              </Link>
             </div>
 
             {/*

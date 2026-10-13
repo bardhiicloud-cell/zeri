@@ -718,6 +718,17 @@ html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569
 .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 25s linear infinite; }
 .animate-marquee:hover { animation-play-state: paused; }
 
+/* News ticker: two identical halves, so moving by half the track loops seamlessly. */
+@keyframes news-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.news-ticker-track { display: flex; width: max-content; animation: news-ticker var(--ticker-duration, 40s) linear infinite; }
+.news-ticker:hover .news-ticker-track,
+.news-ticker:focus-within .news-ticker-track { animation-play-state: paused; }
+/* The ticker keeps moving under reduced motion too (many Windows setups report it); the pause button satisfies WCAG 2.2.2. */
+.news-ticker[data-paused='true'] .news-ticker-track { animation-play-state: paused; }
+
 .leaflet-tile-container img { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .leaflet-tile { box-shadow: 0 0 1px rgba(0, 0, 0, 0.05); }
 .leaflet-container {
