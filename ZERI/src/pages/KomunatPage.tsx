@@ -298,6 +298,7 @@ export default function KomunatPage() {
   const reports = useStore((state) => state.reports || []);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('all');
+  const [expandedMuni, setExpandedMuni] = useState<string | null>(null);
 
   // Add all other 18 municipalities dynamically if not present in detailed array
   const fullMunicipalitiesList = useMemo(() => {
@@ -310,14 +311,17 @@ export default function KomunatPage() {
           name,
           code: name.slice(0, 3).toUpperCase(),
           region: 'Komunë e Republikës së Kosovës',
-          population: '12,000+',
-          area: '180 km²',
-          mayor: 'Zyra e Kryetarit Komunal',
-          phone: '+383 (0) 38 200 12 345',
-          email: `komuna.${name.toLowerCase().replace(/\s+/g, '')}@rks-gov.net`,
-          website: `https://kk.rks-gov.net/${name.toLowerCase().replace(/\s+/g, '')}`,
-          postalCode: '10000',
-          description: `Komuna e ${name} është pjesë integrale e sistemit të vetëqeverisjes lokale të Republikës së Kosovës.`
+          // Placeholder population, area, phone, email, website and postal code used to be
+          // generated here for every municipality without a hand-written entry. They were
+          // invented, so they are left empty and the card simply omits them.
+          population: '',
+          area: '',
+          mayor: '',
+          phone: '',
+          email: '',
+          website: '',
+          postalCode: '',
+          description: `Komuna e ${name}.`
         });
       }
     });
@@ -333,9 +337,8 @@ export default function KomunatPage() {
   const filteredMunicipalities = useMemo(() => {
     return fullMunicipalitiesList.filter(item => {
       const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.mayor.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           item.region.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchRegion = selectedRegion === 'all' || item.region.toLowerCase().includes(selectedRegion.toLowerCase());
 
       return matchSearch && matchRegion;
@@ -347,28 +350,36 @@ export default function KomunatPage() {
     return reports.filter(r => r.location?.municipality?.toLowerCase() === muniName.toLowerCase()).length;
   };
 
+  /** Raportime të zgjidhura për komunën — tregon performancën e administratës. */
+  const getResolvedCount = (muniName: string) => {
+    return reports.filter(r => r.location?.municipality?.toLowerCase() === muniName.toLowerCase() && r.status === 'Resolved').length;
+  };
+
   return (
     <div className="page-shell min-h-screen bg-(--color-page) dark:bg-(--color-brand-dark) text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         <PageHero
           eyebrow={dt('Vetëqeverisja Lokale e Republikës së Kosovës')}
           icon={Building2}
           title={dt('38 Komunat e Kosovës')}
-          subtitle={dt('Zgjidhni komunën tuaj për të parë statistikat lokale, raportimet e qytetarëve, kontaktet e administratës komunale dhe shërbimet e integruara digjitale.')}
+          subtitle={dt('Zgjidhni komunën tuaj për të parë raportet publike dhe për të dërguar një raport për atë komunë.')}
           stats={[
-            { value: '38', label: dt('Komuna Aktive') },
-            { value: '100%', label: dt('Mbulueshmëri') },
+            { value: '38', label: dt('komuna në Kosovë') },
           ]}
         />
+
+        <p role="note" className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
+          {dt('Popullsia dhe sipërfaqja janë të dhëna referuese dhe jo të verifikuara nga platforma; kryetari, telefoni dhe emaili nuk shfaqen sepse ndryshojnë dhe nuk kemi burim të verifikuar. Për informacion zyrtar shihni faqen e komunës.')}
+        </p>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           {/* Search & Filter Toolbar */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <input 
-                type="text" 
-                placeholder={dt('Kërko komunën sipas emrit, kryetarit ose rajonit...')}
+              <input
+                type="text"
+                placeholder={dt('Kërko komunën sipas emrit ose rajonit...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -453,30 +464,59 @@ export default function KomunatPage() {
                   </p>
 
                   {/* Key Quick Stats */}
-                  <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-white/5 text-xs mb-4">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">Kryetari</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{muni.mayor}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">{dt('Banorë')}</span>
+                  {muni.population && (
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-white/5 text-xs mb-4">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">{dt('Banorë (përafërsisht)')}</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">{muni.population}</span>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Official Contacts */}
-                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="font-mono text-[11px]">{muni.phone}</span>
+                  <Link to="/kontakt-numrat" className="mb-1 inline-flex min-h-11 items-center gap-2 text-xs font-bold text-blue-700 hover:underline dark:text-blue-300">
+                    <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {dt('Kontakte dhe numra')}
+                  </Link>
+
+                  {/* Raportimet e zgjidhura — performanca lokale */}
+                  {reportsCount > 0 && (
+                    <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 transition-colors hover:border-emerald-200 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:hover:border-emerald-800/60">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> {dt('Të zgjidhura (nga raportet e ngarkuara)')}
+                        </span>
+                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-300">
+                          {getResolvedCount(muni.name)}/{reportsCount} ({Math.round((getResolvedCount(muni.name) / Math.max(reportsCount, 1)) * 100)}%)
+                        </span>
+                      </div>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-emerald-200/60 dark:bg-emerald-900/50">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-700 ease-out"
+                          style={{ width: `${Math.round((getResolvedCount(muni.name) / Math.max(reportsCount, 1)) * 100)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 truncate">
-                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate text-[11px]">{muni.email}</span>
-                    </div>
-                  </div>
+                  )}
                   </div>
                 </div>
+
+                {/* Detajet e plota — të zgjerueshme */}
+                {expandedMuni === muni.name && (
+                  <div className="mx-5 mt-4 space-y-2.5 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/30 text-xs">
+                    {(muni.area || muni.postalCode) && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {muni.area && <div><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Sipërfaqja</p><p className="font-bold text-slate-800 dark:text-slate-200">{muni.area}</p></div>}
+                        {muni.postalCode && <div><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Kodi postar</p><p className="font-mono font-bold text-slate-800 dark:text-slate-200">{muni.postalCode}</p></div>}
+                      </div>
+                    )}
+                    {muni.website && (
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Website</p>
+                        <a href={muni.website} target="_blank" rel="noreferrer" className="mt-0.5 flex items-center gap-1.5 text-[11px] font-bold text-blue-700 hover:underline dark:text-blue-300 break-all">
+                          <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" /> {muni.website.replace('https://', '')}
+                        </a>
+                      </div>
+                    )}
+                    <p className="leading-relaxed text-slate-600 dark:text-slate-300">{muni.description}</p>
+                  </div>
+                )}
 
                 {/* Bottom Action Buttons */}
                 <div className="mx-5 mt-5 mb-5 pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
@@ -488,12 +528,25 @@ export default function KomunatPage() {
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
 
-                  <button
-                    onClick={() => navigate(`/raporto?komuna=${encodeURIComponent(muni.name)}`)}
-                    className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
-                  >
-                    {dt('Raporto')}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setExpandedMuni(expandedMuni === muni.name ? null : muni.name)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+                        expandedMuni === muni.name
+                          ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-950/40 dark:text-blue-300"
+                          : "border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      {expandedMuni === muni.name ? 'Mbyll' : 'Detaje'}
+                    </button>
+                    <button
+                      onClick={() => navigate(`/raporto?komuna=${encodeURIComponent(muni.name)}`)}
+                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    >
+                      {dt('Raporto')}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -504,7 +557,7 @@ export default function KomunatPage() {
           <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 p-8">
             <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{dt('Nuk u gjet asnjë komunë')}</h3>
-            <p className="text-xs text-slate-500 mt-1">{dt('Provoni një kërkim tjetër me emër komune apo emër kryetari.')}</p>
+            <p className="text-xs text-slate-500 mt-1">{dt('Provoni një kërkim tjetër me emër komune ose rajoni.')}</p>
           </div>
         )}
 

@@ -261,6 +261,21 @@ describe('sponsored click tracking', () => {
   });
 });
 
+describe('ad campaign window', () => {
+  it('serves nothing before the start, after the end, or once the click cap is reached', async () => {
+    const { recordAdClick } = await import('../../server/adTracking');
+    const now = Date.UTC(2026, 9, 13, 12);
+    const base = { authorId: AUTHOR, isAd: true, adLink: 'https://example.org', adClicks: 0 };
+    await db.collection('forumPosts').doc('future').set({ ...base, adStartAt: Timestamp.fromMillis(now + 1000) });
+    await db.collection('forumPosts').doc('over').set({ ...base, promotedUntil: Timestamp.fromMillis(now - 1000) });
+    await db.collection('forumPosts').doc('running').set({ ...base, promotedUntil: Timestamp.fromMillis(now + 86_400_000), adMaxClicks: 1 });
+    expect((await recordAdClick(db, 'future', { key: 'k', countable: true }, now)).url).toBeNull();
+    expect((await recordAdClick(db, 'over', { key: 'k', countable: true }, now)).url).toBeNull();
+    expect(await recordAdClick(db, 'running', { key: 'a', countable: true }, now)).toMatchObject({ counted: true });
+    expect((await recordAdClick(db, 'running', { key: 'b', countable: true }, now)).url).toBeNull();
+  });
+});
+
 describe('following through the server', () => {
   it('follows and unfollows idempotently, and refuses self, blocked, banned, missing and guest cases', async () => {
     const { setFollow, GraphError } = await import('../../server/forumPeople');

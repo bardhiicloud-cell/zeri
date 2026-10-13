@@ -28,9 +28,12 @@ jobs:
           cache-dependency-path: ZERI/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
-      # Lint gate covers files known to be clean; the wider code base still has
-      # ~1,470 legacy errors (see REPOSITORY_AUDIT_REPORT.md, F-28).
-      - run: npx eslint tests server/roleClaims.ts server/policy.ts server/gdpr.ts server/polls.ts server/upvotes.ts server/reports.ts src/lib/apiAuth.ts src/lib/escapeHtml.ts scripts/sync-claims.ts
+      # Lint gate covers files known to be clean; the wider code base still has legacy
+      # findings (counts and plan: docs/CI_REMEDIATION.md). Add a file here once it is clean.
+      - run: npx eslint tests server/roleClaims.ts server/policy.ts server/gdpr.ts server/polls.ts server/upvotes.ts server/reports.ts server/reportAssignment.ts server/staffRemoval.ts server/publicReports.ts src/lib/apiAuth.ts src/lib/escapeHtml.ts src/lib/publicReportsApi.ts src/lib/handoverHistory.ts src/lib/reportAssignmentApi.ts src/components/admin/HandoverHistoryPanel.tsx scripts/sync-claims.ts scripts/reportsLockdownRules.ts
+      # React Hooks rules over all of src. New violations fail the build; files with older findings are
+      # listed as warnings in eslint.hooks.config.js and must only shrink.
+      - run: npx eslint -c eslint.hooks.config.js src
       - run: npm test
       - run: npm run build
       - name: Dependency audit (report only)

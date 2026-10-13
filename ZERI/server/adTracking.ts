@@ -20,6 +20,7 @@
 import { createHash } from 'node:crypto';
 import type { Express, Request, Response } from 'express';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { adStatus } from '../src/lib/adCampaign';
 
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|curl|wget|python-requests|headless/i;
 
@@ -56,6 +57,8 @@ export async function recordAdClick(
     const snap = await tx.get(ref);
     const data = snap.data() as Record<string, any> | undefined;
     if (!snap.exists || !data || data.isAd !== true || data.isHidden === true || data.deletedAt) return { url: null, counted: false };
+    // An ended, not yet started or capped campaign serves nothing (src/lib/adCampaign.ts).
+    if (adStatus(data, now) !== 'live') return { url: null, counted: false };
     const url = safeHttpsUrl(data.adLink);
     if (!url) return { url: null, counted: false };
     if (!input.countable) return { url, counted: false };

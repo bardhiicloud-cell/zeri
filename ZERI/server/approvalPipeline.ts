@@ -240,6 +240,11 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     from: ['inspecting', 'submitted'],
     toStatus: 'Approved',
     guard: (report) => {
+      // A report whose reviewer asked the citizen for more cannot be passed on until the
+      // citizen has answered (it can still be rejected, with a reason).
+      if (report?.awaitingInfo === true) {
+        return { ok: false, reason: 'Raporti pret përgjigjen e qytetarit për informacionin e kërkuar. Prisni përgjigjen ose refuzojeni me arsye.' };
+      }
       const failed = completenessChecks(report).filter((c) => !c.ok);
       if (failed.length > 0) {
         return {

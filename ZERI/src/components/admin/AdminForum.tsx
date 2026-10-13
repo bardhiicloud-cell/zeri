@@ -11,11 +11,12 @@ import { cn } from '../../lib/utils';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import AdminForumStories from './AdminForumStories.tsx';
 import AdminReelReports from './AdminReelReports.tsx';
+import AdminForumReports from './AdminForumReports.tsx';
 
 export default function AdminForum() {
   const [posts, setPosts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [forumTab, setForumTab] = useState<'posts' | 'stories' | 'reels'>('posts');
+  const [forumTab, setForumTab] = useState<'posts' | 'stories' | 'reels' | 'reports'>('posts');
   const currentUser = useStore(state => state.currentUser);
 
   useEffect(() => {
@@ -96,9 +97,23 @@ export default function AdminForum() {
         >
           <Film className="w-4 h-4" /> {dt('Raportimet e Reels')}
         </button>
+        <button
+          type="button"
+          onClick={() => setForumTab('reports')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            forumTab === 'reports'
+              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800',
+          )}
+        >
+          <AlertCircle className="w-4 h-4" /> {dt('Raportime të tjera')}
+        </button>
       </div>
 
-      {forumTab === 'reels' ? (
+      {forumTab === 'reports' ? (
+        <AdminForumReports />
+      ) : forumTab === 'reels' ? (
         <AdminReelReports />
       ) : forumTab === 'stories' ? (
         <AdminForumStories />

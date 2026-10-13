@@ -73,9 +73,12 @@ export function summarizeTeam(agents: readonly AgentInput[], loads: ReadonlyMap<
   };
 }
 
-/** Who may see the team view: owners, the manager, and anyone granted monitoring. */
+/**
+ * Who may see the team view: owners, the manager, the dispatcher (who needs the workload to distribute work),
+ * and anyone granted monitoring. The view holds counts and staff names only, never a reporter's data.
+ */
 export function mayViewTeam(actor: { role: string; permissions: readonly string[] }): boolean {
-  return actor.role === 'admin' || actor.role === 'superadmin' || actor.role === 'monitor' ||
+  return actor.role === 'admin' || actor.role === 'superadmin' || actor.role === 'monitor' || actor.role === 'dispatcher' ||
     mayUseSection({ role: actor.role, permissions: actor.permissions }, 'monitorim');
 }
 

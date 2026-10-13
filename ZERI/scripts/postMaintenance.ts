@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { extractHashtags } from '../src/lib/forumTrends';
 
 export interface ScrubResult {
   scanned: number;
@@ -63,6 +64,75 @@ export async function backfillPostVisibility(firestore: Firestore, options: { ap
       if (v === 'public' || v === 'followers') continue;
       result.missing += 1;
       if (options.apply) { batch.update(doc.ref, { visibility: 'public' }); writes += 1; }
+    }
+    if (writes > 0) await batch.commit();
+    last = page.docs[page.docs.length - 1];
+    if (page.size < pageSize) break;
+  }
+  return result;
+}
+
+export interface CommentAuthorsResult { scanned: number; posts: number }
+
+/**
+ * Builds `commentAuthorIds` for posts written before the server kept it, so that erasing an
+ * account can find and anonymise comments left on other people's posts. Adds ids only;
+ * never changes a comment. Idempotent.
+ */
+export async function backfillCommentAuthors(firestore: Firestore, options: { apply: boolean; pageSize?: number }): Promise<CommentAuthorsResult> {
+  const pageSize = options.pageSize ?? 300;
+  const result: CommentAuthorsResult = { scanned: 0, posts: 0 };
+  let last: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  for (;;) {
+    let q = firestore.collection('forumPosts').orderBy('__name__').limit(pageSize);
+    if (last) q = q.startAfter(last);
+    const page = await q.get();
+    if (page.empty) break;
+    const batch = firestore.batch();
+    let writes = 0;
+    for (const doc of page.docs) {
+      result.scanned += 1;
+      const ids = new Set<string>();
+      const comments = doc.get('comments');
+      if (Array.isArray(comments)) {
+        for (const c of comments) {
+          if (typeof c?.authorId === 'string') ids.add(c.authorId);
+          if (Array.isArray(c?.replies)) for (const r of c.replies) if (typeof r?.authorId === 'string') ids.add(r.authorId);
+        }
+      }
+      const existing = new Set<string>(Array.isArray(doc.get('commentAuthorIds')) ? doc.get('commentAuthorIds') : []);
+      const missing = [...ids].filter((id) => !existing.has(id));
+      if (missing.length === 0) continue;
+      result.posts += 1;
+      if (options.apply) { batch.update(doc.ref, { commentAuthorIds: FieldValue.arrayUnion(...missing) }); writes += 1; }
+    }
+    if (writes > 0) await batch.commit();
+    last = page.docs[page.docs.length - 1];
+    if (page.size < pageSize) break;
+  }
+  return result;
+}
+
+export interface HashtagBackfillResult { scanned: number; posts: number }
+
+/** Writes `hashtags` on posts that predate the field, so hashtag pages can find them. */
+export async function backfillPostHashtags(firestore: Firestore, options: { apply: boolean; pageSize?: number }): Promise<HashtagBackfillResult> {
+  const pageSize = options.pageSize ?? 300;
+  const result: HashtagBackfillResult = { scanned: 0, posts: 0 };
+  let last: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  for (;;) {
+    let q = firestore.collection('forumPosts').orderBy('__name__').limit(pageSize);
+    if (last) q = q.startAfter(last);
+    const page = await q.get();
+    if (page.empty) break;
+    const batch = firestore.batch();
+    let writes = 0;
+    for (const doc of page.docs) {
+      result.scanned += 1;
+      if (Array.isArray(doc.get('hashtags'))) continue;
+      const tags = extractHashtags(String(doc.get('content') ?? '')).slice(0, 10);
+      result.posts += 1;
+      if (options.apply) { batch.update(doc.ref, { hashtags: tags }); writes += 1; }
     }
     if (writes > 0) await batch.commit();
     last = page.docs[page.docs.length - 1];

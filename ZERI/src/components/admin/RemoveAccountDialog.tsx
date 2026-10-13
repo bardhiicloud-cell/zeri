@@ -41,7 +41,14 @@ export default function RemoveAccountDialog({ target, onClose, onRemoved }: Prop
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(describeApiFailure(response.status, result));
-      toast.success(dt('Llogaria u hoq. Puna e saj mbetet e regjistruar.'));
+      if (result.releaseIncomplete) {
+        // The account is gone, but some of its reports may still name it: say so rather than imply all is tidy.
+        toast.error(dt('Llogaria u hoq, por raportimet e saj nuk u kthyen të gjitha në radhën e përbashkët. Kontrolloni "Të miat" të panjohura.'), { duration: 10000 });
+      } else {
+        toast.success(Number(result.releasedReports) > 0
+          ? dt('Llogaria u hoq. Raportimet që mbante u kthyen në radhën e përbashkët.')
+          : dt('Llogaria u hoq. Puna e saj mbetet e regjistruar.'));
+      }
       onRemoved();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : dt('Llogaria nuk u hoq.'));

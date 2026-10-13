@@ -187,15 +187,23 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
     if (!id || id.includes('/')) return res.status(400).json({ error: 'Postimi nuk është i vlefshëm.' });
     if (!Number.isInteger(days) || days < 1 || days > 90) return res.status(400).json({ error: 'Kohëzgjatja duhet të jetë 1–90 ditë.' });
     if (link !== undefined && link !== '' && !isHttpsUrl(link)) return res.status(400).json({ error: 'Linku duhet të fillojë me https://.' });
+    // Optional campaign controls: a click cap and a delayed start (see src/lib/adCampaign.ts).
+    const maxClicks = req.body?.maxClicks === undefined || req.body.maxClicks === null || req.body.maxClicks === '' ? null : Number(req.body.maxClicks);
+    if (maxClicks !== null && (!Number.isInteger(maxClicks) || maxClicks < 1 || maxClicks > 10_000_000)) return res.status(400).json({ error: 'Kufiri i klikimeve duhet të jetë një numër i plotë pozitiv.' });
+    const startInDays = req.body?.startInDays === undefined || req.body.startInDays === null || req.body.startInDays === '' ? 0 : Number(req.body.startInDays);
+    if (!Number.isInteger(startInDays) || startInDays < 0 || startInDays > 90) return res.status(400).json({ error: 'Fillimi duhet të jetë brenda 0–90 ditëve.' });
 
     try {
       const ref = deps.db().collection('forumPosts').doc(id);
       const snap = await ref.get();
       if (!snap.exists) return res.status(404).json({ error: 'Postimi nuk u gjet.' });
+      const startMs = Date.now() + startInDays * 86_400_000;
       await ref.update({
         isAd: true,
         adLink: link ? String(link) : null,
-        promotedUntil: Timestamp.fromMillis(Date.now() + days * 86_400_000),
+        adStartAt: startInDays > 0 ? Timestamp.fromMillis(startMs) : FieldValue.delete(),
+        adMaxClicks: maxClicks ?? FieldValue.delete(),
+        promotedUntil: Timestamp.fromMillis(startMs + days * 86_400_000),
         promotedBy: req.user?.uid ?? null,
       });
       deps.audit('debate.post.promote', req, { id, days });

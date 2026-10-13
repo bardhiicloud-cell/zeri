@@ -240,6 +240,21 @@ describe('forumReelReports', () => {
   });
 });
 
+describe('forumReports (comments, accounts, ads)', () => {
+  const doc0 = { kind: 'comment', targetId: 'c1', reporterId: B, reason: 'abuse', status: 'open', createdAt: new Date() };
+
+  it('cannot be created from a client, even for yourself; only staff read and close them', async () => {
+    await assertFails(setDoc(doc(citizen(B), 'forumReports', `comment_c1_${B}`), { ...doc0, createdAt: serverTimestamp() }));
+    await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'forumReports', 'r1'), doc0); });
+    await assertFails(getDoc(doc(citizen(B), 'forumReports', 'r1')));
+    await assertSucceeds(getDoc(doc(staff(A), 'forumReports', 'r1')));
+    await assertSucceeds(updateDoc(doc(staff(A), 'forumReports', 'r1'), { status: 'closed', resolvedBy: A }));
+    await assertFails(updateDoc(doc(staff(A), 'forumReports', 'r1'), { reason: 'other' }));
+    await assertFails(updateDoc(doc(citizen(B), 'forumReports', 'r1'), { status: 'closed' }));
+    await assertFails(deleteDoc(doc(staff(A), 'forumReports', 'r1')));
+  });
+});
+
 describe('forumReels edit, moderation and delete', () => {
   it('lets the author edit the caption only', async () => {
     await assertSucceeds(updateDoc(doc(citizen(A), 'forumReels', 'visible'), { caption: 'E re', hashtags: [] }));

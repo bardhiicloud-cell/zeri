@@ -21,7 +21,8 @@
     "test": "vitest run tests/server tests/lib",
     "test:rules": "firebase emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-zeri-rules \"vitest run --no-file-parallelism tests/rules tests/emulator\"",
     "claims:sync": "tsx scripts/sync-claims.ts",
-    "mail:test": "tsx scripts/test-mail.ts"
+    "mail:test": "tsx scripts/test-mail.ts",
+    "matrix:write": "tsx scripts/write-permissions-matrix.ts"
   },
   "dependencies": {
     "@google-cloud/translate": "^10.0.1",
@@ -81,6 +82,7 @@
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.28.0",
     "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "firebase-tools": "^15.32.1",
     "jsdom": "^30.1.1",
     "sharp": "^0.35.4",

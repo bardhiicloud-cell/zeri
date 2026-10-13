@@ -52,6 +52,12 @@ import { registerPhotoEditRoutes } from './server/reportPhotoEdit';
 import { registerMunicipalityDeskRoutes } from './server/municipalityDesk';
 import { registerInstitutionMailRoutes } from './server/institutionMail';
 import { registerTeamOverviewRoutes } from './server/teamOverview';
+import { registerTransparencyRoutes } from './server/transparency';
+import { registerReportCaseRoutes } from './server/reportCase';
+import { registerTrackLookupRoutes } from './server/trackLookup';
+import { registerPublicReportRoutes } from './server/publicReports';
+import { registerContactRoutes } from './server/contactMessages';
+import { registerPublicSubmissionRoutes } from './server/publicSubmissions';
 import { createMailerFromEnv } from './server/mailer';
 import { cheapestPlanWith, hasFeature as planHasFeature, normalizePlan as normalizeMunicipalityPlan } from './server/municipalityPlans';
 import { registerUserModerationRoutes } from './server/userModeration';
@@ -64,6 +70,9 @@ import { registerAdRoutes } from './server/adTracking';
 import { registerForumReelRoutes } from './server/forumReels';
 import { registerForumFeedRoutes } from './server/forumFeed';
 import { registerForumPeopleRoutes } from './server/forumPeople';
+import { registerForumReportRoutes } from './server/forumReports';
+import { publishDueScheduled, registerScheduledPostRoutes } from './server/scheduledPosts';
+import { registerStoryRoutes } from './server/storyViews';
 import { registerPaymentRoutes } from './server/paymentRoutes';
 import { registerDebateAdminRoutes } from './server/debateAdmin';
 import { buildRoleClaims } from './server/roleClaims';
@@ -2387,6 +2396,19 @@ registerReportAssignmentRoutes(app, { requireAuth, db, authAdmin, actingUser, au
 registerPhotoEditRoutes(app, { requireAuth, db, bucket: storageBucket, actingUser, audit });
 registerMunicipalityDeskRoutes(app, { requireAuth, db, authAdmin, actingUser, audit, logEditorialEvent });
 registerTeamOverviewRoutes(app, { requireAuth, db, actingUser });
+registerTransparencyRoutes(app, { db });
+registerReportCaseRoutes(app, { requireAuth, db, actingUser, audit });
+registerTrackLookupRoutes(app, { db });
+registerPublicReportRoutes(app, { db });
+registerContactRoutes(app, { db });
+registerPublicSubmissionRoutes(app, {
+  db,
+  optionalUid: async (req) => {
+    const m = /^Bearer\s+(.+)$/i.exec(req.headers.authorization ?? '');
+    if (!m) return null;
+    try { return (await authAdmin().verifyIdToken(m[1])).uid; } catch { return null; }
+  },
+});
 const institutionMailer = createMailerFromEnv();
 registerInstitutionMailRoutes(app, {
   requireAuth, db, mailer: () => institutionMailer, actingUser, audit,
@@ -2399,6 +2421,9 @@ registerForumPostRoutes(app, { requireAuth, db });
 registerAdRoutes(app, { db });
 registerForumFeedRoutes(app, { requireAuth, db });
 registerForumPeopleRoutes(app, { requireAuth, db });
+registerForumReportRoutes(app, { requireAuth, db });
+registerScheduledPostRoutes(app, { requireAuth, db });
+registerStoryRoutes(app, { requireAuth, db });
 registerForumReelRoutes(app, {
   requireAuth,
   db,
@@ -3081,6 +3106,12 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
       console.log(`[${workerLabel}] Porti ${requestedPort} ishte i zënë; u zhvendos në ${PORT}.`);
     }
   });
+
+  // Scheduled posts go live within a minute of their time. Overlapping workers are safe: each
+  // post is published in one transaction. (scripts/publish-scheduled-posts.ts does the same from a scheduler.)
+  if (!isPrototypeSandbox) {
+    setInterval(() => { void publishDueScheduled(db()).catch((e) => console.warn('[SCHEDULE] run failed:', e?.message)); }, 60_000).unref();
+  }
 
   // Keep sockets from outliving a rolling deploy, so Cloud Run can drain the
   // worker instead of resetting in-flight requests.

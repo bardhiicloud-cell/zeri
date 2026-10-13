@@ -81,6 +81,11 @@ describe('users — privileged fields are not self-assignable', () => {
     await assertSucceeds(setDoc(doc(asUser('uidNEW'), 'users', 'uidNEW'), { id: 'uidNEW', name: 'N' }));
   });
 
+  it('denies a citizen writing followingIds directly: follows go through the server', async () => {
+    await assertFails(updateDoc(doc(asUser(A), 'users', A), { followingIds: [B, C] }));
+    await assertSucceeds(updateDoc(doc(asUser(A), 'users', A), { name: 'Arta Re' }));
+  });
+
   it("denies one citizen writing another's profile", async () => {
     await assertFails(updateDoc(doc(asUser(C), 'users', A), { name: 'hijack' }));
   });
@@ -411,7 +416,7 @@ describe('forumPosts — everything after creation is server-owned', () => {
   it('refuses pre-seeded engagement, delete/edit state, counters, and the author e-mail', async () => {
     for (const bad of [
       { likes: ['x', 'y'] }, { reposts: ['x'] }, { comments: [{ id: '1' }] }, { reactions: { love: ['x'] } },
-      { deletedAt: new Date() }, { editedAt: new Date() }, { viewCount: 9999 }, { adClicks: 500 }, { authorEmail: 'me@example.org' },
+      { deletedAt: new Date() }, { editedAt: new Date() }, { viewCount: 9999 }, { adClicks: 500 }, { authorEmail: 'me@example.org' }, { commentAuthorIds: [B] },
       { poll: { question: 'q', totalVotes: 40, options: [] } }, { authorId: A },
     ]) {
       await assertFails(addDoc(collection(asUser(B), 'forumPosts'), newPost(bad)));

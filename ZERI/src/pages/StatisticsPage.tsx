@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { AuraHero } from '../components/aura/Aura';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -502,27 +503,15 @@ export default function StatisticsPage() {
     <div className="page-shell w-full bg-(--color-page) dark:bg-(--color-brand-dark) min-h-screen pb-20 font-sans text-[var(--color-text)] dark:text-white dark:text-slate-100 transition-colors">
       <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 md:py-10 lg:px-8">
 
-        {/* Executive Header & Filter Toolbar */}
-        <div className="relative mb-7 overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/90 p-5 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 sm:p-8">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
-
-          <div className="relative flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/50 bg-cyan-50 px-3 py-1.5 text-cyan-900 dark:border-cyan-300/15 dark:bg-cyan-300/10 dark:text-cyan-200">
-                <Activity className="h-3.5 w-3.5" aria-hidden="true" />
-                <span className="text-[10px] font-black uppercase tracking-[0.16em]">{dt(`Analitika e pjesëmarrjes qytetare`)}</span>
-              </div>
-              <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">{dt(`Statistikat & Analitika`)}
-              </h1>
-              <p className="max-w-3xl text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300">{dt(`Një pasqyrë e matshme e raportimeve, zgjidhjeve dhe nevojave sipas komunës. Çdo grafik ndjek filtrat e zgjedhur dhe bazohet në raportimet e ngarkuara.`)}
-              </p>
-            </div>
-
-          </div>
-
+        <div className="mb-6">
+          <AuraHero tone="teal" eyebrow={dt(`Analitika e pjesëmarrjes qytetare`)} icon={Activity}
+            title={dt(`Statistikat & Analitika`)}
+            subtitle={dt(`Një pasqyrë e matshme e raportimeve, zgjidhjeve dhe nevojave sipas komunës. Çdo shifër tregon çfarë numërohet dhe në cilin filtër.`)} />
+        </div>
+        {/* Filter toolbar */}
+        <div className="au-tile relative mb-7 p-4 sm:p-5">
           {/* Interactive Filters Bar */}
-          <div className="relative mt-8 grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-6 dark:border-white/10 sm:grid-cols-3">
+          <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="relative">
               <label className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Filtro Komunën`)}</label>
               <div className="relative">
@@ -1135,7 +1124,7 @@ export default function StatisticsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 font-bold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">
-                      {stat.avgDays}{dt(`ditë`)}
+                      {stat.avgDays === 'N/A' ? 'N/A' : `${stat.avgDays}${dt(' ditë')}`}
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-[var(--color-text-muted)]">

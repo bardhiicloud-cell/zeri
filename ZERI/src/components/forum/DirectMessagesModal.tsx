@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Bell, BellOff, Flag, Trash2 } from 'lucide-react';
+import { ReportTargetSheet } from './ReportTargetSheet';
 import { dt } from '@/src/lib/dt';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,7 +14,7 @@ import { db, uploadFileToStorage } from '../../lib/firebase';
 import { useStore } from '../../lib/store';
 import toast from 'react-hot-toast';
 import {
-  DmApiError, blockUser, composerState, markDmRead, respondToDmRequest, sendDm, setDmPrivacy, unblockUser,
+  DmApiError, blockUser, composerState, setConversationPrefsApi, markDmRead, respondToDmRequest, sendDm, setDmPrivacy, unblockUser,
   viewOfConversation, type DmPrivacy,
 } from '../../lib/directMessagesApi';
 
@@ -38,6 +40,8 @@ interface Conversation {
   status?: string;
   requestedBy?: string;
   requestMessages?: number;
+  mutedBy?: string[];
+  hiddenBy?: string[];
 }
 
 interface DirectMessagesModalProps {
@@ -65,6 +69,7 @@ export function DirectMessagesModal({
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
   const [privacy, setPrivacy] = useState<DmPrivacy>('everyone');
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [reportUserId, setReportUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Helper to generate consistent conversation ID for 2 users
@@ -242,6 +247,15 @@ export function DirectMessagesModal({
     if (block && !window.confirm(`${dt('Të bllokohet')} ${name}? ${dt('Nuk do të mund t’ju shkruajë dhe ndjekja mes jush hiqet.')}`)) return;
     return runAction('block', () => (block ? blockUser(userId) : unblockUser(userId)),
       block ? dt('Përdoruesi u bllokua.') : dt('Përdoruesi u zhbllokua.'));
+  };
+
+  const toggleMute = (convId: string, muted: boolean) =>
+    runAction('mute', () => setConversationPrefsApi(convId, { muted }),
+      muted ? dt('Njoftimet e kësaj bisede u heshtën.') : dt('Njoftimet u rivendosën.'));
+
+  const deleteConversation = (convId: string) => {
+    if (!window.confirm(dt('Ta heq këtë bisedë nga lista jote? Personi tjetër e ruan atë, dhe ajo kthehet nëse shkruani përsëri.'))) return;
+    void runAction('hide', async () => { await setConversationPrefsApi(convId, { hidden: true }); setActiveConvId(null); }, dt('Biseda u hoq nga lista.'));
   };
 
   const changePrivacy = (next: DmPrivacy) => {
@@ -463,6 +477,26 @@ export function DirectMessagesModal({
                         </span>
                       </div>
                     </div>
+                    {activeConv && (
+                      <>
+                        <button type="button" onClick={() => void toggleMute(activeConv.id, !(activeConv.mutedBy ?? []).includes(me))} disabled={busyAction === 'mute'}
+                          aria-label={(activeConv.mutedBy ?? []).includes(me) ? dt('Hiq heshtimin') : dt('Hesht njoftimet')}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:bg-slate-800">
+                          {(activeConv.mutedBy ?? []).includes(me) ? <BellOff className="w-3.5 h-3.5" aria-hidden="true" /> : <Bell className="w-3.5 h-3.5" aria-hidden="true" />}
+                          {(activeConv.mutedBy ?? []).includes(me) ? dt('Heshtur') : dt('Hesht')}
+                        </button>
+                        <button type="button" onClick={() => deleteConversation(activeConv.id)} disabled={busyAction === 'hide'} aria-label={dt('Fshi bisedën')}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:bg-slate-800">
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> {dt('Fshi')}
+                        </button>
+                      </>
+                    )}
+                    {otherUserKey && (
+                      <button type="button" onClick={() => setReportUserId(otherUserKey)} aria-label={dt('Raporto përdoruesin')}
+                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:bg-slate-800">
+                        <Flag className="w-3.5 h-3.5" aria-hidden="true" /> {dt('Raporto')}
+                      </button>
+                    )}
                     {otherUserKey && (
                       <button type="button" onClick={() => void toggleBlock(otherUserKey, otherUserData.name || 'përdoruesin', !blockedByMe)}
                         disabled={busyAction === 'block'}
@@ -606,6 +640,7 @@ export function DirectMessagesModal({
             </div>
           </div>
         </motion.div>
+        {reportUserId && <ReportTargetSheet target={{ kind: 'user', targetId: reportUserId }} onClose={() => setReportUserId(null)} />}
       </div>
     </AnimatePresence>
   );

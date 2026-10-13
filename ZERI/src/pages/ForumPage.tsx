@@ -22,6 +22,13 @@ import {
   serverTimestamp, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc , where, getDocs
 } from 'firebase/firestore';
 import { PostFormatter } from "../components/PostFormatter";
+import { HashtagSheet } from '../components/forum/HashtagSheet';
+import { adVisibleInFeed } from '../lib/adCampaign';
+import { Clock as ClockIcon } from 'lucide-react';
+import { PostGallery } from '../components/forum/PostGallery';
+import { ScheduledPostsSheet } from '../components/forum/ScheduledPostsSheet';
+import { localInputToMs, msToLocalInput, schedulePostApi } from '../lib/forumScheduleApi';
+import { clearDraft, loadDraft, saveDraft } from '../lib/postDraft';
 import { LegalModal } from "../components/LegalModal";
 import { GuestGuard } from '../components/GuestGuard';
 import ForumProfileTab from '../components/forum/ForumProfileTab';
@@ -34,6 +41,7 @@ import { PostAnalyticsSheet } from '../components/forum/PostAnalyticsSheet';
 import { AccountInsightsSheet } from '../components/forum/AccountInsightsSheet';
 import { PostOwnerMenu } from '../components/forum/PostOwnerMenu';
 import { LoadMore } from '../components/forum/LoadMore';
+import { fetchPeople, followApi, unfollowApi } from '../lib/forumPeopleApi';
 import { useForumFeed } from '../lib/useForumFeed';
 import { reelIdFromSearch } from '../lib/reelsApi';
 import { PostEditSheet } from '../components/forum/PostEditSheet';
@@ -44,9 +52,10 @@ import {
 } from '../lib/forumPostsApi';
 import { PostViewSensor } from '../components/forum/PostViewSensor';
 import { ReportPostSheet } from '../components/forum/ReportPostSheet';
+import { ReportTargetSheet, type ReportTarget } from '../components/forum/ReportTargetSheet';
 import { useVerifiedIds } from '../lib/forumApi';
 import { rankForYou, hotScore as rankHotScore, trendingScore as rankTrendingScore } from '../lib/forumRanking';
-import { computeTrends, extractMentions, toHandle } from '../lib/forumTrends';
+import { computeTrends, extractHashtags, extractMentions, toHandle } from '../lib/forumTrends';
 import { audienceAllows, canViewReels, isBusiness, prefsOf, wantsNotification } from '../lib/forumPrefs';
 import { AdRequestModal } from '../components/AdRequestModal.tsx';
 import { ShareSheet } from '../components/ShareSheet.tsx';
@@ -175,7 +184,11 @@ export default function ForumPage() {
     followingKey: (((currentUser as any)?.followingIds as string[] | undefined) ?? []).join(','),
   });
   const [newPostContent, setNewPostContent] = useState('');
-  const [newPostImage, setNewPostImage] = useState<File | null>(null);
+  // Up to four photos per post.
+  const [newPostImages, setNewPostImages] = useState<File[]>([]);
+  // `datetime-local` value; empty means publish now.
+  const [scheduleAt, setScheduleAt] = useState('');
+  const [scheduledSheetOpen, setScheduledSheetOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   // Active Filter States
@@ -320,6 +333,7 @@ export default function ForumPage() {
         authorRole: currentUser.role,
         authorBadge: currentUser.points > 100 ? 'Përfaqësues Lagjeje' : 'Qytetar',
         content: quoteText,
+        hashtags: extractHashtags(quoteText).slice(0, 10),
         category: quoteTargetPost.category || 'all',
         neighborhood: selectedNeighborhood,
         quotedPost: {
@@ -387,12 +401,15 @@ export default function ForumPage() {
     if (!currentUser || currentUser.role === 'guest') return;
     let cancelled = false;
     let lastLoad = 0;
+    // The server computes counts and the follow relationships (a citizen cannot read other
+    // profiles directly, which left this list empty). Each person carries `followers`, the
+    // public forum preferences, and `followingIds: [me]` only when they follow me.
     const load = async () => {
-      if (Date.now() - lastLoad < 5 * 60_000) return;
+      if (Date.now() - lastLoad < 60_000) return;
       lastLoad = Date.now();
       try {
-        const snap = await getDocs(query(collection(db, 'users'), limit(500)));
-        if (!cancelled) setAllForumUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const { people } = await fetchPeople();
+        if (!cancelled) setAllForumUsers(people);
       } catch {
         if (!cancelled) setAllForumUsers([]);
       }
@@ -408,9 +425,12 @@ export default function ForumPage() {
     return Array.isArray(profile?.followingIds) ? profile.followingIds : [];
   }, [allForumUsers]);
 
-  const followerCountOf = React.useCallback((userId: string): number =>
-    allForumUsers.filter(u => Array.isArray(u.followingIds) && u.followingIds.includes(userId)).length,
-  [allForumUsers]);
+  const followerCountOf = React.useCallback((userId: string): number => {
+    const person = allForumUsers.find(u => u.id === userId);
+    // The server sends the real count; the fallback only serves lists built in the browser.
+    if (typeof person?.followers === 'number') return person.followers;
+    return allForumUsers.filter(u => Array.isArray(u.followingIds) && u.followingIds.includes(userId)).length;
+  }, [allForumUsers]);
 
   /*
    * Debati Publik preferences of other citizens (users/{id}.forumPrefs). Used on
@@ -466,25 +486,22 @@ export default function ForumPage() {
     const updated = isFollowing ? followedUserIds.filter(id => id !== targetId) : [...followedUserIds, targetId];
     if (currentUser && currentUser.role !== 'guest' && auth.currentUser) {
       try {
-        await updateDoc(doc(db, 'users', currentUser.id), { followingIds: updated });
+        // The server writes the follow (blocks respected, counters consistent) and notifies once.
+        await (isFollowing ? unfollowApi(targetId) : followApi(targetId));
         useStore.getState().setCurrentUser({ ...currentUser, followingIds: updated } as any);
-        // Keep follower counts right without a live listener on all users.
-        setAllForumUsers(prev => prev.some(u => u.id === currentUser.id)
-          ? prev.map(u => (u.id === currentUser.id ? { ...u, followingIds: updated } : u))
-          : [...prev, { id: currentUser.id, followingIds: updated }]);
+        setAllForumUsers(prev => prev.map(p => p.id === targetId
+          ? { ...p, followers: Math.max(0, (typeof p.followers === 'number' ? p.followers : 0) + (isFollowing ? -1 : 1)) }
+          : p));
       } catch (error) {
         console.error('Following nuk u ruajt:', error);
-        toast.error('Ndjekja nuk u ruajt. Provoni përsëri.');
+        toast.error(error instanceof Error ? error.message : 'Ndjekja nuk u ruajt. Provoni përsëri.');
         return;
       }
     }
     setFollowedUserIds(updated);
     try { localStorage.setItem('followed_user_ids', JSON.stringify(updated)); } catch { /* Storage may be unavailable. */ }
     if (isFollowing) toast(`Ndalove ndjekjen e ${name || 'përdoruesit'}`);
-    else {
-      toast.success(`Tani po ndjek ${name || 'përdoruesin'}.`);
-      if (currentUser && currentUser.role !== 'guest' && targetId !== currentUser.id) void notifyFollowApi(targetId);
-    }
+    else toast.success(`Tani po ndjek ${name || 'përdoruesin'}.`);
   };
 
   const handleToggleSavedPost = (postId: string) => {
@@ -666,6 +683,7 @@ export default function ForumPage() {
   const [showVerification, setShowVerification] = useState(false);
   const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   // Back from Paysera: say what happened, then clean the address so a refresh does not repeat it.
   useEffect(() => {
@@ -681,6 +699,7 @@ export default function ForumPage() {
   }, []);
   const verifiedIds = useVerifiedIds();
   const [searchQuery, setSearchQuery] = useState('');
+  const [hashtagPage, setHashtagPage] = useState<string | null>(null);
   // Closed on load: a guest can read, search and filter first; the prompt opens only when they try to act.
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const shouldGateForum = !currentUser || currentUser.role === 'guest';
@@ -691,7 +710,34 @@ export default function ForumPage() {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files?.[0]) setNewPostImage(e.target.files[0]); };
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length) {
+      if (newPostImages.length + picked.length > 4) toast(dt('Mund të shtoni deri në 4 foto.'));
+      setNewPostImages(prev => [...prev, ...picked].slice(0, 4));
+    }
+    e.target.value = '';
+  };
+
+  // The post being written survives a refresh: text, category and audience are kept per account.
+  const draftRestored = useRef(false);
+  useEffect(() => {
+    if (draftRestored.current || !currentUser || currentUser.role === 'guest') return;
+    draftRestored.current = true;
+    const draft = loadDraft(currentUser.id);
+    if (draft && !newPostContent) {
+      setNewPostContent(draft.content);
+      setSelectedCategory(draft.category);
+      setFollowersOnly(draft.followersOnly);
+      toast(dt('Skica juaj u rikthye.'), { icon: '📝' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+  useEffect(() => {
+    if (!draftRestored.current || !currentUser || currentUser.role === 'guest') return;
+    const timer = setTimeout(() => saveDraft({ uid: currentUser.id, content: newPostContent, category: selectedCategory, followersOnly }), 600);
+    return () => clearTimeout(timer);
+  }, [newPostContent, selectedCategory, followersOnly, currentUser?.id]);
 
 
   const getCitizenBadge = (post: Post) => {
@@ -713,15 +759,38 @@ export default function ForumPage() {
       setShowAuthPrompt(true);
       return;
     }
-    if (!newPostContent.trim() && !newPostImage && !pollQuestion.trim()) return;
+    if (!newPostContent.trim() && newPostImages.length === 0 && !pollQuestion.trim()) return;
+
+    const scheduledMs = scheduleAt ? localInputToMs(scheduleAt) : NaN;
+    if (scheduleAt) {
+      if (!newPostContent.trim()) { toast.error(dt('Shkruani tekstin e postimit për ta planifikuar.')); return; }
+      if (showPollCreator && pollQuestion.trim()) { toast.error(dt('Sondazhi nuk mund të planifikohet. Postojeni menjëherë.')); return; }
+      if (!Number.isFinite(scheduledMs) || scheduledMs - Date.now() < 5 * 60_000) { toast.error(dt('Zgjidhni një kohë të paktën 5 minuta përpara.')); return; }
+    }
 
     setIsSubmitting(true);
     let imageUrl = '';
+    const imageUrls: string[] = [];
 
     try {
-      if (newPostImage) {
-        const url = await uploadFileToStorage(newPostImage, 'reports', { scope: 'forum' });
-        if (url) imageUrl = url;
+      for (const file of newPostImages) {
+        const url = await uploadFileToStorage(file, 'reports', { scope: 'forum' });
+        if (url) imageUrls.push(url);
+      }
+      imageUrl = imageUrls[0] ?? '';
+
+      if (scheduleAt) {
+        await schedulePostApi({
+          content: newPostContent, category: selectedCategory, neighborhood: selectedNeighborhood,
+          imageUrls, followersOnly, publishAtMs: scheduledMs,
+        });
+        clearDraft();
+        setComposeOpen(false);
+        setNewPostContent('');
+        setNewPostImages([]);
+        setScheduleAt('');
+        toast.success(`${dt('Postimi u planifikua për')} ${new Date(scheduledMs).toLocaleString('sq-AL', { dateStyle: 'medium', timeStyle: 'short' })}.`);
+        return;
       }
 
       const isAdsAdmin = currentUser.role === 'adsadmin' || currentUser.email === 'reklama@ks.com' || currentUser.email === 'reklama@kosova.com';
@@ -751,10 +820,12 @@ export default function ForumPage() {
         authorRole: currentUser.role,
         authorBadge: currentUser.points > 100 ? 'Përfaqësues Lagjeje' : 'Qytetar i Verifikuar',
         content: newPostContent,
+        hashtags: extractHashtags(newPostContent).slice(0, 10),
         category: selectedCategory,
         neighborhood: selectedNeighborhood,
         poll: pollData,
         imageUrl,
+        imageUrls,
         /*
          * Post visibility. `followersOnly` hides the post from anyone who does
          * not follow the author — the rule the feed and profile enforce at read
@@ -773,8 +844,10 @@ export default function ForumPage() {
       void notifyPublishedApi(created.id, resolveMentionUids(newPostContent));
       setComposeOpen(false);
 
+      clearDraft();
       setNewPostContent('');
-      setNewPostImage(null);
+      setNewPostImages([]);
+      setScheduleAt('');
       setPollQuestion('');
       setShowPollCreator(false);
       setIsAdPost(false);
@@ -1022,6 +1095,8 @@ export default function ForumPage() {
   const displayPosts = React.useMemo(() => {
     let result = posts.filter(p => {
       if (p.isHidden && !isModerator && !isAdsAdmin) return false;
+      // Sponsored posts leave the feed when the campaign ends, has not started or hit its click cap.
+      if (!adVisibleInFeed(p as any, { id: currentUser?.id, isStaff: isStaffUser })) return false;
       /*
        * Followers-only posts. A post the author restricted is visible to the
        * author and to people the author's followers list contains — which, per
@@ -1534,7 +1609,12 @@ export default function ForumPage() {
                           <button onClick={() => fileInputRef.current?.click()} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-full transition-colors">
                             <ImageIcon className="w-5 h-5" />
                           </button>
-                          <input type="file" accept="image/*,video/*" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+                          <input type="file" accept="image/*,video/*" multiple className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+                          <button type="button" onClick={() => setScheduleAt(v => (v ? '' : msToLocalInput(Date.now() + 60 * 60_000)))} aria-pressed={!!scheduleAt}
+                            title={dt('Planifiko postimin')} aria-label={dt('Planifiko postimin')}
+                            className={`p-2 rounded-full transition-colors ${scheduleAt ? 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800'}`}>
+                            <ClockIcon className="w-5 h-5" aria-hidden="true" />
+                          </button>
 
                           <button onClick={() => setShowPollCreator(!showPollCreator)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-full transition-colors" title="Krijo Sondazh">
                             <SlidersHorizontal className="w-5 h-5" />
@@ -1577,10 +1657,10 @@ export default function ForumPage() {
                           </button>
                           <button
                           onClick={handleCreatePost}
-                          disabled={isSubmitting || (!newPostContent.trim() && !newPostImage && !pollQuestion)}
+                          disabled={isSubmitting || (!newPostContent.trim() && newPostImages.length === 0 && !pollQuestion)}
                           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-black rounded-full transition-all shadow-md shadow-blue-600/20 active:scale-95"
                         >
-                          {dt(`Posto`)}
+                          {scheduleAt ? dt('Planifiko') : dt(`Posto`)}
                         </button>
                         </div>
                       </div>
@@ -1595,10 +1675,24 @@ export default function ForumPage() {
                       </div>
                     )}
                     {/* Selected File Preview */}
-                    {newPostImage && (
-                      <div className="mt-3 relative rounded-[1rem] overflow-hidden bg-slate-100 dark:bg-zinc-950 border border-slate-200/60 dark:border-slate-200/60 dark:border-zinc-800 p-1">
-                         <span className="text-xs text-emerald-400 px-2">{dt(`Media e zgjedhur:`)} {newPostImage.name}</span>
-                         <button onClick={() => setNewPostImage(null)} className="absolute top-1 right-1 p-1 bg-[var(--color-secondary)]/50 rounded-full"><X className="w-4 h-4 text-[var(--color-text)] dark:text-white" /></button>
+                    {newPostImages.length > 0 && (
+                      <ul className="mt-3 flex flex-wrap gap-2" aria-label={dt('Media e zgjedhur')}>
+                        {newPostImages.map((file, index) => (
+                          <li key={`${file.name}-${index}`} className="relative flex items-center gap-2 rounded-xl border border-slate-200/60 bg-slate-100 py-1 pl-2 pr-8 text-xs text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-slate-200">
+                            <span className="max-w-[10rem] truncate">{file.name}</span>
+                            <button type="button" onClick={() => setNewPostImages(prev => prev.filter((_, i) => i !== index))} aria-label={`${dt('Hiq')} ${file.name}`} className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-slate-200 dark:hover:bg-zinc-800"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {scheduleAt && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 p-2 text-xs text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100">
+                        <label className="flex items-center gap-2 font-bold">
+                          {dt('Publiko më')}
+                          <input type="datetime-local" value={scheduleAt} min={msToLocalInput(Date.now() + 5 * 60_000)} onChange={(e) => setScheduleAt(e.target.value)}
+                            className="rounded-lg border border-violet-300 bg-white px-2 py-1 text-sm text-slate-900 dark:border-violet-500/40 dark:bg-zinc-900 dark:text-white" />
+                        </label>
+                        <button type="button" onClick={() => setScheduledSheetOpen(true)} className="ml-auto font-bold underline underline-offset-2">{dt('Të planifikuarat')}</button>
                       </div>
                     )}
                   </div>
@@ -1752,7 +1846,7 @@ export default function ForumPage() {
                       onClick={() => setProfileModalData({isOpen: true, authorId: post.authorId, authorName: post.authorName, authorAvatar: post.authorAvatar})}
                     />
                     <div className="flex-1 min-w-0">
-                      {post.isAd && <SponsoredPostBar postId={post.id} adLink={post.adLink} />}
+                      {post.isAd && <SponsoredPostBar postId={post.id} adLink={post.adLink} onReport={currentUser && currentUser.role !== 'guest' ? () => setReportTarget({ kind: 'ad', targetId: post.id, postId: post.id }) : undefined} />}
                       {/* Header Row */}
                       <div className="flex items-center gap-1.5 text-[15px] mb-0.5 flex-wrap">
                         <span
@@ -1795,15 +1889,13 @@ export default function ForumPage() {
 
                       {/* Content */}
                       <div className="text-[15px] text-slate-800 dark:text-slate-100 whitespace-pre-wrap leading-relaxed mb-3 break-words mt-1">
-                        <PostFormatter content={post.content} />
+                        <PostFormatter content={post.content} onHashtagClick={(tag) => setHashtagPage(tag.replace(/^#/, '').toLowerCase())} />
                       </div>
 
                       {post.editedAt && <p className="-mt-2 mb-2 text-[11px] text-slate-400">{dt('i redaktuar')}</p>}
                       {/* Media */}
-                      {post.imageUrl && (
-                        <div className="rounded-[1.25rem] overflow-hidden border border-slate-200 dark:border-zinc-800 mb-3 bg-slate-50 dark:bg-zinc-800/40">
-                          <img src={post.imageUrl} className="w-full max-h-[500px] object-cover" alt="" />
-                        </div>
+                      {(post.imageUrl || (post as any).imageUrls?.length > 0) && (
+                        <PostGallery urls={Array.isArray((post as any).imageUrls) && (post as any).imageUrls.length > 0 ? (post as any).imageUrls : [post.imageUrl as string]} />
                       )}
 
                       {/* Poll */}
@@ -2025,6 +2117,16 @@ export default function ForumPage() {
                                             {dt('Fshi')}
                                           </button>
                                         )}
+                                        {currentUser && currentUser.role !== 'guest' && comment.authorId !== currentUser.id && (
+                                          <button
+                                            type="button"
+                                            className="hover:text-rose-600 transition-colors"
+                                            onClick={() => setReportTarget({ kind: 'comment', targetId: comment.id, postId: post.id })}
+                                            aria-label={dt('Raporto komentin')}
+                                          >
+                                            {dt('Raporto')}
+                                          </button>
+                                        )}
                                       </div>
 
                                       {/* Replies List */}
@@ -2047,6 +2149,16 @@ export default function ForumPage() {
                                                     aria-label={dt('Fshi përgjigjen')}
                                                   >
                                                     {dt('Fshi')}
+                                                  </button>
+                                                )}
+                                                {currentUser && currentUser.role !== 'guest' && reply.authorId !== currentUser.id && (
+                                                  <button
+                                                    type="button"
+                                                    className="mt-1 ml-3 text-[10px] font-bold text-slate-400 hover:text-rose-600"
+                                                    onClick={() => setReportTarget({ kind: 'comment', targetId: reply.id, postId: post.id })}
+                                                    aria-label={dt('Raporto përgjigjen')}
+                                                  >
+                                                    {dt('Raporto')}
                                                   </button>
                                                 )}
                                               </div>
@@ -2391,6 +2503,8 @@ export default function ForumPage() {
       />
 
       {reportingPostId && <ReportPostSheet postId={reportingPostId} onClose={() => setReportingPostId(null)} />}
+      {scheduledSheetOpen && <ScheduledPostsSheet onClose={() => setScheduledSheetOpen(false)} />}
+      {reportTarget && <ReportTargetSheet target={reportTarget} onClose={() => setReportTarget(null)} />}
       {showVerification && <VerificationModal onClose={() => setShowVerification(false)} />}
       {editingPost && (
         <PostEditSheet
@@ -2401,6 +2515,7 @@ export default function ForumPage() {
         />
       )}
       {trashOpen && <DeletedPostsSheet posts={trashPosts} onClose={() => setTrashOpen(false)} />}
+      {hashtagPage && <HashtagSheet tag={hashtagPage} localPosts={posts as any[]} onClose={() => setHashtagPage(null)} />}
       {insightsOpen && currentUser && isSignedInCitizen && (
         <AccountInsightsSheet
           authorId={currentUser.id}

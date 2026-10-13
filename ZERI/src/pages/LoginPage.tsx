@@ -287,16 +287,9 @@ export default function LoginPage() {
            <p className="text-lg text-slate-400 font-medium max-w-md leading-relaxed">{dt(`Platformë e pavarur qytetare për shërbim dhe zgjidhje të problemeve lokale.`)} <span className="text-white">{dt(`Nga qytetarët, për qytetarët.`)}</span>{dt(`Bëhu pjesë e ndryshimit dhe ngrije zërin tënd.`)}
            </p>
 
-           <div className="mt-16 flex gap-8">
-             <div className="flex flex-col gap-2">
-               <span className="text-3xl font-bold text-white">{dt(`400ms`)}</span>
-               <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">{dt(`Koha e Përgjigjes`)}</span>
-             </div>
-             <div className="flex flex-col gap-2">
-               <span className="text-3xl font-bold text-white">99.9%</span>
-               <span className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">{dt(`Uptime i Rrjetit`)}</span>
-             </div>
-           </div>
+           {/* The two "400ms" and "99.9% uptime" figures that stood here were not measured
+               anywhere. Nothing is shown in their place: a number on a login page is
+               either true and sourced, or it is not there. */}
         </div>
       </div>
 

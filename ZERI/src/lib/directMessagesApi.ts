@@ -45,6 +45,9 @@ export const markDmRead = (conversationId: string) =>
 export const setDmPrivacy = (privacy: DmPrivacy) =>
   call<{ privacy: DmPrivacy }>('/api/v1/forum/dm/privacy', 'PUT', { privacy });
 
+export const setConversationPrefsApi = (conversationId: string, prefs: { muted?: boolean; hidden?: boolean }) =>
+  call<{ muted: boolean; hidden: boolean }>(`/api/v1/forum/dm/${encodeURIComponent(conversationId)}/prefs`, 'PUT', prefs);
+
 export const blockUser = (uid: string) => call<{ ok: true }>(`/api/v1/forum/blocks/${encodeURIComponent(uid)}`, 'PUT');
 export const unblockUser = (uid: string) => call<{ ok: true }>(`/api/v1/forum/blocks/${encodeURIComponent(uid)}`, 'DELETE');
 
@@ -53,6 +56,8 @@ export interface ConversationLike {
   status?: string;
   requestedBy?: string;
   requestMessages?: number;
+  /** Accounts that removed the thread from their own list. */
+  hiddenBy?: string[];
 }
 
 export type ConversationView = 'inbox' | 'incoming_request' | 'outgoing_request' | 'hidden';
@@ -62,6 +67,7 @@ export type ConversationView = 'inbox' | 'incoming_request' | 'outgoing_request'
  * never sees a declined thread (and a requester never learns of it) is tested.
  */
 export function viewOfConversation(conv: ConversationLike, me: string): ConversationView {
+  if (Array.isArray(conv.hiddenBy) && conv.hiddenBy.includes(me)) return 'hidden';
   const status = conv.status ?? 'active';
   if (status === 'request') return conv.requestedBy === me ? 'outgoing_request' : 'incoming_request';
   if (status === 'declined') return conv.requestedBy === me ? 'inbox' : 'hidden';

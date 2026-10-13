@@ -35,7 +35,6 @@ const IdeaPage = React.lazy(() => import('./pages/IdeaPage'));
 const PartnersPage = React.lazy(() => import('./pages/PartnersPage'));
 const DebateAdminPage = React.lazy(() => import('./pages/DebateAdminPage'));
 const ProjektetPage = React.lazy(() => import('./pages/ProjektetPage'));
-const MunicipalityPanel = React.lazy(() => import('./pages/MunicipalityPanel.tsx'));
 const LajmePage = React.lazy(() => import('./pages/LajmePage.tsx'));
 const KontaktPage = React.lazy(() => import('./pages/KontaktPage'));
 const RrethProjektitPage = React.lazy(() => import('./pages/RrethProjektitPage'));
@@ -46,9 +45,11 @@ const AdminPanel = React.lazy(() => import('./pages/AdminPanel.tsx'));
 const ModerationCenterPage = React.lazy(() => import('./pages/ModerationCenterPage.tsx'));
 const MunicipalityPanelPage = React.lazy(() => import('./pages/MunicipalityPanelPage.tsx'));
 const MonitoringPage = React.lazy(() => import('./pages/MonitoringPage.tsx'));
+const TransparencyPage = React.lazy(() => import('./pages/TransparencyPage.tsx'));
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
 import { useStore, DEMO_REPORTS } from './lib/store';
+import { realContactOrEmpty } from './lib/placeholderContacts';
 import { PUBLIC_LIMITS, STAFF_LIMITS } from './lib/loadLimits';
 import { canAccessAdmin } from './lib/adminPermissions';
 import { LanguageProvider } from './lib/LanguageContext';
@@ -62,6 +63,7 @@ import { SeriousAnnouncementPopup } from './components/SeriousAnnouncementPopup'
 
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { canReadAllReports, startPublicReports } from './lib/publicReportsApi';
 import { doc, getDoc, collection, onSnapshot, query, orderBy, setDoc, getDocs, limit, where } from 'firebase/firestore';
 import { createGuestUser, getOrCreateGuestUser } from './lib/session';
 import { GA_CONFIG, hasAnalyticsConsent, onConsentChange } from './lib/consent';
@@ -140,6 +142,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/semundjet': 'Regjistri Shëndetësor',
   '/sondazhet': 'Sondazhet Publike',
   '/komunat': 'Komunat',
+  '/transparenca': 'Qendra e Transparencës',
   '/sherbimet': 'Shërbimet',
   '/Idea': 'Idetë Qytetare',
   '/projektet': 'Projektet Qytetare',
@@ -396,6 +399,10 @@ export default function App() {
     let publicNotifications: any[] = [];
     let personalNotifications: any[] = [];
     let unsubscribePersonalNotifications: (() => void) | undefined;
+    // Which source feeds the list of reports depends on who is signed in (see lib/publicReportsApi.ts).
+    let stopReports: () => void = () => undefined;
+    let reportsRun = 0;
+    let switchReportsSource: (user: import('firebase/auth').User | null) => Promise<void> = async () => undefined;
     let unsubscribeAuditLogs: (() => void) | undefined;
     const syncNotifications = () => {
       const currentNotifs = useStore.getState().notifications;
@@ -417,6 +424,7 @@ export default function App() {
       unsubscribePersonalNotifications = undefined;
       personalNotifications = [];
       syncNotifications();
+      void switchReportsSource(firebaseUser);
 
       if (firebaseUser) {
         const qPersonalNotifications = query(
@@ -513,8 +521,9 @@ export default function App() {
     // Reports Listener
     let prevReports: any[] = [];
     setReportsStatus('loading');
+    const startFirestoreReports = (): (() => void) => {
     const q = query(collection(db, "reports"), orderBy("createdAt", "desc"), limit(100)); // P2: Limit queries for scale
-    const unsubscribeReports = onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
         // Only a development build falls back to demo data; production renders
         // the real (empty) state rather than fake reports that look live.
@@ -607,6 +616,29 @@ export default function App() {
       setReports(import.meta.env.DEV ? DEMO_REPORTS : []);
       setReportsStatus('ready');
     });
+    };
+
+    // Everyone who may not read the whole collection gets the server's public feed
+    // plus their own reports; staff and the monitor keep the live collection.
+    const startPublicFeed = (uid: string | null): (() => void) => startPublicReports({
+      uid,
+      onReports: (items) => setReports(items),
+      onCursor: (cursor) => {
+        const api = useStore.getState();
+        api.setLastVisibleReport(cursor ? { publicFeedCursor: cursor } : null);
+        api.setHasMoreReports(Boolean(cursor));
+      },
+      onReady: () => setReportsStatus('ready'),
+      onError: (error) => console.error('Raportimet publike nuk u ngarkuan', error),
+    });
+    switchReportsSource = async (user) => {
+      const run = ++reportsRun;
+      stopReports();
+      stopReports = () => undefined;
+      const full = await canReadAllReports(user);
+      if (run !== reportsRun) return;
+      stopReports = full ? startFirestoreReports() : startPublicFeed(user?.uid ?? null);
+    };
 
     // Donation Causes Listener.
     //
@@ -669,11 +701,11 @@ export default function App() {
         const data = docSnap.data();
         useStore.getState().setSystemSettings({
           showReels: data.showReels !== false,
-          adContactPhone: data.adContactPhone || '+383 44 123 456',
-          adContactEmail: data.adContactEmail || 'reklama@qytetari.ks',
+          adContactPhone: realContactOrEmpty(data.adContactPhone),
+          adContactEmail: realContactOrEmpty(data.adContactEmail),
           adContactCompanyName: data.adContactCompanyName || 'Platforma Qytetare Ad-Tech',
           adSlogan: data.adSlogan || 'Zgjidhni hapësirën e përshtatshme dhe promovoni shërbimet tuaja në platformë.',
-          adWhatsApp: data.adWhatsApp || '+38344123456',
+          adWhatsApp: realContactOrEmpty(data.adWhatsApp),
         });
       }
     });
@@ -769,7 +801,8 @@ export default function App() {
     return () => {
       clearInterval(interval);
       unsubscribeAuth();
-      unsubscribeReports();
+      reportsRun += 1;
+      stopReports();
       unsubscribeDonations();
       unsubscribeAds();
       unsubscribeSettings();
@@ -821,6 +854,7 @@ export default function App() {
               <Route path="/raporto" element={<ReportIssue />} />
               <Route path="/harta" element={<MapPage />} />
               <Route path="/statistikat" element={<StatisticsPage />} />
+              <Route path="/transparenca" element={<TransparencyPage />} />
               <Route path="/shendetesia" element={<HealthRegistryPage />} />
               <Route path="/semundjet" element={<HealthRegistryPage />} />
               <Route path="/sondazhet" element={<PollsPage />} />
@@ -867,6 +901,7 @@ export default function App() {
               <Route path="raporto" element={<ReportIssue />} />
               <Route path="harta" element={<MapPage />} />
               <Route path="statistikat" element={<StatisticsPage />} />
+              <Route path="transparenca" element={<TransparencyPage />} />
               <Route path="shendetesia" element={<HealthRegistryPage />} />
               <Route path="semundjet" element={<HealthRegistryPage />} />
               <Route path="sondazhet" element={<PollsPage />} />
@@ -892,7 +927,7 @@ export default function App() {
               <Route path="kontakte" element={<KontaktPage />} />
               <Route path="rreth-nesh" element={<RrethProjektitPage />} />
             </Route>
-            <Route path="/komuna-panel" element={<MunicipalityPanel />} />
+            <Route path="/komuna-panel" element={<Navigate to="/komuna" replace />} />
             <Route path="/komuna" element={<MunicipalityPanelPage />} />
             <Route path="/debatwp" element={<DebateAdminPage />} />
             <Route path="/debatiwp" element={<DebateAdminPage />} />

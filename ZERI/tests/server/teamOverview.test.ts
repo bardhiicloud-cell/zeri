@@ -66,7 +66,11 @@ describe('mayViewTeam', () => {
     expect(mayViewTeam({ role: 'agent', permissions: ['monitorim'] })).toBe(true);
   });
 
+  it('is for the dispatcher, who needs the workload to distribute work', () => {
+    expect(mayViewTeam({ role: 'dispatcher', permissions: [] })).toBe(true);
+  });
+
   it('is not for plain agents, municipalities or citizens', () => {
-    for (const role of ['agent', 'municipality', 'citizen', '']) expect(mayViewTeam({ role, permissions: [] }), role).toBe(false);
+    for (const role of ['agent', 'responder', 'moderator', 'municipality', 'citizen', '']) expect(mayViewTeam({ role, permissions: [] }), role).toBe(false);
   });
 });

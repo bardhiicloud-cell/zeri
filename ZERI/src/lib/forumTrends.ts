@@ -15,7 +15,7 @@ export interface TrendItem {
   score: number;
 }
 
-const HASHTAG = /(^|[^\p{L}\p{N}_])#([\p{L}\p{N}_]{2,40})/gu;
+const HASHTAG = /(^|[^\p{L}\p{N}_/:.&=?#])#([\p{L}\p{N}_]{2,40})/gu;
 const MENTION = /(^|[^\p{L}\p{N}_])@([\p{L}\p{N}_.]{2,40})/gu;
 
 export function extractHashtags(text: string): string[] {

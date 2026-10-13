@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Check, ChevronLeft, ChevronRight, Crop, ImageOff, Loader2, MapPin, Trash2, Undo2, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Crop, HelpCircle, ImageOff, Loader2, MapPin, StickyNote, Trash2, Undo2, X, XCircle } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import type { Report } from '../../types';
@@ -8,6 +8,10 @@ import { statusMeta, TONE_CLASSES } from '../../lib/reportStatus';
 import { advanceAfterAction, clampPhotoIndex, reviewProgress, stepIndex } from '../../lib/reviewQueue';
 import { removeReportPhoto, restoreReportPhoto, uncropReportPhoto } from '../../lib/reportMediaApi';
 import PhotoCropper from './PhotoCropper';
+import CaseThreadPanel from './CaseThreadPanel';
+import HandoverHistoryPanel from './HandoverHistoryPanel';
+import { loadTeamOverview } from '../../lib/teamOverviewApi';
+import { addNote, escalateReport, loadCase, requestInfo, resolveEscalation, type CaseThread } from '../../lib/reportCaseApi';
 import { assignReport, claimReport, releaseReport, type Holder } from '../../lib/reportAssignmentApi';
 import { useStore } from '../../lib/store';
 import { useStaffDirectory } from '../../lib/useCitizenDirectory';
@@ -42,7 +46,7 @@ export interface ReviewModeProps {
   onClose: () => void;
 }
 
-type Ask = { kind: 'reject' | 'photo'; text: string } | null;
+type Ask = { kind: 'reject' | 'photo' | 'info' | 'note' | 'escalate' | 'handover'; text: string; assignUid?: string } | null;
 
 const when = (iso?: string) => {
   if (!iso) return '—';
@@ -66,18 +70,33 @@ export default function ReviewMode({
   const [zoom, setZoom] = useState(false);
   /** The photo being cropped, if the cropper is open. */
   const [cropping, setCropping] = useState<string | null>(null);
+  /** The conversation around the current record (questions to the citizen, answers, internal notes). */
+  const [thread, setThread] = useState<CaseThread | null>(null);
   /** Photos known to be cropped versions (from the record, or cropped in this session). */
   const [croppedNow, setCroppedNow] = useState<string[]>([]);
   const askRef = useRef<HTMLTextAreaElement>(null);
   const me = useStore(state => state.currentUser);
   const isOwner = me?.role === 'admin' || me?.role === 'superadmin';
+  const isDispatcher = me?.role === 'dispatcher';
+  /** Who may hand a report to someone else; the server decides again. */
+  const canAssign = isOwner || isDispatcher;
   /** Who holds each record, as the server last told us (overrides the list copy). */
   const [holders, setHolders] = useState<Record<string, Holder>>({});
   const [assignTo, setAssignTo] = useState('');
   const { staff } = useStaffDirectory();
+  // A dispatcher cannot read the user directory; the server's team view lists the agents they may hand work to.
+  const [teamAgents, setTeamAgents] = useState<Array<{ id: string; name: string; email: string; role: string }>>([]);
+  useEffect(() => {
+    if (!isDispatcher) return;
+    let alive = true;
+    loadTeamOverview().then(overview => {
+      if (alive) setTeamAgents(overview.agents.map(agent => ({ id: agent.uid, name: agent.name, email: agent.email, role: agent.role })));
+    }).catch(() => { if (alive) setTeamAgents([]); });
+    return () => { alive = false; };
+  }, [isDispatcher]);
   const agents = useMemo(
-    () => staff.filter(person => ['agent', 'responder', 'dispatcher', 'moderator', 'approver'].includes(String(person.role))),
-    [staff]
+    () => (isDispatcher ? teamAgents : staff).filter(person => ['agent', 'responder', 'dispatcher', 'moderator', 'approver'].includes(String(person.role))),
+    [staff, teamAgents, isDispatcher]
   );
 
   const current = ids[index] ? getReport(ids[index]) ?? queue[index] : undefined;
@@ -91,6 +110,12 @@ export default function ReviewMode({
   }, [outcomes]);
 
   useEffect(() => { setPhotoIndex(0); setZoom(false); setAsk(null); }, [index]);
+  const reloadThread = useCallback(async (id?: string) => {
+    const target = id ?? current?.id;
+    if (!target || !canEditPhotos) { setThread(null); return; }
+    try { setThread(await loadCase(target)); } catch { setThread(null); }
+  }, [current?.id, canEditPhotos]);
+  useEffect(() => { void reloadThread(); }, [reloadThread]);
   useEffect(() => { if (ask) askRef.current?.focus(); }, [ask]);
   useEffect(() => { setPhotoIndex(i => clampPhotoIndex(i, images.length)); }, [images.length]);
 
@@ -195,12 +220,56 @@ export default function ReviewMode({
     }
   };
 
+  /** Ask the citizen, leave a note, or escalate: the three things that are not a decision. */
+  const sendCase = async (kind: 'info' | 'note' | 'escalate', text: string) => {
+    if (!current) return;
+    setBusy(true);
+    try {
+      if (kind === 'info') await requestInfo(current.id, text);
+      else if (kind === 'note') await addNote(current.id, text);
+      else await escalateReport(current.id, text);
+      toast.success(kind === 'info' ? dt('Pyetja iu dërgua qytetarit.') : kind === 'note' ? dt('Shënimi u ruajt.') : dt('Raportimi u eskalua te administratori.'));
+      setAsk(null);
+      await reloadThread();
+    } catch (error) {
+      toast.error((error as Error)?.message || dt('Veprimi nuk u krye.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const closeEscalation = async () => {
+    if (!current) return;
+    const reason = window.prompt(dt('Shënim për mbylljen e eskalimit:'));
+    if (!reason) return;
+    setBusy(true);
+    try {
+      await resolveEscalation(current.id, reason);
+      toast.success(dt('Eskalimi u mbyll.'));
+      await reloadThread();
+    } catch (error) {
+      toast.error((error as Error)?.message || dt('Eskalimi nuk u mbyll.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submitAsk = () => {
     if (!ask) return;
     const reason = ask.text.trim();
     if (reason.length < 5) { toast.error(dt('Shkruani një arsye (të paktën 5 shkronja).')); return; }
     if (ask.kind === 'reject') reject(reason);
-    else void takeDownPhoto(reason);
+    else if (ask.kind === 'photo') void takeDownPhoto(reason);
+    else if (ask.kind === 'handover') {
+      if (!current) return;
+      const held = holderOf(current).assignedToUid;
+      const assignUid = ask.assignUid;
+      void (assignUid
+        ? changeHolder(() => assignReport(current.id, assignUid, { reason, expectedHolderUid: held }), { assignedToUid: assignUid, assignedTo: '' }, dt('Raportimi iu caktua.')).then(() => setAssignTo(''))
+        : changeHolder(() => releaseReport(current.id, { reason, expectedHolderUid: held }), { assignedToUid: '', assignedTo: '' }, dt('U kthye në radhën e përbashkët.'))
+      ).then(() => setAsk(null));
+    }
+    else void sendCase(ask.kind, reason);
   };
 
   // Keyboard: never while typing a reason.
@@ -349,23 +418,23 @@ export default function ReviewMode({
                       {holder.assignedTo ? (mine ? `${holder.assignedTo} (${dt('ju')})` : holder.assignedTo) : dt('Askush, në radhën e përbashkët')}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {canApprove && !mine && (!holder.assignedToUid || isOwner) && (
+                      {canApprove && !mine && (!holder.assignedToUid || canAssign) && (
                         <button type="button" disabled={busy} onClick={() => void changeHolder(() => claimReport(current.id), { assignedToUid: me?.id ?? '', assignedTo: me?.name ?? '' }, dt('E morët përsipër.'))} className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 disabled:opacity-40 dark:bg-white dark:text-slate-900">
                           {dt('Merr përsipër')}
                         </button>
                       )}
-                      {holder.assignedToUid && (mine || isOwner) && (
-                        <button type="button" disabled={busy} onClick={() => void changeHolder(() => releaseReport(current.id), { assignedToUid: '', assignedTo: '' }, dt('U kthye në radhën e përbashkët.'))} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:text-slate-200">
+                      {holder.assignedToUid && (mine || canAssign) && (
+                        <button type="button" disabled={busy} onClick={() => (mine ? void changeHolder(() => releaseReport(current.id, { expectedHolderUid: holder.assignedToUid }), { assignedToUid: '', assignedTo: '' }, dt('U kthye në radhën e përbashkët.')) : setAsk({ kind: 'handover', text: '' }))} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:text-slate-200">
                           {dt('Lësho')}
                         </button>
                       )}
-                      {isOwner && agents.length > 0 && (
+                      {canAssign && agents.length > 0 && (
                         <>
                           <select value={assignTo} onChange={event => setAssignTo(event.target.value)} aria-label={dt('Cakto te agjenti')} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] dark:border-white/10 dark:bg-slate-800 dark:text-slate-100">
                             <option value="">{dt('Cakto te…')}</option>
                             {agents.map(person => <option key={person.id} value={person.id}>{person.name || person.email}</option>)}
                           </select>
-                          <button type="button" disabled={busy || !assignTo} onClick={() => void changeHolder(() => assignReport(current.id, assignTo), { assignedToUid: assignTo, assignedTo: '' }, dt('Raportimi iu caktua.')).then(() => setAssignTo(''))} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-500 disabled:opacity-40">
+                          <button type="button" disabled={busy || !assignTo} onClick={() => (holder.assignedToUid && !mine ? setAsk({ kind: 'handover', text: '', assignUid: assignTo }) : void changeHolder(() => assignReport(current.id, assignTo, { expectedHolderUid: holder.assignedToUid }), { assignedToUid: assignTo, assignedTo: '' }, dt('Raportimi iu caktua.')).then(() => setAssignTo(''))) } className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-500 disabled:opacity-40">
                             {dt('Cakto')}
                           </button>
                         </>
@@ -374,6 +443,8 @@ export default function ReviewMode({
                   </div>
                 );
               })()}
+              <CaseThreadPanel thread={thread} />
+              <HandoverHistoryPanel reportId={current.id} refreshKey={holderOf(current).assignedToUid} />
               <button type="button" onClick={() => onOpenFull(current.id)} className="mt-5 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-300">
                 {dt('Hap dosjen e plotë (historiku, komentet, dërgimi)')}
               </button>
@@ -384,7 +455,12 @@ export default function ReviewMode({
           {ask && (
             <div className="shrink-0 border-t border-white/10 bg-slate-900 p-3">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                {ask.kind === 'reject' ? dt('Pse po refuzohet? (e lexon qytetari)') : dt('Pse po hiqet fotoja? (mbetet vetëm në regjistër)')}
+                {ask.kind === 'reject' ? dt('Pse po refuzohet? (e lexon qytetari)')
+                  : ask.kind === 'info' ? dt('Çfarë informacioni i duhet qytetarit? (e lexon qytetari, jo publiku)')
+                  : ask.kind === 'note' ? dt('Shënim i brendshëm (vetëm stafi e lexon)')
+                  : ask.kind === 'escalate' ? dt('Pse po eskalohet te administratori? (vetëm stafi e lexon)')
+                  : ask.kind === 'handover' ? dt('Pse po kalon puna te dikush tjetër? (e lexon stafi në historikun e caktimeve)')
+                  : dt('Pse po hiqet fotoja? (mbetet vetëm në regjistër)')}
               </label>
               <div className="mt-1.5 flex flex-wrap gap-2">
                 <textarea
@@ -398,7 +474,7 @@ export default function ReviewMode({
                 />
                 <div className="flex flex-col gap-1.5">
                   <button type="button" disabled={busy} onClick={submitAsk} className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-500 disabled:opacity-40">
-                    {ask.kind === 'reject' ? dt('Refuzo') : dt('Hiq foton')}
+                    {ask.kind === 'reject' ? dt('Refuzo') : ask.kind === 'info' ? dt('Dërgo pyetjen') : ask.kind === 'note' ? dt('Ruaj shënimin') : ask.kind === 'escalate' ? dt('Eskalo') : ask.kind === 'handover' ? dt('Ruaj kalimin') : dt('Hiq foton')}
                   </button>
                   <button type="button" onClick={() => setAsk(null)} className="rounded-lg px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white">{dt('Anulo')}</button>
                 </div>
@@ -415,9 +491,29 @@ export default function ReviewMode({
               {dt('Kalo')} <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
             <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
-            {canApprove && current.status === 'Pending Review' && (
+            {canApprove && current.status === 'Pending Review' && !thread?.awaitingInfo && (
               <button type="button" onClick={approve} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" aria-hidden="true" />} {dt('Aprovo & vazhdo')} <kbd className="rounded bg-white/20 px-1 text-[10px]">A</kbd>
+              </button>
+            )}
+            {canEditPhotos && ['Pending Review', 'Draft'].includes(current.status) && !thread?.awaitingInfo && (
+              <button type="button" onClick={() => setAsk({ kind: 'info', text: '' })} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-sky-700 px-3 py-2 text-xs font-bold text-white hover:bg-sky-600 disabled:opacity-40">
+                <HelpCircle className="h-4 w-4" aria-hidden="true" /> {dt('Kërko informacion')}
+              </button>
+            )}
+            {canEditPhotos && (
+              <button type="button" onClick={() => setAsk({ kind: 'note', text: '' })} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-40">
+                <StickyNote className="h-4 w-4" aria-hidden="true" /> {dt('Shënim')}
+              </button>
+            )}
+            {canEditPhotos && !thread?.escalated && (
+              <button type="button" onClick={() => setAsk({ kind: 'escalate', text: '' })} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-40">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" /> {dt('Eskalo')}
+              </button>
+            )}
+            {canEditPhotos && thread?.escalated && isOwner && (
+              <button type="button" onClick={() => void closeEscalation()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-2 text-xs font-bold text-white hover:bg-rose-600 disabled:opacity-40">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" /> {dt('Mbyll eskalimin')}
               </button>
             )}
             {canReject && (

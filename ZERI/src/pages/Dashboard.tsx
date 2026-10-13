@@ -1,6 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import React, { useState, useMemo, useEffect } from 'react';
-import { useStore, DEMO_REPORTS } from '../lib/store';
+import { useStore } from '../lib/store';
+import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
 import { 
   Search, MapPin, Clock, ArrowRight, CheckCircle2, AlertTriangle, 
   Layers, Heart, Share2, Sparkles, Filter, SlidersHorizontal,
@@ -36,14 +37,7 @@ export default function Dashboard() {
   const reportsStatus = useStore((state) => state.reportsStatus);
   const userMunicipality = useStore((state) => state.userMunicipality);
 
-  const previewReports: Report[] = DEMO_REPORTS.slice(0, 6).map((report, index) => ({
-    ...report,
-    id: `preview-${index + 1}`,
-    authorId: 'preview',
-    authorName: 'Qytetar',
-    isAnonymous: true,
-    timeline: report.timeline || []
-  }));
+  const hasMoreReports = useStore((state) => state.hasMoreReports);
 
   // View Mode: default is 'screenshot'
   const [viewMode, setViewMode] = useState<'screenshot' | 'backup'>(() => {
@@ -87,7 +81,8 @@ export default function Dashboard() {
 
   // Real-time live counts + baseline
   const publicReports = reports.filter(r => !['Pending Review', 'Rejected', 'Draft'].includes(r.status));
-  const dashboardReports = publicReports.length > 0 ? publicReports : previewReports;
+  // Only real, public reports. Demo/sample rows used to fill this page when none had loaded.
+  const dashboardReports = publicReports;
   /**
    * The page-level scope is the global one. It used to fall back to a private
    * `selectedMunicipality` state, which meant the hero and the cards could
@@ -111,10 +106,11 @@ export default function Dashboard() {
   const activeReports = scopedReports.filter(r => r.status !== 'Resolved');
   const resolvedReports = scopedReports.filter(r => r.status === 'Resolved');
 
-  const totalReportsCount = publicReports.length > 0 ? scopedReports.length : (activeMunicipality ? scopedReports.length : 1248);
-  const inTreatmentCount = publicReports.length > 0 ? activeReports.length : (activeMunicipality ? activeReports.length : 742);
-  const resolvedCount = publicReports.length > 0 ? resolvedReports.length : (activeMunicipality ? resolvedReports.length : 436);
-  const isPreviewData = reportsStatus !== 'ready' && publicReports.length === 0;
+  const totalReportsCount = scopedReports.length;
+  const inTreatmentCount = activeReports.length;
+  const resolvedCount = resolvedReports.length;
+  /** True until real reports are on screen: numbers are then shown as "—", never as invented figures. */
+  const countsUnavailable = reportsStatus !== 'ready' && publicReports.length === 0;
 
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -153,19 +149,14 @@ export default function Dashboard() {
 
   // Dynamic reports from store formatted to table rows
   const storeTableRows = scopedReports.map((r) => {
-    let st: 'Të raportuar' | 'Në trajtim' | 'Të zgjidhur' | 'Urgjent' = 'Në trajtim';
-    if (r.urgency === 'Kritike') st = 'Urgjent';
-    else if (r.status === 'Resolved') st = 'Të zgjidhur';
-    else if (r.status === 'Approved' || r.status === 'In Progress') st = 'Në trajtim';
-    else st = 'Të raportuar';
-
     return {
       id: r.id,
       code: r.trackingId || r.id,
       category: getReportTopicLabel(r),
       municipality: r.location?.municipality || 'Prishtinë',
       date: new Date(r.createdAt || Date.now()).toLocaleDateString('de-DE'),
-      status: st,
+      status: statusLabel(r.status),
+      tone: statusMeta(r.status).tone,
       rawReport: r
     };
   });
@@ -325,9 +316,9 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {[
-            { label: 'Raportet e hapura', value: totalReportsCount.toLocaleString('de-DE'), tone: 'blue', icon: FileText },
-            { label: 'Në trajtim', value: inTreatmentCount.toLocaleString('de-DE'), tone: 'amber', icon: Activity },
-            { label: 'Urgjente', value: urgentReportsCount.toLocaleString('de-DE'), tone: 'rose', icon: AlertTriangle },
+            { label: 'Raporte publike', value: countsUnavailable ? '—' : `${totalReportsCount.toLocaleString('de-DE')}${hasMoreReports ? '+' : ''}`, tone: 'blue', icon: FileText },
+            { label: 'Jo ende të zgjidhura', value: countsUnavailable ? '—' : inTreatmentCount.toLocaleString('de-DE'), tone: 'amber', icon: Activity },
+            { label: 'Urgjente', value: countsUnavailable ? '—' : urgentReportsCount.toLocaleString('de-DE'), tone: 'rose', icon: AlertTriangle },
             { label: 'Sondazhe aktive', value: activePollsCount.toLocaleString('de-DE'), tone: 'emerald', icon: Vote },
           ].map((metric) => {
             const Icon = metric.icon as React.ComponentType<{ className?: string }>;
@@ -351,12 +342,18 @@ export default function Dashboard() {
 
         <div className={cn(
           "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold",
-          isPreviewData
+          countsUnavailable
             ? "border-amber-100 bg-amber-50/80 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300"
             : "border-emerald-100 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
         )}>
-          <span className={cn("h-2 w-2 shrink-0 rounded-full", isPreviewData ? "bg-amber-500" : "bg-emerald-500")} />
-          {isPreviewData ? dt("Po shfaqen të dhëna paraprake; raportimet reale nuk janë ngarkuar ende.") : dt("Përditësimet shfaqen pas raportimit dhe ndryshimit të statusit.")}
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", countsUnavailable ? "bg-amber-500" : "bg-emerald-500")} />
+          <span role="status">
+            {reportsStatus === 'error'
+              ? dt("Raportet nuk u ngarkuan. Rifreskoni faqen për të provuar përsëri.")
+              : countsUnavailable
+                ? dt("Raportet po ngarkohen.")
+                : dt("Numrat tregojnë raportet publike të ngarkuara. Detajet e plota janë te Statistikat dhe Regjistri.")}
+          </span>
         </div>
 
         {/* 4. SPLIT SECTION: RAPORTIMET NË HARTË (LEFT) & RAPORTIMET MË TË FUNDIT (RIGHT) */}
@@ -416,6 +413,13 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
+                    {combinedRecentReports.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          {countsUnavailable ? dt('Raportet po ngarkohen.') : dt('Nuk ka ende raporte publike për këtë zonë.')}
+                        </td>
+                      </tr>
+                    )}
                     {combinedRecentReports.map((row) => (
                       <tr
                         key={row.id}
@@ -450,13 +454,7 @@ export default function Dashboard() {
 
                         {/* Status Badge */}
                         <td className="py-3 pl-2 text-right whitespace-nowrap">
-                          <span className={cn(
-                            "inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold",
-                            row.status === 'Në trajtim' && "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
-                            row.status === 'Të raportuar' && "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
-                            row.status === 'Të zgjidhur' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
-                            row.status === 'Urgjent' && "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                          )}>
+                          <span className={cn("inline-block px-2.5 py-0.5 rounded-full border text-[10px] font-bold", TONE_CLASSES[row.tone].badge)}>
                             {row.status}
                           </span>
                         </td>
@@ -548,10 +546,10 @@ export default function Dashboard() {
                       <Users className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-emerald-600 dark:text-white">
-                      Konsultime publike
+                      {dt('Sondazhe publike')}
                     </h4>
                     <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      {dt('Merr pjesë në konsultime për projektet lokale.')}
+                      {dt('Votoni në sondazhet e hapura.')}
                     </p>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 transition-all group-hover:gap-1.5">
@@ -792,7 +790,7 @@ export default function Dashboard() {
                 {dt('Transparencë, më shumë të dhëna, vendimmarrje më e mirë.')}
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl font-normal leading-relaxed">
-                {dt('Të dhënat e raportimeve janë të hapura për publikun dhe mund të përdoren për analizë dhe planifikim.')}
+                {dt('Raportet e aprovuara janë publike dhe shfaqen në regjistër, hartë dhe statistika.')}
               </p>
             </div>
           </div>

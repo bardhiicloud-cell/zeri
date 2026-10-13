@@ -905,12 +905,12 @@ export default function ReportIssue() {
       )}
 
       {step === 1 && (
-        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 sm:p-10 md:p-16 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
           <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 md:px-4 py-1 text-xs md:text-xs font-bold tracking-wide border-b-4 border-l-4 border-slate-900 dark:border-slate-700 rounded-bl-xl rounded-tr-xl">{dt(`Nr: 01`)}
           </div>
 
           <div className="mb-8 md:mb-12">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 title-serif uppercase leading-[0.9]">{dt(`Hap`)}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
+            <h1 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 leading-[1.1]">{dt(`Hap`)}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
             </h1>
             <p className="text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-sm md:max-w-md font-serif italic text-sm md:text-lg">{dt(`Paraqit një çështje që ndikon drejtpërdrejt në shoqëri ose proceset e lëvizjes.`)}</p>
           </div>
@@ -1051,7 +1051,7 @@ export default function ReportIssue() {
       )}
 
       {step === 2 && !isSubmitting && (
-        <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 sm:p-10 md:p-16 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-right-8 duration-500 relative">
+        <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-right-8 duration-500 relative">
           <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 md:px-4 py-1 text-xs md:text-xs font-bold tracking-wide border-b-4 border-l-4 border-slate-900 dark:border-slate-700 rounded-bl-xl rounded-tr-xl">{dt(`Nr: 02`)}
           </div>
 
@@ -1060,7 +1060,7 @@ export default function ReportIssue() {
               <button type="button" onClick={() => setStep(1)} className="text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] hover:text-indigo-600 flex items-center gap-2 text-xs md:text-xs font-bold tracking-wide mb-4 md:mb-6 transition-colors">
                  <ArrowLeft className="w-4 h-4" />{dt(`Kthehu prapa`)}
               </button>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-2 title-serif uppercase leading-none">{dt(`Specifikat e`)}<br className="hidden md:block" />{dt(`Rastit`)}<span className="text-indigo-600">.</span></h1>
+              <h1 className="text-[26px] sm:text-[34px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-2  uppercase leading-none">{dt(`Specifikat e`)}<br className="hidden md:block" />{dt(`Rastit`)}<span className="text-indigo-600">.</span></h1>
             </div>
             <button type="button" onClick={analyzeWithAI} className="flex items-center justify-center gap-2 text-xs md:text-xs uppercase font-bold tracking-widest bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 hover:bg-neutral-200 text-[var(--color-text)] dark:text-white px-4 md:px-5 py-2.5 md:py-3 border border-slate-200/60 dark:border-white/10 rounded-xl transition-colors whitespace-nowrap group w-full md:w-auto">
                <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:text-indigo-600" /> {isAnalyzing ? 'Po përpunohet...' : 'Krijim me AI'}
@@ -1434,16 +1434,36 @@ export default function ReportIssue() {
           <div className="w-20 h-20 md:w-28 md:h-28 bg-emerald-50 border-2 border-emerald-200 rounded-[28px] flex items-center justify-center mx-auto mb-6 md:mb-8 relative">
             <CheckCircle2 className="w-10 h-10 md:w-16 md:h-16 text-emerald-600 relative z-10" />
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-4 md:mb-5 title-serif uppercase">{dt(`Raportimi u pranua`)}<span className="text-indigo-600">.</span></h1>
+          <h1 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4">{dt(`Raportimi u pranua`)}<span className="text-indigo-600">.</span></h1>
           <p className="text-slate-600 dark:text-slate-200 font-medium text-sm md:text-base lg:text-lg mb-6 md:mb-8 font-serif italic max-w-md mx-auto">{dt(`Raportimi iu dërgua agjentëve dhe administratorëve për shqyrtim. Përdorni Track-ID për ta ndjekur statusin e tij në çdo moment.`)}</p>
           <div className="w-full mb-8 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 p-4 text-left shadow-inner">
             <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-bold">{dt('Track-ID i raportimit')}</div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <code className="text-lg font-black tracking-wider text-slate-900 dark:text-white break-all">{submittedReportId}</code>
-              <button type="button" onClick={() => navigator.clipboard?.writeText(submittedReportId)} className="shrink-0 text-xs font-bold text-blue-600 hover:text-blue-700">Kopjo</button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(submittedReportId);
+                    toast.success(dt('Track-ID u kopjua.'));
+                  } catch {
+                    toast.error(dt('Kopjimi nuk u realizua. Shënojeni Track-ID me dorë.'));
+                  }
+                }}
+                className="shrink-0 min-h-11 px-3 text-xs font-bold text-blue-600 hover:text-blue-700"
+              >{dt('Kopjo')}</button>
             </div>
           </div>
           
+          <div role="note" className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left text-xs leading-relaxed text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
+            <p className="font-black">{dt('Çfarë ndodh tani')}</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              <li>{dt('Statusi është “Në pritje”: raporti pret shqyrtimin. Nuk është ende publik.')}</li>
+              <li>{dt('Pasi të aprovohet, dërgohet te institucioni përgjegjës dhe shfaqet në hartë dhe regjistër.')}</li>
+              <li>{dt('Ruajeni Track-ID: është mënyra e vetme për ta ndjekur raportin pa llogari.')}</li>
+            </ul>
+          </div>
+
           {currentUser && (
             <div className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-blue-700 text-white px-6 md:px-8 py-3 md:py-4 font-bold tracking-wide text-xs md:text-xs mb-8 md:mb-10 w-full rounded-2xl shadow-lg shadow-indigo-600/20">
               <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-300" />{dt(`Titulli: +10 Pikë Qytetare`)}

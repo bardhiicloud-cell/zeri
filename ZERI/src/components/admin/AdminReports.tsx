@@ -218,13 +218,19 @@ export default function AdminReports({ department, openReportId }: { department?
   // the server pins it to the signed-in account.
   const [onlyMine, setOnlyMine] = useState(false);
   const canHaveMine = currentUser?.role !== 'municipality' && currentUser?.role !== 'monitor';
+  // The two lists staff work from when a case is stuck: waiting for the citizen's answer,
+  // and raised to the owner. A flag is a list of its own (the server refuses other filters).
+  const [flag, setFlag] = useState<'' | 'awaitingInfo' | 'escalated'>('');
+  const canSeeFlags = currentUser?.role !== 'municipality';
   const serverParams = useMemo<ReportListParams>(
     () => (codeQuery
       ? { code: codeQuery }
-      : onlyMine && canHaveMine
+      : flag && canSeeFlags
+        ? { flag }
+        : onlyMine && canHaveMine
         ? { status: serverStatus || undefined, assignee: 'me' }
         : { status: serverStatus || undefined, municipality: scopeName || undefined }),
-    [codeQuery, serverStatus, scopeName, onlyMine, canHaveMine]
+    [codeQuery, serverStatus, scopeName, onlyMine, canHaveMine, flag, canSeeFlags]
   );
   const serverList = useServerReports(serverParams, !department);
   const serverActive = !department && serverList.status !== 'error';
@@ -811,13 +817,31 @@ export default function AdminReports({ department, openReportId }: { department?
                   {pageData.total.toLocaleString('sq')} {dt(`raporte`)}
                   {moreAvailable && <span className="font-normal"> · {dt(`të ngarkuara deri tani`)}</span>}
                 </span>
+                {canSeeFlags && (
+                  <div className="ml-auto flex gap-1.5" role="group" aria-label={dt(`Raporte që kërkojnë vëmendje`)}>
+                    {([['awaitingInfo', 'Presin informacion'], ['escalated', 'Të eskaluara']] as const).map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setFlag(current => (current === id ? '' : id))}
+                        aria-pressed={flag === id}
+                        className={cn(
+                          'rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors',
+                          flag === id ? 'bg-sky-700 text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800'
+                        )}
+                      >
+                        {dt(label)}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {canHaveMine && (
                   <button
                     type="button"
                     onClick={() => setOnlyMine(value => !value)}
                     aria-pressed={onlyMine}
                     className={cn(
-                      'ml-auto rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors',
+                      'rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors',
                       onlyMine ? 'bg-indigo-600 text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800'
                     )}
                     title={dt(`Vetëm raportimet që i keni marrë përsipër`)}

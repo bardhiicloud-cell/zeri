@@ -78,6 +78,8 @@ export interface ReportListQuery {
    * newest first. Only offered for the filter shapes that have an ascending index.
    */
   order?: 'oldest';
+  /** Reports carrying a flag: waiting for the citizen's answer, or escalated. Used alone. */
+  flag?: 'awaitingInfo' | 'escalated';
   limit: number;
   cursor?: Cursor;
 }
@@ -93,7 +95,7 @@ export interface Principal {
 export interface WhereClause {
   field: string;
   op: '==' | 'in';
-  value: string | string[];
+  value: string | string[] | boolean;
 }
 
 export interface QueryPlan {
@@ -127,6 +129,9 @@ export const REQUIRED_REPORT_INDEXES: ReadonlyArray<readonly string[]> = [
   ['status', 'urgency'],
   ['location.municipality', 'urgency'],
   ['location.municipality', 'status', 'urgency'],
+  // The two flags of the case conversation, used alone (server/reportCase.ts).
+  ['awaitingInfo'],
+  ['escalated'],
   // "Të miat": the reports a person has taken on, alone or by status.
   ['assignedToUid'],
   ['assignedToUid', 'status'],
@@ -193,6 +198,8 @@ export function parseReportListQuery(raw: Record<string, unknown>): ParseResult 
   const cursorRaw = single(raw.cursor, 400);
   const assignee = single(raw.assignee, 10);
   if (assignee === null || (assignee && assignee !== 'me')) return bad('Filtri i caktimit nuk njihet.');
+  const flag = single(raw.flag, 20);
+  if (flag === null || (flag && flag !== 'awaitingInfo' && flag !== 'escalated')) return bad('Flamuri nuk njihet.');
   const order = single(raw.order, 10);
   if (order === null || (order && order !== 'oldest')) return bad('Renditja nuk njihet.');
   if (status === null) return bad('Statusi nuk është i vlefshëm.');
@@ -219,7 +226,7 @@ export function parseReportListQuery(raw: Record<string, unknown>): ParseResult 
     cursor = decoded;
   }
 
-  return { ok: true, query: { code, status, municipality, urgency, assignee: assignee ? 'me' : undefined, order: order ? 'oldest' : undefined, limit, cursor } };
+  return { ok: true, query: { code, status, municipality, urgency, assignee: assignee ? 'me' : undefined, order: order ? 'oldest' : undefined, flag: (flag as 'awaitingInfo' | 'escalated' | undefined) || undefined, limit, cursor } };
 }
 
 // ── Planning (authorization lives here) ──────────────────────────────────────
@@ -267,7 +274,14 @@ export function planReportQuery(query: ReportListQuery, principal: Principal): P
   }
 
   const where: WhereClause[] = [];
-  if (query.assignee === 'me') {
+  if (query.flag) {
+    // A municipality does not see internal flags; and a flag is a list of its own.
+    if (isMunicipality) return { ok: false, status: 403, error: 'Kjo pamje nuk është për komunat.' };
+    if (query.status || query.municipality || query.urgency || query.assignee) {
+      return { ok: false, status: 400, error: 'Flamuri përdoret vetëm, pa filtra të tjerë.' };
+    }
+    where.push({ field: query.flag, op: '==', value: true });
+  } else if (query.assignee === 'me') {
     if (!principal.uid) return { ok: false, status: 400, error: 'Mungon identiteti për "Të miat".' };
     // A municipality does not take reports on; the queue it answers is its own.
     if (isMunicipality) return { ok: false, status: 400, error: 'Komuna nuk ka "Të miat"; e gjithë radha e saj është e vetja.' };

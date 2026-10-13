@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {  dt } from '../lib/dt';
+import {  dt } from '../lib/dt'; import { AuraHero, AuraNote, AuraOrbit } from '../components/aura/Aura';
 import {
   HeartPulse, Activity, ShieldAlert, Plus, Search, Filter, MapPin, 
   User, Calendar, AlertCircle, CheckCircle2, ChevronRight, Share2, 
@@ -286,7 +286,7 @@ export default function HealthRegistryPage() {
         setCases(prev => [{ id: docRef.id, ...newCaseData }, ...prev]);
       }
 
-      toast.success(`Kërkesa u dërgua për verifikim. Kodi i rastit: ${trackingId}`);
+      toast.success(`Kërkesa u ruajt dhe pret verifikimin. Kodi i rastit: ${trackingId}. Ruajeni; rasti nuk është publik.`, { duration: 9000 });
       setIsRegisterModalOpen(false);
       setForm({
         fullName: '',
@@ -343,23 +343,17 @@ export default function HealthRegistryPage() {
 
     setIsSavingGoFundMe(true);
     try {
-      // Update local state immediately
+      // Persist first; the list only changes once the write really succeeded.
+      await updateDoc(doc(db, 'healthRegistry', goFundMeModalCase.id), {
+        donationUrl: url || null
+      });
       setCases(prev => prev.map(item => item.id === goFundMeModalCase.id ? { ...item, donationUrl: url || undefined } : item));
 
-      // Persist to Firestore if it's not a mock-only item or if it exists
-      try {
-        await updateDoc(doc(db, 'healthRegistry', goFundMeModalCase.id), {
-          donationUrl: url || null
-        });
-      } catch (err) {
-        console.warn("Firestore update notice (offline/mock record):", err);
-      }
-
-      toast.success(url ? 'Linku i GoFundMe u ruajt me sukses!' : 'Linku i donacionit u hoq.');
+      toast.success(url ? 'Linku u ruajt te rasti juaj privat.' : 'Linku i donacionit u hoq.');
       setGoFundMeModalCase(null);
     } catch (err) {
       console.error(err);
-      toast.error('Gabim gjatë ruajtjes së linkut të GoFundMe.');
+      toast.error('Linku nuk u ruajt. Provoni përsëri.');
     } finally {
       setIsSavingGoFundMe(false);
     }
@@ -408,7 +402,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
         return item;
       }));
 
-      toast.success(`Njoftimi iu dërgua ${hospitalInfo.name}!`);
+      toast.success(`U shënua si i njoftuar: ${hospitalInfo.name}. Platforma nuk dërgon vetë mesazh; dërgojeni me email, telefon ose WhatsApp.`, { duration: 8000 });
       setHospitalModalCase(null);
     } catch (e) {
       console.error(e);
@@ -466,176 +460,77 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
   }, [form.municipality]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 text-slate-900 transition-colors dark:bg-zinc-950 dark:text-slate-100">
+    <div className="au-page min-h-screen pb-20">
       <div className="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-8">
-        <header className="relative isolate mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-[#071322] p-5 text-white shadow-[0_30px_90px_-42px_rgba(2,6,23,0.9)] sm:p-8">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-rose-400/15 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
-          <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-rose-200">
-              <HeartPulse className="h-3.5 w-3.5" />
-              <span>{dt('Shërbim qytetar · Privatësi si parazgjedhje')}</span>
-            </div>
-            <h1 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-              {dt('Kujdes i organizuar. Të dhëna të mbrojtura.')}
-            </h1>
-            <p className="max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              {dt('Një hapësirë e sigurt për të paraqitur nevoja shëndetësore, ndjekur kërkesat e tua dhe gjetur institucionin përkatës. Rastet dhe dokumentet mjekësore nuk janë publike.')}
-            </p>
-          </div>
-
-          <div className="relative flex flex-wrap items-center gap-3 lg:max-w-[430px] lg:justify-end">
-            <button
-              onClick={handleExportCSV}
-              disabled={!currentUser || currentUser.role === 'guest' || cases.length === 0}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 text-xs font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-              title={dt('Shkarko evidencën në formatin CSV / Excel')}
-            >
-              <Download className="h-4 w-4 text-emerald-300" />
-              <span>Shkarko CSV</span>
-            </button>
-
-            <button
-              onClick={() => setIsRegisterModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-500 px-4 text-sm font-black text-white shadow-lg shadow-rose-950/30 transition hover:bg-rose-400"
-            >
-              <Plus className="h-4 w-4 stroke-[3]" />
-              <span>{dt('Regjistro Rast / Kërko Ndihmë')}</span>
-            </button>
-          </div>
-          </div>
-        </header>
+        <div className="mx-auto max-w-6xl">
+          <AuraHero
+            visual={<AuraOrbit core={ShieldCheck} icons={[HeartPulse, FileText, Building2, Stethoscope, Pill, Heart]} />}
+            tone="rose"
+            eyebrow={dt('Shërbim qytetar · Privatësi si parazgjedhje')}
+            icon={HeartPulse}
+            title={dt('Kujdes i organizuar. Të dhëna të mbrojtura.')}
+            subtitle={dt('Një hapësirë e sigurt për të paraqitur nevoja shëndetësore, ndjekur kërkesat e tua dhe gjetur institucionin përkatës. Rastet dhe dokumentet mjekësore nuk janë publike.')}
+            actions={<>
+              <button onClick={() => setIsRegisterModalOpen(true)} className="au-btn au-btn-light"><Plus className="h-4 w-4" aria-hidden="true" /><span>{dt('Regjistro Rast / Kërko Ndihmë')}</span></button>
+              <button onClick={handleExportCSV} disabled={!currentUser || currentUser.role === 'guest' || cases.length === 0} className="au-btn au-btn-glass" title={dt('Shkarko evidencën në formatin CSV / Excel')}>
+                <Download className="h-4 w-4" aria-hidden="true" /><span>Shkarko CSV</span>
+              </button>
+            </>}
+          />
+        </div>
       </div>
 
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <section className="grid gap-3 sm:grid-cols-3" aria-label={dt('Si funksionon mbështetja shëndetësore')}>
+      <div className="mx-auto max-w-6xl space-y-4 px-3 py-4 sm:px-6 lg:px-8">
+        {/* How it works: one compact strip */}
+        <section className="au-tile grid divide-y divide-[var(--au-line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-label={dt('Si funksionon mbështetja shëndetësore')}>
           {[
-            { number: '01', title: 'Paraqite nevojën', description: 'Dërgo kërkesën pa llogari, në mënyrë anonime ose me identitet dhe pëlqim të qartë.', icon: FileText, tone: 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-400/10' },
-            { number: '02', title: 'Shqyrtim i sigurt', description: 'Kërkesa merr kod gjurmimi dhe kalon në verifikim nga stafi i autorizuar.', icon: ShieldCheck, tone: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-400/10' },
-            { number: '03', title: 'Gjej institucionin', description: 'Përdor drejtorinë për kontaktet e spitaleve rajonale dhe QKMF-ve.', icon: Building2, tone: 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-400/10' },
-          ].map(({ number, title, description, icon: Icon, tone }) => (
-            <article key={number} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-900 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <span className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
-                <span className="font-mono text-[11px] font-black tracking-wider text-slate-400">{number} / 03</span>
+            { n: 1, title: 'Paraqite nevojën', description: 'Dërgo kërkesën pa llogari, në mënyrë anonime ose me identitet dhe pëlqim të qartë.', icon: FileText },
+            { n: 2, title: 'Shqyrtim i sigurt', description: 'Kërkesa merr kod gjurmimi dhe kalon në verifikim nga stafi i autorizuar.', icon: ShieldCheck },
+            { n: 3, title: 'Gjej institucionin', description: 'Përdor drejtorinë për kontaktet e spitaleve rajonale dhe QKMF-ve.', icon: Building2 },
+          ].map(({ n, title, description, icon: Icon }) => (
+            <article key={n} className="flex items-start gap-3 p-4">
+              <span className="au-ico"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
+              <div className="min-w-0">
+                <h2 className="text-[14px] font-semibold"><span className="au-sub mr-1 tabular-nums">{n}.</span>{title}</h2>
+                <p className="au-sub mt-0.5 text-[12.5px] leading-snug">{description}</p>
               </div>
-              <h2 className="mt-4 text-sm font-black text-slate-900 dark:text-white">{title}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{description}</p>
             </article>
           ))}
         </section>
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-300/15 dark:bg-amber-300/[0.06] dark:text-amber-100">
+
+        <AuraNote tone="warn" icon={AlertCircle}>
           <strong>{dt('Shënim i rëndësishëm:')}</strong> {dt('Regjistri koordinon kërkesat qytetare dhe nuk zëvendëson këshillën, diagnozën apo kujdesin urgjent mjekësor.')}
-        </p>
-        {/* KPI Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase">
-              <span>Rastet e mia</span>
-              <Building2 className="w-4 h-4 text-blue-500" />
+        </AuraNote>
+
+        {/* Key figures: one strip instead of five cards */}
+        <dl className="au-tile grid grid-cols-2 divide-[var(--au-line)] sm:grid-cols-5 sm:divide-x" aria-label={dt('Të dhëna personale të mbrojtura')}>
+          {[
+            { label: 'Rastet e mia', value: totalCount, note: dt('Të dhëna personale të mbrojtura') },
+            { label: 'Kancer / Onkologji', value: cancerCount, note: dt('Vetëm nga rastet e tua') },
+            { label: 'Sëmundje Zemre', value: heartCount, note: dt('Kardiake, nga rastet e tua') },
+            { label: 'Raste Urgjente', value: urgentCount, note: dt('Sipas urgjencës së regjistruar') },
+            { label: dt('Dokumente Mjekësore'), value: withDocCount, note: dt('Dokumente në hapësirë private') },
+          ].map(kpi => (
+            <div key={kpi.label} className="px-4 py-3">
+              <dd className="text-[24px] font-semibold leading-none tabular-nums">{kpi.value}</dd>
+              <dt className="mt-1.5 truncate text-[12px] font-medium">{kpi.label}</dt>
+              <p className="au-sub truncate text-[11px]">{kpi.note}</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-2">
-              {totalCount}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">{dt('Të dhëna personale të mbrojtura')}</p>
-          </div>
+          ))}
+        </dl>
 
-          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-purple-600 text-xs font-bold uppercase">
-              <span>Kancer / Onkologji</span>
-              <ShieldAlert className="w-4 h-4" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-purple-600 dark:text-purple-400 mt-2">
-              {cancerCount}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">{dt('Vetëm nga rastet e tua')}</p>
-          </div>
-
-          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-rose-600 text-xs font-bold uppercase">
-              <span>Raste Urgjente</span>
-              <AlertTriangle className="w-4 h-4 text-rose-500" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 mt-2">
-              {urgentCount}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">{dt('Sipas urgjencës së regjistruar')}</p>
-          </div>
-
-          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-emerald-600 text-xs font-bold uppercase">
-              <span>{dt('Dokumente Mjekësore')}</span>
-              <FileText className="w-4 h-4 text-emerald-500" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-              {withDocCount}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">{dt('Dokumente në hapësirë private')}</p>
-          </div>
-        </div>
-
-        {/* View Switcher Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2 dark:border-zinc-800" role="tablist" aria-label={dt('Pamjet e regjistrit shëndetësor')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'cases'}
-            onClick={() => setActiveTab('cases')}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all ${
-              activeTab === 'cases'
-                ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <User className="h-4 w-4" aria-hidden="true" />
-            <span>Rastet e mia ({filteredCases.length})</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'municipalStats'}
-            onClick={() => setActiveTab('municipalStats')}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all ${
-              activeTab === 'municipalStats'
-                ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <Building2 className="h-4 w-4" aria-hidden="true" />
-            <span>{dt('Përmbledhja ime (private)')}</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'hospitalDirectory'}
-            onClick={() => setActiveTab('hospitalDirectory')}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all ${
-              activeTab === 'hospitalDirectory'
-                ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <Stethoscope className="h-4 w-4" aria-hidden="true" />
-            <span>{dt('Spitalet & QKMF e Kosovës')}</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'shortages'}
-            onClick={() => setActiveTab('shortages')}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all ${
-              activeTab === 'shortages'
-                ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <Pill className="h-4 w-4" aria-hidden="true" />
-            <span>Mungesat e Barnave</span>
-          </button>
+        {/* View switcher */}
+        <div className="au-rail" role="tablist" aria-label={dt('Pamjet e regjistrit shëndetësor')}>
+          {([
+            { id: 'cases', icon: User, label: `Rastet e mia (${filteredCases.length})` },
+            { id: 'municipalStats', icon: Building2, label: dt('Përmbledhja ime (private)') },
+            { id: 'hospitalDirectory', icon: Stethoscope, label: dt('Spitalet & QKMF e Kosovës') },
+            { id: 'shortages', icon: Pill, label: 'Mungesat e Barnave' },
+          ] as const).map(t => (
+            <button key={t.id} type="button" role="tab" aria-selected={activeTab === t.id} onClick={() => setActiveTab(t.id)} className="au-chip">
+              <t.icon className="h-3.5 w-3.5" aria-hidden="true" />{t.label}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'shortages' && <MedicineShortages />}
@@ -643,67 +538,31 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
         {/* TAB 1: CASES FEED */}
         {activeTab === 'cases' && (
           <div className="space-y-6">
-            {/* Filters Row */}
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Search */}
+            {/* Filters */}
+            <div className="space-y-2.5">
+              <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder={dt('Kërko me emër, diagnozë, komunë...')}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-rose-500 font-medium"
-                  />
+                  <label htmlFor="hr-search" className="sr-only">{dt('Kërko me emër, diagnozë, komunë...')}</label>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" aria-hidden="true" />
+                  <input id="hr-search" type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={dt('Kërko me emër, diagnozë, komunë...')} className="au-input !pl-9" />
                 </div>
-
-                {/* Municipality Dropdown */}
-                <div>
-                  <select
-                    value={selectedMunicipality}
-                    onChange={e => setSelectedMunicipality(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
-                  >
-                    <option value="Të Gjitha">{dt('📍 Të Gjitha 38 Komunat')}</option>
-                    {KOSOVO_MUNICIPALITIES.map(m => (
-                      <option key={m} value={m}>{m} ({municipalityStats[m]?.total || 0} raste)</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Urgency Dropdown */}
-                <div>
-                  <select
-                    value={selectedUrgency}
-                    onChange={e => setSelectedUrgency(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
-                  >
-                    <option value="all">{dt('⚡ Të gjitha Nivelet e Urgjencës')}</option>
-                    <option value="Urgjente">{dt('Urgjente')}</option>
-                    <option value="Mesatare">{dt('Mesatare')}</option>
-                    <option value="Kronike e Stabilizuar">Kronike e Stabilizuar</option>
-                  </select>
-                </div>
+                <select aria-label={dt('Komuna')} value={selectedMunicipality} onChange={e => setSelectedMunicipality(e.target.value)} className="au-input sm:!w-52">
+                  <option value="Të Gjitha">{dt('📍 Të Gjitha 38 Komunat')}</option>
+                  {KOSOVO_MUNICIPALITIES.map(m => (<option key={m} value={m}>{m} ({municipalityStats[m]?.total || 0} raste)</option>))}
+                </select>
+                <select aria-label={dt('Urgjenca')} value={selectedUrgency} onChange={e => setSelectedUrgency(e.target.value)} className="au-input sm:!w-52">
+                  <option value="all">{dt('⚡ Të gjitha Nivelet e Urgjencës')}</option>
+                  <option value="Urgjente">{dt('Urgjente')}</option>
+                  <option value="Mesatare">{dt('Mesatare')}</option>
+                  <option value="Kronike e Stabilizuar">Kronike e Stabilizuar</option>
+                </select>
               </div>
-
-              {/* Category Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              <div className="au-rail" role="group" aria-label={dt('Kategoritë')}>
                 {DISEASE_CATEGORIES.map(cat => {
                   const Icon = cat.icon;
-                  const isSelected = selectedCategory === cat.id;
                   return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border ${
-                        isSelected
-                          ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                          : 'bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-slate-300'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{cat.name}</span>
+                    <button key={cat.id} type="button" aria-pressed={selectedCategory === cat.id} onClick={() => setSelectedCategory(cat.id)} className="au-chip">
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span>{cat.name}</span>
                     </button>
                   );
                 })}
@@ -712,18 +571,18 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
 
             {/* Cases Grid */}
             {displayedCases.length === 0 ? (
-              <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-12 text-center text-slate-500">
-                <HeartPulse className="w-12 h-12 mx-auto text-slate-300 dark:text-zinc-700 mb-3" />
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              <div className="au-tile px-6 py-10 text-center">
+                <HeartPulse className="mx-auto h-7 w-7 opacity-40" aria-hidden="true" />
+                <h3 className="mt-3 text-[15px] font-semibold">
                   {searchQuery || selectedMunicipality !== 'Të Gjitha' || selectedCategory !== 'all' || selectedUrgency !== 'all' ? 'Nuk u gjetën raste për filtrat e zgjedhur' : 'Nuk ke ende raste të regjistruara'}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                <p className="au-sub mx-auto mt-1 max-w-sm text-[13px]">
                   {currentUser && currentUser.role !== 'guest' ? 'Regjistro një rast për të ndjekur shqyrtimin dhe hapat e mbështetjes.' : 'Dërgo kërkesë shëndetësore anonime ose me identitet. Për arsye privatësie, rastet pa llogari nuk shfaqen në këtë listë.'}
                 </p>
-                <button onClick={() => setIsRegisterModalOpen(true)} className="mt-4 min-h-10 rounded-xl bg-rose-600 px-4 text-xs font-bold text-white hover:bg-rose-700">{dt('Regjistro Rast të Ri')}</button>
+                <button onClick={() => setIsRegisterModalOpen(true)} className="au-btn au-btn-primary mt-4">{dt('Regjistro Rast të Ri')}</button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {displayedCases.map(c => {
                   const assignedHospital = getHospitalInfoForMunicipality(c.municipality);
                   return (
@@ -732,7 +591,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+                      className="au-tile flex flex-col justify-between p-4"
                     >
                       <div className="space-y-3.5">
                         {/* Header */}
@@ -887,7 +746,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           {c.donationUrl ? (
                             <div className="inline-flex items-center gap-1">
                               <a
-                                href={c.donationUrl}
+                                href={/^https?:\/\//i.test(c.donationUrl) ? c.donationUrl : '#'}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 group"
@@ -1443,7 +1302,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    {dt('Nëse keni hapur fushatë në GoFundMe apo platformë tjetër, vendosni linkun këtu që qytetarët të mund të dhurojnë drejtpërdrejt.')}
+                    {dt('Nëse keni hapur fushatë në GoFundMe apo platformë tjetër, vendosni linkun këtu për ta pasur pranë rastit tuaj.')}
                   </p>
                 </div>}
 
@@ -1677,7 +1536,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               </div>
 
               <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
-                {dt('Vendosni linkun zyrtar të fushatës së hapur në')} <strong>GoFundMe</strong> (ose platformë tjetër bamirësie). Me t'u ruajtur ky link, çdo qytetar mund të klikojë butonin <strong>"Kontribo"</strong> {dt('dhe të dhurojë ndihmë financiare menjëherë.')}
+                {dt('Vendosni linkun zyrtar të fushatës së hapur në')} <strong>GoFundMe</strong> (ose platformë tjetër bamirësie). {dt('Linku ruhet te rasti juaj. Rastet shëndetësore nuk janë publike, kështu që linku shfaqet vetëm te ju, jo te qytetarët e tjerë.')}
               </div>
 
               <form onSubmit={handleSaveGoFundMe} className="space-y-4">
