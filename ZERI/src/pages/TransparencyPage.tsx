@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, Info, Loader2, Printer, ShieldCheck } from 'lucide-react';
-import { AuraHero } from '../components/aura/Aura';
+import { AuraOrbit, AuraHero } from '../components/aura/Aura';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../lib/utils';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
@@ -87,7 +87,7 @@ export default function TransparencyPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 print:max-w-none print:px-0" id="transparency">
-      <AuraHero tone="slate" eyebrow={dt('Transparenca')} icon={ShieldCheck} title={dt('Qendra e Transparencës')}
+      <AuraHero visual={<AuraOrbit core={ShieldCheck} />} tone="slate" eyebrow={dt('Transparenca')} icon={ShieldCheck} title={dt('Qendra e Transparencës')}
         subtitle={dt('Çfarë ka bërë platforma me raportimet e qytetarëve, në numra që mund t\'i kontrolloni. Çdo shifër numërohet nga baza e të dhënave për të gjitha raportimet, dhe tregon me çfarë pjesëtohet.')} />
 
       <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 print:hidden dark:border-white/10 dark:bg-slate-900" aria-label={dt('Filtrat')}>

@@ -32,7 +32,7 @@ export default function RrethProjektitPage() {
   return (
     <AuraPage>
       <AuraHero
-        visual={<AuraOrbit core={Info} icons={[Eye, ShieldCheck, Users, Clock, Cpu, Database]} />}
+        visual={<AuraOrbit core={Info} />}
         tone="violet"
         eyebrow={dt('Rreth Platformës Kombëtare')}
         icon={Info}

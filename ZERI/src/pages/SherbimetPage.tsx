@@ -265,7 +265,7 @@ export default function SherbimetPage() {
   return (
     <AuraPage>
       <AuraHero
-        visual={<AuraOrbit core={Shield} icons={[FileText, Building, Search, Lightbulb, CheckCircle2, Phone]} />}
+        visual={<AuraOrbit core={Shield} />}
         tone="blue"
         eyebrow={dt('Shërbimet e platformës')}
         icon={FileText}

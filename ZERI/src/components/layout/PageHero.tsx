@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { AuraHero, AuraStats, type AuraTone } from '../aura/Aura';
+import { AuraHero, AuraOrbit, AuraStats, type AuraTone } from '../aura/Aura';
 
 export interface PageHeroStat { value: string; label: string }
 
@@ -21,7 +21,7 @@ export function PageHero({ eyebrow, icon, title, subtitle, actions, stats, aside
   return (
     <div className={className}>
       <AuraHero tone={tone} eyebrow={eyebrow} icon={icon} title={title} subtitle={subtitle} actions={actions}
-        aside={stats?.length ? <AuraStats items={stats} /> : aside} />
+        aside={stats?.length ? <AuraStats items={stats} /> : aside} visual={<AuraOrbit core={icon} />} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import { AuraHero } from '../components/aura/Aura';
+import { AuraOrbit, AuraHero } from '../components/aura/Aura';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -504,7 +504,7 @@ export default function StatisticsPage() {
       <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 md:py-10 lg:px-8">
 
         <div className="mb-6">
-          <AuraHero tone="teal" eyebrow={dt(`Analitika e pjesëmarrjes qytetare`)} icon={Activity}
+          <AuraHero visual={<AuraOrbit core={Activity} />} tone="teal" eyebrow={dt(`Analitika e pjesëmarrjes qytetare`)} icon={Activity}
             title={dt(`Statistikat & Analitika`)}
             subtitle={dt(`Një pasqyrë e matshme e raportimeve, zgjidhjeve dhe nevojave sipas komunës. Çdo shifër tregon çfarë numërohet dhe në cilin filtër.`)} />
         </div>

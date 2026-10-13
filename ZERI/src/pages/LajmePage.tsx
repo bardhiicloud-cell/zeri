@@ -392,7 +392,7 @@ export default function LajmePage() {
     <div className="au-page min-h-screen">
       <div className="mx-auto max-w-[1280px] space-y-7 px-4 pb-14 pt-3 sm:px-7 sm:pt-5 lg:px-10">
         <AuraHero
-          visual={<AuraOrbit core={Newspaper} icons={[MapPin, Link2, Calendar, Share2, Search, Info]} />}
+          visual={<AuraOrbit core={Newspaper} />}
           tone="blue"
           eyebrow={dt('Informim publik · Komuniteti · Transparencë')}
           icon={Newspaper}

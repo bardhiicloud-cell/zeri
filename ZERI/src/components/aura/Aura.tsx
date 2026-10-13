@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BarChart3, Building, FileText, LifeBuoy, ListChecks, MapPin, Phone, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 
 /**
@@ -66,7 +68,7 @@ export function AuraHero({ tone = 'blue', eyebrow, icon: Icon, title, subtitle, 
         </div>
         {(aside || visual) && (
           <div className="flex min-w-0 items-center gap-5 md:w-auto">
-            {visual && <div className="hidden lg:block">{visual}</div>}
+            {visual && <div className="flex justify-center md:block">{visual}</div>}
             {aside && <div className="min-w-0 flex-1 md:w-[15rem] md:flex-none">{aside}</div>}
           </div>
         )}
@@ -139,26 +141,39 @@ export function AuraPhoto({ src, alt, ratio = '16/10', video = false, className,
   );
 }
 
+const DEFAULT_ORBIT: Array<{ to: string; label: string; icon: LucideIcon }> = [
+  { to: '/raporto', label: 'Raporto problem', icon: FileText },
+  { to: '/trackid', label: 'Gjurmo raportin', icon: Search },
+  { to: '/harta', label: 'Harta', icon: MapPin },
+  { to: '/detailed-registry', label: 'Regjistri', icon: ListChecks },
+  { to: '/statistikat', label: 'Statistikat', icon: BarChart3 },
+  { to: '/sherbimet', label: 'Shërbimet', icon: Building },
+  { to: '/ndihma', label: 'Ndihma', icon: LifeBuoy },
+  { to: '/kontakt', label: 'Kontakt', icon: Phone },
+];
+
 /**
- * Orbit of icons around a core icon. Satellites are decorative unless `links` is given,
- * in which case each one is a real link (with an accessible name) to that route.
+ * Orbit of icons around a core icon. Every satellite is a real link: by default to the
+ * eight main public routes, or to the `links` given (with matching `icons`).
  */
-export function AuraOrbit({ core: Core, icons, links }: { core: LucideIcon; icons: LucideIcon[]; links?: Array<{ to: string; label: string }> }) {
-  const sats = icons.slice(0, 8);
+export function AuraOrbit({ core: Core, icons, links }: { core: LucideIcon; icons?: LucideIcon[]; links?: Array<{ to: string; label: string }> }) {
+  const items = icons && links ? icons.map((icon, i) => ({ icon, ...links[i] })).filter(x => x.to) : DEFAULT_ORBIT;
+  const sats = items.slice(0, 8);
   return (
-    <div className="au-orbit" {...(links ? {} : { 'aria-hidden': true })}>
+    <nav className="au-orbit" aria-label={dt('Lidhje të shpejta')}>
       <span aria-hidden="true" className="au-orbit-ring inset-[6%]" />
       <span aria-hidden="true" className="au-orbit-ring inset-[26%]" />
-      <span aria-hidden="true" className="au-orbit-core"><Core className="h-7 w-7" /></span>
-      {sats.map((Icon, i) => {
-        const a = (i / sats.length) * Math.PI * 2 - Math.PI / 2;
+      <span aria-hidden="true" className="au-orbit-core"><Core className="h-6 w-6" /></span>
+      {sats.map((it, i) => {
+        const ang = (i / sats.length) * Math.PI * 2 - Math.PI / 2;
         const r = i % 2 ? 34 : 46;
-        const style = { left: `${50 + Math.cos(a) * r}%`, top: `${50 + Math.sin(a) * r}%`, animationDelay: `${i * 0.6}s` };
-        const link = links?.[i];
-        return link
-          ? <Link key={i} to={link.to} aria-label={link.label} title={link.label} className="au-orbit-sat" style={style}><Icon className="h-[18px] w-[18px]" /></Link>
-          : <span key={i} className="au-orbit-sat" style={style}><Icon className="h-[18px] w-[18px]" /></span>;
+        return (
+          <Link key={it.to} to={it.to} aria-label={dt(it.label)} title={dt(it.label)} className="au-orbit-sat"
+            style={{ left: `${50 + Math.cos(ang) * r}%`, top: `${50 + Math.sin(ang) * r}%`, animationDelay: `${i * 0.6}s` }}>
+            <it.icon className="h-[18px] w-[18px]" />
+          </Link>
+        );
       })}
-    </div>
+    </nav>
   );
 }

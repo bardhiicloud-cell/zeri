@@ -112,7 +112,7 @@ export default function PartnersPage() {
     <div className="au-page min-h-screen px-3 pb-24 pt-3 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
         <AuraHero
-          visual={<AuraOrbit core={Handshake} icons={[Megaphone, Landmark, GraduationCap, HeartPulse, Newspaper, Store]} />}
+          visual={<AuraOrbit core={Handshake} />}
           tone="green"
           eyebrow={dt('Partnerët & Reklama')}
           icon={Handshake}

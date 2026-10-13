@@ -122,7 +122,7 @@ export default function KontaktPage() {
   return (
     <AuraPage>
       <AuraHero
-        visual={<AuraOrbit core={Phone} icons={[Send, FileText, Search, BookOpen, ShieldAlert, CheckCircle2]} />}
+        visual={<AuraOrbit core={Phone} />}
         tone="teal"
         eyebrow={dt('Kontakt')}
         icon={Phone}

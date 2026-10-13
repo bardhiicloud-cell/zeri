@@ -45,6 +45,7 @@ html.dark {
 .au-orbit-core { position: absolute; inset: 34%; display: grid; place-items: center; border-radius: 999px; color: #fff; background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.55), rgba(255,255,255,.12)); box-shadow: 0 0 36px rgba(255,255,255,.25), inset 0 0 0 1px rgba(255,255,255,.3); }
 .au-orbit-sat { position: absolute; display: grid; place-items: center; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 13px; transition: transform .2s ease, background .2s ease; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); animation: au-bob 6s ease-in-out infinite; }
 a.au-orbit-sat:hover, .au-orbit-sat:is(a):hover { background: rgba(255,255,255,.3); transform: scale(1.12); }
+@media (max-width: 640px) { .au-orbit { width: 200px; height: 200px; } .au-orbit-sat { width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 12px; } }
 @keyframes au-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .au-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(255,255,255,.07), transparent 40%); pointer-events: none; }
 .au-hero[data-tone="blue"]   { --a: #1e56b8; --b: #0a1b3d; }
@@ -72,7 +73,7 @@ a.au-orbit-sat:hover, .au-orbit-sat:is(a):hover { background: rgba(255,255,255,.
 .au-rail > * { flex: none; }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
-.au-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 600; transition: transform .2s ease, background .2s ease, opacity .2s; }
+.au-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 18px; text-align: center; line-height: 1.2; border-radius: 999px; font-size: 14px; font-weight: 600; transition: transform .2s ease, background .2s ease, opacity .2s; }
 .au-btn:active { transform: scale(.98); }
 .au-btn-primary { background: var(--au-accent); color: #fff; }
 .au-btn-primary:hover { filter: brightness(1.08); }

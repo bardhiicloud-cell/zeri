@@ -169,7 +169,7 @@ const ITEMS_PER_PAGE = 6;
 
       <div className="mb-6">
         <AuraHero
-          visual={<AuraOrbit core={Heart} icons={[HeartPulse, Home, Utensils, Shirt, Globe, Layers]} />}
+          visual={<AuraOrbit core={Heart} />}
           tone="rose"
           eyebrow={dt(`Fushatat e Donacioneve`)}
           icon={Heart}

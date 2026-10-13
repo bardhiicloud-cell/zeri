@@ -85,7 +85,7 @@ export default function IdeaPage() {
       </button>
 
       <AuraHero
-        visual={<AuraOrbit core={Lightbulb} icons={[Target, Users, MapPinned, Send, CheckCircle2, Loader2]} />}
+        visual={<AuraOrbit core={Lightbulb} />}
         tone="amber"
         eyebrow={dt('Laboratori qytetar')}
         icon={Lightbulb}

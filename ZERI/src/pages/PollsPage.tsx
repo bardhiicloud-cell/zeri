@@ -2,7 +2,7 @@ import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { dt } from '@/src/lib/dt';
-import { AuraHero, AuraStats } from '../components/aura/Aura';
+import { AuraOrbit, AuraHero, AuraStats } from '../components/aura/Aura';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -159,7 +159,7 @@ export default function PollsPage() {
   return (
     <div className="page-shell min-h-screen bg-(--color-page) dark:bg-(--color-brand-dark) transition-colors pb-24 font-sans text-[var(--color-text)] dark:text-white dark:text-slate-100 selection:bg-rose-500/30">
       <div className="mx-auto mb-6 max-w-6xl px-3 pt-3 sm:px-6 lg:px-8">
-        <AuraHero tone="violet" live eyebrow={dt(`Votim publik`)} icon={Vote}
+        <AuraHero visual={<AuraOrbit core={Vote} />} tone="violet" live eyebrow={dt(`Votim publik`)} icon={Vote}
           title={dt(`Sondazhet & Pjesëmarrja Qytetare`)}
           subtitle={dt(`Votoni në sondazhet aktive. Çdo llogari voton një herë për sondazh. Rezultatet shfaqen si totale; zgjedhja juaj individuale nuk shfaqet publikisht, por sistemi ruan që keni votuar për të parandaluar votat e dyfishta.`)}
           aside={<AuraStats items={[

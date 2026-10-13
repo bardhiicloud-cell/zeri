@@ -464,7 +464,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
       <div className="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-8">
         <div className="mx-auto max-w-6xl">
           <AuraHero
-            visual={<AuraOrbit core={ShieldCheck} icons={[HeartPulse, FileText, Building2, Stethoscope, Pill, Heart]} />}
+            visual={<AuraOrbit core={ShieldCheck} />}
             tone="rose"
             eyebrow={dt('Shërbim qytetar · Privatësi si parazgjedhje')}
             icon={HeartPulse}

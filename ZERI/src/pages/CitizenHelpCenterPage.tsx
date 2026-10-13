@@ -166,7 +166,7 @@ export default function CitizenHelpCenterPage() {
     <AuraPage>
       {/* Hero with the search built in: the first thing a visitor can do is ask. */}
       <AuraHero
-        visual={<AuraOrbit core={LifeBuoy} icons={[Search, FileText, MapPin, Phone, ShieldCheck, HelpCircle]} />}
+        visual={<AuraOrbit core={LifeBuoy} />}
         tone="violet"
         eyebrow={dt('Qendra e ndihmës')}
         icon={LifeBuoy}
