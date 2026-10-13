@@ -4,6 +4,7 @@ import { AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+import { dt } from '@/src/lib/dt';
 /**
  * Serious admin announcement popup.
  *
@@ -107,7 +108,7 @@ export function SeriousAnnouncementPopup() {
               <button
                 type="button"
                 onClick={dismiss}
-                aria-label="Mbyll njoftimin"
+                aria-label={dt('Mbyll njoftimin')}
                 className="ml-auto rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
               >
                 <X className="h-4 w-4" />

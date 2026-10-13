@@ -4,14 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, User as UserIcon, MessageSquare, Calendar, Megaphone,
   ShieldCheck, UserPlus, UserCheck, Play, Radio, Share2, Award, MapPin,
-  ExternalLink, Heart, Eye, Sparkles
+  ExternalLink, Heart, Eye, Sparkles, Lock, Mail, Phone, Globe, Briefcase
 } from 'lucide-react';
 import { addDoc, collection, serverTimestamp, getDocs, query, where, updateDoc, doc, limit } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { useStore } from '../lib/store';
 import { recordMatchesScope, isSpecificScope } from '../lib/municipalityScope';
 import { PUBLIC_LIMITS } from '../lib/loadLimits';
+import { fetchReelsByAuthor } from '../lib/reelsSocial';
+import type { Reel } from '../lib/reels';
 import { shareNatively } from '../lib/share';
+import { canViewProfile, canViewReels, prefsOf } from '../lib/forumPrefs';
+import { trackInsight, type ContactKind } from '../lib/forumAnalyticsApi';
 import toast from 'react-hot-toast';
 
 export function ForumProfileModal({
@@ -24,6 +28,8 @@ export function ForumProfileModal({
   followed = false,
   onToggleFollow,
   onOpenDM,
+  onOpenReel,
+  authorProfile,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -34,6 +40,10 @@ export function ForumProfileModal({
   followed?: boolean;
   onToggleFollow?: (targetId: string, name: string) => void | Promise<void>;
   onOpenDM?: (user: { id: string; name: string; avatar?: string }) => void;
+  /** Opens the Reels player on one reel of this profile. */
+  onOpenReel?: (reel: Reel) => void;
+  /** The author's users/{id} document, for their bio and Debati Publik privacy choices. */
+  authorProfile?: { bio?: string; forumPrefs?: unknown };
 }) {
   const currentUser = useStore(state => state.currentUser);
   const userMunicipality = useStore(state => state.userMunicipality);
@@ -51,6 +61,26 @@ export function ForumProfileModal({
     [allUsers, authorId]
   );
   const [followerDelta, setFollowerDelta] = useState(0);
+  const authorPrefs = prefsOf(authorProfile);
+  const viewerOpts = {
+    isOwner: currentUser?.id === authorId,
+    viewerFollowsOwner: Array.isArray((currentUser as any)?.followingIds) && ((currentUser as any).followingIds as string[]).includes(authorId),
+    viewerIsStaff: ['admin', 'superadmin', 'debatwp'].includes(currentUser?.role || ''),
+  };
+  const canSeeReels = canViewReels(authorPrefs, viewerOpts);
+  const isBiz = authorPrefs.accountType === 'business';
+  // A business account learns how many people opened its profile (server counts once per day per person).
+  useEffect(() => {
+    if (isOpen && authorId && currentUser?.id && currentUser.role !== 'guest') trackInsight({ authorId, type: 'profile_view' }, currentUser.id);
+  }, [isOpen, authorId, currentUser?.id]);
+  const contactClick = (kind: ContactKind) => {
+    if (currentUser?.id && currentUser.role !== 'guest') trackInsight({ authorId, type: 'contact_click', kind }, currentUser.id);
+  };
+  const canView = canViewProfile(authorPrefs, {
+    isOwner: currentUser?.id === authorId,
+    viewerFollowsOwner: Array.isArray((currentUser as any)?.followingIds) && ((currentUser as any).followingIds as string[]).includes(authorId),
+    viewerIsStaff: ['admin', 'superadmin', 'debatwp'].includes(currentUser?.role || ''),
+  });
   const [activeTab, setActiveTab] = useState<'reels' | 'debates' | 'bio'>('debates');
   const showReels = systemSettings?.showReels ?? true;
   const [userReels, setUserReels] = useState<any[]>([]);
@@ -63,10 +93,8 @@ export function ForumProfileModal({
     const fetchAuthorReels = async () => {
       setLoadingReels(true);
       try {
-        const q = query(collection(db, 'forum_reels'), where('authorId', '==', authorId), limit(PUBLIC_LIMITS.profileReels));
-        const snap = await getDocs(q);
-        const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUserReels(list);
+        // Real Reels (forumReels). The author also sees their own moderated ones.
+        setUserReels(await fetchReelsByAuthor(authorId, currentUser?.id === authorId, PUBLIC_LIMITS.profileReels));
       } catch (err) {
         console.error('Error fetching author reels:', err);
       } finally {
@@ -92,8 +120,8 @@ export function ForumProfileModal({
       && (p.visibility !== 'followers' || isOwnProfile || viewerFollowsAuthor));
     const postCount = userPosts.length;
     const totalPostLikes = userPosts.reduce((acc, p) => acc + (p.likes?.length || 0), 0);
-    const totalReelLikes = userReels.reduce((acc, r) => acc + (r.likes?.length || 0), 0);
-    const totalViews = userReels.reduce((acc, r) => acc + (r.views || 0), 0);
+    const totalReelLikes = userReels.reduce((acc, r) => acc + (r.likedBy?.length || 0), 0);
+    const totalViews = 0;
     return { postCount, reelCount: userReels.length, totalLikes: totalPostLikes + totalReelLikes, totalViews, userPosts };
   }, [posts, authorId, authorName, userReels]);
 
@@ -215,7 +243,7 @@ export function ForumProfileModal({
                         onOpenDM({ id: authorId, name: authorName, avatar: authorAvatar });
                       }}
                       className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                      title="Dërgo Mesazh Privat"
+                      title={dt('Dërgo Mesazh Privat')}
                     >
                       <MessageSquare className="w-4 h-4 text-blue-400" />
                       {dt(`Mesazh`)}
@@ -245,10 +273,44 @@ export function ForumProfileModal({
                 </div>
               </div>
 
+              {isBiz && (
+                <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-blue-300">
+                    <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />{dt('Biznes')} · {authorPrefs.business.category}
+                  </p>
+                  {authorPrefs.business.address && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-300"><MapPin className="h-3.5 w-3.5 shrink-0 text-rose-400" aria-hidden="true" />{authorPrefs.business.address}</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {authorPrefs.business.phone && (
+                      <a href={`tel:${authorPrefs.business.phone.replace(/[^\d+]/g, '')}`} onClick={() => contactClick('phone')}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700">
+                        <Phone className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />{dt('Telefono')}
+                      </a>
+                    )}
+                    {authorPrefs.business.email && (
+                      <a href={`mailto:${authorPrefs.business.email}`} onClick={() => contactClick('email')}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700">
+                        <Mail className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />{dt('Email')}
+                      </a>
+                    )}
+                    {authorPrefs.business.website && (
+                      <a href={authorPrefs.business.website} target="_blank" rel="noopener noreferrer nofollow" onClick={() => contactClick('website')}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700">
+                        <Globe className="h-3.5 w-3.5 text-indigo-400" aria-hidden="true" />{dt('Faqja')}
+                      </a>
+                    )}
+                    {!authorPrefs.business.phone && !authorPrefs.business.email && !authorPrefs.business.website && (
+                      <p className="text-[11px] text-slate-400">{dt('Ky biznes nuk ka shtuar ende të dhëna kontakti.')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Stats Bar */}
-              <div className="grid grid-cols-4 gap-2 my-4 p-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-center">
+              {canView && <div className="grid grid-cols-4 gap-2 my-4 p-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-center">
                 <div>
-                  <div className="text-sm font-black text-white">{Math.max(0, realFollowerCount + followerDelta)}</div>
+                  <div className="text-sm font-black text-white">{authorPrefs.showFollowLists || currentUser?.id === authorId ? Math.max(0, realFollowerCount + followerDelta) : '—'}</div>
                   <div className="text-[10px] font-bold text-slate-400">{dt(`Ndjekës`)}</div>
                 </div>
                 <div>
@@ -263,10 +325,10 @@ export function ForumProfileModal({
                   <div className="text-sm font-black text-emerald-400">{stats.totalLikes}</div>
                   <div className="text-[10px] font-bold text-slate-400">{dt(`Pëlqime`)}</div>
                 </div>
-              </div>
+              </div>}
 
               {/* Tab Selection */}
-              <div className="flex border-b border-slate-800 font-extrabold text-xs">
+              {canView && <div className="flex border-b border-slate-800 font-extrabold text-xs">
                 <button 
                   onClick={() => setActiveTab('reels')} 
                   className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
@@ -291,12 +353,25 @@ export function ForumProfileModal({
                 >
                   <UserIcon className="w-3.5 h-3.5" />{dt(`Rreth Meje`)}
                 </button>
-              </div>
+              </div>}
             </div>
 
             {/* Tab Content Area */}
             <div className="px-6 pb-6 overflow-y-auto flex-1 min-h-[180px] space-y-3">
-              {activeTab === 'reels' && (
+              {!canView && (
+                <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-10 text-center">
+                  <Lock className="h-6 w-6 text-slate-400" aria-hidden="true" />
+                  <p className="text-sm font-extrabold text-white">{authorPrefs.profileVisibility === 'private' ? dt('Ky profil është privat') : dt('Ky profil është vetëm për ndjekësit')}</p>
+                  <p className="text-xs text-slate-400">{authorPrefs.profileVisibility === 'private' ? dt('Ky qytetar nuk i shfaq postimet dhe reels te profili.') : dt('Ndiq këtë qytetar për të parë postimet, reels dhe bio-n e tij.')}</p>
+                </div>
+              )}
+              {canView && activeTab === 'reels' && !canSeeReels && (
+                <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-8 text-center">
+                  <Lock className="h-5 w-5 text-slate-400" aria-hidden="true" />
+                  <p className="text-xs font-extrabold text-white">{dt('Reels-et e këtij qytetari nuk janë publike')}</p>
+                </div>
+              )}
+              {canView && canSeeReels && activeTab === 'reels' && (
                 <div>
                   {loadingReels ? (
                     <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 font-bold">{dt(`Po ngarkohen videot reels...`)}</div>
@@ -306,26 +381,21 @@ export function ForumProfileModal({
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
                       {userReels.map((reel) => (
-                        <div key={reel.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">
-                          {reel.videoUrl ? (
-                            <video src={reel.videoUrl} className="w-full h-full object-cover" />
-                          ) : (
-                            <img src={reel.imageUrl || reel.thumbnail || authorAvatar} alt="" className="w-full h-full object-cover" />
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-2 text-white">
-                            <div className="flex items-center justify-between text-[10px] font-black">
-                              <span className="flex items-center gap-0.5 text-rose-400"><Heart className="w-2.5 h-2.5 fill-current" /> {reel.likes?.length || 0}</span>
-                              <span className="flex items-center gap-0.5 text-slate-300"><Eye className="w-2.5 h-2.5" /> {reel.views || 1}</span>
-                            </div>
+                        <button key={reel.id} type="button" onClick={() => onOpenReel?.(reel)}
+                          aria-label={reel.caption ? reel.caption.slice(0, 90) : dt('Hap Reel-in')}
+                          className="group relative aspect-[9/16] overflow-hidden rounded-xl border border-slate-800 bg-slate-900 text-left">
+                          <video src={`${reel.mediaUrl}#t=0.1`} preload="metadata" muted playsInline tabIndex={-1} className="h-full w-full object-cover" />
+                          <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 text-white">
+                            <span className="flex items-center gap-0.5 text-[10px] font-black text-rose-400"><Heart className="w-2.5 h-2.5 fill-current" /> {reel.likedBy.length}</span>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
                 </div>
               )}
 
-              {activeTab === 'debates' && (
+              {canView && activeTab === 'debates' && (
                 <div className="space-y-2">
                   {stats.userPosts.length === 0 ? (
                     <div className="py-8 text-center text-slate-500 dark:text-slate-400 text-xs font-bold bg-slate-950/50 rounded-2xl border border-slate-800">{dt(`Nuk ka debate publike të hapura nga ky anëtar.`)}
@@ -344,9 +414,9 @@ export function ForumProfileModal({
                 </div>
               )}
 
-              {activeTab === 'bio' && (
+              {canView && activeTab === 'bio' && (
                 <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-300">
-                  <p className="font-medium">{dt(`🇦🇱 Qytetar aktiv i Kosovës i përkushtuar për ngritjen e zërit publik, rregullimin e hapësirave publike dhe promovimin e kulturës dixhitale lokale.`)}
+                  <p className="font-medium">{authorProfile?.bio?.trim() || dt(`🇦🇱 Qytetar aktiv i Kosovës i përkushtuar për ngritjen e zërit publik, rregullimin e hapësirave publike dhe promovimin e kulturës dixhitale lokale.`)}
                   </p>
                   <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-[11px]">
                     <div className="flex items-center justify-between"><span className="text-slate-500 dark:text-slate-400">{dt(`I bashkuar:`)}</span> <span className="font-bold text-slate-200">{dt(`Qershor 2024`)}</span></div>

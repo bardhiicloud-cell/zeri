@@ -13,23 +13,47 @@ import { ForumProfileModal } from '../components/ForumProfileModal';
 import { 
   Send, Heart, MessageCircle, Share2, MoreHorizontal, ShieldCheck, 
   Image as ImageIcon, ThumbsUp, MessageSquare, Smile, X, 
-  Search, Bell, Trash2, Home, User, Loader2, ArrowUpRight, Globe, Video, Users, Eye, EyeOff, Hash, Filter, ChevronDown, Check, AlertTriangle, TrendingUp, UserPlus, Sparkles, MapPin, BarChart3, CornerDownRight, Award, BadgeCheck, Flame, PieChart, Layers, ArrowLeft, SlidersHorizontal, Plus, Shield, Megaphone, DollarSign, Radio, Bookmark, LockKeyhole
-, RefreshCw} from 'lucide-react';
+  Search, Bell, Trash2, Home, User, Loader2, ArrowUpRight, Globe, Video, Users, Eye, EyeOff, Hash, Filter, ChevronDown, Check, AlertTriangle, TrendingUp, UserPlus, Sparkles, MapPin, BarChart3, CornerDownRight, Award, BadgeCheck, Flame, PieChart, Layers, ArrowLeft, SlidersHorizontal, Plus, Shield, Megaphone, DollarSign, Radio, Bookmark, LockKeyhole, Settings2
+, RefreshCw, Film, Flag} from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { auth, db, uploadFileToStorage } from '../lib/firebase';
 import { 
   collection, query, orderBy, onSnapshot, addDoc,  limit,
-  serverTimestamp, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc , where
+  serverTimestamp, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc , where, getDocs
 } from 'firebase/firestore';
 import { PostFormatter } from "../components/PostFormatter";
 import { LegalModal } from "../components/LegalModal";
 import { GuestGuard } from '../components/GuestGuard';
 import ForumProfileTab from '../components/forum/ForumProfileTab';
 import { ForumStories } from '../components/forum/ForumStories';
-import AdBanner from '../components/AdBanner.tsx';
+import { VerifiedBadge } from '../components/forum/VerifiedBadge';
+import { ForumExplore, type ExplorePerson } from '../components/forum/ForumExplore';
+import { ForumNotificationsView, isForumNotification } from '../components/forum/ForumNotificationsView';
+import { VerificationModal } from '../components/forum/VerificationModal';
+import { PostAnalyticsSheet } from '../components/forum/PostAnalyticsSheet';
+import { AccountInsightsSheet } from '../components/forum/AccountInsightsSheet';
+import { PostOwnerMenu } from '../components/forum/PostOwnerMenu';
+import { LoadMore } from '../components/forum/LoadMore';
+import { useForumFeed } from '../lib/useForumFeed';
+import { reelIdFromSearch } from '../lib/reelsApi';
+import { PostEditSheet } from '../components/forum/PostEditSheet';
+import { SponsoredPostBar } from '../components/forum/SponsoredPostBar';
+import { DeletedPostsSheet, type DeletedPost } from '../components/forum/DeletedPostsSheet';
+import {
+  addCommentApi, deleteCommentApi, deletePostApi, notifyFollowApi, notifyPublishedApi, restorePostApi, setReactionApi, votePollApi,
+} from '../lib/forumPostsApi';
+import { PostViewSensor } from '../components/forum/PostViewSensor';
+import { ReportPostSheet } from '../components/forum/ReportPostSheet';
+import { useVerifiedIds } from '../lib/forumApi';
+import { rankForYou, hotScore as rankHotScore, trendingScore as rankTrendingScore } from '../lib/forumRanking';
+import { computeTrends, extractMentions, toHandle } from '../lib/forumTrends';
+import { audienceAllows, canViewReels, isBusiness, prefsOf, wantsNotification } from '../lib/forumPrefs';
 import { AdRequestModal } from '../components/AdRequestModal.tsx';
 import { ShareSheet } from '../components/ShareSheet.tsx';
 import { DirectMessagesModal } from '../components/forum/DirectMessagesModal';
+import { ReelsViewer, type ReelsSource } from '../components/forum/ReelsViewer';
+import { ReelComposer } from '../components/forum/ReelComposer';
+import { CreateMenuSheet, type CreateAction } from '../components/forum/CreateMenuSheet';
 import { FORUM_MUNICIPALITIES } from '../lib/constants';
 
 // Static forum data lives in src/lib/constants.ts on purpose: a page module that
@@ -118,26 +142,24 @@ interface Post {
     neutralPct: number;
     summaryText: string;
   };
+  /** Impressions, counted server-side once per account. */
+  viewCount?: number;
+  /** Set by the server when the author edits the text. */
+  editedAt?: any;
+  /** Set by the server on soft delete; the post is hidden from the feed and restorable for 30 days. */
+  deletedAt?: any;
+  /** Counted by the server redirect, once per visitor per day. */
+  adClicks?: number;
   createdAt: any;
 }
 
 
 
 
-const DEFAULT_OFFICIAL_PROFILES = [
-  { id: 'off-1', name: 'Komuna e Prishtinës', handle: '@prishtina_official', verified: true, followers: '45.2K', initials: 'KP', color: 'bg-blue-600' },
-  { id: 'off-2', name: 'Policia e Kosovës', handle: '@policiakosoves', verified: true, followers: '68.9K', initials: 'PK', color: 'bg-indigo-600' },
-  { id: 'off-3', name: 'Ministria e Mjedisit', handle: '@mjedisiks', verified: true, followers: '22.1K', initials: 'MM', color: 'bg-emerald-600' },
-  { id: 'off-4', name: 'Shërbimet Publike', handle: '@sherbimetpublike', verified: true, followers: '19.4K', initials: 'SHP', color: 'bg-amber-600' },
-  { id: 'off-5', name: 'Inspektorati Komunal', handle: '@inspektoratiks', verified: true, followers: '14.8K', initials: 'IK', color: 'bg-rose-600' }
-];
+// No placeholder institutions or topics: only real accounts and real posts are shown.
+const DEFAULT_OFFICIAL_PROFILES: any[] = [];
 
-const DEFAULT_TRENDS = [
-  { id: 101, category: 'Infrastrukturë', location: 'Prishtinë', title: 'Zgjerimi i rrugëve dhe unaza e kryeqytetit', discussions: '142 diskutime', rank: 1 },
-  { id: 102, category: 'Mjedis & Gjelbërim', location: 'Kosovë', title: 'Fushata kombëtare për pastrimin e parqeve', discussions: '98 diskutime', rank: 2 },
-  { id: 103, category: 'Siguri Publike', location: 'Prizren', title: 'Vendosja e kamerave të sigurisë në qendër', discussions: '76 diskutime', rank: 3 },
-  { id: 104, category: 'Transport Publik', location: 'Trafiku Urban', title: 'Linjat e reja të autobusëve elektrikë', discussions: '64 diskutime', rank: 4 }
-];
+const DEFAULT_TRENDS: any[] = [];
 
 export default function ForumPage() {
   const navigate = useNavigate();
@@ -146,7 +168,12 @@ export default function ForumPage() {
   const systemSettings = useStore(state => state.systemSettings);
   const showReels = systemSettings?.showReels ?? true;
 
-  const [posts, setPosts] = useState<Post[]>([]);
+  // Public posts (live), my own (live), followers-only posts of people I follow (server) and older pages.
+  const { posts, setPosts, trash: trashPosts, isLoading, hasMore, loadingMore, loadMore } = useForumFeed<Post>({
+    uid: currentUser?.id ?? null,
+    isGuest: !currentUser || currentUser.role === 'guest',
+    followingKey: (((currentUser as any)?.followingIds as string[] | undefined) ?? []).join(','),
+  });
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostImage, setNewPostImage] = useState<File | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -210,44 +237,22 @@ export default function ForumPage() {
   }, []);
 
   // Compute actual trends from `posts` state or fallback
-  const computedTrends = React.useMemo(() => {
-    if (!posts || posts.length === 0) return DEFAULT_TRENDS;
+  // Trends come from real posts only (hashtags and categories); no posts, no trends.
+  const computedTrends = React.useMemo(
+    () =>
+      computeTrends(posts as any, { limit: 10 }).map((trend, index) => ({
+        id: `${trend.kind}-${trend.label}`,
+        category: trend.kind === 'hashtag' ? 'Trend' : 'Temë',
+        location: 'Kosovë',
+        title: trend.label,
+        discussions: `${trend.posts} postime · ${trend.interactions} ndërveprime`,
+        rank: index + 1,
+      })),
+    [posts]
+  );
 
-    // 1. Group posts by category/location
-    const topics: Record<string, { id: number, category: string, location: string, title: string, engagement: number }> = {};
-
-    posts.forEach((post, index) => {
-      const title = post.content.substring(0, 30) + (post.content.length > 30 ? '...' : '');
-      const cat = post.category || 'Tjera';
-      const loc = post.neighborhood || 'Kosovë';
-
-      const engagement = (post.likes?.length || 0) + (post.comments?.length || 0) * 2;
-      topics[post.id] = {
-        id: index,
-        category: cat,
-        location: loc,
-        title: title,
-        engagement: engagement
-      };
-    });
-
-    // 2. Sort by highest engagement
-    const sorted = Object.values(topics).sort((a, b) => b.engagement - a.engagement);
-    if (sorted.length === 0) return DEFAULT_TRENDS;
-
-    // 3. Map to trend object
-    return sorted.map((t, i) => ({
-      id: t.id,
-      category: t.category,
-      location: t.location,
-      title: t.title,
-      discussions: `${Math.max(t.engagement * 3, 14)} diskutime`,
-      rank: i + 1
-    }));
-  }, [posts]);
-
-  const [feedSortBy, setFeedSortBy] = useState('trending'); // 'recent', 'trending', 'hot'
-  const [feedTab, setFeedTab] = useState<'forYou' | 'following' | 'municipality' | 'polls' | 'official'>('forYou');
+  const [feedSortBy, setFeedSortBy] = useState('foryou'); // 'foryou' (ranked), 'recent', 'trending', 'hot'
+  const [feedTab, setFeedTab] = useState<'forYou' | 'following' | 'municipality' | 'polls' | 'official' | 'saved'>('forYou');
   const [isAdRequestModalOpen, setIsAdRequestModalOpen] = useState(false);
   const [adModalPostId, setAdModalPostId] = useState<string | undefined>(undefined);
   const [adModalPostContent, setAdModalPostContent] = useState<string | undefined>(undefined);
@@ -307,14 +312,13 @@ export default function ForumPage() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'forumPosts'), {
+      const created = await addDoc(collection(db, 'forumPosts'), {
         isHidden: false,
         authorId: currentUser.id,
         authorName: currentUser.name,
-        authorEmail: currentUser.email,
         authorAvatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=0D8ABC&color=fff`,
         authorRole: currentUser.role,
-        authorBadge: currentUser.points > 100 ? 'Përfaqësues Lagjeje' : 'Qytetar i Verifikuar',
+        authorBadge: currentUser.points > 100 ? 'Përfaqësues Lagjeje' : 'Qytetar',
         content: quoteText,
         category: quoteTargetPost.category || 'all',
         neighborhood: selectedNeighborhood,
@@ -330,37 +334,11 @@ export default function ForumPage() {
         likes: [],
         comments: [],
         reactions: {},
-        aiSentiment: {
-          positivePct: 80,
-          negativePct: 10,
-          neutralPct: 10,
-          summaryText: 'Citat dhe analizë nga qytetari mbi debatin publik.'
-        },
         createdAt: serverTimestamp()
       });
 
-      if (quoteTargetPost.authorId && quoteTargetPost.authorId !== currentUser.id) {
-        try {
-          await addDoc(collection(db, 'notifications'), {
-            title: `${currentUser.name} citoi postimin tuaj`,
-            message: quoteText.slice(0, 150) || 'Postimi juaj u citua në Debatin Publik.',
-            channel: 'forum',
-            category: 'forum_quote',
-            type: 'info',
-            priority: 'normal',
-            audience: 'user',
-            userId: quoteTargetPost.authorId,
-            actorId: currentUser.id,
-            actorName: currentUser.name,
-            state: 'published',
-            link: '/forum',
-            sender: currentUser.name,
-            createdAt: serverTimestamp(),
-          });
-        } catch (err) {
-          console.warn('Could not write quote notification:', err);
-        }
-      }
+      // The quoted author's bell and any mentions are handled by the server after it checks the stored post.
+      void notifyPublishedApi(created.id, resolveMentionUids(quoteText));
 
       setQuoteTargetPost(null);
       setQuoteText('');
@@ -401,12 +379,28 @@ export default function ForumPage() {
    * who did not follow back, and suggestions — without a counter collection.
    */
   const [allForumUsers, setAllForumUsers] = useState<any[]>([]);
+  // A one-off read, refreshed when the tab regains focus (at most every 5 min).
+  // This used to be a live onSnapshot over 500 user documents, so every profile
+  // edit anywhere was pushed to every open forum tab. Follower counts do not
+  // need second-by-second freshness; the user's own follows update locally.
   useEffect(() => {
     if (!currentUser || currentUser.role === 'guest') return;
-    const usersQuery = query(collection(db, 'users'), limit(500));
-    return onSnapshot(usersQuery, (snap) => {
-      setAllForumUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, () => setAllForumUsers([]));
+    let cancelled = false;
+    let lastLoad = 0;
+    const load = async () => {
+      if (Date.now() - lastLoad < 5 * 60_000) return;
+      lastLoad = Date.now();
+      try {
+        const snap = await getDocs(query(collection(db, 'users'), limit(500)));
+        if (!cancelled) setAllForumUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch {
+        if (!cancelled) setAllForumUsers([]);
+      }
+    };
+    void load();
+    const onVisible = () => { if (!document.hidden) void load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { cancelled = true; document.removeEventListener('visibilitychange', onVisible); };
   }, [currentUser?.id, currentUser?.role]);
 
   const followingIdsOf = React.useCallback((userId: string): string[] => {
@@ -417,6 +411,17 @@ export default function ForumPage() {
   const followerCountOf = React.useCallback((userId: string): number =>
     allForumUsers.filter(u => Array.isArray(u.followingIds) && u.followingIds.includes(userId)).length,
   [allForumUsers]);
+
+  /*
+   * Debati Publik preferences of other citizens (users/{id}.forumPrefs). Used on
+   * the sender's side: skip notifications a person switched off, and refuse
+   * comments / mentions / reposts they restricted.
+   */
+  const forumProfileOf = React.useCallback((userId?: string) => allForumUsers.find(u => u.id === userId), [allForumUsers]);
+  const notifAllowed = React.useCallback(
+    (userId: string | undefined, category: string, kind?: 'comment' | 'reply') =>
+      wantsNotification(forumProfileOf(userId), category, kind),
+    [forumProfileOf]);
 
   /** People I follow who do not follow me back. */
   const notFollowedBack = React.useMemo(
@@ -438,6 +443,24 @@ export default function ForumPage() {
     if (Array.isArray(profileFollowing)) setFollowedUserIds(profileFollowing);
   }, [currentUser?.id]);
 
+  const forumNotifications = useStore((state) => state.notifications);
+  const unreadForumCount = React.useMemo(
+    () => forumNotifications.filter((n) => isForumNotification(n, currentUser?.id) && !n.isRead).length,
+    [forumNotifications, currentUser?.id]
+  );
+
+  /** Tell people they were mentioned (@handle). Skips yourself and anyone already notified. */
+  /** Resolves @mentions in a text to account ids. The server re-checks that each person is really named. */
+  const resolveMentionUids = (text: string): string[] => {
+    if (!currentUser || currentUser.role === 'guest') return [];
+    const handles = extractMentions(text);
+    if (handles.length === 0) return [];
+    return allForumUsers
+      .filter(u => u.id !== currentUser.id && handles.includes(toHandle(u.name || '')))
+      .slice(0, 5)
+      .map(u => u.id);
+  };
+
   const handleToggleFollow = async (targetId: string, name?: string) => {
     const isFollowing = followedUserIds.includes(targetId);
     const updated = isFollowing ? followedUserIds.filter(id => id !== targetId) : [...followedUserIds, targetId];
@@ -445,6 +468,10 @@ export default function ForumPage() {
       try {
         await updateDoc(doc(db, 'users', currentUser.id), { followingIds: updated });
         useStore.getState().setCurrentUser({ ...currentUser, followingIds: updated } as any);
+        // Keep follower counts right without a live listener on all users.
+        setAllForumUsers(prev => prev.some(u => u.id === currentUser.id)
+          ? prev.map(u => (u.id === currentUser.id ? { ...u, followingIds: updated } : u))
+          : [...prev, { id: currentUser.id, followingIds: updated }]);
       } catch (error) {
         console.error('Following nuk u ruajt:', error);
         toast.error('Ndjekja nuk u ruajt. Provoni përsëri.');
@@ -454,7 +481,10 @@ export default function ForumPage() {
     setFollowedUserIds(updated);
     try { localStorage.setItem('followed_user_ids', JSON.stringify(updated)); } catch { /* Storage may be unavailable. */ }
     if (isFollowing) toast(`Ndalove ndjekjen e ${name || 'përdoruesit'}`);
-    else toast.success(`Tani po ndjek ${name || 'përdoruesin'}.`);
+    else {
+      toast.success(`Tani po ndjek ${name || 'përdoruesin'}.`);
+      if (currentUser && currentUser.role !== 'guest' && targetId !== currentUser.id) void notifyFollowApi(targetId);
+    }
   };
 
   const handleToggleSavedPost = (postId: string) => {
@@ -581,11 +611,78 @@ export default function ForumPage() {
    * from having to lay them all out.
    */
   const [sharingPost, setSharingPost] = useState<Post | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'feed' | 'profile'>('feed');
-  const [activeMobileNav, setActiveMobileNav] = useState<'debate' | 'search' | 'post' | 'profile'>('debate');
+  const [activeTab, setActiveTab] = useState<'feed' | 'profile' | 'explore' | 'notifications'>('feed');
+  // The mobile tab is derived from what is on screen, so it can never disagree with it.
+  const activeMobileNav: 'home' | 'explore' | 'notifications' | 'messages' | 'profile' =
+    isDMModalOpen ? 'messages' : activeTab === 'explore' ? 'explore' : activeTab === 'notifications' ? 'notifications' : activeTab === 'profile' ? 'profile' : 'home';
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [reelsOpen, setReelsOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  // Editing and the author's own deleted posts (restorable for 30 days).
+  const [editingPost, setEditingPost] = useState<{ id: string; content: string } | null>(null);
+  const [trashOpen, setTrashOpen] = useState(false);
+  // What the player shows: the public feed, one author's reels, or one hashtag.
+  const [reelsView, setReelsView] = useState<{ source: ReelsSource; startReelId?: string }>({ source: { kind: 'feed' } });
+  const openReels = (view: { source: ReelsSource; startReelId?: string } = { source: { kind: 'feed' } }) => {
+    setReelsView(view);
+    setReelsOpen(true);
+  };
+  // A shared link (/forum?reel=ID) opens that reel straight away.
+  useEffect(() => {
+    const id = reelIdFromSearch(window.location.search);
+    if (id && showReels) openReels({ source: { kind: 'single', reelId: id }, startReelId: id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Mirrors isStaff() in firestore.rules; the rules remain the real gate.
+  const isStaffUser = ['admin', 'superadmin', 'agent', 'approver', 'newsadmin', 'adsadmin'].includes(String(currentUser?.role));
+  const [reelComposerOpen, setReelComposerOpen] = useState(false);
+  // Bumped after a publish so the viewer reloads and shows the new reel first.
+  const [reelsVersion, setReelsVersion] = useState(0);
+  const isSignedInCitizen = !!currentUser && currentUser.role !== 'guest';
+  const openCreateMenu = () => {
+    if (!isSignedInCitizen) { setShowAuthPrompt(true); return; }
+    setCreateMenuOpen(true);
+  };
+  const handleCreateAction = (action: CreateAction) => {
+    setCreateMenuOpen(false);
+    if (!isSignedInCitizen) { setShowAuthPrompt(true); return; }
+    if (action === 'reel') { setReelComposerOpen(true); return; }
+    setReelsOpen(false);
+    setIsDMModalOpen(false);
+    setActiveTab('feed');
+    if (action === 'story') {
+      // ForumStories owns the story editor and listens for this event.
+      window.dispatchEvent(new Event('zeri:open-forum-story'));
+      return;
+    }
+    setComposeOpen(true);
+    setShowPollCreator(action === 'poll');
+    window.setTimeout(() => {
+      textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      textareaRef.current?.focus();
+    }, 120);
+  };
+  const [showVerification, setShowVerification] = useState(false);
+  const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
+  const [reportingPostId, setReportingPostId] = useState<string | null>(null);
+
+  // Back from Paysera: say what happened, then clean the address so a refresh does not repeat it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get('payment');
+    if (!outcome) return;
+    if (outcome === 'ok') toast.success(dt('Faleminderit! Pagesa po konfirmohet; shërbimi aktivizohet sapo të vërtetohet.'), { duration: 7000 });
+    else toast(dt('Pagesa u anulua. Kodi juaj mbetet i vlefshëm për pagesë me IBAN.'), { duration: 7000 });
+    params.delete('payment');
+    params.delete('code');
+    const rest = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}${window.location.hash}`);
+  }, []);
+  const verifiedIds = useVerifiedIds();
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAuthPrompt, setShowAuthPrompt] = useState(true);
+  // Closed on load: a guest can read, search and filter first; the prompt opens only when they try to act.
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const shouldGateForum = !currentUser || currentUser.role === 'guest';
 
   // Ad state
@@ -596,37 +693,6 @@ export default function ForumPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files?.[0]) setNewPostImage(e.target.files[0]); };
 
-  useEffect(() => {
-    /**
-     * The feed is capped at the newest 50 posts.
-     *
-     * Without a limit, `orderBy('createdAt','desc')` still delivers the entire
-     * collection to the browser and keeps a live listener on every one of them.
-     * The forum is the highest-traffic page on the platform, so that is a
-     * per-visitor cost that grows with total history rather than with what the
-     * visitor can see. Older posts are reachable by scrolling through the
-     * server's paginated endpoint.
-     */
-    const q = query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc'), limit(50));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const p = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Post));
-
-      setPosts(p);
-      setIsLoading(false);
-    }, (error) => {
-      console.warn('Could not fetch live forum posts, proceeding with default state:', error);
-      setIsLoading(false);
-    });
-
-    const safetyTimer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => {
-      clearTimeout(safetyTimer);
-      unsub();
-    };
-  }, []);
 
   const getCitizenBadge = (post: Post) => {
     if (['admin', 'moderator', 'zyrtar'].includes(post.authorRole)) {
@@ -638,7 +704,7 @@ export default function ForumPage() {
     if (post.comments?.length > 2 || post.likes?.length > 5) {
       return { label: 'Debatues Aktiv', color: 'bg-rose-100 text-rose-700 border-rose-200', icon: Flame };
     }
-    return { label: 'Qytetar i Verifikuar', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: BadgeCheck };
+    return { label: 'Qytetar', color: 'bg-slate-100 text-slate-700 border-slate-200', icon: User };
   };
 
   const handleCreatePost = async (e: React.FormEvent) => {
@@ -677,11 +743,10 @@ export default function ForumPage() {
         }
       }
 
-      await addDoc(collection(db, 'forumPosts'), {
+      const created = await addDoc(collection(db, 'forumPosts'), {
         isHidden: false,
         authorId: currentUser.id,
         authorName: currentUser.name,
-        authorEmail: currentUser.email,
         authorAvatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=0D8ABC&color=fff`,
         authorRole: currentUser.role,
         authorBadge: currentUser.points > 100 ? 'Përfaqësues Lagjeje' : 'Qytetar i Verifikuar',
@@ -703,14 +768,10 @@ export default function ForumPage() {
         likes: [],
         comments: [],
         reactions: {},
-        aiSentiment: {
-          positivePct: 75,
-          negativePct: 15,
-          neutralPct: 10,
-          summaryText: 'Debat aktiv qytetar mbi propozimin lokal. AI Analiza tregon mbështetje pozitive.'
-        },
         createdAt: serverTimestamp()
       });
+      void notifyPublishedApi(created.id, resolveMentionUids(newPostContent));
+      setComposeOpen(false);
 
       setNewPostContent('');
       setNewPostImage(null);
@@ -750,7 +811,12 @@ export default function ForumPage() {
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, poll: updatedPoll } : p));
 
       if (!postId.startsWith('demo-') && currentUser && currentUser.role !== 'guest') {
-        updateDoc(doc(db, 'forumPosts', postId), { poll: updatedPoll }).catch(console.error);
+        votePollApi(postId, optionId)
+          .then((r) => setPosts(prev => prev.map(p => p.id === postId ? { ...p, poll: r.poll } : p)))
+          .catch((err) => {
+            setPosts(prev => prev.map(p => p.id === postId ? { ...p, poll: post.poll } : p));
+            toast.error(err instanceof Error ? err.message : 'Vota nuk u ruajt.');
+          });
       }
 
       toast.success('Vota juaj u regjistrua me sukses!');
@@ -766,34 +832,16 @@ export default function ForumPage() {
       if (!post) return;
       const currentReposts = post.reposts || [];
       const hasReposted = currentReposts.includes(actorId);
+      if (!hasReposted && post.authorId !== actorId && prefsOf(forumProfileOf(post.authorId)).allowReposts === false) {
+        toast.error('Ky përdorues nuk lejon riposto të postimeve të tij.');
+        return;
+      }
       const newReposts = hasReposted ? currentReposts.filter(id => id !== actorId) : [...currentReposts, actorId];
 
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, reposts: newReposts } : p));
       try {
         await persistPostAction(postId, 'repost');
-        /**
-         * Real-time bell: the author learns their post is circulating the
-         * moment the repost lands. Only on the first repost — un-reposting is
-         * not something worth a notification.
-         */
-        if (!hasReposted && post.authorId && currentUser && post.authorId !== currentUser.id) {
-          addDoc(collection(db, 'notifications'), {
-            title: `${currentUser.name} ripostoi debatin tuaj`,
-            message: post.content.slice(0, 100),
-            channel: 'forum',
-            category: 'forum_repost',
-            type: 'info',
-            priority: 'low',
-            audience: 'user',
-            userId: post.authorId,
-            actorId: currentUser.id,
-            actorName: currentUser.name,
-            state: 'published',
-            link: '/forum',
-            sender: currentUser.name,
-            createdAt: serverTimestamp(),
-          }).catch(console.warn);
-        }
+        // The author's bell is written by the server (once per person and post).
       } catch (error) {
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, reposts: currentReposts } : p));
         toast.error(error instanceof Error ? error.message : 'Rishpërndarja nuk u ruajt.');
@@ -816,24 +864,7 @@ export default function ForumPage() {
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: newLikes } : p));
         try {
           await persistPostAction(postId, 'like');
-          if (!hasLiked && post.authorId && currentUser && post.authorId !== currentUser.id) {
-            addDoc(collection(db, 'notifications'), {
-              title: `${currentUser.name} pëlqeu postimin tuaj`,
-              message: post.content.slice(0, 100),
-              channel: 'forum',
-              category: 'forum_like',
-              type: 'info',
-              priority: 'low',
-              audience: 'user',
-              userId: post.authorId,
-              actorId: currentUser.id,
-              actorName: currentUser.name,
-              state: 'published',
-              link: '/forum',
-              sender: currentUser.name,
-              createdAt: serverTimestamp(),
-            }).catch(console.warn);
-          }
+          // The author's bell is written by the server (once per person and post).
         } catch (error) {
           setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: currentLikes } : p));
           toast.error(error instanceof Error ? error.message : 'Pëlqimi nuk u ruajt.');
@@ -857,10 +888,21 @@ export default function ForumPage() {
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, reactions: updatedReactions } : p));
 
         if (!postId.startsWith('demo-') && currentUser && currentUser.role !== 'guest') {
-          updateDoc(doc(db, 'forumPosts', postId), { reactions: updatedReactions }).catch(console.error);
+          setReactionApi(postId, hasReacted ? null : reactionType).catch((err) => {
+            setPosts(prev => prev.map(p => p.id === postId ? { ...p, reactions: currentReactions } : p));
+            toast.error(err instanceof Error ? err.message : 'Reagimi nuk u ruajt.');
+          });
         }
       }
     } catch (e) { console.error(e); }
+  };
+
+  /** The author may restrict who comments; tell the commenter why instead of failing silently. */
+  const canCommentOn = (post?: { authorId?: string }): boolean => {
+    if (!post?.authorId || !currentUser || post.authorId === currentUser.id) return true;
+    const allowed = audienceAllows(prefsOf(forumProfileOf(post.authorId)).whoCanComment, followedUserIds.includes(post.authorId));
+    if (!allowed) toast.error('Autori e ka kufizuar kush mund të komentojë këtë postim.');
+    return allowed;
   };
 
   const handleAddComment = async (postId: string) => {
@@ -869,66 +911,21 @@ export default function ForumPage() {
       return;
     }
     if (!newCommentContent.trim()) return;
+    if (!canCommentOn(posts.find(p => p.id === postId))) return;
 
     const commentText = newCommentContent;
     setNewCommentContent('');
-
-    const newComment: ForumComment = {
-      id: Math.random().toString(36).substring(2, 9),
-      authorId: currentUser.id,
-      authorName: currentUser.name,
-      authorAvatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=0D8ABC&color=fff`,
-      content: commentText,
-      createdAt: new Date().toISOString(),
-      replies: []
-    };
-
-    // Instant optimistic state update
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...(p.comments || []), newComment] } : p));
-    toast.success('Komenti u shtua!');
-
     try {
-      if (!postId.startsWith('demo-')) {
-        await updateDoc(doc(db, 'forumPosts', postId), {
-          comments: arrayUnion(newComment)
-        });
-
-        /*
-         * Notify the post author that someone commented. The bell already
-         * renders `channel: 'forum'` documents, so this completes the loop:
-         * before this block a reply was written silently and the author never
-         * knew their discussion had an answer. Self-comments don't notify —
-         * the author already knows what they just wrote.
-         */
-        const post = posts.find(p => p.id === postId);
-        if (post && post.authorId && post.authorId !== currentUser.id) {
-          try {
-            await addDoc(collection(db, 'notifications'), {
-              title: `${currentUser.name} komentoi diskutimin tuaj`,
-              message: commentText.slice(0, 200),
-              channel: 'forum',
-              category: 'forum_reply',
-              type: 'info',
-              priority: 'normal',
-              audience: 'user',
-              userId: post.authorId,
-              postId,
-              actorId: currentUser.id,
-              actorName: currentUser.name,
-              state: 'published',
-              link: '/forum',
-              sender: currentUser.name,
-              createdAt: serverTimestamp(),
-            });
-          } catch (notifError) {
-            // A failed notification must not fail the comment that was already
-            // written — the discussion itself is the primary data.
-            console.warn('Forum notification write failed:', notifError);
-          }
-        }
-      }
+      // The server stores the comment under the verified account and notifies the
+      // post's author (and verified mentions); two people commenting at once no longer lose one.
+      const { comment } = await addCommentApi(postId, commentText, { mentionUids: resolveMentionUids(commentText) });
+      setPosts(prev => prev.map(p => p.id === postId && !(p.comments || []).some(c => c.id === comment.id)
+        ? { ...p, comments: [...(p.comments || []), { ...comment, replies: [] } as ForumComment] }
+        : p));
+      toast.success('Komenti u shtua!');
     } catch (error) {
-      console.error(error);
+      setNewCommentContent(commentText);
+      toast.error(error instanceof Error ? error.message : 'Komenti nuk u shtua.');
     }
   };
 
@@ -942,94 +939,83 @@ export default function ForumPage() {
 
     const repText = replyContent;
     setReplyContent('');
-    setReplyingCommentId(null);
-
-    const newReply: CommentReply = {
-      id: Math.random().toString(36).substring(2, 9),
-      authorId: currentUser.id,
-      authorName: currentUser.name,
-      authorAvatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=0D8ABC&color=fff`,
-      content: repText,
-      createdAt: new Date().toISOString()
-    };
-
-    // Instant optimistic state update
-    setPosts(prev => prev.map(p => {
-      if (p.id !== postId) return p;
-      const updatedComments = (p.comments || []).map(c => {
-        if (c.id === commentId) {
-          return { ...c, replies: [...(c.replies || []), newReply] };
-        }
-        return c;
-      });
-      return { ...p, comments: updatedComments };
-    }));
-    toast.success('Përgjigjja u dërgua!');
-
     try {
-      const post = posts.find(p => p.id === postId);
-      if (post && !postId.startsWith('demo-')) {
-        const updatedComments = (post.comments || []).map(c => {
-          if (c.id === commentId) {
-            return { ...c, replies: [...(c.replies || []), newReply] };
-          }
-          return c;
-        });
-        await updateDoc(doc(db, 'forumPosts', postId), { comments: updatedComments });
+      const { comment } = await addCommentApi(postId, repText, { parentId: commentId, mentionUids: resolveMentionUids(repText) });
+      setReplyingCommentId(null);
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          comments: (p.comments || []).map(c => c.id === commentId && !(c.replies || []).some(r => r.id === comment.id)
+            ? { ...c, replies: [...(c.replies || []), comment as unknown as CommentReply] }
+            : c),
+        };
+      }));
+      toast.success('Përgjigjja u dërgua!');
+    } catch (error) {
+      setReplyContent(repText);
+      toast.error(error instanceof Error ? error.message : 'Përgjigjja nuk u dërgua.');
+    }
+  };
 
-        /*
-         * Notify the comment author that their comment got a reply. This is
-         * the conversation loop the forum was missing: a nested reply was
-         * written silently, so the person being answered never returned.
-         * Notifies the comment's author (not the post's), and never the
-         * replier themselves.
-         */
-        const parent = (post.comments || []).find(c => c.id === commentId);
-        if (parent && parent.authorId && parent.authorId !== currentUser.id) {
-          try {
-            await addDoc(collection(db, 'notifications'), {
-              title: `${currentUser.name} u përgjigj komentit tuaj`,
-              message: repText.slice(0, 200),
-              channel: 'forum',
-              category: 'forum_reply',
-              type: 'info',
-              priority: 'normal',
-              audience: 'user',
-              userId: parent.authorId,
-              postId,
-              commentId,
-              actorId: currentUser.id,
-              actorName: currentUser.name,
-              state: 'published',
-              link: '/forum',
-              sender: currentUser.name,
-              createdAt: serverTimestamp(),
-            });
-          } catch (notifError) {
-            console.warn('Forum reply notification write failed:', notifError);
-          }
-        }
-      }
-    } catch (e) {
-      console.error(e);
+  /** The commenter, the post's author or staff may remove a comment or reply; the server decides. */
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    if (!window.confirm('Ta fshij këtë koment?')) return;
+    const before = posts;
+    setPosts(prev => prev.map(p => p.id !== postId ? p : {
+      ...p,
+      comments: (p.comments || [])
+        .filter(c => c.id !== commentId)
+        .map(c => ({ ...c, replies: (c.replies || []).filter(r => r.id !== commentId) })),
+    }));
+    try {
+      await deleteCommentApi(postId, commentId);
+    } catch (error) {
+      setPosts(before);
+      toast.error(error instanceof Error ? error.message : 'Komenti nuk u fshi.');
     }
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!window.confirm('A jeni të sigurt? Kjo fshin postimin përgjithmonë.')) return;
+    if (!window.confirm('Ta fshij postimin? Mund ta rikthesh brenda 30 ditëve nga profili yt.')) return;
+    const before = posts;
+    setPosts(prev => prev.filter(p => p.id !== postId));
     try {
-      if (!postId.startsWith('demo-')) {
-        await deleteDoc(doc(db, 'forumPosts', postId));
-      } else {
-        setPosts(prev => prev.filter(p => p.id !== postId));
-      }
-      toast.success('Postimi u fshi!');
-    } catch(e) {
-      toast.error('Gabim gjatë fshirjes');
+      await deletePostApi(postId);
+      toast((t) => (
+        <span className="flex items-center gap-3 text-sm">
+          Postimi u fshi.
+          <button type="button" className="font-black text-blue-600"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try { await restorePostApi(postId); toast.success('Postimi u rikthye.'); }
+              catch (e) { toast.error(e instanceof Error ? e.message : 'Rikthimi dështoi.'); }
+            }}>
+            Zhfshi
+          </button>
+        </span>
+      ), { duration: 8000 });
+    } catch (error) {
+      setPosts(before);
+      toast.error(error instanceof Error ? error.message : 'Gabim gjatë fshirjes');
     }
   };
 
   const isAdsAdmin = currentUser?.role === 'adsadmin' || currentUser?.email === 'reklama@ks.com' || currentUser?.email === 'reklama@kosova.com';
+  const explorePeople = React.useMemo<ExplorePerson[]>(() => {
+    const q = toHandle(searchQuery.replace(/^@/, ''));
+    return allForumUsers
+      .filter((u) => u.id !== currentUser?.id && (!q || toHandle(u.name || '').includes(q)))
+      .map((u) => ({
+        id: u.id,
+        name: u.name || 'Qytetar',
+        avatar: u.avatar || '',
+        followers: followerCountOf(u.id),
+        verified: verifiedIds.has(u.id),
+      }))
+      .sort((a, b) => Number(b.verified) - Number(a.verified) || b.followers - a.followers);
+  }, [allForumUsers, searchQuery, currentUser?.id, followerCountOf, verifiedIds]);
+
   const isModerator = currentUser?.role === 'admin';
 
   // Unified displayPosts respecting tabs, filters, and algorithmic sorting
@@ -1076,6 +1062,8 @@ export default function ForumPage() {
         if (!isFollowed) return false;
       } else if (feedTab === 'polls') {
         if (!p.poll) return false;
+      } else if (feedTab === 'saved') {
+        if (!savedPostIds.includes(p.id)) return false;
       } else if (feedTab === 'official') {
         if (p.authorRole !== 'admin' && p.authorBadge !== 'Zyrtar Komunal') return false;
       } else if (feedTab === 'municipality') {
@@ -1091,22 +1079,22 @@ export default function ForumPage() {
       return true;
     });
 
+    // One ranking module for every sort (see src/lib/forumRanking.ts).
+    if (feedSortBy === 'foryou') {
+      return rankForYou(result as any, {
+        followedIds: followedUserIds,
+        verifiedIds,
+        municipality: isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : null,
+      }) as Post[];
+    }
     if (feedSortBy === 'trending') {
-      result.sort((a, b) => engagementScore(b) - engagementScore(a));
+      result.sort((a, b) => rankTrendingScore(b as any) - rankTrendingScore(a as any));
     } else if (feedSortBy === 'hot') {
-      const hotScore = (post: Post) => {
-        const created = post.createdAt?.toMillis
-          ? post.createdAt.toMillis()
-          : Date.parse(post.createdAt || '') || 0;
-        const ageHours = created > 0 ? Math.max(0, (Date.now() - created) / 3_600_000) : 0;
-        const raw = (post.likes?.length || 0) * 2 + (post.comments?.length || 0) * 3 + (post.reposts?.length || 0) * 4;
-        return raw / Math.pow(2, ageHours / 6);
-      };
-      result.sort((a, b) => hotScore(b) - hotScore(a));
+      result.sort((a, b) => rankHotScore(b as any) - rankHotScore(a as any));
     }
 
     return result;
-  }, [posts, searchQuery, activeCategoryFilter, activeNeighborhoodFilter, feedTab, followedUserIds, userMunicipality, feedSortBy, isModerator, isAdsAdmin, engagementScore]);
+  }, [posts, searchQuery, activeCategoryFilter, activeNeighborhoodFilter, feedTab, followedUserIds, savedPostIds, userMunicipality, feedSortBy, isModerator, isAdsAdmin, verifiedIds]);
 
   return (
     /**
@@ -1142,14 +1130,14 @@ export default function ForumPage() {
                 <div className="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 p-6 text-white">
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]">
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    Debati Publik
+                    {dt('Debati Publik')}
                   </div>
-                  <h3 className="mt-4 text-3xl font-black leading-tight text-white">Vazhdoni me siguri</h3>
+                  <h3 className="mt-4 text-3xl font-black leading-tight text-white">{dt('Vazhdoni me siguri')}</h3>
                 </div>
 
                 <div className="p-6">
                   <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    Për të komentuar, votuar dhe ndjekur diskutimet, mund të vazhdoni si mysafir ose të hyni në llogarinë tuaj.
+                    {dt('Për të komentuar, votuar dhe ndjekur diskutimet, mund të vazhdoni si mysafir ose të hyni në llogarinë tuaj.')}
                   </p>
 
                   <div className="mt-6 space-y-3">
@@ -1157,19 +1145,19 @@ export default function ForumPage() {
                       onClick={() => setShowAuthPrompt(false)}
                       className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                     >
-                      Vazhdoni si Mysafir
+                      {dt('Vazhdoni si Mysafir')}
                     </button>
                     <button
                       onClick={() => navigate('/login')}
                       className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white transition hover:bg-blue-500"
                     >
-                      Kyçu me llogari
+                      {dt('Kyçu me llogari')}
                     </button>
                     <button
                       onClick={() => navigate('/register')}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     >
-                      Regjistrohu
+                      {dt('Regjistrohu')}
                     </button>
                   </div>
                 </div>
@@ -1178,7 +1166,34 @@ export default function ForumPage() {
           )}
         </AnimatePresence>
 
-        <div className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#121b2b]">
+        {/* Phones: a compact app bar (back, profile, search, settings), like X. */}
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden dark:border-white/10 dark:bg-zinc-950/95">
+          <div className="flex h-14 items-center gap-2 px-3">
+            <button type="button" onClick={() => navigate('/')} aria-label={dt('Kthehu te platforma')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button type="button" onClick={() => setActiveTab('profile')} aria-label={dt('Profili im')} className="shrink-0">
+              <img src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-white/10" />
+            </button>
+            <button type="button" onClick={() => setActiveTab('explore')} className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 text-left text-sm text-slate-500 dark:border-white/10 dark:bg-zinc-800 dark:text-slate-400">
+              <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">{dt('Kërko')}</span>
+            </button>
+            <button type="button" onClick={() => { setIsDMModalOpen(false); setActiveTab('notifications'); }} aria-label={`${dt('Njoftimet')}${unreadForumCount ? ` (${unreadForumCount})` : ''}`} aria-current={activeTab === 'notifications' ? 'page' : undefined} className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
+              <Bell className="h-5 w-5" aria-hidden="true" />
+              {unreadForumCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex min-w-[1.1rem] items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-black text-white ring-2 ring-white dark:ring-zinc-950">
+                  {unreadForumCount > 9 ? '9+' : unreadForumCount}
+                </span>
+              )}
+            </button>
+            <button type="button" onClick={() => setShowVerification(true)} aria-label={dt('Verifikimi')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
+              <Settings2 className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+        </header>
+
+        <div className="sticky top-0 z-40 hidden w-full border-b border-slate-200 bg-white shadow-sm lg:block dark:border-white/10 dark:bg-[#121b2b]">
           <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
             <button
               type="button"
@@ -1186,12 +1201,12 @@ export default function ForumPage() {
               className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              <span>Kthehu te platforma</span>
+              <span>{dt('Kthehu te platforma')}</span>
             </button>
 
             <div className="flex min-w-0 items-center gap-2 text-slate-900 dark:text-white">
               <Radio className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
-              <span className="truncate text-sm font-bold">Debati Publik</span>
+              <span className="truncate text-sm font-bold">{dt('Debati Publik')}</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1213,14 +1228,10 @@ export default function ForumPage() {
                 }}
                 className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-800"
               >
-                Posto
+                {dt('Posto')}
               </button>
             </div>
           </div>
-        </div>
-
-        <div className="mx-auto w-full max-w-7xl px-4 pt-3 sm:px-6 lg:px-8">
-          <AdBanner position="top" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-h-full flex gap-6 lg:gap-8 justify-center pt-5">
@@ -1238,7 +1249,7 @@ export default function ForumPage() {
             Now: no empty banner, real numbers only, and the rail scrolls with
             the page instead of pinning a column that cannot fit.
           */}
-          <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4">
+          <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 overflow-hidden">
                <div className="flex items-center gap-3 p-4">
                  <img
@@ -1268,37 +1279,92 @@ export default function ForumPage() {
                </button>
              </div>
 
-             <div className="flex flex-col gap-1 rounded-2xl border border-slate-200/80 bg-white p-2 dark:border-zinc-800/80 dark:bg-zinc-900">
+             <nav
+               aria-label={dt('Navigimi i debatit')}
+               className="flex flex-col gap-1 rounded-2xl border border-slate-200/80 bg-white p-2 dark:border-zinc-800/80 dark:bg-zinc-900"
+             >
                {[
-                 { id: 'feed', label: 'Rrjeti i Diskutimeve', icon: Home },
-                 { id: 'profile', label: 'Profili Qytetar', icon: User },
-               ].map(({ id, label, icon: Icon }) => (
+                 {
+                   key: 'home', label: 'Rrjeti i Diskutimeve', icon: Home,
+                   active: activeTab === 'feed' && feedTab === 'forYou',
+                   onClick: () => { setActiveTab('feed'); setFeedTab('forYou'); },
+                 },
+                 {
+                   key: 'explore', label: 'Eksploro', icon: Search, active: activeTab === 'explore',
+                   onClick: () => setActiveTab('explore'),
+                 },
+                 ...(showReels ? [{
+                   key: 'reels', label: 'Reels', icon: Film, active: reelsOpen,
+                   onClick: () => openReels(),
+                 }] : []),
+                 {
+                   key: 'notifications', label: 'Njoftimet', icon: Bell, active: activeTab === 'notifications',
+                   badge: unreadForumCount,
+                   onClick: () => setActiveTab('notifications'),
+                 },
+                 {
+                   key: 'messages', label: 'Mesazhet', icon: MessageCircle, active: false,
+                   onClick: () => setIsDMModalOpen(true),
+                 },
+                 {
+                   key: 'saved', label: 'Të ruajturat', icon: Bookmark,
+                   active: activeTab === 'feed' && feedTab === 'saved',
+                   badge: savedPostIds.length,
+                   onClick: () => { setActiveTab('feed'); setFeedTab('saved'); },
+                 },
+                 {
+                   key: 'official', label: 'Zyrtare', icon: ShieldCheck,
+                   active: activeTab === 'feed' && feedTab === 'official',
+                   onClick: () => { setActiveTab('feed'); setFeedTab('official'); },
+                 },
+                 {
+                   key: 'profile', label: 'Profili Qytetar', icon: User,
+                   active: activeTab === 'profile',
+                   onClick: () => setActiveTab('profile'),
+                 },
+                 {
+                   key: 'verify', label: 'Verifikimi', icon: BadgeCheck, active: false,
+                   onClick: () => setShowVerification(true),
+                 },
+               ].map(({ key, label, icon: Icon, active, onClick, badge }) => (
                  <button
-                   key={id}
+                   key={key}
                    type="button"
-                   onClick={() => setActiveTab(id as typeof activeTab)}
-                   aria-current={activeTab === id ? 'page' : undefined}
-                   className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-colors ${
-                     activeTab === id
+                   onClick={onClick}
+                   aria-current={active ? 'page' : undefined}
+                   className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-colors ${
+                     active
                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-zinc-800/50'
                    }`}
                  >
-                   <Icon className="h-4.5 w-4.5" />
-                   {dt(label)}
+                   <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+                   <span className="flex-1 text-left">{dt(label)}</span>
+                   {badge ? (
+                     <span className="rounded-full bg-blue-600 px-1.5 text-[10px] font-black text-white">{badge}</span>
+                   ) : null}
                  </button>
                ))}
-             </div>
+               <button
+                 type="button"
+                 onClick={openCreateMenu}
+                 aria-haspopup="dialog"
+                 className="mt-1 flex min-h-11 items-center justify-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
+               >
+                 <Plus className="h-4 w-4" aria-hidden="true" />
+                 {dt('Krijo')}
+               </button>
+             </nav>
           </div>
 
           {/* Center Main Feed */}
           <div className="flex-1 max-w-2xl w-full flex flex-col gap-6">
 
-             {/* The citizen profile is the first mobile entry point. */}
+             {/* The profile entry now lives in the phone app bar. */}
              <button
                type="button"
-               onClick={() => { setActiveTab('profile'); setActiveMobileNav('profile'); }}
-               className="lg:hidden flex w-full items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 text-left shadow-sm transition hover:border-blue-300 dark:border-zinc-800 dark:bg-zinc-900"
+               onClick={() => { setActiveTab('profile'); }}
+               className="hidden w-full items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 text-left shadow-sm transition hover:border-blue-300 dark:border-zinc-800 dark:bg-zinc-900"
              >
                <img
                  src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'}
@@ -1306,7 +1372,7 @@ export default function ForumPage() {
                  alt=""
                />
                <span className="min-w-0 flex-1">
-                 <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Profili im</span>
+                 <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{dt('Profili im')}</span>
                  <span className="block truncate text-sm font-black text-slate-900 dark:text-white">
                    {currentUser?.name || 'Qytetar'}
                  </span>
@@ -1314,12 +1380,49 @@ export default function ForumPage() {
                <ArrowUpRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
              </button>
 
-             <ForumStories
-               currentUser={currentUser}
-               followedUserIds={followedUserIds}
-               isActive={activeTab === 'feed'}
-               onRequireAuth={() => setShowAuthPrompt(true)}
-             />
+             {(activeTab === 'feed' || activeTab === 'profile') && (
+               <ForumStories
+                 currentUser={currentUser}
+                 followedUserIds={followedUserIds}
+                 isActive={activeTab === 'feed'}
+                 onRequireAuth={() => setShowAuthPrompt(true)}
+               />
+             )}
+
+             {activeTab === 'feed' && showReels && (
+               <button
+                 type="button"
+                 onClick={() => openReels()}
+                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-zinc-800 p-3 text-left text-white shadow-sm transition hover:from-slate-800 hover:to-zinc-700 dark:border-zinc-800"
+               >
+                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                   <Film className="h-5 w-5" aria-hidden="true" />
+                 </span>
+                 <span className="min-w-0 flex-1">
+                   <span className="block text-sm font-black">{dt('Reels')}</span>
+                   <span className="block truncate text-xs text-white/70">{dt('Video të shkurtra vertikale nga qytetarët')}</span>
+                 </span>
+                 <ArrowUpRight className="h-4 w-4 text-white/60" aria-hidden="true" />
+               </button>
+             )}
+
+             {activeTab === 'explore' && (
+               <ForumExplore
+                 query={searchQuery}
+                 onQuery={setSearchQuery}
+                 trends={computeTrends(posts as any, { limit: 12 })}
+                 people={explorePeople}
+                 followedIds={followedUserIds}
+                 matchingPosts={searchQuery.trim() ? posts.filter((p) => (p.content || '').toLowerCase().includes(searchQuery.trim().toLowerCase())).length : 0}
+                 onToggleFollow={handleToggleFollow}
+                 onOpenPerson={(person) => setProfileModalData({ isOpen: true, authorId: person.id, authorName: person.name, authorAvatar: person.avatar || '' })}
+                 onPickTopic={(label) => { setSearchQuery(label); setActiveTab('feed'); setFeedTab('forYou'); }}
+                 onShowPosts={() => { setActiveTab('feed'); setFeedTab('forYou'); }}
+                 onOpenReel={(reel, tag) => openReels({ source: { kind: 'hashtag', tag }, startReelId: reel.id })}
+               />
+             )}
+
+             {activeTab === 'notifications' && <ForumNotificationsView onOpenMessages={() => setIsDMModalOpen(true)} />}
 
              {activeTab === 'feed' && (
                <>
@@ -1328,7 +1431,7 @@ export default function ForumPage() {
                   <div className="flex items-center gap-2 min-w-0">
                     <Radio className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
                     <div className="min-w-0">
-                      <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Debati Publik</h2>
+                      <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{dt('Debati Publik')}</h2>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                         {displayPosts.length} {displayPosts.length === 1 ? 'postim' : 'postime'} · renditur sipas angazhimit
                       </p>
@@ -1338,11 +1441,11 @@ export default function ForumPage() {
                     type="button"
                     onClick={() => setIsDMModalOpen(true)}
                     className="relative shrink-0 px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    title="Hap bisedat e mesazheve private"
+                    title={dt('Hap bisedat e mesazheve private')}
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span className="hidden xs:inline sm:inline">Mesazhet Private</span>
-                    <span className="sm:hidden">Mesazhe</span>
+                    <span className="sm:hidden">{dt('Mesazhe')}</span>
                     {totalUnreadDMs > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 px-1 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-zinc-900">
                         {totalUnreadDMs > 9 ? '9+' : totalUnreadDMs}
@@ -1357,12 +1460,12 @@ export default function ForumPage() {
                      type="search"
                      value={searchQuery}
                      onChange={(event) => setSearchQuery(event.target.value)}
-                     placeholder="Kërko në debat, tema ose profile..."
-                     aria-label="Kërko në debat publik"
+                     placeholder={dt('Kërko në debat, tema ose profile...')}
+                     aria-label={dt('Kërko në debat publik')}
                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:ring-blue-900/40"
                    />
                  </label>
-                 <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar" role="group" aria-label="Filtroni sipas temës">
+                 <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar" role="group" aria-label={dt('Filtroni sipas temës')}>
                    {[
                      { label: 'Të gjitha', id: 'all' },
                      { label: 'Rrugët', id: 'infrastrukture' },
@@ -1388,14 +1491,30 @@ export default function ForumPage() {
                  </div>
                </section>
 
-               {/* Composer wrapped in a professional card */}
-               <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_18px_40px_-24px_rgba(15,23,42,0.18)] dark:border-zinc-800 dark:bg-zinc-900">
+               {/* Composer: a card on desktop, a full-screen sheet on phones (opened by the + button). */}
+               <div
+                 className={cn(
+                   'lg:overflow-hidden lg:rounded-[28px] lg:border lg:border-slate-200/80 lg:bg-white lg:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.18)] dark:lg:border-zinc-800 dark:lg:bg-zinc-900',
+                   composeOpen
+                     ? 'fixed inset-0 z-[90] overflow-y-auto bg-white pt-[env(safe-area-inset-top)] dark:bg-zinc-900 lg:static lg:z-auto lg:pt-0'
+                     : 'hidden lg:block'
+                 )}
+               >
+                {composeOpen && (
+                  <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2 lg:hidden dark:border-zinc-800 dark:bg-zinc-900">
+                    <button type="button" onClick={() => setComposeOpen(false)} className="min-h-10 rounded-full px-3 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800">
+                      {dt('Anulo')}
+                    </button>
+                    <span className="text-sm font-black text-slate-900 dark:text-white">{dt('Postim i ri')}</span>
+                    <span className="w-16" aria-hidden="true" />
+                  </div>
+                )}
                 <div className="border-b border-slate-200/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 p-4 dark:border-zinc-800 dark:from-sky-950/20 dark:via-zinc-900 dark:to-indigo-950/20">
                   <div className="flex items-start gap-3">
                     <img src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-zinc-900" alt="" />
                     <div className="flex-1">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Komuniteti Qytetar</div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{dt('Komuniteti Qytetar')}</div>
                         <div className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           Live
@@ -1431,7 +1550,7 @@ export default function ForumPage() {
                             title="Kërko reklamim me pagesë bankare (IBAN)"
                           >
                             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                            <span className="hidden sm:inline">Kërko Reklamë / IBAN</span>
+                            <span className="hidden sm:inline">{dt('Kërko Reklamë / IBAN')}</span>
                           </button>
                         </div>
                         <div className="flex items-center gap-3">
@@ -1510,6 +1629,7 @@ export default function ForumPage() {
                       { id: 'following', label: 'Duke Ndjekur', icon: Users },
                       { id: 'municipality', label: isSpecificScope(userMunicipality) ? `📍 ${userMunicipality}` : 'Komuna Ime', icon: MapPin },
                       { id: 'polls', label: 'Sondazhe', icon: BarChart3 },
+                      { id: 'saved', label: 'Të ruajturat', icon: Bookmark },
                       { id: 'official', label: 'Zyrtare', icon: ShieldCheck }
                     ].map(tab => {
                       const Icon = tab.icon;
@@ -1533,6 +1653,14 @@ export default function ForumPage() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-0.5 self-end rounded-full bg-slate-100 p-0.5 dark:bg-zinc-800/80 sm:self-auto" role="group" aria-label={dt('Renditja')}>
+                    <button
+                      onClick={() => setFeedSortBy('foryou')}
+                      aria-pressed={feedSortBy === 'foryou'}
+                      className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${feedSortBy === 'foryou' ? 'bg-white text-indigo-600 shadow-xs dark:bg-zinc-700 dark:text-indigo-300' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {dt('Për Ty')}
+                    </button>
                     <button
                       onClick={() => setFeedSortBy('recent')}
                       aria-pressed={feedSortBy === 'recent'}
@@ -1597,11 +1725,12 @@ export default function ForumPage() {
               ) : displayPosts.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800">
                   <p className="font-bold text-sm text-slate-700 dark:text-slate-300">{dt(`Nuk u gjetën postime për këtë filtër.`)}</p>
-                  <p className="text-xs text-slate-400 mt-1">Provo të ndryshosh kategorinë ose zgjidh një rubrikë tjetër.</p>
+                  <p className="text-xs text-slate-400 mt-1">{dt('Provo të ndryshosh kategorinë ose zgjidh një rubrikë tjetër.')}</p>
                 </div>
               ) : displayPosts.map((post, postIndex) => (
                 <React.Fragment key={post.id}>
-                <div className="group rounded-[22px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_22px_-14px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-16px_rgba(15,23,42,0.24)] dark:border-zinc-800 dark:bg-zinc-900 border-l-4 border-l-blue-500/90">
+                <div className="group relative rounded-[22px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_22px_-14px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-16px_rgba(15,23,42,0.24)] dark:border-zinc-800 dark:bg-zinc-900 border-l-4 border-l-blue-500/90">
+                  <PostViewSensor postId={post.id} enabled={!isLoading} />
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
@@ -1623,6 +1752,7 @@ export default function ForumPage() {
                       onClick={() => setProfileModalData({isOpen: true, authorId: post.authorId, authorName: post.authorName, authorAvatar: post.authorAvatar})}
                     />
                     <div className="flex-1 min-w-0">
+                      {post.isAd && <SponsoredPostBar postId={post.id} adLink={post.adLink} />}
                       {/* Header Row */}
                       <div className="flex items-center gap-1.5 text-[15px] mb-0.5 flex-wrap">
                         <span
@@ -1636,6 +1766,7 @@ export default function ForumPage() {
                             <BadgeCheck className="w-4 h-4 text-blue-500 shrink-0" />
                           </span>
                         )}
+                        {verifiedIds.has(post.authorId) && post.authorBadge !== 'Zyrtar Komunal' && post.authorRole !== 'admin' && <VerifiedBadge />}
                         <span className="text-slate-400 dark:text-slate-500 truncate text-xs">@{(post.authorName || 'user').replace(/\s+/g, '').toLowerCase()}</span>
                         {/* Real interactive follow button directly on post */}
                         {post.authorId !== currentUser?.id && (
@@ -1654,6 +1785,12 @@ export default function ForumPage() {
                             {followedUserIds.includes(post.authorId) ? 'Duke ndjekur' : 'Ndjek'}
                           </button>
                         )}
+                        {post.authorId === currentUser?.id && (
+                          <PostOwnerMenu
+                            onEdit={() => setEditingPost({ id: post.id, content: post.content })}
+                            onDelete={() => void handleDeletePost(post.id)}
+                          />
+                        )}
                       </div>
 
                       {/* Content */}
@@ -1661,6 +1798,7 @@ export default function ForumPage() {
                         <PostFormatter content={post.content} />
                       </div>
 
+                      {post.editedAt && <p className="-mt-2 mb-2 text-[11px] text-slate-400">{dt('i redaktuar')}</p>}
                       {/* Media */}
                       {post.imageUrl && (
                         <div className="rounded-[1.25rem] overflow-hidden border border-slate-200 dark:border-zinc-800 mb-3 bg-slate-50 dark:bg-zinc-800/40">
@@ -1779,6 +1917,18 @@ export default function ForumPage() {
                         </button>
 
                         <button
+                          type="button"
+                          disabled={!(post.authorId === currentUser?.id || isModerator)}
+                          onClick={() => setAnalyticsPost(post)}
+                          className="flex items-center gap-1.5 text-[13px] text-slate-500 transition-colors enabled:hover:text-blue-600 disabled:cursor-default dark:text-slate-400"
+                          title={post.authorId === currentUser?.id || isModerator ? dt('Analitika e postimit') : dt('Shfaqje')}
+                          aria-label={`${post.viewCount || 0} ${dt('shfaqje')}`}
+                        >
+                          <span className="rounded-full p-2"><BarChart3 className="h-4 w-4" aria-hidden="true" /></span>
+                          <span className="font-bold">{post.viewCount || 0}</span>
+                        </button>
+
+                        <button
                           onClick={() => setSharingPost(post)}
                           className="flex items-center gap-2 text-[13px] hover:text-blue-500 group transition-colors"
                           title={dt('Shpërndaj në të gjitha platformat')}
@@ -1801,6 +1951,21 @@ export default function ForumPage() {
                             <Bookmark className={`h-4 w-4 ${savedPostIds.includes(post.id) ? 'fill-blue-600 text-blue-600' : ''}`} />
                           </span>
                         </button>
+
+                        {post.authorId !== currentUser?.id && !post.id.startsWith('demo-') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!currentUser || currentUser.role === 'guest') { setShowAuthPrompt(true); return; }
+                              setReportingPostId(post.id);
+                            }}
+                            aria-label={dt('Raporto postimin')}
+                            title={dt('Raporto postimin')}
+                            className="flex items-center text-[13px] text-slate-500 transition-colors hover:text-rose-600 dark:text-slate-400"
+                          >
+                            <span className="rounded-full p-2 hover:bg-rose-50 dark:hover:bg-rose-500/10"><Flag className="h-4 w-4" aria-hidden="true" /></span>
+                          </button>
+                        )}
 
                         {/* Direct Ad Promotion Trigger for this Post */}
                         <button
@@ -1850,6 +2015,16 @@ export default function ForumPage() {
                                         >
                                           {dt(`Përgjigju`)}
                                         </button>
+                                        {(comment.authorId === currentUser?.id || post.authorId === currentUser?.id || isStaffUser) && (
+                                          <button
+                                            type="button"
+                                            className="hover:text-rose-600 transition-colors"
+                                            onClick={() => void handleDeleteComment(post.id, comment.id)}
+                                            aria-label={dt('Fshi komentin')}
+                                          >
+                                            {dt('Fshi')}
+                                          </button>
+                                        )}
                                       </div>
 
                                       {/* Replies List */}
@@ -1864,6 +2039,16 @@ export default function ForumPage() {
                                                   <span className="text-[9px] text-slate-400">{new Date(reply.createdAt).toLocaleDateString('sq-AL')}</span>
                                                 </div>
                                                 <p className="text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{reply.content}</p>
+                                                {(reply.authorId === currentUser?.id || comment.authorId === currentUser?.id || post.authorId === currentUser?.id || isStaffUser) && (
+                                                  <button
+                                                    type="button"
+                                                    className="mt-1 text-[10px] font-bold text-slate-400 hover:text-rose-600"
+                                                    onClick={() => void handleDeleteComment(post.id, reply.id)}
+                                                    aria-label={dt('Fshi përgjigjen')}
+                                                  >
+                                                    {dt('Fshi')}
+                                                  </button>
+                                                )}
                                               </div>
                                             </div>
                                           ))}
@@ -1934,16 +2119,12 @@ export default function ForumPage() {
                   </div>
                 </div>
 
-                {/* Targeted in-feed campaign with a direct sponsor request action. */}
-                {((postIndex + 1) % (systemSettings?.adFrequencyPosts || 4) === 0) && (
-                  <AdBanner
-                    position="feed"
-                    municipality={isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : undefined}
-                  />
-                )}
                 </React.Fragment>
               ))}
             </div>
+            {!isLoading && displayPosts.length > 0 && feedTab !== 'saved' && (
+              <LoadMore hasMore={hasMore} loading={loadingMore} onLoad={() => void loadMore()} />
+            )}
 
 
                </>
@@ -1952,6 +2133,11 @@ export default function ForumPage() {
                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] dark:shadow-none min-h-[60vh] overflow-hidden">
                  <ForumProfileTab
                    currentUser={currentUser}
+                   onOpenReel={(reel) => openReels({ source: { kind: 'author', authorId: reel.authorId, includeHidden: reel.authorId === currentUser?.id }, startReelId: reel.id })}
+                   onCreateReel={() => setReelComposerOpen(true)}
+                   onOpenInsights={() => setInsightsOpen(true)}
+                   deletedCount={trashPosts.length}
+                   onOpenTrash={() => setTrashOpen(true)}
                    setActiveTab={setActiveTab}
                    posts={posts}
                    savedPostIds={savedPostIds}
@@ -1971,7 +2157,6 @@ export default function ForumPage() {
                    suggestions={followSuggestions}
                    onToggleFollow={handleToggleFollow}
                    onCreateStory={() => {
-                     setActiveMobileNav('post');
                      setActiveTab('feed');
                      window.setTimeout(() => window.dispatchEvent(new Event('zeri:open-forum-story')), 0);
                    }}
@@ -1992,6 +2177,7 @@ export default function ForumPage() {
             column.
           */}
           <div className="hidden xl:flex w-72 shrink-0 flex-col gap-4">
+             {currentTrends.length > 0 && (
              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] dark:shadow-none p-5">
                <h3 className="font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2 title-serif text-lg"><TrendingUp className="w-5 h-5 text-blue-500"/> {dt('Në Qendër Të Vëmendjes')}</h3>
                <div className="space-y-5 relative min-h-[200px]">
@@ -2005,6 +2191,7 @@ export default function ForumPage() {
                          exit={{ opacity: 0, x: -10 }}
                          transition={{ duration: 0.4 }}
                          className="cursor-pointer group flex gap-3"
+                         onClick={() => { setSearchQuery(trend.title); setActiveTab('feed'); setFeedTab('forYou'); }}
                        >
                          {/* Modern X/Twitter style trend */}
                          <div className="flex-1">
@@ -2022,10 +2209,9 @@ export default function ForumPage() {
                  </AnimatePresence>
                </div>
              </div>
+             )}
 
-             {/* Dedicated Ad Placement in Forum Sidebar */}
-             <AdBanner position="sidebar" />
-
+             {allProfiles.length > 0 && (
              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] dark:shadow-none p-5">
                <h3 className="font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2 title-serif text-lg"><Users className="w-5 h-5 text-indigo-500"/> {dt('Profilet Zyrtare')}</h3>
                <div className="space-y-5 relative min-h-[140px]">
@@ -2087,13 +2273,14 @@ export default function ForumPage() {
                  </button>
                )}
              </div>
+             )}
 
              <div className="text-xs text-slate-400 dark:text-slate-500 flex flex-wrap gap-x-3 gap-y-2 px-2 mt-1">
-               <a href="#" className="hover:underline transition-all">Privatësia</a>
+               <a href="#" className="hover:underline transition-all">{dt('Privatësia')}</a>
                <a href="#" className="hover:underline transition-all">Kushtet</a>
                <a href="#" className="hover:underline transition-all">Reklamimi</a>
                <a href="#" className="hover:underline transition-all">Rreth Nesh</a>
-               <a href="#" className="hover:underline transition-all">Aksesueshmëria</a>
+               <a href="#" className="hover:underline transition-all">{dt('Aksesueshmëria')}</a>
                <span className="w-full mt-1">© 2026 Platforma Raporto</span>
              </div>
           </div>
@@ -2102,61 +2289,89 @@ export default function ForumPage() {
       </div>
 
       <nav
-        aria-label="Navigimi i debatit publik"
-        className="z-40 grid shrink-0 grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-18px_rgba(15,23,42,0.3)] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950/95 lg:hidden"
+        aria-label={dt('Navigimi i debatit publik')}
+        className="z-40 grid shrink-0 grid-cols-5 items-center border-t border-slate-200 bg-white/95 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950/95 lg:hidden"
       >
+        {([
+          { id: 'home', label: 'Ballina', icon: Home, onClick: () => { setActiveTab('feed'); setFeedTab('forYou'); setIsDMModalOpen(false); document.querySelector('.forum-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }); } },
+          { id: 'explore', label: 'Eksploro', icon: Search, onClick: () => setActiveTab('explore') },
+        ] as const).map(({ id, label, icon: Icon, onClick }) => (
+          <button key={id} type="button" onClick={onClick} aria-label={dt(label)} aria-current={activeMobileNav === id ? 'page' : undefined}
+            className={`flex min-h-12 items-center justify-center rounded-xl transition-colors ${activeMobileNav === id ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+            <Icon className="h-6 w-6" strokeWidth={activeMobileNav === id ? 2.7 : 2} aria-hidden="true" />
+          </button>
+        ))}
+
+        {/* The centre slot opens the create menu: post, story, reel, poll. */}
         <button
           type="button"
-          onClick={() => { setActiveMobileNav('debate'); setActiveTab('feed'); setFeedTab('forYou'); }}
-          aria-current={activeMobileNav === 'debate' ? 'page' : undefined}
-          className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold transition-colors ${activeMobileNav === 'debate' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}
+          onClick={openCreateMenu}
+          aria-label={dt('Krijo')}
+          aria-haspopup="dialog"
+          className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 transition active:scale-95"
         >
-          <Home className="h-5 w-5" aria-hidden="true" />
-          Debati
+          <Plus className="h-6 w-6" strokeWidth={2.6} aria-hidden="true" />
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveMobileNav('search');
-            setActiveTab('feed');
-            window.setTimeout(() => {
-              const search = document.getElementById('forum-search');
-              search?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              search?.focus();
-            }, 0);
-          }}
-          aria-current={activeMobileNav === 'search' ? 'page' : undefined}
-          className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold transition-colors ${activeMobileNav === 'search' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}
-        >
-          <Search className="h-5 w-5" aria-hidden="true" />
-          Kërko
+
+        <button type="button" onClick={() => setIsDMModalOpen(true)} aria-label={`${dt('Mesazhet')}${totalUnreadDMs ? ` (${totalUnreadDMs})` : ''}`} aria-current={activeMobileNav === 'messages' ? 'page' : undefined}
+          className={`relative flex min-h-12 items-center justify-center rounded-xl transition-colors ${activeMobileNav === 'messages' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+          <MessageCircle className="h-6 w-6" strokeWidth={activeMobileNav === 'messages' ? 2.7 : 2} aria-hidden="true" />
+          {totalUnreadDMs > 0 && (
+            <span className="absolute right-[28%] top-1.5 flex min-w-[1.1rem] items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-black text-white ring-2 ring-white dark:ring-zinc-950">
+              {totalUnreadDMs > 9 ? '9+' : totalUnreadDMs}
+            </span>
+          )}
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveMobileNav('post');
-            setActiveTab('feed');
-            window.setTimeout(() => {
-              textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              textareaRef.current?.focus();
-            }, 0);
-          }}
-          aria-current={activeMobileNav === 'post' ? 'page' : undefined}
-          className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold transition-colors ${activeMobileNav === 'post' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}
-        >
-          <Plus className="h-5 w-5" aria-hidden="true" />
-          Posto
-        </button>
-        <button
-          type="button"
-          onClick={() => { setActiveMobileNav('profile'); setActiveTab('profile'); }}
-          aria-current={activeMobileNav === 'profile' ? 'page' : undefined}
-          className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold transition-colors ${activeMobileNav === 'profile' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}
-        >
-          <User className="h-5 w-5" aria-hidden="true" />
-          Profili
+
+        <button type="button" onClick={() => { setIsDMModalOpen(false); setActiveTab('profile'); }} aria-label={dt('Profili im')} aria-current={activeMobileNav === 'profile' ? 'page' : undefined}
+          className={`flex min-h-12 items-center justify-center rounded-xl transition-colors ${activeMobileNav === 'profile' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+          <User className="h-6 w-6" strokeWidth={activeMobileNav === 'profile' ? 2.7 : 2} aria-hidden="true" />
         </button>
       </nav>
+
+      {createMenuOpen && (
+        <CreateMenuSheet allowReels={showReels} onSelect={handleCreateAction} onClose={() => setCreateMenuOpen(false)} />
+      )}
+      {reelsOpen && showReels && (
+        <ReelsViewer
+          key={`${reelsVersion}:${reelsView.source.kind}:${reelsView.startReelId ?? ''}`}
+          source={reelsView.source}
+          startReelId={reelsView.startReelId}
+          currentUser={currentUser ? { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar } : null}
+          isStaff={isStaffUser}
+          currentUserId={currentUser?.id ?? null}
+          canInteract={isSignedInCitizen}
+          isFollowing={(id) => followedUserIds.includes(id)}
+          canViewAuthorReels={(authorId) => canViewReels(prefsOf(forumProfileOf(authorId)), {
+            isOwner: authorId === currentUser?.id,
+            viewerFollowsOwner: followedUserIds.includes(authorId),
+            viewerIsStaff: isStaffUser,
+          })}
+          onToggleFollow={(id) => void handleToggleFollow(id)}
+          onOpenProfile={(authorId, authorName, authorAvatar) => {
+            setReelsOpen(false);
+            setProfileModalData({ isOpen: true, authorId, authorName, authorAvatar });
+          }}
+          onRequireAuth={() => { setReelsOpen(false); setShowAuthPrompt(true); }}
+          onCreateReel={() => setReelComposerOpen(true)}
+          onClose={() => {
+            setReelsOpen(false);
+            // Leave the shared link's address so a refresh does not reopen the reel.
+            if (reelIdFromSearch(window.location.search)) window.history.replaceState(window.history.state, '', window.location.pathname);
+          }}
+        />
+      )}
+      {reelComposerOpen && currentUser && isSignedInCitizen && (
+        <ReelComposer
+          author={{ id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar }}
+          onClose={() => setReelComposerOpen(false)}
+          onPublished={() => {
+            setReelComposerOpen(false);
+            setReelsVersion((v) => v + 1);
+            openReels();
+          }}
+        />
+      )}
 
       <ForumProfileModal
         isOpen={profileModalData.isOpen}
@@ -2166,9 +2381,39 @@ export default function ForumPage() {
         authorAvatar={profileModalData.authorAvatar}
         posts={posts.filter(p => p.authorId === profileModalData.authorId)}
         followed={followedUserIds.includes(profileModalData.authorId)}
+        authorProfile={forumProfileOf(profileModalData.authorId)}
         onToggleFollow={handleToggleFollow}
         onOpenDM={handleOpenDM}
+        onOpenReel={(reel) => {
+          setProfileModalData({ ...profileModalData, isOpen: false });
+          openReels({ source: { kind: 'author', authorId: reel.authorId, includeHidden: reel.authorId === currentUser?.id }, startReelId: reel.id });
+        }}
       />
+
+      {reportingPostId && <ReportPostSheet postId={reportingPostId} onClose={() => setReportingPostId(null)} />}
+      {showVerification && <VerificationModal onClose={() => setShowVerification(false)} />}
+      {editingPost && (
+        <PostEditSheet
+          postId={editingPost.id}
+          initialContent={editingPost.content}
+          onClose={() => setEditingPost(null)}
+          onSaved={(content) => setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, content, editedAt: new Date() } : p))}
+        />
+      )}
+      {trashOpen && <DeletedPostsSheet posts={trashPosts} onClose={() => setTrashOpen(false)} />}
+      {insightsOpen && currentUser && isSignedInCitizen && (
+        <AccountInsightsSheet
+          authorId={currentUser.id}
+          posts={posts as any}
+          isBusiness={isBusiness(currentUser)}
+          followersCount={followerCountOf(currentUser.id)}
+          onUpgrade={() => { setActiveTab('profile'); window.dispatchEvent(new Event('zeri:open-forum-settings')); }}
+          onClose={() => setInsightsOpen(false)}
+        />
+      )}
+      {analyticsPost && (
+        <PostAnalyticsSheet post={analyticsPost as any} verified={verifiedIds.has(analyticsPost.authorId)} onClose={() => setAnalyticsPost(null)} />
+      )}
 
       {/* Direct Messages Modal */}
       <DirectMessagesModal
@@ -2200,7 +2445,7 @@ export default function ForumPage() {
               <textarea
                 value={quoteText}
                 onChange={(e) => setQuoteText(e.target.value)}
-                placeholder="Shto mendimin tënd mbi këtë postim..."
+                placeholder={dt('Shto mendimin tënd mbi këtë postim...')}
                 rows={3}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 mb-3"
               />
@@ -2227,7 +2472,7 @@ export default function ForumPage() {
                   onClick={() => setIsQuoteModalOpen(false)}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
                 >
-                  Anulo
+                  {dt('Anulo')}
                 </button>
                 <button
                   onClick={handleCreateQuotePost}

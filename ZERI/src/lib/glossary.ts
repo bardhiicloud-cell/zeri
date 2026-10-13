@@ -32,31 +32,31 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     sq: 'Kosovë',
     properNoun: true,
-    translations: { en: 'Kosovo', de: 'Kosovo', fr: 'Kosovo', it: 'Kosovo', es: 'Kosovo', pt: 'Kosovo', nl: 'Kosovo', sv: 'Kosovo', nb: 'Kosovo', ro: 'Kosovo', hr: 'Kosovo', sl: 'Kosovo', mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', hy: 'Կոսովո', gsw: 'Kosovo', bs: 'Kosovo' },
+    translations: { en: 'Kosovo', de: 'Kosovo', fr: 'Kosovo', it: 'Kosovo', pt: 'Kosovo', nl: 'Kosovo', sv: 'Kosovo', nb: 'Kosovo', hr: 'Kosovo', sl: 'Kosovo', mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', gsw: 'Kosovo', bs: 'Kosovo', ja: 'コソボ', ko: '코소보', pl: 'Kosowo', bg: 'Косово', ca: 'Kosovo', au: 'Kosovo' },
   },
   {
     sq: 'raportim',
-    translations: { en: 'report', de: 'Meldung', fr: 'signalement', it: 'segnalazione', es: 'reporte', pt: 'relatório', nl: 'melding', sv: 'rapport', nb: 'rapport', ro: 'raportare', hr: 'prijava', sl: 'prijava', mk: 'пријава', sr: 'пријава', tr: 'bildirim', ar: 'بلاغ', hy: 'հաղորդում', gsw: 'Mäldig', bs: 'prijava' },
+    translations: { en: 'report', de: 'Meldung', fr: 'signalement', it: 'segnalazione', pt: 'relatório', nl: 'melding', sv: 'rapport', nb: 'rapport', hr: 'prijava', sl: 'prijava', mk: 'пријава', sr: 'пријава', tr: 'bildirim', ar: 'بلاغ', gsw: 'Mäldig', bs: 'prijava', ja: '通報', ko: '신고', pl: 'zgłoszenie', bg: 'докладване', ca: 'report', au: 'report' },
   },
   {
     sq: 'qytetar',
-    translations: { en: 'citizen', de: 'Bürger', fr: 'citoyen', it: 'cittadino', es: 'ciudadano', pt: 'cidadão', nl: 'burger', sv: 'medborgare', nb: 'innbygger', ro: 'cetățean', hr: 'građanin', sl: 'državljan', mk: 'граѓанин', sr: 'грађанин', tr: 'vatandaş', ar: 'مواطن', hy: 'քաղաքացի', gsw: 'Bürger', bs: 'građanin' },
+    translations: { en: 'citizen', de: 'Bürger', fr: 'citoyen', it: 'cittadino', pt: 'cidadão', nl: 'burger', sv: 'medborgare', nb: 'innbygger', hr: 'građanin', sl: 'državljan', mk: 'граѓанин', sr: 'грађанин', tr: 'vatandaş', ar: 'مواطن', gsw: 'Bürger', bs: 'građanin', ja: '市民', ko: '시민', pl: 'obywatel', bg: 'гражданин', ca: 'citizen', au: 'citizen' },
   },
   {
     sq: 'komunë',
-    translations: { en: 'municipality', de: 'Gemeinde', fr: 'municipalité', it: 'comune', es: 'municipio', pt: 'município', nl: 'gemeente', sv: 'kommun', nb: 'kommune', ro: 'municipalitate', hr: 'općina', sl: 'občina', mk: 'општина', sr: 'општина', tr: 'belediye', ar: 'بلدية', hy: 'համայնք', gsw: 'Gmeind', bs: 'općina' },
+    translations: { en: 'municipality', de: 'Gemeinde', fr: 'municipalité', it: 'comune', pt: 'município', nl: 'gemeente', sv: 'kommun', nb: 'kommune', hr: 'općina', sl: 'občina', mk: 'општина', sr: 'општина', tr: 'belediye', ar: 'بلدية', gsw: 'Gmeind', bs: 'općina', ja: '自治体', ko: '지방자치단체', pl: 'gmina', bg: 'община', ca: 'municipality', au: 'municipality' },
   },
   {
     sq: 'shërbim publik',
-    translations: { en: 'public service', de: 'öffentlicher Dienst', fr: 'service public', it: 'servizio pubblico', es: 'servicio público', pt: 'serviço público', nl: 'openbare dienst', sv: 'offentlig tjänst', nb: 'offentlig tjeneste', ro: 'serviciu public', hr: 'javna usluga', sl: 'javna storitev', mk: 'јавна услуга', sr: 'јавна услуга', tr: 'kamu hizmeti', ar: 'خدمة عامة', hy: 'հանրային ծառայություն', gsw: 'öffentliche Dienst', bs: 'javna usluga' },
+    translations: { en: 'public service', de: 'öffentlicher Dienst', fr: 'service public', it: 'servizio pubblico', pt: 'serviço público', nl: 'openbare dienst', sv: 'offentlig tjänst', nb: 'offentlig tjeneste', hr: 'javna usluga', sl: 'javna storitev', mk: 'јавна услуга', sr: 'јавна услуга', tr: 'kamu hizmeti', ar: 'خدمة عامة', gsw: 'öffentliche Dienst', bs: 'javna usluga', ja: '公共サービス', ko: '공공 서비스', pl: 'usługa publiczna', bg: 'обществена услуга', ca: 'public service', au: 'public service' },
   },
   {
     sq: 'transparencë',
-    translations: { en: 'transparency', de: 'Transparenz', fr: 'transparence', it: 'trasparenza', es: 'transparencia', pt: 'transparência', nl: 'transparantie', sv: 'transparens', nb: 'åpenhet', ro: 'transparență', hr: 'transparentnost', sl: 'preglednost', mk: 'транспарентност', sr: 'транспарентност', tr: 'şeffaflık', ar: 'شفافية', hy: 'թափանցիկություն', gsw: 'Transparänz', bs: 'transparentnost' },
+    translations: { en: 'transparency', de: 'Transparenz', fr: 'transparence', it: 'trasparenza', pt: 'transparência', nl: 'transparantie', sv: 'transparens', nb: 'åpenhet', hr: 'transparentnost', sl: 'preglednost', mk: 'транспарентност', sr: 'транспарентност', tr: 'şeffaflık', ar: 'شفافية', gsw: 'Transparänz', bs: 'transparentnost', ja: '透明性', ko: '투명성', pl: 'przejrzystość', bg: 'прозрачност', ca: 'transparency', au: 'transparency' },
   },
   {
     sq: 'raport i zgjidhur',
-    translations: { en: 'resolved report', de: 'gelöste Meldung', fr: 'signalement résolu', it: 'segnalazione risolta', es: 'reporte resuelto', pt: 'relatório resolvido', nl: 'opgeloste melding', sv: 'löst rapport', nb: 'løst rapport', ro: 'raportare soluționată', hr: 'riješena prijava', sl: 'rešena prijava', mk: 'решена пријава', sr: 'решена пријава', tr: 'çözülmüş bildirim', ar: 'بلاغ محلول', hy: 'լուծված հաղորդում', gsw: 'glösti Mäldig', bs: 'riješena prijava' },
+    translations: { en: 'resolved report', de: 'gelöste Meldung', fr: 'signalement résolu', it: 'segnalazione risolta', pt: 'relatório resolvido', nl: 'opgeloste melding', sv: 'löst rapport', nb: 'løst rapport', hr: 'riješena prijava', sl: 'rešena prijava', mk: 'решена пријава', sr: 'решена пријава', tr: 'çözülmüş bildirim', ar: 'بلاغ محلول', gsw: 'glösti Mäldig', bs: 'riješena prijava', ja: '解決済みの通報', ko: '해결된 신고', pl: 'rozpatrzone zgłoszenie', bg: 'решен доклад', ca: 'resolved report', au: 'resolved report' },
   },
 ];
 

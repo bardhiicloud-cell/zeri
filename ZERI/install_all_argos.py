@@ -2,22 +2,25 @@
 Install every Argos model the project can use, including the ones missed on the
 first pass.
 
-The first run asked only for the 14 added languages and silently skipped anything
+The first run asked only for the added languages and silently skipped anything
 not in the index. This version asks for the complete set we can actually serve,
 adds Turkish (which IS published, as en->tr, and is needed because Turkish is one
 of the original six that still has gaps), and reports precisely which pairs are
 unavailable so the coverage number is honest.
+
+Canada and Australia are not listed: they read English, so they need no model of
+their own.
 """
 import argostranslate.package as pkg
 
 # Every language the app supports, except Albanian itself.
-WANTED = ['en', 'de', 'bs', 'ar', 'tr', 'sr', 'fr', 'it', 'es', 'pt',
-          'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl']
+WANTED = ['en', 'de', 'bs', 'ar', 'tr', 'sr', 'fr', 'it', 'pt',
+          'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg']
 
 # Swiss German rides on standard German; Argos has no gsw model.
 ALIAS = {'gsw': 'de'}
 
-# English can reach these (from the index listing); bs, sr, mk, hr, hy are not.
+# English can reach these (from the index listing); bs, sr, mk, hr are not.
 available = pkg.get_available_packages()
 index = {(p.from_code, p.to_code): p for p in available}
 installed = {(p.from_code, p.to_code) for p in pkg.get_installed_packages()}

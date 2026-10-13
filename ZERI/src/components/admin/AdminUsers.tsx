@@ -6,15 +6,15 @@ import { canAccessSection } from '../../lib/adminPermissions';
 import { UserX, UserCheck, ShieldAlert, Plus, Edit3, X, Search, Phone, Mail, Award, ShieldCheck, Trash2, CheckSquare, Square, Users, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 /** The directory row, which already carries every field the form needs. */
 type UserRow = ReturnType<typeof useCitizenDirectory>['citizens'][number];
 
 export default function AdminUsers() {
   const currentUser = useStore(state => state.currentUser);
-  const banUser = useStore(state => state.banUser);
+  const moderateUser = useStore(state => state.moderateUser);
   const deleteUser = useStore(state => state.deleteUser);
-  const adminCreateUser = useStore(state => state.adminCreateUser);
   const updateUser = useStore(state => state.updateUser);
 
   /**
@@ -127,18 +127,24 @@ export default function AdminUsers() {
     setSelectedIds(newSet);
   };
 
-  const handleBulkAction = (action: 'ban' | 'verify' | 'delete') => {
+  const handleBulkAction = async (action: 'ban' | 'verify' | 'delete') => {
     if (!window.confirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} përdorues?`)) return;
+    const ids = [...selectedIds];
 
-    selectedIds.forEach(id => {
-      if (action === 'delete') {
-        deleteUser(id);
-      } else if (action === 'ban') {
-        banUser(id);
-      } else if (action === 'verify') {
-        updateUser(id, { isVerified: true });
+    if (action === 'delete') {
+      ids.forEach(id => deleteUser(id));
+    } else {
+      const reason = action === 'ban' ? askBanReason(`${ids.length} ${dt('përdorues')}`) : undefined;
+      if (action === 'ban' && !reason) {
+        toast.error(dt('Ndalimi anulohet: arsyeja është e detyrueshme (të paktën 5 shenja).'));
+        return;
       }
-    });
+      let done = 0;
+      for (const id of ids) {
+        if (await moderate(id, action === 'ban' ? 'ban' : 'verify', reason ?? undefined)) done += 1;
+      }
+      if (done > 0) toast.success(`${done} / ${ids.length} ${dt('veprime u kryen.')}`);
+    }
     setSelectedIds(new Set());
   };
 
@@ -156,36 +162,42 @@ export default function AdminUsers() {
     });
   };
 
+  /**
+   * Only harmless profile fields are edited here. Role, points, ban and
+   * verification are not form fields: they are privileged and change through the
+   * server (see /api/v1/admin/users/:uid/moderate and the staff screen). The old
+   * form let an administrator set any user's "Autoriteti" to admin with a plain
+   * database write.
+   */
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) return;
-
-    if (editingUserId) {
-      await updateUser(editingUserId, {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role as any,
-        points: Number(formData.points),
-        isBanned: formData.isBanned,
-        isVerified: formData.isVerified
-      });
-    } else {
-      await adminCreateUser({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role as any,
-        points: Number(formData.points) || 0,
-        badges: ['Regjistruar nga Admin'],
-        isBanned: formData.isBanned,
-        isVerified: formData.isVerified
-      } as any);
+    if (!editingUserId || !formData.name.trim()) return;
+    try {
+      await updateUser(editingUserId, { name: formData.name.trim(), phone: formData.phone.trim() });
+      toast.success(dt('Ndryshimet u ruajtën.'));
+      setIsFormOpen(false);
+      setEditingUserId(null);
+      setFormData(initialUserState);
+    } catch (error) {
+      toast.error((error as Error)?.message || dt('Ndryshimet nuk u ruajtën.'));
     }
-    
-    setIsFormOpen(false);
-    setEditingUserId(null);
-    setFormData(initialUserState);
+  };
+
+  /** One moderation action, with the server's real answer shown to the person. */
+  const moderate = async (id: string, action: 'ban' | 'unban' | 'verify' | 'unverify', reason?: string) => {
+    try {
+      await moderateUser(id, action, reason);
+      return true;
+    } catch (error) {
+      toast.error((error as Error)?.message || dt('Veprimi nuk u krye.'));
+      return false;
+    }
+  };
+
+  /** A ban needs a stated reason; it is kept in the audit log. */
+  const askBanReason = (subject: string): string | null => {
+    const reason = window.prompt(`${dt('Arsyeja e ndalimit për')} ${subject} (${dt('e detyrueshme, ruhet në auditim')}):`);
+    return reason && reason.trim().length >= 5 ? reason.trim() : null;
   };
 
   const cancelEdit = () => {
@@ -236,21 +248,6 @@ export default function AdminUsers() {
             ))}
           </div>
 
-          <button 
-            onClick={() => {
-              if (isFormOpen) cancelEdit();
-              else setIsFormOpen(true);
-            }}
-            className={cn(
-              "flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm transition-all rounded-xl shadow-sm dark:shadow-none hover:shadow active:scale-95",
-              isFormOpen 
-                ? "bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100" 
-                : "bg-slate-900 text-white hover:bg-slate-800"
-            )}
-          >
-            {isFormOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {isFormOpen ? 'Mbyll' : 'Shto Përdorues'}
-          </button>
         </div>
       </div>
 
@@ -301,19 +298,11 @@ export default function AdminUsers() {
             </div>
             <div>
               <label className="block text-xs font-bold tracking-wide text-slate-900 dark:text-white mb-2 border-l-4 border-red-500 rounded-l-xl pl-2">{dt(`Email`)}</label>
-              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-neutral-50 border border-slate-200/60 dark:border-white/10 rounded-xl font-bold text-sm" />
+              <input readOnly type="email" value={formData.email} title={dt(`Email-i është identiteti i hyrjes dhe nuk ndryshohet këtu`)} className="w-full cursor-not-allowed px-4 py-3 bg-slate-100 text-slate-500 border border-slate-200/60 dark:border-white/10 dark:bg-slate-800 rounded-xl font-bold text-sm" />
             </div>
             <div>
               <label className="block text-xs font-bold tracking-wide text-slate-900 dark:text-white mb-2 border-l-4 border-red-500 rounded-l-xl pl-2">{dt(`Telefoni`)}</label>
               <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-neutral-50 border border-slate-200/60 dark:border-white/10 rounded-xl font-bold text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold tracking-wide text-slate-900 dark:text-white mb-2 border-l-4 border-red-500 rounded-l-xl pl-2">{dt(`Autoriteti`)}</label>
-              <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-4 py-3 bg-neutral-50 border border-slate-200/60 dark:border-white/10 rounded-xl font-bold text-xs tracking-wide">
-                <option value="citizen">{dt(`Qytetar`)}</option>
-                <option value="admin">{dt(`Administrator (Qasja e plotë)`)}</option>
-                <option value="approver">{dt(`Zyr. Aprovimeve (Vetëm ankesa)`)}</option>
-              </select>
             </div>
             {editingUserId && (
               <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 dark:border-blue-900/40 dark:bg-blue-950/20">
@@ -326,9 +315,9 @@ export default function AdminUsers() {
                         const { sendPasswordResetEmail } = await import('firebase/auth');
                         const { auth } = await import('../../lib/firebase');
                         await sendPasswordResetEmail(auth, formData.email);
-                        alert(`Email i ndërrimit të fjalëkalimit u dërgua me sukses drejt: ${formData.email}`);
+                        toast.success(`${dt('Email-i i ndërrimit të fjalëkalimit u dërgua te')} ${formData.email}`);
                      } catch(err) {
-                        alert(`Dërgimi i emailit dështoi: llogaria duhet të ekzistojë në Firebase Authentication.`);
+                        toast.error(dt('Dërgimi i email-it dështoi: llogaria duhet të ekzistojë në Firebase Authentication.'));
                      }
                    }}
                    className="text-xs text-blue-600 font-bold tracking-wide hover:underline mt-2 flex items-center gap-1"
@@ -336,39 +325,12 @@ export default function AdminUsers() {
                  </button>
               </div>
             )}
-            <div>
-              <label className="block text-xs font-bold tracking-wide text-slate-900 dark:text-white mb-2 border-l-4 border-red-500 rounded-l-xl pl-2">{dt(`Pikët e Mirënjohjes`)}</label>
-              <input type="number" value={formData.points} onChange={e => setFormData({...formData, points: parseInt(e.target.value) || 0})} className="w-full px-4 py-3 bg-neutral-50 border border-slate-200/60 dark:border-white/10 rounded-xl font-bold text-sm" />
-            </div>
-            
-            <div className="flex items-end gap-2">
-               <div className="flex-1 p-3 bg-neutral-100 border border-slate-200/60 dark:border-white/10 rounded-xl flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="isVerified" 
-                    checked={formData.isVerified} 
-                    onChange={e => setFormData({...formData, isVerified: e.target.checked})} 
-                    className="w-5 h-5 border border-slate-200/60 dark:border-white/10 rounded-xl"
-                  />
-                  <label htmlFor="isVerified" className="text-xs font-bold tracking-wide text-slate-900 dark:text-white">{dt(`I Verifikuar`)}</label>
-               </div>
-               <div className="flex-1 p-3 bg-red-50 border-2 border-rose-600 flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="isBanned" 
-                    checked={formData.isBanned} 
-                    onChange={e => setFormData({...formData, isBanned: e.target.checked})} 
-                    className="w-5 h-5 border-2 border-rose-600"
-                  />
-                  <label htmlFor="isBanned" className="text-xs font-bold tracking-wide text-rose-600">{dt(`I Bllokuar`)}</label>
-               </div>
-            </div>
           </div>
 
           <div className="flex justify-end gap-4 pt-4 border-t-2 border-slate-900">
             <button type="button" onClick={cancelEdit} className="px-8 py-4 border border-slate-200/60 dark:border-white/10 rounded-xl font-bold text-xs tracking-wide hover:bg-neutral-100">{dt(`Anulo`)}</button>
             <button type="submit" className="px-8 py-4 bg-slate-900 text-white font-bold text-xs tracking-wide hover:bg-blue-900">
-              {editingUserId ? 'Përditëso' : 'Krijo Dosjen'}
+              {dt(`Ruaj ndryshimet`)}
             </button>
           </div>
         </form>
@@ -482,7 +444,7 @@ export default function AdminUsers() {
                       </button>
                       {!u.isVerified && (
                         <button 
-                          onClick={() => updateUser(u.id, { isVerified: true })}
+                          onClick={() => void moderate(u.id, 'verify')}
                           className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:border-emerald-600 transition-colors shadow-sm dark:shadow-none"
                           title={dt(`Verifiko (Prano)`)}
                         >
@@ -492,14 +454,26 @@ export default function AdminUsers() {
                       {!u.isBanned && u.role !== 'admin' && (
                         <button 
                           onClick={() => {
-                            if(confirm(`Jeni i sigurt që dëshironi t'i bëni BAN ${u.name}?`)) {
-                              banUser(u.id);
+                            const reason = askBanReason(u.name);
+                            if (!reason) {
+                              toast.error(dt('Ndalimi anulohet: arsyeja është e detyrueshme (të paktën 5 shenja).'));
+                              return;
                             }
+                            void moderate(u.id, 'ban', reason).then(ok => ok && toast.success(`${u.name} ${dt('u ndalua dhe sesionet u mbyllën.')}`));
                           }}
                           className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl text-slate-500 dark:text-slate-400 hover:text-orange-600 hover:border-orange-600 transition-colors shadow-sm dark:shadow-none"
                           title={dt(`Blloko`)}
                         >
                           <ShieldAlert className="w-4 h-4" />
+                        </button>
+                      )}
+                      {u.isBanned && u.role === 'citizen' && (
+                        <button
+                          onClick={() => void moderate(u.id, 'unban').then(ok => ok && toast.success(`${u.name} ${dt('u çbllokua.')}`))}
+                          className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:border-emerald-600 transition-colors shadow-sm dark:shadow-none"
+                          title={dt(`Hiq ndalimin`)}
+                        >
+                          <UserCheck className="w-4 h-4" />
                         </button>
                       )}
                       {u.role !== 'admin' && (

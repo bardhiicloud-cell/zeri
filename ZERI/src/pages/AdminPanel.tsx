@@ -1,13 +1,7 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { useStore } from '../lib/store';
-import {
-  ShieldAlert, FileText, Users, ArrowLeft, LogOut, Shield, Settings,
-  Map as MapIcon, Megaphone, Bell, Heart, LayoutDashboard, HeartPulse,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, MessageSquare, Vote,
-  Newspaper, Headphones, Loader2, Activity, Building,
-  Eye, UserCheck, Landmark, Video,
-} from 'lucide-react';
+import { BookOpen, Loader2, Menu, Search, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +15,14 @@ import {
   type AdminSection,
 } from '../lib/adminPermissions';
 import { MunicipalityScopeControl } from '../components/admin/MunicipalityScopeControl';
+import { hashForSection, paramsFromHash, sectionFromHash } from '../lib/adminDeepLink';
+import { AdminCountsProvider, useAdminCounts } from '../components/admin/AdminCountsContext';
+import { NAV_BY_ID, NAV_SECTIONS } from '../components/admin/nav/navConfig';
+import { SidebarNav, shortcutLabel } from '../components/admin/nav/SidebarNav';
+import { CommandPalette } from '../components/admin/nav/CommandPalette';
+import SectionGuidePanel from '../components/admin/SectionGuidePanel';
+import { SECTION_GUIDES } from '../lib/adminGuides';
+import { CONSOLES, CONSOLE_ROUTES, consolePathsFor, viewerFor, type ConsoleVariant } from '../lib/roleHome';
 
 /**
  * The panel is the heaviest surface in the product: sixteen views over
@@ -29,6 +31,7 @@ import { MunicipalityScopeControl } from '../components/admin/MunicipalityScopeC
  * slow connection paid for the security console before seeing a single report.
  * Each view is code-split and fetched the first time it is opened.
  */
+const AdminInbox = lazy(() => import('../components/admin/AdminInbox.tsx'));
 const AdminDashboard = lazy(() => import('../components/admin/AdminDashboard.tsx'));
 const AdminReports = lazy(() => import('../components/admin/AdminReports.tsx'));
 const AdminUsers = lazy(() => import('../components/admin/AdminUsers.tsx'));
@@ -44,120 +47,46 @@ const AdminHealthRegistry = lazy(() => import('../components/admin/AdminHealthRe
 const AdminForum = lazy(() => import('../components/admin/AdminForum.tsx'));
 const AdminPolls = lazy(() => import('../components/admin/AdminPolls.tsx'));
 const AdminNews = lazy(() => import('../components/admin/AdminNews.tsx'));
+const WorkflowCenter = lazy(() => import('../components/admin/workflow/WorkflowCenter.tsx'));
 const AdminSupportChats = lazy(() => import('../components/admin/AdminSupportChats.tsx'));
 const AdminUpdates = lazy(() => import('../components/admin/AdminUpdates.tsx'));
 const AdminAgentMonitoring = lazy(() => import('../components/admin/AdminAgentMonitoring.tsx'));
 const MunicipalityProvisioning = lazy(() => import('../components/admin/MunicipalityProvisioning.tsx'));
 const MonitoringPage = lazy(() => import('./MonitoringPage.tsx'));
 const AgentPanelPage = lazy(() => import('./AgentPanelPage.tsx'));
+const DebateConsole = lazy(() => import('../components/debate/DebateConsole').then((m) => ({ default: m.DebateConsole })));
 const MunicipalityPanelPage = lazy(() => import('./MunicipalityPanelPage.tsx'));
 const ModerationCenterPage = lazy(() => import('./ModerationCenterPage.tsx'));
 const AdminWorkFacts = lazy(() => import('../components/admin/AdminWorkFacts.tsx'));
 const AdminRoles = lazy(() => import('../components/admin/AdminRoles.tsx'));
 
-type GroupId = 'overview' | 'operations' | 'citizens' | 'communications' | 'system';
+const COLLAPSED_KEY = 'admin.nav.collapsed';
 
-interface SectionDef {
-  id: AdminSection;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  group: GroupId;
-  /** Short purpose line: subtitle in the header, tooltip in the sidebar. */
-  hint: string;
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
-const GROUP_LABELS: Record<GroupId, { label: string; order: number }> = {
-  overview: { label: 'Përmbledhje', order: 0 },
-  operations: { label: 'Operacionet', order: 1 },
-  citizens: { label: 'Qytetarët & Komuniteti', order: 2 },
-  communications: { label: 'Komunikimi', order: 3 },
-  system: { label: 'Sistemi', order: 4 },
-};
+/** True when the key event came from somewhere the person is typing. */
+function isTypingTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element) return false;
+  const tag = element.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || element.isContentEditable === true;
+}
 
-const ALL_SECTIONS: readonly SectionDef[] = [
-  { id: 'dashboard', label: 'Paneli i Përgjithshëm', icon: LayoutDashboard, group: 'overview', hint: 'Numrat e ditës dhe ngarkesat aktive' },
-  { id: 'updates', label: 'Përditësimet e Adminit', icon: Bell, group: 'overview', hint: 'Aktiviteti i fundit i stafit' },
-
-  { id: 'reports', label: 'Inspektimi i Raporteve', icon: FileText, group: 'operations', hint: 'Radha e raporteve qytetarëve' },
-  { id: 'workfacts', label: 'Faktet e Komunave', icon: Building, group: 'operations', hint: 'Verifikimi i punimeve të raportuara nga komunat' },
-  { id: 'health', label: 'Regjistri Shëndetësor & Spitalet', icon: HeartPulse, group: 'operations', hint: 'Rastet shëndetësore të regjistruara' },
-  { id: 'donations', label: 'Aprovimi i Donacioneve', icon: Heart, group: 'operations', hint: 'Kërkesat për fonde' },
-
-  { id: 'users', label: 'Regjistri i Qytetarëve', icon: Users, group: 'citizens', hint: 'Llogaritë dhe statusi i tyre' },
-  { id: 'forum', label: 'Moderimi i Debatit Publik', icon: MessageSquare, group: 'citizens', hint: 'Postimet dhe raportimet' },
-  { id: 'polls', label: 'Sondazhet Publike', icon: Vote, group: 'citizens', hint: 'Pyetësori dhe rezultatet' },
-
-  { id: 'agents', label: 'Menaxhimi i Stafit & Agjentëve', icon: ShieldAlert, group: 'communications', hint: 'Rolet dhe lejet e stafit' },
-  { id: 'roles', label: 'Katalogu i Roleve & Lejeve', icon: Shield, group: 'communications', hint: 'Çka hap dhe çka nuk lejohet çdo rol — referencë e plotë' },
-  { id: 'municipalities', label: 'Llogaritë e Komunave', icon: Building, group: 'communications', hint: 'Krijimi i llogarive komunale me firewall editorial' },
-  { id: 'monitoring', label: 'Monitorimi i Agjentëve', icon: Activity, group: 'communications', hint: 'Aktiviteti, ngarkesa dhe anomalitë' },
-
-  { id: 'monitorim', label: 'Monitorim i Plotë', icon: Eye, group: 'operations', hint: 'Mbikëqyrje e thellë e agjentëve dhe komunave — /monitorim' },
-  { id: 'agentpanel', label: 'Paneli i Agjentëve', icon: UserCheck, group: 'operations', hint: 'Konsola e punës së agjentëve — /agent' },
-  { id: 'komunapanel', label: 'Paneli i Komunave', icon: Landmark, group: 'operations', hint: 'Konsola e punëve të komunave — /komuna' },
-  { id: 'moderim', label: 'Qendra e Moderimit', icon: ShieldAlert, group: 'operations', hint: 'Anomalitë, auditimi dhe moderimi — /moderim' },
-  { id: 'support', label: 'Kërkesat për Agjent', icon: Headphones, group: 'communications', hint: 'Bisedat me qytetarë' },
-  { id: 'ads', label: 'Menaxhimi i Reklamave', icon: Megaphone, group: 'communications', hint: 'Sloti dhe fushatat' },
-  { id: 'videos', label: 'Menaxhimi i Videove', icon: Video, group: 'communications', hint: 'Video publike për sidebar dhe faqe' },
-  { id: 'notifications', label: 'Komunikimi & Njoftimet', icon: Bell, group: 'communications', hint: 'Broadcast drejt qytetarëve' },
-  { id: 'news', label: 'Menaxhimi i Lajmeve', icon: Newspaper, group: 'communications', hint: 'Botimi dhe redaktimi' },
-
-  { id: 'categories', label: 'Harta & GIS', icon: MapIcon, group: 'system', hint: 'Ndarja gjeografike dhe rajonet' },
-  { id: 'security', label: 'Siguria dhe Auditimi', icon: Shield, group: 'system', hint: 'Regjistri i veprimeve' },
-  { id: 'settings', label: 'Konfigurimet e Sistemit', icon: Settings, group: 'system', hint: 'Parametrat e platformës' },
-];
-
-export default function AdminPanel() {
+export default function AdminPanel({ variant = 'admin' }: { variant?: ConsoleVariant }) {
   const currentUser = useStore(state => state.currentUser);
-  const logout = useStore(state => state.logout);
-  const navigate = useNavigate();
-  const { language } = useLanguage();
-
-  const [activeTab, setActiveTab] = useState<AdminSection>('dashboard');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
-  const [openAdminGroups, setOpenAdminGroups] = useState<Record<GroupId, boolean>>({
-    overview: true,
-    operations: false,
-    citizens: false,
-    communications: false,
-    system: false,
-  });
-
-  /**
-   * The visible list comes from a single capability check. Adding a role or a
-   * section is one edit in adminPermissions.ts, and the sidebar can no longer
-   * drift out of sync with what the server will actually accept.
-   */
-  const visibleSections = useMemo(
-    () => ALL_SECTIONS.filter(section => canAccessSection(currentUser, section.id)),
-    [currentUser]
-  );
-
-  const groupedSections = useMemo(() => {
-    const byGroup = new Map<GroupId, SectionDef[]>();
-    for (const section of visibleSections) {
-      const bucket = byGroup.get(section.group) ?? [];
-      bucket.push(section);
-      byGroup.set(section.group, bucket);
-    }
-    return [...byGroup.entries()]
-      .sort(([a], [b]) => GROUP_LABELS[a].order - GROUP_LABELS[b].order)
-      .map(([id, items]) => ({ id, label: GROUP_LABELS[id].label, items }));
-  }, [visibleSections]);
-
-  const activeSection = visibleSections.find(section => section.id === activeTab) ?? null;
-
-  /** Open whichever group contains the active section, so it is never hidden. */
-  useEffect(() => {
-    if (!activeSection) return;
-    setOpenAdminGroups(groups => ({ ...groups, [activeSection.group]: true }));
-  }, [activeSection]);
 
   // NOTE: every hook must run before any conditional return. This component
   // renders a "Qasje e Mohuar" pane when the viewer loses admin rights (e.g.
-  // they sign out while on /admin), and the early return below used to sit
-  // above these effects — crashing with "Rendered fewer hooks than expected".
-
+  // they sign out while on /admin), and an early return above the hooks used to
+  // crash with "Rendered fewer hooks than expected". The panel proper lives in
+  // AdminPanelShell so the counters (which open Firestore queries) are only
+  // created for a viewer who is actually allowed in.
   if (!canAccessAdmin(currentUser)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 bg-slate-50 dark:bg-slate-900 transition-colors">
@@ -174,242 +103,304 @@ export default function AdminPanel() {
     );
   }
 
-  // Streamlined active system tabs (cleaned of obsolete forum/chat/live discussions/polls tabs)
-  const systemTabs = visibleSections;
+  return (
+    <AdminCountsProvider>
+      <AdminPanelShell variant={variant} />
+    </AdminCountsProvider>
+  );
+}
 
-  const adminNavigationGroups = groupedSections;
+function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
+  const currentUser = useStore(state => state.currentUser)!;
+  const logout = useStore(state => state.logout);
+  const navigate = useNavigate();
+  const { language } = useLanguage();
+  const { counts } = useAdminCounts();
+
+  const brand = CONSOLES[variant];
+  // An owner opening /agent or /menagjer sees that role's menu (and a banner says so).
+  const { viewer, previewing } = useMemo(() => viewerFor(variant, currentUser), [variant, currentUser]);
+
+  // Owners land on the overview; an agent on the work waiting for them; a
+  // manager on the monitoring of the team.
+  const [activeTab, setActiveTab] = useState<AdminSection>(() => {
+    if (variant === 'manager' && canAccessSection(viewer, 'monitorim')) return 'monitorim';
+    if (variant === 'admin' && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) return 'dashboard';
+    return 'inbox';
+  });
+  // Parameters carried by the link that opened the current section, e.g. the
+  // report to open. Cleared when the person moves to another section.
+  const [linkParams, setLinkParams] = useState<Record<string, string>>(() => paramsFromHash(window.location.hash));
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(readCollapsed);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  // Sections whose guide this person has already opened: the button shows a dot on
+  // the ones they have not, so a first-day user is pointed to the explanation.
+  const [seenGuides, setSeenGuides] = useState<string[]>(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('admin.guides.seen') ?? '[]');
+      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
+  const openGuide = () => {
+    setIsGuideOpen(true);
+    setSeenGuides(previous => {
+      if (previous.includes(activeTab)) return previous;
+      const next = [...previous, activeTab];
+      try { localStorage.setItem('admin.guides.seen', JSON.stringify(next)); } catch { /* the dot just returns next visit */ }
+      return next;
+    });
+  };
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  /**
+   * The visible list comes from a single capability check. Adding a role or a
+   * section is one edit in adminPermissions.ts, and the sidebar can no longer
+   * drift out of sync with what the server will actually accept.
+   */
+  const visibleSections = useMemo(
+    () => NAV_SECTIONS.filter(section => canAccessSection(viewer, section.id)),
+    [viewer]
+  );
+
+  const activeSection = NAV_BY_ID.get(activeTab);
+  const activeVisible = visibleSections.some(section => section.id === activeTab);
+
+  /** Where work is waiting, shown as a count beside the section. */
+  const badges = useMemo<Partial<Record<AdminSection, number>>>(
+    () => ({
+      reports: counts.reportsPending ?? 0,
+      support: counts.supportWaiting ?? 0,
+    }),
+    [counts.reportsPending, counts.supportWaiting]
+  );
+
+  /**
+   * Opening a section also writes it to the URL hash, so a reload, a bookmark or
+   * a pasted link returns to the same place. `replaceState` rather than a push:
+   * moving between sections is not a page the Back button should walk through.
+   */
+  const selectSection = (id: AdminSection, params?: Record<string, string>) => {
+    setActiveTab(id);
+    setLinkParams(params ?? {});
+    const target = `${window.location.pathname}${window.location.search}${hashForSection(id, params)}`;
+    window.history.replaceState(window.history.state, '', target);
+  };
+
+  const toggleCollapsed = () => {
+    setIsSidebarCollapsed(collapsed => {
+      const next = !collapsed;
+      try {
+        localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
+      } catch {
+        // Not persisted in private mode; the rail still collapses for this visit.
+      }
+      return next;
+    });
+  };
 
   /**
    * Deep linking. Staff arrive from a notification or a support ticket, and
    * dropping them on the dashboard loses the context of why they clicked, so
-   * /admin#reports and the legacy /approvals path open the matching section.
+   * /admin#reports (and the legacy /approvals path) open the matching section.
+   *
+   * The hash is applied once, the first time the staffer has any visible
+   * section. It used to be re-read on every render, so after arriving through a
+   * deep link every click on another tab was immediately reverted to the linked
+   * section.
    */
+  const appliedDeepLink = useRef(false);
   useEffect(() => {
-    const hash = window.location.hash.toLowerCase();
+    if (visibleSections.length === 0) return;
 
-    if (hash.includes('/approvals')) {
-      if (canAccessSection(currentUser, 'reports')) setActiveTab('reports');
-      return;
-    }
-
-    const match = ALL_SECTIONS.find(section => hash.includes(`/${section.id}`));
-    if (match && canAccessSection(currentUser, match.id)) {
-      setActiveTab(match.id);
-      return;
+    if (!appliedDeepLink.current) {
+      appliedDeepLink.current = true;
+      const linked = sectionFromHash(
+        window.location.hash,
+        visibleSections.map(section => section.id)
+      );
+      if (linked) {
+        setActiveTab(linked);
+        setLinkParams(paramsFromHash(window.location.hash));
+        return;
+      }
     }
 
     // A staffer whose role cannot open the current section is moved to the first
     // one they can, rather than being shown an empty pane.
-    if (visibleSections.length > 0 && !visibleSections.some(s => s.id === activeTab)) {
+    if (!visibleSections.some(section => section.id === activeTab)) {
       setActiveTab(visibleSections[0].id);
     }
-  }, [currentUser, visibleSections, activeTab]);
+  }, [visibleSections, activeTab]);
+
+  /**
+   * A link followed while the panel is already open (a notification, a pasted
+   * URL) changes only the hash, so the page does not reload and the mount-time
+   * read above never sees it. `selectSection` writes the hash with replaceState,
+   * which does not fire this event, so the panel cannot trigger itself.
+   */
+  useEffect(() => {
+    const onHashChange = () => {
+      const linked = sectionFromHash(
+        window.location.hash,
+        visibleSections.map(section => section.id)
+      );
+      if (linked) {
+        setActiveTab(linked);
+        setLinkParams(paramsFromHash(window.location.hash));
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [visibleSections]);
+
+  // Ctrl/⌘+K opens "Shko te…" from anywhere; "/" does too, unless the person is
+  // typing in a field. Esc closes the mobile drawer.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setIsPaletteOpen(open => !open);
+      } else if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !isTypingTarget(event.target)) {
+        event.preventDefault();
+        setIsPaletteOpen(true);
+      } else if (event.key === 'Escape') {
+        setIsDrawerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth).catch(() => undefined);
+    logout();
+    navigate('/login');
+  };
+
+  const sidebarProps = {
+    sections: visibleSections,
+    activeId: activeTab,
+    onSelect: selectSection,
+    badges,
+    onOpenPalette: () => {
+      setIsDrawerOpen(false);
+      setIsPaletteOpen(true);
+    },
+    onGoToSite: () => navigate('/'),
+    onLogout: handleLogout,
+    // Only an owner gets these doors; for everyone else the list is empty.
+    consoles: consolePathsFor(currentUser.role).includes('/agent') ? CONSOLE_ROUTES : [],
+    brand,
+    onOpenConsole: (path: string) => navigate(path),
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors flex flex-col md:flex-row overflow-hidden font-sans">
-
-      {/* Admin Collapsible Sidebar */}
+    <div className="flex h-[100dvh] overflow-hidden bg-slate-50 font-sans transition-colors dark:bg-slate-900">
+      {/* Desktop rail */}
       <aside
         className={cn(
-          "bg-slate-950 border-r border-white/5 flex flex-col md:h-screen shrink-0 relative z-30 transition-all duration-300 ease-in-out shadow-2xl",
-          isSidebarCollapsed ? "w-full md:w-20" : "w-full md:w-72"
+          'relative z-30 hidden shrink-0 border-r border-white/5 bg-slate-950 shadow-2xl transition-[width] duration-200 ease-in-out md:block',
+          isSidebarCollapsed ? 'w-[72px]' : 'w-64'
         )}
       >
-        {/* Header with Brand & Collapse Button */}
-        <div className="p-3 md:p-4 border-b border-white/10 shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/25">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            {!isSidebarCollapsed && (
-              <div className="truncate">
-                <h2 className="text-xl font-bold text-white tracking-wide leading-none">
-                  {dt(`Admin`)}<span className="text-rose-500">.</span>KS
-                </h2>
-                <p className="text-[10px] text-slate-400 font-bold tracking-widest mt-1 uppercase">
-                  {dt(`Sistemi Qendror`)}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Desktop Toggle Button */}
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-            title={isSidebarCollapsed ? "Zgjero menunë" : "Palos menunë"}
-          >
-            {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </button>
-        </div>
-
-        {/* Navigation items */}
-        <div className="p-2 flex-1 min-h-0 overflow-visible space-y-0.5 hidden md:block">
-          {!isSidebarCollapsed && (
-            <p className="px-2 text-[9px] font-bold text-slate-400 tracking-wider mb-1 uppercase">
-              {dt(`Menaxhimi Administrativ`)}
-            </p>
-          )}
-
-          {isSidebarCollapsed ? (
-            <div className="space-y-0.5">
-              {systemTabs.map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    title={tab.label}
-                    aria-label={tab.label}
-                    className={cn(
-                      "group relative flex min-h-9 w-full items-center justify-center rounded-xl transition-all duration-150",
-                      isActive ? "bg-rose-600 text-white shadow-md shadow-rose-600/30" : "text-slate-300 hover:bg-white/5 hover:text-white"
-                    )}
-                  >
-                    <Icon className={cn("h-4 w-4 shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : "text-slate-400")} />
-                    {isActive && <span className="absolute right-1 h-5 w-1 rounded-full bg-white" />}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {adminNavigationGroups.map((group) => {
-                const isGroupOpen = openAdminGroups[group.id];
-                return (
-                  <section key={group.id} className="space-y-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setOpenAdminGroups((groups) => Object.keys(groups).reduce<Record<string, boolean>>((next, groupId) => {
-                        next[groupId] = groupId === group.id ? !groups[groupId] : false;
-                        return next;
-                      }, {}))}
-                      className="flex min-h-8 w-full items-center justify-between gap-2 rounded-lg px-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
-                      aria-expanded={isGroupOpen}
-                      aria-controls={`admin-nav-group-${group.id}`}
-                    >
-                      <span className="truncate">{group.label}</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isGroupOpen ? "rotate-180" : "")} aria-hidden="true" />
-                    </button>
-                    {isGroupOpen && (
-                      <div id={`admin-nav-group-${group.id}`} className="space-y-0.5">
-                        {group.items.map(tab => {
-                          const Icon = tab.icon;
-                          const isActive = activeTab === tab.id;
-                          return (
-                            <button
-                              key={tab.id}
-                              onClick={() => setActiveTab(tab.id)}
-                              className={cn(
-                                "group relative flex min-h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[11px] font-medium transition-all duration-150",
-                                isActive ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-600/30" : "text-slate-300 hover:bg-white/5 hover:text-white"
-                              )}
-                              aria-current={isActive ? 'page' : undefined}
-                            >
-                              <Icon className={cn("h-4 w-4 shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : "text-slate-400")} />
-                              <span className="truncate">{tab.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Mobile Navigation (Horizontal Scroll) */}
-        <div className="md:hidden flex overflow-x-auto p-2.5 gap-2 border-b border-white/10 bg-slate-950 scrollbar-hide shrink-0">
-          {systemTabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs whitespace-nowrap rounded-xl transition-all",
-                  isActive
-                    ? "bg-rose-600 text-white shadow-sm"
-                    : "text-slate-300 bg-white/5"
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="p-2 border-t border-white/10 hidden md:flex flex-col gap-1.5 shrink-0">
-          <button
-            onClick={() => navigate('/')}
-            title={isSidebarCollapsed ? "Shiko Platformën" : undefined}
-            className={cn(
-              "w-full flex items-center bg-white/5 text-slate-300 text-xs font-semibold hover:bg-white/10 hover:text-white rounded-xl transition-all",
-              isSidebarCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
-            )}
-          >
-            <ArrowLeft className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>{dt(`Shiko Platformën`)}</span>}
-          </button>
-          <button
-            onClick={async () => {
-              await signOut(auth).catch(() => undefined);
-              logout();
-              navigate('/login');
-            }}
-            title={isSidebarCollapsed ? "Mbyll Sesionin" : undefined}
-            className={cn(
-              "w-full flex items-center bg-rose-500/10 text-rose-400 text-xs font-semibold hover:bg-rose-600 hover:text-white rounded-xl transition-all",
-              isSidebarCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
-            )}
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>{dt(`Mbyll Sesionin`)}</span>}
-          </button>
-        </div>
+        <SidebarNav {...sidebarProps} collapsed={isSidebarCollapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-[calc(100vh-140px)] md:h-screen w-full relative overflow-hidden">
-        {/* Top Header Bar */}
-        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-white/10 px-6 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <h1 className="flex items-center gap-2.5 truncate text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              <span className="truncate">{activeSection?.label ?? dt('Paneli Administrativ')}</span>
-            </h1>
-            {activeSection && (
-              <span className="hidden lg:inline text-[11px] text-slate-400 truncate">
-                {activeSection.hint}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3.5">
-            {/* The administrator works on one municipality at a time, and that
-                choice has to be visible in the header of every section — the
-                reports queue, the statistics, the map. A per-section dropdown
-                was how a supervisor approved Prizren while believing they were
-                looking at Prishtinë. */}
-            <MunicipalityScopeControl />
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="max-w-[10rem] truncate text-xs font-bold text-slate-900 dark:text-white">{currentUser.name}</span>
-              <span className="text-[10px] font-bold text-rose-500 tracking-wider uppercase">
-                {roleLabel(currentUser, language)}
-              </span>
-            </div>
-            <div className="w-9 h-9 bg-slate-900 dark:bg-slate-800 text-rose-400 flex items-center justify-center font-bold text-xs rounded-xl shadow-xs border border-slate-700">
-              {currentUser.name.charAt(0)}
-            </div>
+      {/* Mobile drawer */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-[550] md:hidden" role="dialog" aria-modal="true" aria-label={dt(`Menyja e administrimit`)}>
+          <button
+            type="button"
+            aria-label={dt(`Mbyll menunë`)}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <div className="relative h-full w-72 max-w-[85vw] bg-slate-950 shadow-2xl">
+            <SidebarNav {...sidebarProps} onClose={() => setIsDrawerOpen(false)} />
           </div>
         </div>
+      )}
 
-        {/* Content View with Page Animation */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 relative custom-scrollbar bg-slate-50/50 dark:bg-slate-950/40">
+      {/* Main */}
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-slate-200/80 bg-white/90 px-3 py-3 backdrop-blur-md sm:px-6 dark:border-white/10 dark:bg-slate-900/90">
+          <button
+            type="button"
+            onClick={() => setIsDrawerOpen(true)}
+            aria-label={dt(`Hap menunë`)}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 md:hidden dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <Menu className="h-5 w-5" aria-hidden="true" />
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-base font-bold tracking-tight text-slate-900 sm:text-xl dark:text-white">
+              {activeVisible && activeSection ? activeSection.label : dt('Paneli Administrativ')}
+            </h1>
+            {activeVisible && activeSection && (
+              <p className="hidden truncate text-[11px] text-slate-400 sm:block">{activeSection.hint}</p>
+            )}
+          </div>
+
+          {SECTION_GUIDES[activeTab] && (
+            <button
+              type="button"
+              onClick={openGuide}
+              title={dt('Si punon ky seksion')}
+              aria-label={dt('Si punon ky seksion')}
+              className="relative inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="hidden sm:inline">{dt('Si punon')}</span>
+              {!seenGuides.includes(activeTab) && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-indigo-500 ring-2 ring-white dark:ring-slate-900" aria-hidden="true" />}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsPaletteOpen(true)}
+            aria-label={dt(`Shko te…`)}
+            title={`${dt(`Shko te…`)} (${shortcutLabel()})`}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 lg:min-w-[11rem] dark:border-white/10 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="hidden flex-1 text-left lg:block">{dt(`Shko te…`)}</span>
+            <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 lg:block dark:border-white/10">{shortcutLabel()}</kbd>
+          </button>
+
+          {/* The administrator works on one municipality at a time, and that
+              choice has to be visible in the header of every section — the
+              reports queue, the statistics, the map. A per-section dropdown
+              was how a supervisor approved Prizren while believing they were
+              looking at Prishtinë. */}
+          <MunicipalityScopeControl />
+
+          <div className="hidden flex-col text-right md:flex">
+            <span className="max-w-[10rem] truncate text-xs font-bold text-slate-900 dark:text-white">{currentUser.name}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">{roleLabel(currentUser, language)}</span>
+          </div>
+          <div className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-xs font-bold text-rose-400 shadow-xs sm:flex dark:bg-slate-800">
+            {currentUser.name.charAt(0)}
+          </div>
+        </header>
+
+        {previewing && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 sm:px-6 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200" role="status">
+            <span>
+              {variant === 'agent' ? dt('Po e shihni si Agjent.') : dt('Po e shihni si Menaxher i agjentëve.')}{' '}
+              <span className="font-normal">{dt('Menuja është ajo e këtij roli; veprimet kryhen me të drejtat tuaja si administrator.')}</span>
+            </span>
+            <button type="button" onClick={() => navigate('/admin')} className="ml-auto rounded-lg bg-amber-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-amber-800">
+              {dt('Kthehu te Admin')}
+            </button>
+          </div>
+        )}
+
+        {/* Content */}
+        <main className="custom-scrollbar relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-slate-50/50 p-3 sm:p-6 lg:p-8 dark:bg-slate-950/40">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -417,7 +408,7 @@ export default function AdminPanel() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="min-h-full max-w-[1600px] mx-auto"
+              className="mx-auto min-h-full max-w-[1600px]"
             >
               <Suspense fallback={
                 <div className="flex h-64 flex-col items-center justify-center gap-3 text-slate-400">
@@ -425,9 +416,10 @@ export default function AdminPanel() {
                   <span className="text-xs font-semibold">{dt('Duke ngarkuar seksionin...')}</span>
                 </div>
               }>
-              {activeTab === 'dashboard' && <AdminDashboard onTabChange={(t: string) => setActiveTab(t as AdminSection)} />}
-              {activeTab === 'updates' && <AdminUpdates onTabChange={(t: string) => setActiveTab(t as AdminSection)} />}
-              {activeTab === 'reports' && <AdminReports />}
+              {activeTab === 'inbox' && <AdminInbox onOpen={(section, params) => selectSection(section, params)} />}
+              {activeTab === 'dashboard' && <AdminDashboard onTabChange={selectSection} />}
+              {activeTab === 'updates' && <AdminUpdates onTabChange={(t: string) => selectSection(t as AdminSection)} />}
+              {activeTab === 'reports' && <AdminReports openReportId={linkParams.open} />}
               {activeTab === 'health' && <AdminHealthRegistry />}
               {activeTab === 'donations' && <AdminDonations />}
               {activeTab === 'users' && <AdminUsers />}
@@ -444,22 +436,42 @@ export default function AdminPanel() {
               {activeTab === 'videos' && <AdminVideos />}
               {activeTab === 'notifications' && (
                 <AdminNotifications
-                  onOpenPublicNews={canAccessSection(currentUser, 'news') ? () => setActiveTab('news') : undefined}
+                  onOpenPublicNews={canAccessSection(currentUser, 'news') ? () => selectSection('news') : undefined}
                 />
               )}
               {activeTab === 'forum' && <AdminForum />}
+              {activeTab === 'debate' && <DebateConsole />}
               {activeTab === 'support' && <AdminSupportChats />}
               {activeTab === 'polls' && <AdminPolls />}
               {activeTab === 'news' && <AdminNews />}
+              {activeTab === 'workflow' && <WorkflowCenter />}
               {activeTab === 'security' && <AdminSecurity />}
               {activeTab === 'settings' && <AdminSettings />}
               {activeTab === 'categories' && <AdminGIS />}
               </Suspense>
             </motion.div>
           </AnimatePresence>
-        </div>
+        </main>
       </div>
-      
+
+      {isGuideOpen && (
+        <SectionGuidePanel
+          sectionId={activeTab}
+          role={currentUser.role}
+          onClose={() => setIsGuideOpen(false)}
+          onGo={id => selectSection(id)}
+          openable={new Set(visibleSections.map(section => section.id))}
+        />
+      )}
+
+      <CommandPalette
+        open={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        sections={visibleSections}
+        activeId={activeTab}
+        badges={badges}
+        onSelect={selectSection}
+      />
     </div>
   );
 }

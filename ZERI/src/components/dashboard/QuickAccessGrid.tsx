@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
+import { dt } from '@/src/lib/dt';
 interface QuickAccessCard {
   to: string;
   title: string;
@@ -63,19 +64,19 @@ const QUICK_ACCESS_CARDS: QuickAccessCard[] = [
 
 export function QuickAccessGrid() {
   return (
-    <section aria-label="Aksesi i shpejtë" className="space-y-4">
+    <section aria-label={dt('Aksesi i shpejtë')} className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl">
-            Çfarë dëshiron të bësh sot?
+            {dt('Çfarë dëshiron të bësh sot?')}
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Zgjidh çfarë të duhet. Të udhëheqim hap pas hapi.
+            {dt('Zgjidh çfarë të duhet. Të udhëheqim hap pas hapi.')}
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          Ndihmë e shpejtë
+          {dt('Ndihmë e shpejtë')}
         </div>
       </div>
 
@@ -103,15 +104,15 @@ export function QuickAccessGrid() {
 
             <div className="relative z-10">
               <h3 className="mt-4 text-base font-extrabold leading-snug text-slate-900 dark:text-white">
-                {card.title}
+                {dt(card.title)}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {card.description}
+                {dt(card.description)}
               </p>
             </div>
 
             <span className="relative z-10 mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-slate-900/5 px-3 py-2 text-xs font-bold text-blue-700 transition-colors group-hover:bg-blue-600 group-hover:text-white dark:bg-slate-800/80 dark:text-blue-300 dark:group-hover:bg-blue-500 dark:group-hover:text-white">
-              {card.action}
+              {dt(card.action)}
               <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
             </span>
           </Link>

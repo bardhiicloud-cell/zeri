@@ -9,7 +9,11 @@ import { MunicipalityShield } from '../components/MunicipalityShield';
 import { useStore } from '../lib/store';
 import { cn } from '../lib/utils';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
+import { getMunicipalityPhoto, getMunicipalitySlug } from '../lib/municipalityPhotos';
+import { MUNICIPALITY_PHOTO_CREDITS } from '../lib/municipalityPhotoCredits';
 
+import { dt } from '@/src/lib/dt';
+import { PageHero } from '../components/layout/PageHero';
 interface MunicipalityDetail {
   name: string;
   code: string;
@@ -22,6 +26,8 @@ interface MunicipalityDetail {
   website: string;
   postalCode: string;
   description: string;
+  photoDay?: string;
+  photoNight?: string;
 }
 
 const DETAILED_MUNICIPALITIES: MunicipalityDetail[] = [
@@ -316,7 +322,11 @@ export default function KomunatPage() {
       }
     });
 
-    return list;
+    return list.map(m => ({
+      ...m,
+      photoDay: getMunicipalityPhoto(m.name, 'day'),
+      photoNight: getMunicipalityPhoto(m.name, 'night'),
+    }));
   }, []);
 
   // Filter municipalities
@@ -341,43 +351,24 @@ export default function KomunatPage() {
     <div className="page-shell min-h-screen bg-(--color-page) dark:bg-(--color-brand-dark) text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header Title Section */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-white/10 shadow-xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/60 dark:border-blue-900 mb-3">
-                <Building2 className="w-3.5 h-3.5" />
-                <span>Vetëqeverisja Lokale e Republikës së Kosovës</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                38 Komunat e Kosovës
-              </h1>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 max-w-2xl">
-                Zgjidhni komunën tuaj për të parë statistikat lokale, raportimet e qytetarëve, 
-                kontaktet e administratës komunale dhe shërbimet e integruara digjitale.
-              </p>
-            </div>
+        <PageHero
+          eyebrow={dt('Vetëqeverisja Lokale e Republikës së Kosovës')}
+          icon={Building2}
+          title={dt('38 Komunat e Kosovës')}
+          subtitle={dt('Zgjidhni komunën tuaj për të parë statistikat lokale, raportimet e qytetarëve, kontaktet e administratës komunale dhe shërbimet e integruara digjitale.')}
+          stats={[
+            { value: '38', label: dt('Komuna Aktive') },
+            { value: '100%', label: dt('Mbulueshmëri') },
+          ]}
+        />
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-white/5 text-center min-w-[100px]">
-                <div className="text-2xl font-black text-blue-600 dark:text-blue-400">38</div>
-                <div className="text-[11px] font-semibold text-slate-500">Komuna Aktive</div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-white/5 text-center min-w-[100px]">
-                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">100%</div>
-                <div className="text-[11px] font-semibold text-slate-500">Mbulueshmëri</div>
-              </div>
-            </div>
-          </div>
-
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           {/* Search & Filter Toolbar */}
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <input 
                 type="text" 
-                placeholder="Kërko komunën sipas emrit, kryetarit ose rajonit..."
+                placeholder={dt('Kërko komunën sipas emrit, kryetarit ose rajonit...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -409,32 +400,53 @@ export default function KomunatPage() {
           {filteredMunicipalities.map((muni) => {
             const reportsCount = getReportCount(muni.name);
             return (
-              <div 
+              <div
                 key={muni.name}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-5 group"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between overflow-hidden group"
               >
                 <div>
-                  {/* Card Header with Shield */}
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="p-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  {/* Photo header: real daytime photo in light mode, night photo in dark mode */}
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-200 dark:bg-slate-800">
+                    {muni.photoDay && (
+                      <img
+                        src={muni.photoDay}
+                        alt={`${muni.name} – pamje nga dita`}
+                        loading="lazy"
+                        decoding="async"
+                        className="dark:hidden absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    )}
+                    {muni.photoNight && (
+                      <img
+                        src={muni.photoNight}
+                        alt={`${muni.name} – pamje nga nata`}
+                        loading="lazy"
+                        decoding="async"
+                        className="hidden dark:block absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/15 to-transparent dark:from-slate-950/90 dark:via-slate-950/25" />
+
+                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-white/90 dark:bg-slate-900/75 text-blue-700 dark:text-blue-300 backdrop-blur-sm border border-white/60 dark:border-white/10">
+                      {muni.code}
+                    </span>
+
+                    <div className="absolute inset-x-0 bottom-0 p-4 flex items-end gap-3">
+                      <div className="shrink-0 p-1 rounded-xl bg-white/95 dark:bg-slate-900/80 backdrop-blur-sm shadow-lg ring-1 ring-black/5 dark:ring-white/10">
                         <MunicipalityShield name={muni.name} code={muni.code} size="lg" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
-                          <span>{muni.name}</span>
+                      <div className="min-w-0">
+                        <h3 className="text-xl font-black text-white leading-tight drop-shadow-sm truncate">
+                          {muni.name}
                         </h3>
-                        <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                        <div className="text-xs font-medium text-white/80 mt-0.5 truncate">
                           {muni.region}
                         </div>
                       </div>
                     </div>
-
-                    <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900">
-                      {muni.code}
-                    </span>
                   </div>
 
+                  <div className="p-5 pb-0">
                   {/* Summary & Description */}
                   <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
                     {muni.description}
@@ -447,7 +459,7 @@ export default function KomunatPage() {
                       <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{muni.mayor}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">Banorë</span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">{dt('Banorë')}</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">{muni.population}</span>
                     </div>
                   </div>
@@ -463,10 +475,11 @@ export default function KomunatPage() {
                       <span className="truncate text-[11px]">{muni.email}</span>
                     </div>
                   </div>
+                  </div>
                 </div>
 
                 {/* Bottom Action Buttons */}
-                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
+                <div className="mx-5 mt-5 mb-5 pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
                   <button
                     onClick={() => navigate(`/detailed-registry?komuna=${encodeURIComponent(muni.name)}`)}
                     className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
@@ -479,7 +492,7 @@ export default function KomunatPage() {
                     onClick={() => navigate(`/raporto?komuna=${encodeURIComponent(muni.name)}`)}
                     className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
                   >
-                    Raporto
+                    {dt('Raporto')}
                   </button>
                 </div>
               </div>
@@ -490,10 +503,30 @@ export default function KomunatPage() {
         {filteredMunicipalities.length === 0 && (
           <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 p-8">
             <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Nuk u gjet asnjë komunë</h3>
-            <p className="text-xs text-slate-500 mt-1">Provoni një kërkim tjetër me emër komune apo emër kryetari.</p>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{dt('Nuk u gjet asnjë komunë')}</h3>
+            <p className="text-xs text-slate-500 mt-1">{dt('Provoni një kërkim tjetër me emër komune apo emër kryetari.')}</p>
           </div>
         )}
+
+        <details className="text-[11px] text-slate-500 dark:text-slate-400">
+          <summary className="cursor-pointer font-semibold">Burimi i fotove (Wikimedia Commons)</summary>
+          <p className="mt-2 max-w-3xl">
+            Fotot e ditës janë fotografi reale nga Wikimedia Commons. Për komunat pa foto reale nate, pamja e natës është fotoja e ditës e përpunuar në ngjyra nate.
+          </p>
+          <ul className="mt-2 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
+            {fullMunicipalitiesList.map((m) => {
+              const credit = MUNICIPALITY_PHOTO_CREDITS[getMunicipalitySlug(m.name) ?? ''];
+              if (!credit) return null;
+              return (
+                <li key={m.name} className="truncate">
+                  <span className="font-semibold">{m.name}:</span>{' '}
+                  <a href={credit.day.source} target="_blank" rel="noreferrer" className="underline">{credit.day.author || 'Autori'}</a>
+                  {' · '}{credit.day.license}
+                </li>
+              );
+            })}
+          </ul>
+        </details>
 
       </div>
     </div>

@@ -4,7 +4,7 @@ import {
   collection, getDocs, limit, onSnapshot, orderBy, query, startAfter, where,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import { ChevronDown, Loader2, Radio } from 'lucide-react';
+import { ChevronDown, Loader2, MapPin, Radio } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
@@ -40,7 +40,7 @@ function relativeWhen(iso?: string): string {
   return `${days} ${dt('ditë më parë')}`;
 }
 
-export function LiveNoticesFeed() {
+export function LiveNoticesFeed({ className }: { className?: string } = {}) {
   const [municipality, setMunicipality] = useState<string>(ALL_MUNICIPALITIES_OPTION);
   const [pages, setPages] = useState<ReportEvent[][]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -105,81 +105,111 @@ export function LiveNoticesFeed() {
   })();
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900">
-      <div className="mb-3 flex items-center justify-between gap-2 border-b border-slate-200 pb-2 dark:border-white/10">
-        <span className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full h-full w-full animate-ping rounded-full bg-rose-500 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-600" />
+    <section
+      aria-label={dt('Njoftime Live')}
+      className={cn('flex min-h-[28rem] flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-900', className ?? 'max-h-[36rem]')}
+    >
+      {/* Masthead */}
+      <header className="relative overflow-hidden bg-gradient-to-br from-[#0b2b57] via-[#0f3a75] to-[#1d4ed8] px-5 pb-5 pt-5 text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex items-start justify-between gap-3">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-50">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
+              </span>
+              {dt('Drejtpërdrejt')}
+            </span>
+            <h3 className="mt-3 font-serif text-2xl font-black leading-none tracking-tight">{dt('Njoftime')}</h3>
+            <p className="mt-1.5 text-[11px] leading-snug text-blue-100/90">{dt('Përgjigjet zyrtare të institucioneve ndaj raportimeve të qytetarëve.')}</p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+            <Radio className="h-5 w-5" aria-hidden="true" />
           </span>
-          <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">{dt('Njoftime Live')}</h3>
-        </span>
-        <Radio className="h-3.5 w-3.5 text-rose-500" aria-hidden="true" />
-      </div>
+        </div>
 
-      {/* Commune filter — the 38 Kosovo municipalities */}
-      <div className="relative mb-3">
-        <select
-          value={municipality}
-          onChange={(e) => setMunicipality(e.target.value)}
-          aria-label={dt('Filtro sipas komunës')}
-          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 pr-8 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
-        >
-          <option value={ALL_MUNICIPALITIES_OPTION}>{dt(ALL_MUNICIPALITIES_OPTION)}</option>
-          {KOSOVO_MUNICIPALITIES.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-      </div>
+        {/* Commune filter: the 38 Kosovo municipalities */}
+        <div className="relative mt-4">
+          <select
+            value={municipality}
+            onChange={(e) => setMunicipality(e.target.value)}
+            aria-label={dt('Filtro sipas komunës')}
+            className="w-full appearance-none rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 pr-9 text-xs font-bold text-white outline-none backdrop-blur transition focus:border-white/60 focus:ring-2 focus:ring-white/30 [&>option]:text-slate-900"
+          >
+            <option value={ALL_MUNICIPALITIES_OPTION}>{dt(ALL_MUNICIPALITIES_OPTION)}</option>
+            {KOSOVO_MUNICIPALITIES.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" aria-hidden="true" />
+        </div>
+      </header>
 
-      {events.length === 0 ? (
-        <p className="py-4 text-center text-xs text-slate-400">
-          {dt('Ende pa përgjigje publike për këtë komunë.')}
-        </p>
-      ) : (
-        <ul className="divide-y divide-slate-100 dark:divide-white/5">
-          {events.map((ev) => {
-            const meta = statusMeta(ev.status);
-            const tone = TONE_CLASSES[meta.tone];
-            return (
-              <li key={ev.id}>
-                <Link
-                  to={ev.trackId ? `/trackid?id=${encodeURIComponent(ev.trackId)}` : '#'}
-                  className="group block py-2.5"
-                >
-                  <span className="flex items-center justify-between gap-2">
-                    <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-black', tone.badge)}>
-                      {statusLabel(ev.status)}
+      {/* Timeline: scrolls inside the panel so the column runs the full height of the archive. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [scrollbar-width:thin]">
+        {events.length === 0 ? (
+          <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 px-4 text-center">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800">
+              <Radio className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              {dt('Ende pa përgjigje publike për këtë komunë.')}
+            </p>
+          </div>
+        ) : (
+          <ol className="relative space-y-3 before:absolute before:bottom-2 before:left-[9px] before:top-2 before:w-px before:bg-slate-200 dark:before:bg-white/10">
+            {events.map((ev) => {
+              const meta = statusMeta(ev.status);
+              const tone = TONE_CLASSES[meta.tone];
+              return (
+                <li key={ev.id} className="relative pl-7">
+                  <span
+                    aria-hidden="true"
+                    className={cn('absolute left-0 top-4 h-[19px] w-[19px] rounded-full border-4 border-white dark:border-slate-900', tone.dot)}
+                  />
+                  <Link
+                    to={ev.trackId ? `/trackid?id=${encodeURIComponent(ev.trackId)}` : '#'}
+                    className="group block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-slate-800/50 dark:hover:border-blue-500/50 dark:hover:bg-slate-800"
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className={cn('rounded-full border px-2.5 py-0.5 text-[10px] font-black', tone.badge)}>
+                        {statusLabel(ev.status)}
+                      </span>
+                      <time className="text-[10px] font-semibold tabular-nums text-slate-400">{relativeWhen(ev.createdAt)}</time>
                     </span>
-                    <span className="text-[10px] text-slate-400">{relativeWhen(ev.createdAt)}</span>
-                  </span>
-                  <span className="mt-1 block line-clamp-2 text-xs font-bold leading-snug text-slate-800 group-hover:text-blue-700 dark:text-slate-200 dark:group-hover:text-blue-300">
-                    {ev.reportTitle || dt('Raportim')}
-                  </span>
-                  <span className="mt-0.5 block text-[10px] text-slate-400">
-                    {ev.municipality ? `${dt('Komuna e')} ${ev.municipality}` : ''}
-                    {ev.actorInstitution ? ` · ${ev.actorInstitution}` : ''}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    <span className="mt-2 block line-clamp-2 text-[13px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">
+                      {ev.reportTitle || dt('Raportim')}
+                    </span>
+                    {(ev.municipality || ev.actorInstitution) && (
+                      <span className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+                        <span className="truncate">
+                          {ev.municipality ? `${dt('Komuna e')} ${ev.municipality}` : ''}
+                          {ev.actorInstitution ? ` · ${ev.actorInstitution}` : ''}
+                        </span>
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        )}
 
-      {hasMore && (
-        <button
-          type="button"
-          onClick={loadMore}
-          disabled={loadingMore}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
-        >
-          {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {dt('Ngarko më shumë')}
-        </button>
-      )}
-    </div>
+        {hasMore && (
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[11px] font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
+          >
+            {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {dt('Ngarko më shumë')}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 

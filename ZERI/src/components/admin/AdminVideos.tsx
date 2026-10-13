@@ -7,6 +7,9 @@ import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { db, uploadFileToStorage } from '../../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import toast from 'react-hot-toast';
+import DecisionBar from './DecisionBar';
+import { takeDecision } from '../../lib/decisionsApi';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 
 /**
@@ -118,7 +121,7 @@ export default function AdminVideos() {
       const url = await uploadFileToStorage(file, 'reports', { scope: 'videos' });
       setForm((f) => (kind === 'video' ? { ...f, videoUrl: url } : { ...f, imageUrl: url }));
     } catch (err: any) {
-      alert(err?.message || 'Ngarkimi dështoi.');
+      toast.error(err?.message || dt('Ngarkimi dështoi.'));
     } finally {
       setUploading(null);
     }
@@ -138,7 +141,6 @@ export default function AdminVideos() {
         municipality: form.municipality,
         videoUrl: form.videoUrl.trim(),
         imageUrl: form.imageUrl.trim() || null,
-        published: form.published,
         position: 'sidebar',
         author: currentUser?.name || currentUser?.email || 'Redaksia',
         readTime: 'Video',
@@ -146,24 +148,25 @@ export default function AdminVideos() {
       };
       const ref = editingId ? doc(db, 'newsArticles', editingId) : doc(collection(db, 'newsArticles'));
       if (editingId) {
+        // Editing saves the text and media; publishing stays a separate decision.
         await setDoc(ref, payload, { merge: true });
       } else {
-        await setDoc(ref, { ...payload, createdAt: now });
+        await setDoc(ref, { ...payload, published: false, status: 'Draft', createdAt: now });
+        if (form.published) {
+          try {
+            await takeDecision('news', ref.id, 'publish');
+          } catch (error) {
+            toast.error(`${dt('Video u ruajt si draft, por nuk u publikua:')} ${(error as Error).message}`);
+          }
+        }
       }
+      toast.success(dt('Video u ruajt.'));
       closeForm();
     } catch (err) {
       console.error('Gabim gjatë ruajtjes së videos', err);
-      alert('Pati një gabim gjatë ruajtjes së videos.');
+      toast.error(dt('Pati një gabim gjatë ruajtjes së videos.'));
     } finally {
       setSaving(false);
-    }
-  };
-
-  const togglePublished = async (v: VideoItem) => {
-    try {
-      await setDoc(doc(db, 'newsArticles', v.id), { published: !v.published }, { merge: true });
-    } catch (err) {
-      console.error('Gabim gjatë ndryshimit të publikimit', err);
     }
   };
 
@@ -320,10 +323,7 @@ export default function AdminVideos() {
                   <button onClick={() => openEdit(v)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors">
                     <Pencil className="w-3.5 h-3.5" />{dt('Modifiko')}
                   </button>
-                  <button onClick={() => togglePublished(v)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors">
-                    {v.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    {v.published ? dt('Çpubliko') : dt('Publiko')}
-                  </button>
+                  <DecisionBar kind="news" id={v.id} doc={v as any} />
                   <button onClick={() => handleDelete(v.id)} className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />{dt('Fshi')}
                   </button>

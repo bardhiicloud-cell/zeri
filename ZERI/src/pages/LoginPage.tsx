@@ -10,6 +10,7 @@ import { getOrCreateGuestUser } from '../lib/session';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { canAccessAdmin } from '../lib/adminPermissions';
+import { homeForRole } from '../lib/roleHome';
 
 export default function LoginPage() {
   const { t } = useLanguage();
@@ -91,25 +92,20 @@ export default function LoginPage() {
      */
     const granted = (name: string) => (currentUser.permissions ?? []).includes(name as never);
 
-    if (currentUser.role === 'admin' || currentUser.role === 'superadmin') {
-      navigate('/admin');
+    const home = homeForRole(currentUser.role);
+    // An agent given monitoring by an administrator works in the manager's place.
+    if (home === '/agent' && (granted('monitorim') || granted('monitoring'))) {
+      navigate('/menagjer');
       return;
     }
-    if (currentUser.role === 'municipality') {
-      navigate('/komuna');
-      return;
-    }
-    if (['agent', 'responder', 'dispatcher', 'moderator'].includes(currentUser.role)) {
-      // A specific grant, where held, is more useful than the generic console.
-      if (granted('monitorim') || granted('monitoring')) navigate('/monitorim');
-      else navigate('/agent');
+    if (home !== '/') {
+      navigate(home);
       return;
     }
 
-    // Other staff roles (approver, adsadmin, newsadmin) work inside the admin
-    // panel, which is where their sections live.
+    // A citizen carrying a grant still reaches the work they were given.
     if (canAccessAdmin(currentUser)) {
-      navigate('/admin');
+      navigate('/agent');
       return;
     }
 
@@ -249,6 +245,9 @@ export default function LoginPage() {
         setError('Ky domain nuk është i autorizuar. Shtoje në Firebase Console → Authentication → Settings → Authorized domains.');
       } else if (err?.code === 'auth/network-request-failed') {
         setError('Problem me rrjetin. Kontrollo internetin dhe provo përsëri.');
+      } else if (err?.code === 'auth/firebase-app-check-token-is-invalid') {
+        console.error('[LOGIN] App Check is enforced for Authentication but no valid token was sent. Set VITE_FIREBASE_APPCHECK_SITE_KEY (and register the debug token on localhost) or unenforce Authentication in Firebase Console → App Check.');
+        setError('Firebase App Check është i detyrueshëm për hyrjen por ky aplikacion nuk po dërgon token të vlefshëm. Kontakto administratorin.');
       } else if (err?.code === 'auth/configuration-not-found' || err?.code === 'auth/invalid-api-key') {
         setError('Konfigurimi i Firebase mungon ose është i gabuar — kontakto administratorin.');
       } else {

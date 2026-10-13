@@ -4,6 +4,7 @@ import { Bot, Send, Sparkles, AlertCircle, RefreshCw, FileText, Landmark, FileCh
 import { useLanguage } from '../lib/LanguageContext';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { authHeaders } from '../lib/apiAuth';
 
 interface Message {
   id: string;
@@ -95,7 +96,7 @@ Zgjidhni një nga pyetjet e shpeshta më poshtë, ose shkruani pyetjen tuaj të 
 
       const res = await fetch('/api/ai-assistant/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           messages: formattedHistory,
           language: language,

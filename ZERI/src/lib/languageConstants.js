@@ -19,16 +19,23 @@ export const DEFAULT_LANGUAGE = 'sq';
  * is the source language and the fallback for every miss.
  */
 export const SUPPORTED_LANGUAGES = [
-    'sq', 'en', 'de', 'bs', 'ar', 'tr', 'sr', 'fr', 'it', 'es',
-    'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl',
+    'sq', 'en', 'de', 'bs', 'ar', 'tr', 'sr', 'fr', 'it', 'pt',
+    'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl',
+    'ja', 'ko', 'pl', 'bg', 'ca', 'au',
 ];
+/**
+ * Regional English variants: Canada and Australia read English (Canada also
+ * French) rather than needing a translation table of their own.
+ */
+export const REGIONAL_ENGLISH = ['ca', 'au'];
 /** Languages written right-to-left. */
 export const RTL_LANGUAGES = ['ar'];
 /** Tag used for `<html lang>` and `dir`; Swiss German carries its region. */
 export const HTML_LANG_TAGS = {
     sq: 'sq', en: 'en', de: 'de', bs: 'bs', ar: 'ar', tr: 'tr', sr: 'sr',
-    fr: 'fr', it: 'it', es: 'es', pt: 'pt', gsw: 'de-CH', mk: 'mk', sl: 'sl',
-    hr: 'hr', ro: 'ro', sv: 'sv', nb: 'nb', hy: 'hy', nl: 'nl',
+    fr: 'fr', it: 'it', pt: 'pt', gsw: 'de-CH', mk: 'mk', sl: 'sl',
+    hr: 'hr', sv: 'sv', nb: 'nb', nl: 'nl',
+    ja: 'ja', ko: 'ko', pl: 'pl', bg: 'bg', ca: 'en-CA', au: 'en-AU',
 };
 /** Language metadata for the switcher: native name, flag and short badge. */
 export const LANGUAGE_OPTIONS = [
@@ -41,17 +48,20 @@ export const LANGUAGE_OPTIONS = [
     { code: 'sr', label: 'SR', fullName: 'Srpski', flag: '🇷🇸' },
     { code: 'fr', label: 'FR', fullName: 'Français', flag: '🇫🇷' },
     { code: 'it', label: 'IT', fullName: 'Italiano', flag: '🇮🇹' },
-    { code: 'es', label: 'ES', fullName: 'Español', flag: '🇪🇸' },
     { code: 'pt', label: 'PT', fullName: 'Português', flag: '🇵🇹' },
     { code: 'gsw', label: 'CH', fullName: 'Deutsch (Schweiz)', flag: '🇨🇭' },
     { code: 'mk', label: 'MK', fullName: 'Македонски', flag: '🇲🇰' },
     { code: 'sl', label: 'SL', fullName: 'Slovenščina', flag: '🇸🇮' },
     { code: 'hr', label: 'HR', fullName: 'Hrvatski', flag: '🇭🇷' },
-    { code: 'ro', label: 'RO', fullName: 'Română', flag: '🇷🇴' },
     { code: 'sv', label: 'SV', fullName: 'Svenska', flag: '🇸🇪' },
     { code: 'nb', label: 'NO', fullName: 'Norsk', flag: '🇳🇴' },
-    { code: 'hy', label: 'HY', fullName: 'Հայերեն', flag: '🇦🇲' },
     { code: 'nl', label: 'NL', fullName: 'Nederlands', flag: '🇳🇱' },
+    { code: 'ja', label: 'JA', fullName: '日本語', flag: '🇯🇵' },
+    { code: 'ko', label: 'KO', fullName: '한국어', flag: '🇰🇷' },
+    { code: 'pl', label: 'PL', fullName: 'Polski', flag: '🇵🇱' },
+    { code: 'bg', label: 'BG', fullName: 'Български', flag: '🇧🇬' },
+    { code: 'ca', label: 'CA', fullName: 'Canada (English/Français)', flag: '🇨🇦' },
+    { code: 'au', label: 'AU', fullName: 'Australia (English)', flag: '🇦🇺' },
 ];
 export const LANGUAGE_STORAGE_KEY = 'app_language';
 export const isSupportedLanguage = (value) => typeof value === 'string'

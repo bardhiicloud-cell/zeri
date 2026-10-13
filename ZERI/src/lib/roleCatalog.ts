@@ -66,13 +66,14 @@ export const SECTION_ORDER: readonly AdminSection[] = [
   'users', 'forum', 'polls',
   'agents', 'municipalities', 'monitoring',
   'monitorim', 'agentpanel', 'komunapanel', 'moderim', 'roles',
-  'support', 'ads', 'videos', 'notifications', 'news',
+  'support', 'ads', 'videos', 'notifications', 'news', 'debate',
   'categories', 'security', 'settings',
 ];
 
 /** Presentation names, matching the sidebar so a reader can find them. */
 export const SECTION_LABELS: Record<AdminSection, string> = {
   dashboard: 'Paneli i Përgjithshëm',
+  inbox: 'Kutia e Punës',
   updates: 'Përditësimet e Adminit',
   reports: 'Inspektimi i Raporteve',
   workfacts: 'Faktet e Komunave',
@@ -80,6 +81,8 @@ export const SECTION_LABELS: Record<AdminSection, string> = {
   donations: 'Aprovimi i Donacioneve',
   users: 'Regjistri i Qytetarëve',
   forum: 'Moderimi i Debatit Publik',
+  debate: 'Admini i Debatit Publik (pagesa, ticke, reklama)',
+  workflow: 'Rrjedha e Aprovimit (hapet për kë ka raporte, donacione, shëndetësi ose lajme)',
   polls: 'Sondazhet Publike',
   agents: 'Menaxhimi i Stafit',
   municipalities: 'Llogaritë e Komunave',
@@ -191,6 +194,24 @@ export const ROLE_CATALOG: readonly RoleProfile[] = [
       'editorial dhe procesin e ankesave si dy vende pune të ndara.',
   },
   {
+    role: 'debatwp',
+    label: 'Admin i Debatit Publik',
+    purpose: 'Menaxhon Debatin Publik: pagesat me kod, tickun e verifikimit, reklamat e debatit dhe postimet.',
+    clearance: 'commercial',
+    isStaff: true,
+    sections: BY_ROLE.debatwp!,
+    fullAccess: false,
+    cannot: [
+      'Nuk sheh raportimet e qytetarëve, regjistrin shëndetësor ose donacionet',
+      'Nuk menaxhon staf, siguri ose konfigurime të platformës',
+      'Nuk sheh të dhëna personale të qytetarëve përtej emrit te pagesa',
+    ],
+    notes:
+      'Rol i ngushtë dhe komercial: konfirmon pagesat që hynë në llogarinë bankare duke i krahasuar me kodet ' +
+      'e gjeneruara, aktivizon ose heq tickun, menaxhon reklamat dhe postimet e promovuara në debat, dhe ' +
+      'trajton raportimet e postimeve. Çdo konfirmim pagese regjistrohet me emrin e tij në auditim.',
+  },
+  {
     role: 'agent',
     label: 'Agjent Terreni',
     purpose: 'Punon drejtpërdrejt me qytetarët në terren: radha, ndihma, moderim i lehtë.',
@@ -241,6 +262,25 @@ export const ROLE_CATALOG: readonly RoleProfile[] = [
       'Si përgjegjësi, me shtimin e njoftimeve. Kjo është dikush që koordinon punën e të tjerëve dhe ' +
       'duhet të komunikojë me qytetarët rreth saj — prandaj njoftimet janë në, dhe menaxhimi i ' +
       'stafit mbetet jashtë.',
+  },
+  {
+    role: 'monitor',
+    label: 'Monitorues',
+    purpose: 'Mbikëqyr: sheh raportimet, afatet, ndryshimet e statusit dhe auditimin, pa ndryshuar asgjë.',
+    clearance: 'field',
+    isStaff: true,
+    sections: BY_ROLE.monitor!,
+    fullAccess: false,
+    cannot: [
+      'Nuk ndryshon statusin, nuk cakton dhe nuk refuzon raportime',
+      'Nuk fshin raportime dhe nuk modifikon përgjigjet e institucioneve',
+      'Nuk menaxhon përdorues, staf ose role',
+      'Nuk sheh regjistrin shëndetësor, donacionet, reklamat ose konfigurimet',
+    ],
+    notes:
+      'Për njerëzit që duhet të shohin gjithçka rreth punës — kush ndryshoi çfarë, kur, dhe cilat ' +
+      'raste janë të vonuara — pa mundur ta ndryshojnë. Çdo veprim shkrimi refuzohet nga serveri, ' +
+      'jo vetëm fshihet në ndërfaqe.',
   },
   {
     role: 'adsadmin',
@@ -309,7 +349,7 @@ export function isFullAccess(sections: readonly AdminSection[]): boolean {
 /** A stable, greppable marker for consumers that must handle every role. */
 export const ALL_ADMIN_ROLES: readonly StaffRole[] = [
   'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin',
-  'agent', 'responder', 'dispatcher', 'municipality',
+  'agent', 'responder', 'dispatcher', 'monitor', 'municipality',
 ];
 
 export type { AdminSection, StaffRole, UserRoleLike };

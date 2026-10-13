@@ -20,6 +20,7 @@ import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constant
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, formatBytes } from '../lib/firebase';
+import { authHeaders } from '../lib/apiAuth';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { createTrackingId, getOrCreateGuestUser, saveGuestReportHistory } from '../lib/session';
@@ -508,7 +509,7 @@ export default function ReportIssue() {
       
       const res = await fetch('/api/analyze-issue', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           imageBase64,
           mimeType,
@@ -524,7 +525,9 @@ export default function ReportIssue() {
       
       const data = await res.json();
       
-       if (data && (data.category || data.title)) {
+       if (data?.degraded) {
+        toast.error(dt('Analiza AI nuk është e disponueshme tani. Plotësoni fushat vetë.'));
+      } else if (data && (data.category || data.title)) {
         if (data.title) setTitle(data.title);
         if (data.description) setDescription(data.description);
         if (data.category) setCategory(data.category);
@@ -658,7 +661,7 @@ export default function ReportIssue() {
          try {
            const dupRes = await fetch('/api/detect-duplicate', {
              method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
+             headers: await authHeaders({ 'Content-Type': 'application/json' }),
              body: JSON.stringify({
                newReport: { title, description, imageUrl: mediaItems[0]?.url },
                existingReports: nearbyReports
@@ -666,11 +669,21 @@ export default function ReportIssue() {
            });
            const dupData = await dupRes.json();
            if (dupData.is_duplicate && dupData.duplicate_of_id) {
-              upvoteReport(dupData.duplicate_of_id);
-              setIsSubmitting(false);
-              navigate(`/detailed-registry?report=${dupData.duplicate_of_id}`);
-              toast.success(dt(`AI Shkrirje: Raportimi juaj u regjistrua si Votë Mbështetëse!`), { duration: 6000 });
-              return;
+              /*
+               * The model only suggests a duplicate. It used to decide on its own:
+               * the citizen's report was thrown away and replaced by a "support"
+               * vote, with no way to say "no, mine is different". Now they choose.
+               */
+              const supportExisting = window.confirm(
+                dt('Duket se ky problem është raportuar tashmë pranë vendndodhjes suaj. Dëshironi ta mbështesni raportimin ekzistues? Shtypni "Anulo" për ta dërguar raportin tuaj gjithsesi.')
+              );
+              if (supportExisting) {
+                upvoteReport(dupData.duplicate_of_id);
+                setIsSubmitting(false);
+                navigate(`/detailed-registry?report=${dupData.duplicate_of_id}`);
+                toast.success(dt(`Faleminderit! E mbështetët raportimin ekzistues.`), { duration: 6000 });
+                return;
+              }
            }
          } catch(e) {
            console.error("Gabim në AI merger", e);
@@ -722,22 +735,31 @@ export default function ReportIssue() {
       reportData.id = reportRef.id;
       reportData.trackingId = trackingId;
 
-      if (!currentUser || currentUser.role === 'guest') {
-        saveGuestReportHistory({
-          id: reportRef.id,
-          trackingId,
-          title: title || 'Raportim i ri',
-          description,
-          category: category || 'Të tjera',
-          topicCategory,
-          status: 'Pending Review',
-          municipality: municipality || 'Prishtinë',
-          createdAt: reportData.createdAt
-        });
-      }
-
-      setSubmittedReportId(trackingId);
-      setStep(3);
+      /**
+       * Everything that tells the citizen "your report exists" lives here and is
+       * called only after the report has actually been written. It used to run
+       * before the uploads and before the save, so a failed save still ended on
+       * the Track ID screen for a report that was never stored.
+       */
+      const confirmSubmission = (finalTrackingId: string, finalId: string) => {
+        if (!currentUser || currentUser.role === 'guest') {
+          saveGuestReportHistory({
+            id: finalId,
+            trackingId: finalTrackingId,
+            title: title || 'Raportim i ri',
+            description,
+            category: category || 'Të tjera',
+            topicCategory,
+            status: 'Pending Review',
+            municipality: municipality || 'Prishtinë',
+            createdAt: reportData.createdAt
+          });
+        }
+        setSubmittedReportId(finalTrackingId);
+        if (currentUser) addPoints(10);
+        localStorage.removeItem('reportDraft');
+        setStep(3);
+      };
 
       const uploadResults = await Promise.allSettled(
         mediaItems.map(async (media) => {
@@ -789,11 +811,16 @@ export default function ReportIssue() {
               title: reportData.title,
               description: reportData.description,
               category: reportData.category,
+              topicCategory: reportData.topicCategory,
+              urgency: reportData.urgency,
               location: reportData.location,
               media: reportData.media,
               isAnonymous: reportData.isAnonymous === true,
               authorName: reportData.authorName ?? '',
               trackingId: reportData.trackingId,
+              aiCategoryScore: reportData.aiCategoryScore,
+              aiRoutingReason: reportData.aiRoutingReason,
+              aiForensicsReport: reportData.aiForensicsReport,
             }),
           });
 
@@ -804,10 +831,7 @@ export default function ReportIssue() {
             reportData.id = created.id;
 
             addReport({ ...reportData, id: created.id } as any);
-            setSubmittedReportId(serverTrackingId);
-            if (currentUser) addPoints(10);
-            localStorage.removeItem('reportDraft');
-            setStep(3);
+            confirmSubmission(serverTrackingId, created.id);
             return;
           }
           // A 409/429 carries a citizen-facing reason; surface it rather than
@@ -834,21 +858,16 @@ export default function ReportIssue() {
           createdAt: serverTimestamp() // native firebase timestamp
         });
       } catch (e) {
+        // The report was not stored anywhere the municipality or platform can
+        // see. Saying otherwise (the old "saved locally" success toast and Track
+        // ID) left citizens waiting on a complaint that did not exist. Keep the
+        // form and the draft so they can simply try again.
         const appError = handleFirebaseError(e);
-        console.warn('Firestore save failed; kept report in local session fallback.', appError.technicalMessage);
-        const localReport = {
-          ...reportData,
-          id: reportData.id || `rep_${Date.now()}`,
-          trackingId: trackingId,
-          createdAt: new Date().toISOString(),
-          status: 'Pending Review' as const,
-          timeline: [{ id: `tl-${Date.now()}`, status: 'Pending Review', date: new Date().toISOString(), updatedBy: 'Sistemi' }]
-        };
-        addReport(localReport);
-        setSubmittedReportId(localReport.trackingId || localReport.id);
-        localStorage.removeItem('reportDraft');
-        setStep(3);
-        toast.success('Raporti u ruajt me sukses në sesionin lokal dhe Track ID është gati për ndjekje.', { duration: 7000 });
+        console.warn('Firestore save failed; the report was NOT stored.', appError.technicalMessage);
+        toast.error(
+          'Raporti NUK u dërgua dhe nuk u krijua Track ID. Të dhënat e formës janë ruajtur në këtë pajisje — kontrolloni lidhjen dhe provoni përsëri.',
+          { duration: 10000 }
+        );
         return;
       }
 
@@ -856,13 +875,7 @@ export default function ReportIssue() {
         ...reportData,
         id: reportData.id || `rep_${Date.now()}`
       });
-      setSubmittedReportId(reportData.trackingId || reportData.id);
-      
-      if (currentUser) {
-        addPoints(10);
-      }
-      localStorage.removeItem('reportDraft');
-      setStep(3); // Success step
+      confirmSubmission(reportData.trackingId || reportData.id, reportData.id || reportRef.id);
     } catch(err) {
       const appError = handleFirebaseError(err);
       console.error('Submission error:', appError.technicalMessage);
@@ -1424,7 +1437,7 @@ export default function ReportIssue() {
           <h1 className="text-3xl md:text-5xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-4 md:mb-5 title-serif uppercase">{dt(`Raportimi u pranua`)}<span className="text-indigo-600">.</span></h1>
           <p className="text-slate-600 dark:text-slate-200 font-medium text-sm md:text-base lg:text-lg mb-6 md:mb-8 font-serif italic max-w-md mx-auto">{dt(`Raportimi iu dërgua agjentëve dhe administratorëve për shqyrtim. Përdorni Track-ID për ta ndjekur statusin e tij në çdo moment.`)}</p>
           <div className="w-full mb-8 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 p-4 text-left shadow-inner">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-bold">Track-ID i raportimit</div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-bold">{dt('Track-ID i raportimit')}</div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <code className="text-lg font-black tracking-wider text-slate-900 dark:text-white break-all">{submittedReportId}</code>
               <button type="button" onClick={() => navigator.clipboard?.writeText(submittedReportId)} className="shrink-0 text-xs font-bold text-blue-600 hover:text-blue-700">Kopjo</button>

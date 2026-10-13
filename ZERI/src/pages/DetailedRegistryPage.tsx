@@ -17,6 +17,7 @@ import { FilterChip } from '../components/registry/FilterChip';
 import { RegistryRow } from '../components/registry/RegistryRow';
 import { getReportTopic, getReportTopicLabel, REPORT_TOPICS } from '../lib/reportTopics';
 
+import { dt } from '@/src/lib/dt';
 const ITEMS_PER_PAGE = 5;
 
 export default function DetailedRegistryPage() {
@@ -286,7 +287,7 @@ export default function DetailedRegistryPage() {
               </button>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/40 bg-cyan-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-900 dark:border-cyan-300/15 dark:bg-cyan-300/10 dark:text-cyan-200">
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                Regjistri publik · Të dhëna të moderuara
+                {dt('Regjistri publik · Të dhëna të moderuara')}
               </div>
               <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">{dt(`Regjistri i Zgjeruar`)}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">{dt(`Eksploro raportimet publike dhe ndiq statusin e çështjeve. Të dhënat personale dhe raportimet në pritje nuk shfaqen në regjistrin publik.`)}</p>

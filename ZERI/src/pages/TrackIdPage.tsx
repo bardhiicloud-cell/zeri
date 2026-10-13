@@ -10,7 +10,8 @@ import { getGuestReportHistory } from '../lib/session';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
 import { ReportTimeline } from '../components/reports/ReportTimeline';
 import { ReportAttachments } from '../components/reports/ReportAttachments';
-
+
+import { dt } from '@/src/lib/dt';
 function normalizeReport(data: any, id: string): Report {
   const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000).toISOString() : data.createdAt;
   return { ...data, id, createdAt: createdAt || new Date().toISOString(), timeline: Array.isArray(data.timeline) ? data.timeline : [] } as Report;
@@ -100,9 +101,9 @@ export default function TrackIdPage() {
           <div className="absolute -bottom-32 left-1/4 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
           <div className="relative z-10 max-w-3xl">
             <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-blue-300">
-              <ShieldCheck className="h-4 w-4" /> Gjurmimi i raportimit
+              <ShieldCheck className="h-4 w-4" /> {dt('Gjurmimi i raportimit')}
             </div>
-            <h1 className="mt-5 text-3xl font-black leading-tight sm:text-5xl">Gjej raportimin tënd</h1>
+            <h1 className="mt-5 text-3xl font-black leading-tight sm:text-5xl">{dt('Gjej raportimin tënd')}</h1>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
               Vendos Track ID (p.sh. <span className="font-mono font-bold text-white">ZQ-ABC12345</span>) për të parë statusin, historinë e veprimeve, fotot dhe përgjigjen e institucionit — njësoj siç shohin punonjesit e komunës.
             </p>
@@ -132,7 +133,7 @@ export default function TrackIdPage() {
                 value={input}
                 onChange={event => setInput(event.target.value)}
                 placeholder="p.sh. ZQ-ABC12345"
-                aria-label="Track ID"
+                aria-label={dt('Track ID')}
                 className="h-14 w-full rounded-2xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 font-mono text-base font-bold uppercase tracking-wide text-slate-900 outline-none transition focus:border-blue-500 dark:border-white/10 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -148,7 +149,7 @@ export default function TrackIdPage() {
 
         {guestHistory.length > 0 && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-4">
-            <div className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Raportimet e tua</div>
+            <div className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{dt('Raportimet e tua')}</div>
             <div className="flex flex-wrap gap-2">
               {guestHistory.slice(0, 10).map(item => (
                 <button
@@ -163,19 +164,19 @@ export default function TrackIdPage() {
           </div>
         )}
 
-        {notFound && <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-5 text-sm font-semibold">Nuk u gjet raportimi me këtë Track ID. Kontrollo shkronjat dhe provo përsëri.</div>}
+        {notFound && <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-5 text-sm font-semibold">{dt('Nuk u gjet raportimi me këtë Track ID. Kontrollo shkronjat dhe provo përsëri.')}</div>}
 
         {report && (
           <main className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden">
             <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div><p className="text-xs font-black uppercase tracking-widest text-blue-600">Track ID</p><p className="font-mono text-2xl font-black text-slate-900 dark:text-white mt-1">{report.trackingId || report.id}</p><h2 className="text-xl font-black text-slate-900 dark:text-white mt-4">{report.title}</h2></div>
+              <div><p className="text-xs font-black uppercase tracking-widest text-blue-600">{dt('Track ID')}</p><p className="font-mono text-2xl font-black text-slate-900 dark:text-white mt-1">{report.trackingId || report.id}</p><h2 className="text-xl font-black text-slate-900 dark:text-white mt-4">{report.title}</h2></div>
               <span className={`px-3 py-2 rounded-xl text-xs font-black whitespace-nowrap border ${TONE_CLASSES[statusMeta(report.status).tone].badge}`}>{statusLabel(report.status)}</span>
             </div>
             <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8">
               <div className="space-y-5">
-                <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30"><p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Përgjegjësia institucionale</p><p className="mt-1 text-sm font-black text-slate-900 dark:text-white">{report.responsibleInstitution || getAccountabilityProfile(report.category).institution}</p><p className="mt-1 text-xs text-slate-500">Zyra: {report.responsibleOffice || getAccountabilityProfile(report.category).office} · Afati: {report.responseDueAt ? new Date(report.responseDueAt).toLocaleString('sq-AL') : new Date(getAccountabilityDueDate(report.createdAt, getAccountabilityProfile(report.category).responseHours)).toLocaleString('sq-AL')}</p></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800"><MapPin className="w-4 h-4 text-blue-600 mb-2" /><strong>{report.location?.municipality || 'Pa komunë'}</strong><p className="text-slate-500 mt-1">{report.location?.address || 'Pa adresë'}</p></div><div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800"><Calendar className="w-4 h-4 text-blue-600 mb-2" /><strong>Dërguar</strong><p className="text-slate-500 mt-1">{new Date(report.createdAt).toLocaleString('sq-AL')}</p></div></div>
-                <div><h3 className="font-black text-slate-900 dark:text-white mb-2">Përshkrimi</h3><p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{report.description}</p></div>
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30"><p className="text-[10px] font-black uppercase tracking-widest text-blue-600">{dt('Përgjegjësia institucionale')}</p><p className="mt-1 text-sm font-black text-slate-900 dark:text-white">{report.responsibleInstitution || getAccountabilityProfile(report.category).institution}</p><p className="mt-1 text-xs text-slate-500">Zyra: {report.responsibleOffice || getAccountabilityProfile(report.category).office} · Afati: {report.responseDueAt ? new Date(report.responseDueAt).toLocaleString('sq-AL') : new Date(getAccountabilityDueDate(report.createdAt, getAccountabilityProfile(report.category).responseHours)).toLocaleString('sq-AL')}</p></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800"><MapPin className="w-4 h-4 text-blue-600 mb-2" /><strong>{report.location?.municipality || 'Pa komunë'}</strong><p className="text-slate-500 mt-1">{report.location?.address || 'Pa adresë'}</p></div><div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800"><Calendar className="w-4 h-4 text-blue-600 mb-2" /><strong>{dt('Dërguar')}</strong><p className="text-slate-500 mt-1">{new Date(report.createdAt).toLocaleString('sq-AL')}</p></div></div>
+                <div><h3 className="font-black text-slate-900 dark:text-white mb-2">{dt('Përshkrimi')}</h3><p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{report.description}</p></div>
                 <div><h3 className="font-black text-(--color-text) mb-4">Historia e trajtimit (Timeline)</h3><ReportTimeline events={report.timeline || []} /></div>
               </div>
               <aside className="space-y-5">
@@ -191,10 +192,10 @@ export default function TrackIdPage() {
                     </p>
                   </div>
                 </div>
-                <div className="text-xs text-slate-500 space-y-2"><p className="flex items-center gap-2"><Clock3 className="w-4 h-4" /> Statusi përditësohet nga stafi gjatë trajtimit.</p><p className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Fotot, videot dhe dokumentet ruhen si dëshmi e rastit.</p><p className="flex items-center gap-2"><Video className="w-4 h-4" /> Track ID përdoret për këtë raportim.</p></div>
+                <div className="text-xs text-slate-500 space-y-2"><p className="flex items-center gap-2"><Clock3 className="w-4 h-4" /> {dt('Statusi përditësohet nga stafi gjatë trajtimit.')}</p><p className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> {dt('Fotot, videot dhe dokumentet ruhen si dëshmi e rastit.')}</p><p className="flex items-center gap-2"><Video className="w-4 h-4" /> {dt('Track ID përdoret për këtë raportim.')}</p></div>
               </aside>
             </div>
-            {report.status === 'Resolved' && report.resolvedImage && <div className="p-6 sm:p-8 border-t border-slate-200 dark:border-white/10"><h3 className="font-black text-slate-900 dark:text-white mb-3">Dëshmia pas zgjidhjes</h3><img src={report.resolvedImage} alt="Dëshmi pas zgjidhjes" className="max-w-xl w-full rounded-2xl" /></div>}
+            {report.status === 'Resolved' && report.resolvedImage && <div className="p-6 sm:p-8 border-t border-slate-200 dark:border-white/10"><h3 className="font-black text-slate-900 dark:text-white mb-3">{dt('Dëshmia pas zgjidhjes')}</h3><img src={report.resolvedImage} alt={dt('Dëshmi pas zgjidhjes')} className="max-w-xl w-full rounded-2xl" /></div>}
           </main>
         )}
       </div>

@@ -5,3 +5,19 @@ node_modules/
 dist/
 build/
 .DS_Store
+
+# Firebase / Identity Platform exports and API responses. These contain OAuth
+# client secrets, password-hash signer keys and user data; never commit them.
+body*.json
+claim_res.json
+idp_*.json
+lookup.json
+users.json
+sa*.json
+proj_policy*.json
+key_create.json
+serviceAccountKey.json
+*-debug.log
+ZERI/anon_*.json
+ZERI/email_verify.json
+ZERI/signin_res.json

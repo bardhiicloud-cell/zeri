@@ -6,8 +6,12 @@ import { dt } from '@/src/lib/dt';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import ReactGA from 'react-ga4';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { usePageMeta } from './lib/usePageMeta';
+import { parseLocalePath } from './lib/seo';
+import { analyzeTheme } from './lib/themePreference';
+import { setRuntimeLanguage, rescanRuntimeTranslation } from './lib/runtimeTranslate';
+import { useLanguage } from './lib/LanguageContext';
 import { Toaster } from 'react-hot-toast';
 import FloatingSupportBot from './components/FloatingSupportBot';
 import { AppLayout } from './components/layout/AppLayout.tsx';
@@ -28,6 +32,8 @@ const HealthRegistryPage = React.lazy(() => import('./pages/HealthRegistryPage.t
 const KomunatPage = React.lazy(() => import('./pages/KomunatPage'));
 const SherbimetPage = React.lazy(() => import('./pages/SherbimetPage'));
 const IdeaPage = React.lazy(() => import('./pages/IdeaPage'));
+const PartnersPage = React.lazy(() => import('./pages/PartnersPage'));
+const DebateAdminPage = React.lazy(() => import('./pages/DebateAdminPage'));
 const ProjektetPage = React.lazy(() => import('./pages/ProjektetPage'));
 const MunicipalityPanel = React.lazy(() => import('./pages/MunicipalityPanel.tsx'));
 const LajmePage = React.lazy(() => import('./pages/LajmePage.tsx'));
@@ -35,12 +41,10 @@ const KontaktPage = React.lazy(() => import('./pages/KontaktPage'));
 const RrethProjektitPage = React.lazy(() => import('./pages/RrethProjektitPage'));
 const TermsOfServicePage = React.lazy(() => import('./pages/TermsOfServicePage'));
 const PrivacyPolicyPage = React.lazy(() => import('./pages/PrivacyPolicyPage'));
-const BudgetPage = React.lazy(() => import('./pages/BudgetPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const AdminPanel = React.lazy(() => import('./pages/AdminPanel.tsx'));
 const ModerationCenterPage = React.lazy(() => import('./pages/ModerationCenterPage.tsx'));
 const MunicipalityPanelPage = React.lazy(() => import('./pages/MunicipalityPanelPage.tsx'));
-const AgentPanelPage = React.lazy(() => import('./pages/AgentPanelPage.tsx'));
 const MonitoringPage = React.lazy(() => import('./pages/MonitoringPage.tsx'));
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
@@ -150,14 +154,45 @@ const ROUTE_TITLES: Record<string, string> = {
   '/terms': 'Kushtet e Përdorimit',
   '/privatesia': 'Politika e Privatësisë',
   '/donacion': 'Ndihma & Donacione',
+  '/partneret': 'Partnerët & Reklama',
   '/login': 'Hyrja',
   '/register': 'Regjistrohu',
+  // Staff places. Without these the browser tab said "Page not found" on a page that was found.
+  '/admin': 'Paneli i administrimit',
+  '/agent': 'Paneli i agjentit',
+  '/menagjer': 'Menaxheri i agjentëve',
+  '/monitorim': 'Menaxheri i agjentëve',
+  '/komuna': 'Paneli i komunës',
+  '/komuna-panel': 'Paneli i komunës',
+  '/debatwp': 'Admini i Debatit Publik',
+  '/debatiwp': 'Admini i Debatit Publik',
+  '/moderim': 'Qendra e moderimit',
 };
+
+/** Keeps the runtime translator in step with the active language and route. */
+export function RuntimeTranslation() {
+  const { pathname } = useLocation();
+  const { language } = useLanguage();
+  useEffect(() => {
+    setRuntimeLanguage(language);
+  }, [language]);
+  useEffect(() => {
+    rescanRuntimeTranslation();
+  }, [pathname]);
+  return null;
+}
 
 export function RouteTitle() {
   const { pathname } = useLocation();
-  const title = ROUTE_TITLES[pathname];
-  usePageMeta(title ?? 'Faqja nuk u gjet');
+  // Subscribing to the language re-renders this on a language switch, so the
+  // browser tab title follows the interface language.
+  const { language } = useLanguage();
+  // `/en/forum` and `/forum` are the same page: look the title up on the path
+  // without its language prefix, otherwise every prefixed URL got "not found".
+  const { pagePath } = parseLocalePath(pathname);
+  const key = pagePath.length > 1 ? pagePath.replace(/\/+$/, '') : pagePath;
+  const title = ROUTE_TITLES[key];
+  usePageMeta(dt(title ?? 'Faqja nuk u gjet', language));
   return null;
 }
 
@@ -186,6 +221,29 @@ export default function App() {
         },
       });
     }
+  }, [analyticsConsented]);
+
+  /**
+   * Theme analyzer report. Once per session, and only with analytics consent,
+   * record which theme the visitor got and why (their own choice, the device
+   * setting, or the day default), so the share of night-mode visitors is
+   * measurable. No identifier is attached.
+   */
+  useEffect(() => {
+    if (!analyticsConsented || !ReactGA.isInitialized) return;
+    try {
+      if (sessionStorage.getItem('zeri-theme-reported')) return;
+      sessionStorage.setItem('zeri-theme-reported', '1');
+    } catch {
+      // Without sessionStorage the event may repeat per page load; harmless.
+    }
+    const analysis = analyzeTheme();
+    ReactGA.event('theme_resolved', {
+      theme: analysis.theme,
+      theme_source: analysis.source,
+      system_prefers_dark: analysis.systemPrefersDark,
+      forced_colors: analysis.forcedColors,
+    });
   }, [analyticsConsented]);
 
   // Withdrawing consent must stop collection, not just prevent it from starting.
@@ -290,6 +348,12 @@ export default function App() {
 
       guestSessionPromise = (async () => {
         try {
+          // Firebase restores a saved session asynchronously. Until it has
+          // finished, `currentUser` is null even for someone who is signed in, so
+          // checking it straight away made every reload sign the person in as a
+          // new anonymous guest, replacing their real session: a staff member who
+          // pressed F5 was thrown out. Wait for the restore to settle first.
+          await auth.authStateReady();
           if (!auth.currentUser) {
             await signInAnonymously(auth);
           }
@@ -723,8 +787,8 @@ export default function App() {
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
         <div className="relative flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-rose-500/20 border-t-rose-600 rounded-full animate-spin mb-4"></div>
-          <span className="text-xl font-bold tracking-widest text-white uppercase font-sans">KOSOVA BASHKË<span className="text-rose-600">.</span></span>
-          <span className="text-xs font-medium text-slate-400 mt-2 tracking-wide uppercase">Duke ngarkuar platformën...</span>
+          <span className="text-xl font-bold tracking-widest text-white uppercase font-sans">{dt('KOSOVA BASHKË')}<span className="text-rose-600">.</span></span>
+          <span className="text-xs font-medium text-slate-400 mt-2 tracking-wide uppercase">{dt('Duke ngarkuar platformën...')}</span>
         </div>
       </div>
     );
@@ -740,6 +804,7 @@ export default function App() {
             <LanguageUrlSync />
             <AnalyticsTracker enabled={analyticsConsented} />
             <RouteTitle />
+            <RuntimeTranslation />
           <ScrollToTop />
           <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div></div>}>
               <Routes>
@@ -760,7 +825,7 @@ export default function App() {
               <Route path="/semundjet" element={<HealthRegistryPage />} />
               <Route path="/sondazhet" element={<PollsPage />} />
               <Route path="/sondazhe" element={<PollsPage />} />
-              <Route path="/buxheti" element={<BudgetPage />} />
+              <Route path="/buxheti" element={<Navigate to="/" replace />} />
               <Route path="/komunat" element={<KomunatPage />} />
               <Route path="/sherbimet" element={<SherbimetPage />} />
               <Route path="/Idea" element={<IdeaPage />} />
@@ -778,6 +843,7 @@ export default function App() {
               <Route path="/politika-e-priveritetit" element={<PrivacyPolicyPage />} />
               <Route path="/politika-e-cookies" element={<PrivacyPolicyPage />} />
               <Route path="/donacion" element={<DonationsPage />} />
+              <Route path="/partneret" element={<PartnersPage />} />
             </Route>
             {}
             {/*
@@ -804,7 +870,7 @@ export default function App() {
               <Route path="shendetesia" element={<HealthRegistryPage />} />
               <Route path="semundjet" element={<HealthRegistryPage />} />
               <Route path="sondazhet" element={<PollsPage />} />
-              <Route path="buxheti" element={<BudgetPage />} />
+              <Route path="buxheti" element={<Navigate to="/" replace />} />
               <Route path="komunat" element={<KomunatPage />} />
               <Route path="sherbimet" element={<SherbimetPage />} />
               <Route path="Idea" element={<IdeaPage />} />
@@ -816,11 +882,23 @@ export default function App() {
               <Route path="kushtet-e-perdorimit" element={<TermsOfServicePage />} />
               <Route path="privatesia" element={<PrivacyPolicyPage />} />
               <Route path="donacion" element={<DonationsPage />} />
+              <Route path="partneret" element={<PartnersPage />} />
+              {/* The same aliases the unprefixed table accepts, so a shared /en/terms link resolves. */}
+              <Route path="terms" element={<TermsOfServicePage />} />
+              <Route path="politika-e-priveritetit" element={<PrivacyPolicyPage />} />
+              <Route path="politika-e-cookies" element={<PrivacyPolicyPage />} />
+              <Route path="sondazhe" element={<PollsPage />} />
+              <Route path="lajmet" element={<LajmePage />} />
+              <Route path="kontakte" element={<KontaktPage />} />
+              <Route path="rreth-nesh" element={<RrethProjektitPage />} />
             </Route>
             <Route path="/komuna-panel" element={<MunicipalityPanel />} />
             <Route path="/komuna" element={<MunicipalityPanelPage />} />
-            <Route path="/agent" element={<AgentPanelPage />} />
+            <Route path="/debatwp" element={<DebateAdminPage />} />
+            <Route path="/debatiwp" element={<DebateAdminPage />} />
+            <Route path="/agent" element={<AdminPanel variant="agent" />} />
             <Route path="/monitorim" element={<MonitoringPage />} />
+            <Route path="/menagjer" element={<AdminPanel variant="manager" />} />
             <Route path="/moderim" element={<ModerationCenterPage />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/approvals" element={<AdminPanel />} />

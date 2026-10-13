@@ -20,7 +20,8 @@ import {
 import { useStore } from '../lib/store';
 import { filterByScope, isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { cn } from '../lib/utils';
-
+
+import { dt } from '@/src/lib/dt';
 const helpCards = [
   {
     title: 'Raporto një problem',
@@ -110,23 +111,23 @@ export default function CitizenHelpCenterPage() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.17em] text-cyan-200">
                 <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-                Qendra e Ndihmës Qytetare
+                {dt('Qendra e Ndihmës Qytetare')}
               </div>
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-5xl">
-                Hapi i duhur për çdo nevojë qytetare.
+                {dt('Hapi i duhur për çdo nevojë qytetare.')}
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
-                Gjej ndihmën sipas situatës dhe zonës tënde. Raporto, kërko shërbim ose ndiq një rast pa humbur kohë nëpër faqe.
+                {dt('Gjej ndihmën sipas situatës dhe zonës tënde. Raporto, kërko shërbim ose ndiq një rast pa humbur kohë nëpër faqe.')}
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link to="/kontakt-numrat" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-rose-950/30 transition hover:bg-rose-400">
                   <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-                  Numrat e emergjencës
+                  {dt('Numrat e emergjencës')}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
                 <Link to="/raporto" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm font-bold text-white transition hover:bg-white/10">
                   <FileText className="h-4 w-4" aria-hidden="true" />
-                  Nis raportim
+                  {dt('Nis raportim')}
                 </Link>
               </div>
             </div>
@@ -137,15 +138,15 @@ export default function CitizenHelpCenterPage() {
                 <span className="text-[10px] font-black uppercase tracking-[0.16em]">Zona aktive</span>
               </div>
               <p className="mt-2 text-xl font-black">{activeMunicipality || 'Të gjitha komunat'}</p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-300">Informacioni dhe numërimet më poshtë përshtaten sipas zonës së zgjedhur.</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">{dt('Informacioni dhe numërimet më poshtë përshtaten sipas zonës së zgjedhur.')}</p>
               <Link to="/komunat" className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-xs font-black text-cyan-200 hover:text-white">
-                Ndrysho zonën <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                {dt('Ndrysho zonën')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
             </aside>
           </div>
         </header>
 
-        <section aria-label="Përmbledhje e zonës" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section aria-label={dt('Përmbledhje e zonës')} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
             { label: 'Raportime të ngarkuara', value: localReports.length, icon: Activity, color: 'text-cyan-600 dark:text-cyan-300' },
             { label: 'Të zgjidhura', value: resolvedReports, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-300' },
@@ -165,9 +166,9 @@ export default function CitizenHelpCenterPage() {
         <section>
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700 dark:text-cyan-300">Orientim i menjëhershëm</p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight">Çfarë të duhet sot?</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Zgjidh një rrugë të qartë dhe vazhdo drejtpërdrejt.</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700 dark:text-cyan-300">{dt('Orientim i menjëhershëm')}</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">{dt('Çfarë të duhet sot?')}</h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{dt('Zgjidh një rrugë të qartë dhe vazhdo drejtpërdrejt.')}</p>
             </div>
             <label className="relative block w-full sm:max-w-sm">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -175,8 +176,8 @@ export default function CitizenHelpCenterPage() {
                 type="search"
                 value={search}
                 onChange={event => setSearch(event.target.value)}
-                placeholder="Kërko ndihmë ose shërbim..."
-                aria-label="Kërko ndihmë ose shërbim"
+                placeholder={dt('Kërko ndihmë ose shërbim...')}
+                aria-label={dt('Kërko ndihmë ose shërbim')}
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900"
               />
             </label>
@@ -206,7 +207,7 @@ export default function CitizenHelpCenterPage() {
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-white/15 dark:bg-slate-900">
               <Search className="mx-auto h-6 w-6 text-slate-400" aria-hidden="true" />
               <p className="mt-2 font-bold">Nuk u gjet ndihmë për “{search}”.</p>
-              <button type="button" onClick={() => setSearch('')} className="mt-2 min-h-10 text-sm font-black text-blue-700 hover:underline dark:text-cyan-300">Pastro kërkimin</button>
+              <button type="button" onClick={() => setSearch('')} className="mt-2 min-h-10 text-sm font-black text-blue-700 hover:underline dark:text-cyan-300">{dt('Pastro kërkimin')}</button>
             </div>
           )}
         </section>
@@ -216,22 +217,22 @@ export default function CitizenHelpCenterPage() {
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-200"><MapPin className="h-5 w-5" aria-hidden="true" /></span>
               <div>
-                <h2 className="font-black">Pasqyra e zonës</h2>
+                <h2 className="font-black">{dt('Pasqyra e zonës')}</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Raportimet e dukshme për {activeMunicipality || 'të gjitha komunat'}.</p>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Të hapura / në proces</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{dt('Të hapura / në proces')}</p>
                 <p className="mt-1 text-2xl font-black text-amber-600 dark:text-amber-300">{openReports.toLocaleString('sq-AL')}</p>
               </div>
               <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/70">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Të zgjidhura</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{dt('Të zgjidhura')}</p>
                 <p className="mt-1 text-2xl font-black text-emerald-600 dark:text-emerald-300">{resolvedReports.toLocaleString('sq-AL')}</p>
               </div>
             </div>
             <Link to={registryLink} className="mt-4 inline-flex min-h-10 items-center gap-1.5 text-xs font-black text-blue-700 hover:underline dark:text-cyan-300">
-              Hap regjistrin publik <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              {dt('Hap regjistrin publik')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           </div>
 
@@ -239,10 +240,10 @@ export default function CitizenHelpCenterPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-400/10 dark:text-rose-200">
               <Phone className="h-5 w-5" aria-hidden="true" />
             </div>
-            <h2 className="mt-4 text-lg font-black">Rrezik i menjëhershëm?</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Për situata urgjente, përdor numrat zyrtarë të emergjencës. Qendra e ndihmës nuk zëvendëson shërbimet emergjente.</p>
+            <h2 className="mt-4 text-lg font-black">{dt('Rrezik i menjëhershëm?')}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{dt('Për situata urgjente, përdor numrat zyrtarë të emergjencës. Qendra e ndihmës nuk zëvendëson shërbimet emergjente.')}</p>
             <Link to="/kontakt-numrat" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-black text-white transition hover:bg-rose-700">
-              Shiko numrat zyrtarë <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              {dt('Shiko numrat zyrtarë')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </aside>
         </section>

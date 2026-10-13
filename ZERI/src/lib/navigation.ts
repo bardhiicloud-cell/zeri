@@ -3,7 +3,7 @@ import {
   MapPin, Newspaper, Lightbulb, Vote, BarChart3, Wallet,
   Megaphone, Phone, Building2, Briefcase, Info, HeartPulse,
   Bot, ShieldAlert, ShieldCheck, MessageSquare, Radio,
-  PlusCircle, FileText,
+  PlusCircle, FileText, Handshake,
 } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from './constants';
 
@@ -63,7 +63,6 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     icon: BarChart3,
     items: [
       { label: 'Statistikat & Analiza', href: '/statistikat', icon: BarChart3, hint: 'Të dhëna dhe krahasime' },
-      { label: 'Buxhetimi me Pjesëmarrje', href: '/buxheti', icon: Wallet, hint: 'Ku investohen paratë publike' },
     ],
   },
   {
@@ -101,6 +100,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
       { label: 'Komunat', href: '/komunat', icon: Building2, hint: 'Të 38 komunat e Kosovës' },
       { label: 'Kontakt', href: '/kontakt', icon: Phone, hint: 'Na shkruani ose na telefononi' },
       { label: 'Rreth Projektit', href: '/rreth-projektit', icon: Info, hint: 'Misioni dhe platforma' },
+      { label: 'Partnerët & Reklama', href: '/partneret', icon: Handshake, hint: 'Partneritet dhe reklamim' },
     ],
   },
 ];

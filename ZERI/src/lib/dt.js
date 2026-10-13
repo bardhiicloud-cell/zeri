@@ -2,6 +2,7 @@ import { dynamicTranslations } from './dynamicTranslations';
 import { uiTranslations } from './uiTranslations';
 import { newLanguageTranslations } from './newLanguageTranslations';
 import { DEFAULT_LANGUAGE, isSupportedLanguage, readStoredLanguage, SUPPORTED_LANGUAGES, } from './languageConstants';
+import { translationLanguageFor } from './seo';
 const isSupported = (value) => value !== null && SUPPORTED_LANGUAGES.includes(value);
 /**
  * Translate a literal Albanian string.
@@ -12,10 +13,13 @@ const isSupported = (value) => value !== null && SUPPORTED_LANGUAGES.includes(va
  * Albanian before falling back to the original text.
  *
  * Lookup order, most specific first:
- *   1. newLanguageTranslations — the 14 added languages (ar, fr, it, ... nl)
+ *   1. newLanguageTranslations — the added languages (ar, fr, it, ... bg)
  *   2. uiTranslations          — short UI labels that override the big table
  *   3. dynamicTranslations     — the original six languages
  *   4. Albanian, then the input text itself
+ *
+ * Canada and Australia resolve to English before lookup: they are regions, not
+ * separate translations, so their strings live in the English column.
  */
 export function dt(text, forcedLang) {
     if (!text)
@@ -29,7 +33,14 @@ export function dt(text, forcedLang) {
         // languageConstants so dt and the React context cannot disagree.
         lang = readStoredLanguage();
     }
-    // The 14 added languages live in their own overlay; check it first so an
+    /*
+     * Regional variants (ca, au) are destinations rather than translations.
+     * Resolving them to their base language here means /ca/ and /au/ render the
+     * English strings, so no duplicate table is needed and an English fix
+     * reaches all three variants at once.
+     */
+    lang = translationLanguageFor(lang);
+    // The added languages live in their own overlay; check it first so an
     // entry there always wins for its language.
     const addedLanguage = newLanguageTranslations[text]?.[lang];
     if (addedLanguage)

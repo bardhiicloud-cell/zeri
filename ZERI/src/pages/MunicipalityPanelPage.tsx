@@ -1,83 +1,89 @@
 /**
  * Paneli i Komunës — /komuna
  *
- * Zgjerimi i punëve që do t'i përfundojnë komuna për qytetin e vet. Ky është
- * kundërpesha e firewall-it editorial: faqja tregon me një vështrim gjithçka që
- * komuna MUND të bëjë, dhe nuk ofron asgjë që nuk mundet — as e grisur.
+ * Ku një komunë punon me raportimet e qytetit të vet. Gjithçka këtu lexohet nga
+ * serveri dhe gjithçka që bën komuna ruhet te serveri: asgjë nuk mbetet vetëm në
+ * kujtesën e shfletuesit.
  *
- * Seksionet:
- *   1. Radha e punëve   — raportimet e aprovuara të komunës, sipas prioritetit
- *   2. Punimet e mia    — fakte pune që komuna i ka regjistruar, me status
- *   3. Performanca      — afatet, koha mesatare, punët e vonuara
- *   4. Regjistri        — veprimet e komunës, përfshirë refuzimet
- *   5. Politika         — çka lejohet dhe çka jo, drejtpërdrejt nga kodi
+ *   Radha          raportimet e aprovuara të komunës, më urgjentet dhe më të vonuarat në krye
+ *   Kërkesat       çka ka dërguar komuna te redaksia dhe çfarë i është përgjigjur
+ *   Punimet        faktet e punimeve që komuna ka regjistruar, dhe verifikimi i tyre
+ *   Performanca    afatet, numrat e saktë, koha mesatare
+ *   Politika       çka lejohet dhe çka jo
  *
- * Kufizimi bazohet në `editorialFirewall.ts`, jo në këtë faqe. Çdo buton që
- * shfaqet e kalon një kontroll burimi, dhe çdo veprim regjistrohet.
+ * Kufijtë i vendos serveri (editorialFirewall dhe rrjedha e aprovimit): komuna
+ * shton kontekst dhe nuk heq asgjë, sheh vetëm raportet e veta të aprovuara dhe
+ * nuk sheh kush i ka raportuar.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { dt } from '../lib/dt';
 import { useStore } from '../lib/store';
-import { sessionFacts } from '../lib/workFactQueue';
-import {
-  MUNICIPALITY_MAY,
-  MUNICIPALITY_MAY_NOT,
-  canSeeReportStatus,
-  canAddWorkFacts,
-  evaluateEditorialAction,
-  type EditorialAction,
-} from '../lib/editorialFirewall';
-import { appendEditorialEvent, getSessionEvents, countDeniedAttempts } from '../lib/editorialLog';
-import { BAD_WORDS } from '../lib/moderation';
-import { classifyRisk } from '../lib/moderationCenter';
+import { MUNICIPALITY_MAY, MUNICIPALITY_MAY_NOT } from '../lib/editorialFirewall';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
+import { MUNICIPALITY_PLANS } from '../lib/municipalityProvisioning';
+import { statusMeta, TONE_CLASSES } from '../lib/reportStatus';
+import { applyTransition } from '../lib/adminApi';
+import { fetchReportPage, useServerReports } from '../lib/adminReportsApi';
 import {
-  Building2, ClipboardList, FileCheck2, Scale, Search, AlertTriangle, Clock,
-  CheckCircle2, MapPin, ArrowRight, Flame, Gavel, FileText, ShieldCheck, Ban,
+  FEATURE_FROM_PLAN, REQUEST_LABELS, addWorkFact, fileRequest, loadDesk, loadHealthCases,
+  type Desk, type MunicipalHealthCase, type RequestKind,
+} from '../lib/municipalityDeskApi';
+import type { Report } from '../types';
+import {
+  AlertTriangle, Building2, CheckCircle2, ClipboardList, Clock, FileCheck2, Flame, Gavel,
+  HeartPulse, Loader2, LogOut, MapPin, Scale, Search, Send, ShieldCheck,
 } from 'lucide-react';
+import DecisionBar from '../components/admin/DecisionBar';
 
-type Tab = 'queue' | 'works' | 'performance' | 'log' | 'policy';
+type Tab = 'queue' | 'health' | 'requests' | 'works' | 'performance' | 'policy';
+type Stage = 'all' | 'Approved' | 'working' | 'Resolved' | 'Overdue';
 
 const TABS: { id: Tab; label: string; icon: typeof ClipboardList }[] = [
   { id: 'queue', label: 'Radha e punëve', icon: ClipboardList },
-  { id: 'works', label: 'Punimet e mia', icon: FileCheck2 },
+  { id: 'health', label: 'Shëndetësia', icon: HeartPulse },
+  { id: 'requests', label: 'Kërkesat e mia', icon: Send },
+  { id: 'works', label: 'Punimet', icon: FileCheck2 },
   { id: 'performance', label: 'Performanca', icon: Clock },
-  { id: 'log', label: 'Regjistri', icon: FileText },
   { id: 'policy', label: 'Politika', icon: Scale },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  Approved: 'bg-emerald-100 text-emerald-700',
-  Assigned: 'bg-blue-100 text-blue-700',
-  'In Progress': 'bg-indigo-100 text-indigo-700',
-  Resolved: 'bg-green-100 text-green-700',
-  Overdue: 'bg-red-100 text-red-700',
-};
+const STAGES: { id: Stage; label: string }[] = [
+  { id: 'all', label: 'Të gjitha' },
+  { id: 'Approved', label: 'Të reja' },
+  { id: 'working', label: 'Në punim' },
+  { id: 'Overdue', label: 'Të vonuara' },
+  { id: 'Resolved', label: 'Të zgjidhura' },
+];
 
 const URGENCY_WEIGHT: Record<string, number> = { Kritike: 4, 'E lartë': 3, Mesatare: 2, 'E ulët': 1 };
 
-const fmtDate = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleString('sq-AL', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const REQUEST_STATUS: Record<string, { label: string; tone: string }> = {
+  published: { label: 'Publikuar', tone: 'bg-emerald-100 text-emerald-800' },
+  pending: { label: 'Në shqyrtim nga redaksia', tone: 'bg-amber-100 text-amber-800' },
+  accepted: { label: 'Pranuar', tone: 'bg-emerald-100 text-emerald-800' },
+  declined: { label: 'Refuzuar', tone: 'bg-rose-100 text-rose-800' },
+};
 
-/** Sa orë kanë kaluar që nga një moment. */
+const fmt = (iso: string | null | undefined) =>
+  iso && Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleString('sq-AL', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+
 const hoursSince = (iso?: string) => {
   const t = Date.parse(iso ?? '');
   return Number.isFinite(t) ? Math.max(0, Math.round((Date.now() - t) / 36e5)) : 0;
 };
 
-/** A ka kaluar afati i përgjigjes që i është caktuar raportimit. */
-const isOverdue = (dueAt?: string, status?: string) =>
-  !!dueAt && status !== 'Resolved' && Date.parse(dueAt) < Date.now();
+const isLate = (report: Report) =>
+  report.status === 'Overdue' || (!!report.responseDueAt && report.status !== 'Resolved' && Date.parse(report.responseDueAt) < Date.now());
 
 function Stat({ label, value, tone = 'slate' }: { label: string; value: string | number; tone?: string }) {
   const tones: Record<string, string> = {
-    slate: 'text-slate-900 dark:text-white',
-    amber: 'text-amber-600',
-    emerald: 'text-emerald-600',
-    rose: 'text-rose-600',
-    indigo: 'text-indigo-600',
-    blue: 'text-blue-600',
+    slate: 'text-slate-900 dark:text-white', amber: 'text-amber-600', emerald: 'text-emerald-600',
+    rose: 'text-rose-600', indigo: 'text-indigo-600', blue: 'text-blue-600',
   };
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
@@ -88,17 +94,28 @@ function Stat({ label, value, tone = 'slate' }: { label: string; value: string |
 }
 
 export default function MunicipalityPanelPage() {
-  const currentUser = useStore((s) => s.currentUser);
-  const reports = useStore((s) => s.reports ?? []);
-  const addAuditLog = useStore((s) => s.addAuditLog);
+  const currentUser = useStore(s => s.currentUser);
+  const logout = useStore(s => s.logout);
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    await signOut(auth).catch(() => undefined);
+    logout();
+    navigate('/login');
+  };
 
   const [tab, setTab] = useState<Tab>('queue');
+  const [stage, setStage] = useState<Stage>('all');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [note, setNote] = useState('');
-  const [tick, setTick] = useState(0);
+  // The profile loads a moment after the page; until then the viewer is a guest and
+  // must not be told "access denied" for a second on every sign-in.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSettled(true), 4000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
-  /** Komuna e kësaj llogarie. Bosh = llogari e pascaktuar. */
+  /** Komuna e kësaj llogarie. Bosh = llogari e pacaktuar. */
   const ownMunicipality = useMemo(() => {
     const explicit = (currentUser?.municipality ?? '').trim();
     if (explicit) return explicit;
@@ -106,188 +123,145 @@ export default function MunicipalityPanelPage() {
     return isSpecificScope(scope) ? scopeKey(scope) : '';
   }, [currentUser?.municipality]);
 
-  /**
-   * Kush e hap këtë panel: një llogari komunale, ose një administrator që
-   * inspekton punën e një komune. Rolet e terrenit nuk e hapin — ata kanë
-   * /agent.
-   */
   const isMunicipal = currentUser?.role === 'municipality';
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-  /** A grant from the agent form (`permissions: ['municipalities']`) also opens this. */
   const hasGrant = (currentUser?.permissions ?? []).includes('municipalities' as never);
   const allowed = (isMunicipal && !!ownMunicipality) || isAdmin || hasGrant;
 
-  /**
-   * An administrator inspecting the panel picks a municipality to look at;
-   * a municipal account is always pinned to its own.
-   */
-  const [inspectMunicipality, setInspectMunicipality] = useState('');
-  const effectiveMunicipality = isAdmin && !isMunicipal ? inspectMunicipality : ownMunicipality;
+  // An administrator looks at one municipality at a time, read-only; the server
+  // refuses their writes here because they are not that municipality.
+  const [inspect, setInspect] = useState('');
+  const effective = isMunicipal ? ownMunicipality : inspect;
+  const canWork = isMunicipal && !!ownMunicipality;
+  const enabled = allowed && !!effective;
 
-  /** Punët që i lejohen kësaj komune: vetëm të vetat, vetëm të aprovuara. */
-  const queue = useMemo(() => {
-    if (!effectiveMunicipality) return [];
-    return reports.filter(
-      (r) =>
-        (r.location?.municipality ?? '') === effectiveMunicipality &&
-        canSeeReportStatus(currentUser, r.status)
-    );
-  }, [reports, effectiveMunicipality, currentUser]);
-
-  const filteredQueue = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return [...queue]
-      .filter((r) => {
-        if (!needle) return true;
-        return (
-          r.title?.toLowerCase().includes(needle) ||
-          (r.trackingId ?? '').toLowerCase().includes(needle) ||
-          (r.category ?? '').toLowerCase().includes(needle)
-        );
-      })
-      .sort((a, b) => {
-        // Punët e vonuara dhe urgjencat e larta janë gjithmonë në krye.
-        const overdueA = isOverdue(a.responseDueAt, a.status) ? 1 : 0;
-        const overdueB = isOverdue(b.responseDueAt, b.status) ? 1 : 0;
-        if (overdueA !== overdueB) return overdueB - overdueA;
-        const urgency = (URGENCY_WEIGHT[b.urgency] ?? 1) - (URGENCY_WEIGHT[a.urgency] ?? 1);
-        if (urgency !== 0) return urgency;
-        return hoursSince(b.createdAt) - hoursSince(a.createdAt);
-      });
-  }, [queue, query]);
-
-  const selected = filteredQueue.find((r) => r.id === selectedId) ?? null;
-
-  /** Punimet e regjistruara nga kjo komunë, sipas raportit. */
-  const [myFacts, setMyFacts] = useState<Array<{ id: string; reportId: string; description: string; at: string }>>([]);
-
-  useEffect(() => {
-    setMyFacts(sessionFacts(effectiveMunicipality).map((f) => ({
-      id: f.id,
-      reportId: f.reportId,
-      description: f.description,
-      at: f.at,
-    })));
-  }, [effectiveMunicipality, tick]);
-
-  /** Veprimet e kësaj komune, përfshirë ato të refuzuara. */
-  const events = getSessionEvents().filter(
-    (e) => !effectiveMunicipality || e.actorMunicipality === effectiveMunicipality
+  const serverParams = useMemo(
+    () => ({
+      status: stage === 'all' ? undefined : stage,
+      ...(isMunicipal ? {} : { municipality: inspect || undefined }),
+    }),
+    [stage, isMunicipal, inspect]
   );
+  const list = useServerReports(serverParams, enabled);
 
-  /** Afatet dhe performanca. */
-  const performance = useMemo(() => {
-    const resolved = queue.filter((r) => r.status === 'Resolved');
-    let sum = 0;
-    let n = 0;
-    for (const r of resolved) {
-      const start = Date.parse(r.createdAt);
-      const end = Date.parse(r.resolvedAt ?? r.updatedAt ?? '');
-      if (Number.isFinite(start) && Number.isFinite(end) && end >= start) {
-        sum += end - start;
-        n += 1;
-      }
-    }
-    return {
-      total: queue.length,
-      overdue: queue.filter((r) => isOverdue(r.responseDueAt, r.status)).length,
-      inProgress: queue.filter((r) => r.status === 'In Progress').length,
-      resolved: resolved.length,
-      avgHours: n > 0 ? Math.round(sum / n / 36e5) : 0,
-      denied: countDeniedAttempts(effectiveMunicipality),
-    };
-  }, [queue, effectiveMunicipality, tick]);
-
-  /**
-   * Regjistron një veprim editorial përmes firewall-it.
-   *
-   * Kontrolli bëhet gjithmonë përmes `evaluateEditorialAction`. Refuzimi
-   * regjistrohet po ashtu — është pikërisht ai rresht që një mosmarrëveshje e
-   * mëvonshme do të kishte për objekt.
-   */
-  const runAction = (action: EditorialAction) => {
-    if (!selected || !currentUser) return;
-    const decision = evaluateEditorialAction(currentUser, action);
-    appendEditorialEvent({
-      kind: decision.allowed ? 'response_published' : 'action_denied',
-      subjectId: selected.id,
-      subjectType: 'report',
-      actorMunicipality: effectiveMunicipality,
-      actorUserId: currentUser.id,
-      actorEmail: currentUser.email ?? '',
-      attemptedAction: action,
-      denied: !decision.allowed,
-      denialReason: decision.allowed ? undefined : decision.reason,
-      note: note.trim() || undefined,
-    });
-    addAuditLog(
-      decision.allowed ? `Komuna: ${action}` : `Komuna REFUZUAR: ${action}`,
-      decision.allowed ? 'success' : 'danger',
-      `${selected.trackingId ?? selected.id} — ${selected.title}`
+  // Exact totals per stage (the first page of each carries the count).
+  const [totals, setTotals] = useState<Record<string, number | null>>({});
+  const refreshTotals = useCallback(async () => {
+    if (!enabled) return;
+    const municipality = isMunicipal ? undefined : inspect || undefined;
+    const keys = ['Approved', 'working', 'Overdue', 'Resolved'];
+    const results = await Promise.all(
+      keys.map(status => fetchReportPage({ status, municipality }, null, 1).then(page => page.total).catch(() => null))
     );
-    if (decision.allowed) setNote('');
-    setTick((v) => v + 1);
-  };
+    setTotals(Object.fromEntries(keys.map((key, i) => [key, results[i]])));
+  }, [enabled, isMunicipal, inspect]);
+  useEffect(() => { void refreshTotals(); }, [refreshTotals]);
+
+  const [desk, setDesk] = useState<Desk | null>(null);
+  const [deskError, setDeskError] = useState('');
+  const refreshDesk = useCallback(async () => {
+    if (!canWork) return;
+    try {
+      setDesk(await loadDesk());
+      setDeskError('');
+    } catch (error) {
+      setDeskError((error as Error).message);
+    }
+  }, [canWork]);
+  useEffect(() => { void refreshDesk(); }, [refreshDesk]);
+
+  const [healthCases, setHealthCases] = useState<MunicipalHealthCase[] | null>(null);
+  const [healthError, setHealthError] = useState('');
+  const refreshHealth = useCallback(async () => {
+    if (!canWork) return;
+    try {
+      setHealthCases(await loadHealthCases());
+      setHealthError('');
+    } catch (error) {
+      setHealthError((error as Error).message);
+    }
+  }, [canWork]);
+  useEffect(() => { if (tab === 'health' && (!desk || desk.features.includes('health'))) void refreshHealth(); }, [tab, refreshHealth, desk]);
+
+  const queue = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return [...list.items]
+      .filter(r => !needle || r.title?.toLowerCase().includes(needle) || (r.trackingId ?? '').toLowerCase().includes(needle) || (r.category ?? '').toLowerCase().includes(needle))
+      .sort((a, b) => {
+        const late = Number(isLate(b)) - Number(isLate(a));
+        if (late) return late;
+        const urgency = (URGENCY_WEIGHT[b.urgency] ?? 1) - (URGENCY_WEIGHT[a.urgency] ?? 1);
+        return urgency || hoursSince(b.createdAt) - hoursSince(a.createdAt);
+      });
+  }, [list.items, query]);
+
+  const selected = queue.find(r => r.id === selectedId) ?? null;
+  const pendingRequests = desk?.requests.filter(r => r.status === 'pending').length ?? 0;
+  // Until the desk answers, nothing is locked: the server is what actually refuses.
+  const has = (feature: string) => !desk || desk.features.includes(feature);
+  const planName = MUNICIPALITY_PLANS.find(plan => plan.id === desk?.plan)?.name ?? '';
+
+  const afterChange = () => { void list.refresh(); void refreshTotals(); void refreshDesk(); };
+
+  if (!allowed && !settled && (!currentUser || currentUser.role === 'guest')) {
+    return (
+      <div className="grid min-h-[60vh] place-items-center">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" aria-label={dt('Duke ngarkuar')} />
+      </div>
+    );
+  }
 
   if (!allowed) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
         <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" />
         <h1 className="mt-4 text-xl font-black text-slate-900 dark:text-white">{dt('Akses i kufizuar')}</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          {dt('Ky panel është i dedikuar llogarive komunale. Administratori e inspekton në /moderim.')}
-        </p>
+        <p className="mt-2 text-sm text-slate-500">{dt('Ky panel është i dedikuar llogarive komunale.')}</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      {/* Header */}
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-700 text-white">
-            <Building2 className="h-5 w-5" />
-          </span>
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-700 text-white"><Building2 className="h-5 w-5" /></span>
           <div>
-            <h1 className="font-serif text-2xl font-black text-slate-950 dark:text-white">
-              {effectiveMunicipality || dt('Pa komunë të caktuar')}
-            </h1>
-            <p className="text-xs text-slate-500">
-              {currentUser?.name} · {dt('zgjerimi i punëve për qytetin tuaj')}
-            </p>
+            <h1 className="font-serif text-2xl font-black text-slate-950 dark:text-white">{effective || dt('Zgjidhni një komunë')}</h1>
+            <p className="text-xs text-slate-500">{currentUser?.name} · {dt('paneli i komunës')}</p>
           </div>
         </div>
 
-        {/* An administrator picks which municipality to inspect; an account is
-            already pinned to one. */}
-        {isAdmin && !isMunicipal && (          <select
-            value={inspectMunicipality}
-            onChange={(e) => setInspectMunicipality(e.target.value)}
+        {!isMunicipal && (
+          <select
+            value={inspect}
+            onChange={e => { setInspect(e.target.value); setSelectedId(null); }}
+            aria-label={dt('Komuna për inspektim')}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
           >
             <option value="">{dt('Zgjidhni një komunë për të inspektuar…')}</option>
-            {KOSOVO_MUNICIPALITIES.map((m) => <option key={m} value={m}>{m}</option>)}
+            {KOSOVO_MUNICIPALITIES.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         )}
-        <div className="flex items-center gap-2 text-xs font-bold">
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">{queue.length} {dt('punë')}</span>
-          {performance.overdue > 0 && (
-            <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700">{performance.overdue} {dt('të vonuara')}</span>
-          )}
-          {performance.denied > 0 && (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">{performance.denied} {dt('refuzime')}</span>
-          )}
+
+        <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">{(totals.Approved ?? 0) + (totals.working ?? 0)} {dt('të hapura')}</span>
+          {(totals.Overdue ?? 0) > 0 && <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700">{totals.Overdue} {dt('të vonuara')}</span>}
+          {pendingRequests > 0 && <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">{pendingRequests} {dt('kërkesa në pritje')}</span>}
+          {planName && <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-300" title={dt('Plani i abonimit')}>{dt('Plani')}: {planName}</span>}
+          <button type="button" onClick={() => navigate('/')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800">{dt('Faqja publike')}</button>
+          <button type="button" onClick={() => void handleLogout()} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-rose-600 hover:bg-rose-600 hover:text-white dark:bg-rose-500/10">
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Mbyll sesionin')}
+          </button>
         </div>
       </header>
 
-      {/* Permanent reminder — the firewall, stated where the temptation arises. */}
-      <p className="mb-6 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[11px] leading-relaxed text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06] dark:text-emerald-200">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-        {dt('Kjo llogari shton kontekst dhe nuk heq asgjë. Çdo përpjekje për heqje regjistrohet dhe nuk zbatohet.')}
-      </p>
+      {!canWork && (
+        <p className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">
+          {dt('Po e shihni si inspektues: vetëm lexim. Veprimet i bën llogaria e komunës.')}
+        </p>
+      )}
 
-      {/* Tabs */}
       <nav className="mb-6 flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-white p-1.5 dark:border-white/10 dark:bg-slate-900">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
@@ -295,295 +269,119 @@ export default function MunicipalityPanelPage() {
             type="button"
             onClick={() => setTab(id)}
             aria-pressed={tab === id}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${tab === id ? 'bg-emerald-700 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${tab === id ? 'bg-emerald-700 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
           >
-            <Icon className="h-4 w-4" />
-            {dt(label)}
+            <Icon className="h-4 w-4" /> {dt(label)}
+            {id === 'requests' && pendingRequests > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[10px] text-white">{pendingRequests}</span>}
           </button>
         ))}
       </nav>
 
-      {/* ============ QUEUE ============ */}
-      {tab === 'queue' && (
+      {!effective && <p className="rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500 dark:border-white/10">{dt('Zgjidhni një komunë për të parë punën e saj.')}</p>}
+
+      {effective && tab === 'queue' && (
         <section className="space-y-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={dt('Kërko punë sipas titullit, kodit ose kategorisë…')}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            {STAGES.map(s => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => { setStage(s.id); setSelectedId(null); }}
+                aria-pressed={stage === s.id}
+                className={`rounded-lg px-3 py-1.5 text-[11px] font-bold ${stage === s.id ? 'bg-slate-900 text-white dark:bg-emerald-600' : 'border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300'}`}
+              >
+                {dt(s.label)} {s.id !== 'all' && totals[s.id] != null && <span className="ml-1 tabular-nums opacity-70">{totals[s.id]}</span>}
+              </button>
+            ))}
+            <div className="relative ml-auto min-w-[14rem] flex-1 sm:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={dt('Kërko sipas titullit, kodit…')}
+                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              />
+            </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+          <div className="grid gap-4 lg:grid-cols-[1fr_400px]">
             <div className="space-y-2">
-              {filteredQueue.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">
-                  {dt('Nuk ka punë aktive për komunën tuaj.')}
-                </p>
+              {list.status === 'loading' && queue.length === 0 ? (
+                <p className="p-8 text-center text-sm text-slate-500"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></p>
+              ) : list.status === 'error' ? (
+                <p className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-700">{list.error?.message ?? dt('Raportet nuk u ngarkuan.')}</p>
+              ) : queue.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">{dt('Nuk ka punë këtu.')}</p>
               ) : (
-                filteredQueue.map((r) => {
-                  const risk = classifyRisk(`${r.title ?? ''} ${r.description ?? ''}`, BAD_WORDS);
-                  const overdue = isOverdue(r.responseDueAt, r.status);
+                queue.map(r => {
+                  const meta = statusMeta(r.status);
                   return (
                     <button
                       key={r.id}
                       type="button"
                       onClick={() => setSelectedId(r.id)}
                       aria-pressed={selectedId === r.id}
-                      className={`block w-full rounded-xl border p-4 text-left transition-colors ${selectedId === r.id
-                          ? 'border-emerald-400 bg-emerald-50/60 dark:border-emerald-500/40 dark:bg-emerald-500/10'
-                          : 'border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900'
-                        }`}
+                      className={`block w-full rounded-xl border p-4 text-left transition-colors ${selectedId === r.id ? 'border-emerald-400 bg-emerald-50/60 dark:border-emerald-500/40 dark:bg-emerald-500/10' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900'}`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center gap-2">
-                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLORS[r.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                              {r.status}
-                            </span>
-                            {overdue && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
-                                <Flame className="h-3 w-3" /> {dt('Afati i kaluar')}
-                              </span>
-                            )}
-                            {risk !== 'clean' && (
-                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                                {dt('Përmbajtje për kujdes')}
-                              </span>
-                            )}
-                          </span>
-                          <span className="mt-1 block truncate text-sm font-semibold text-slate-900 dark:text-white">{r.title}</span>
-                          <span className="mt-0.5 block text-xs text-slate-500">
-                            {r.category} · {fmtDate(r.createdAt)} · {hoursSince(r.createdAt)} {dt('orë')}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-right text-xs text-slate-500">
-                          <span className="block">{(r.comments ?? []).length} 💬</span>
-                          <span className="block">{r.upvotes ?? 0} 👍</span>
-                        </span>
-                      </div>
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${TONE_CLASSES[meta.tone]}`}>{dt(meta.label)}</span>
+                        {isLate(r) && <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700"><Flame className="h-3 w-3" /> {dt('Afati i kaluar')}</span>}
+                        {r.urgency === 'Kritike' && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{dt('Kritike')}</span>}
+                        {r.trackingId && <span className="font-mono text-[10px] text-slate-400">#{r.trackingId}</span>}
+                      </span>
+                      <span className="mt-1 block truncate text-sm font-semibold text-slate-900 dark:text-white">{r.title}</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">{r.category} · {fmt(r.createdAt)} · {hoursSince(r.createdAt)} {dt('orë')}</span>
                     </button>
                   );
                 })
               )}
+              {list.nextCursor && (
+                <button type="button" onClick={() => void list.loadMore()} disabled={list.isLoadingMore} className="w-full rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-300">
+                  {list.isLoadingMore ? dt('Duke ngarkuar…') : dt('Ngarko më shumë')}
+                </button>
+              )}
             </div>
 
-            {/* Action panel */}
             <aside className="space-y-3">
-              {!selected ? (
-                <p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500 dark:border-white/10">
-                  {dt('Zgjidhni një punë për të vepruar.')}
-                </p>
+              {selected ? (
+                <Dossier report={selected} canWork={canWork} canRegisterWorks={has('workFacts')} onChanged={afterChange} />
               ) : (
-                <>
-                  <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
-                    <h2 className="text-sm font-black text-slate-900 dark:text-white">{selected.title}</h2>
-                    <p className="text-[11px] text-slate-500">
-                      <MapPin className="mr-1 inline h-3 w-3" /> {selected.location?.municipality} · {selected.category}
-                    </p>
-                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">{selected.description}</p>
-
-                    <textarea
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      rows={4}
-                      maxLength={1200}
-                      placeholder={dt('Përgjigja zyrtare, korrigjimi ose arsyeja…')}
-                      className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
-                    />
-
-                    {/*
-                      The four constructive actions, and nothing else. A denied
-                      action is still shown — greyed with its reason — so the
-                      municipality learns the boundary from the interface rather
-                      than from a rejected request.
-                    */}
-                    <div className="space-y-1.5">
-                      {([
-                        ['respond', 'Dërgo përgjigje zyrtare'],
-                        ['attach_document', 'Ngarko dokument'],
-                        ['correct_fact', 'Kërko korrigjim fakti'],
-                        ['dispute', 'Kundërshto raportin'],
-                      ] as [EditorialAction, string][]).map(([action, label]) => {
-                        const decision = evaluateEditorialAction(currentUser, action);
-                        return (
-                          <button
-                            key={action}
-                            type="button"
-                            onClick={() => runAction(action)}
-                            disabled={!decision.allowed || !note.trim()}
-                            className="block w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
-                          >
-                            {dt(label)}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <p className="border-t border-slate-100 pt-3 text-[10px] leading-relaxed text-slate-400 dark:border-white/10">
-                      {dt('Komuna nuk mund të fshijë, fshehë ose ndryshojë raportime qytetarësh.')}
-                    </p>
-                  </div>
-
-                  {/* Work facts — the one thing the municipality adds about itself. */}
-                  <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
-                    <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Fakte për punimet e kryera')}</h3>
-                    {!canAddWorkFacts(currentUser, selected).allowed ? (
-                      <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[10px] text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
-                        {dt(canAddWorkFacts(currentUser, selected).reason)}
-                      </p>
-                    ) : (
-                      <p className="text-[10px] leading-relaxed text-slate-500">
-                        {dt('Përshkruani çka është rregulluar. Redaksia e verifikon para publikimit.')}
-                      </p>
-                    )}
-                    <a
-                      href="/komuna-panel"
-                      className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 hover:underline dark:text-emerald-300"
-                    >
-                      {dt('Regjistro faktet e punimeve')} <ArrowRight className="h-3 w-3" />
-                    </a>
-                  </div>
-                </>
+                <p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500 dark:border-white/10">{dt('Zgjidhni një punë për të vepruar.')}</p>
               )}
-
-              {/* The rules, always visible. */}
-              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-                <h3 className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">{dt('Komuna mund të')}</h3>
-                <ul className="mt-2 space-y-1">
-                  {MUNICIPALITY_MAY.map((x) => (
-                    <li key={x} className="flex gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-                      <span className="text-emerald-600">✓</span>{dt(x)}
-                    </li>
-                  ))}
-                </ul>
-                <h3 className="mt-4 text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">{dt('Komuna nuk mund të')}</h3>
-                <ul className="mt-2 space-y-1">
-                  {MUNICIPALITY_MAY_NOT.map((x) => (
-                    <li key={x} className="flex gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-                      <span className="text-rose-600">✕</span>{dt(x)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </aside>
           </div>
         </section>
       )}
 
-      {/* ============ WORKS ============ */}
-      {tab === 'works' && (
+      {effective && tab === 'health' && (
         <section className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Fakte të regjistruara" value={myFacts.length} tone="emerald" />
-            <Stat label="Në verifikim" value={myFacts.length} tone="amber" />
-            <Stat label="Punë të përfunduara" value={performance.resolved} tone="emerald" />
-            <Stat label="Punë në punim" value={performance.inProgress} tone="indigo" />
-          </div>
-
-          {myFacts.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-white/10 dark:bg-slate-900">
-              <FileCheck2 className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-sm text-slate-500">{dt('Nuk ka fakte punimesh të regjistruara në këtë sesion.')}</p>
-            </div>
+          <p className="text-xs text-slate-500">{dt('Rastet shëndetësore të komunës suaj. Emri dhe kontaktet e pacientit mbeten te stafi shëndetësor dhe nuk shfaqen këtu. Mund të verifikoni që rasti është i vërtetë dhe ta mbyllni kur trajtohet.')}</p>
+          {healthError && <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{healthError}</p>}
+          {canWork && !has('health') ? (
+            <PlanLock feature="health" what="Rastet shëndetësore" />
+          ) : !canWork ? (
+            <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">{dt('Rastet shihen nga llogaria e komunës.')}</p>
+          ) : healthCases === null ? (
+            <p className="p-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-slate-400" /></p>
+          ) : healthCases.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">{dt('Asnjë rast shëndetësor për komunën tuaj.')}</p>
           ) : (
-            <div className="space-y-2">
-              {myFacts.map((f) => {
-                const report = reports.find((r) => r.id === f.reportId);
-                return (
-                  <div key={f.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">{report?.title ?? f.reportId}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{f.description}</p>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
-                      <span>{fmtDate(f.at)}</span>
-                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                        {dt('Në verifikim')}
-                      </span>
-                    </p>
+            <ul className="space-y-2">
+              {healthCases.map(c => (
+                <li key={c.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                    {c.urgency && <span className={`rounded-full px-2 py-0.5 ${c.urgency === 'Urgjente' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>{c.urgency}</span>}
+                    <span className={`rounded-full px-2 py-0.5 ${c.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : c.status === 'resolved' ? 'bg-blue-100 text-blue-800' : c.status === 'rejected' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>
+                      {c.status === 'verified' ? dt('Verifikuar') : c.status === 'resolved' ? dt('Trajtuar') : c.status === 'rejected' ? dt('Refuzuar') : dt('Në shqyrtim')}
+                    </span>
+                    {c.trackingId && <span className="font-mono text-slate-400">#{c.trackingId}</span>}
+                    {c.hospitalNotified && <span className="text-slate-400">{dt('Spitali u njoftua')}{c.hospitalTarget ? `: ${c.hospitalTarget}` : ''}</span>}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ============ PERFORMANCE ============ */}
-      {tab === 'performance' && (
-        <section className="space-y-5">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Punë gjithsej" value={performance.total} tone="blue" />
-            <Stat label="Të vonuara" value={performance.overdue} tone="rose" />
-            <Stat label="Në punim" value={performance.inProgress} tone="indigo" />
-            <Stat label="Të përfunduara" value={performance.resolved} tone="emerald" />
-            <Stat label="Ora mes. zgjidhje" value={performance.avgHours} />
-            <Stat label="Refuzime të regjistruara" value={performance.denied} tone="amber" />
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-            <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-              <Clock className="h-4 w-4 text-indigo-600" /> {dt('Afatet më të afërta')}
-            </h3>
-            {filteredQueue.filter((r) => r.responseDueAt && r.status !== 'Resolved').length === 0 ? (
-              <p className="text-xs text-slate-500">{dt('Asnjë afat i caktuar.')}</p>
-            ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-white/5">
-                {filteredQueue
-                  .filter((r) => r.responseDueAt && r.status !== 'Resolved')
-                  .sort((a, b) => Date.parse(a.responseDueAt!) - Date.parse(b.responseDueAt!))
-                  .slice(0, 12)
-                  .map((r) => {
-                    const overdue = isOverdue(r.responseDueAt, r.status);
-                    return (
-                      <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-xs font-bold text-slate-800 dark:text-slate-200">{r.title}</span>
-                          <span className="text-[10px] text-slate-400">{fmtDate(r.responseDueAt)}</span>
-                        </span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${overdue ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
-                          }`}>
-                          {overdue ? dt('E vonuar') : dt('Në afat')}
-                        </span>
-                      </li>
-                    );
-                  })}
-              </ul>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ============ LOG ============ */}
-      {tab === 'log' && (
-        <section className="space-y-3">
-          <p className="text-xs text-slate-500">
-            {dt('Regjistër i pandryshueshëm. Edhe përpjekjet e refuzuara ruhen.')}
-          </p>
-          {events.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-white/10 dark:bg-slate-900">
-              <p className="text-sm text-slate-500">{dt('Asnjë veprim në këtë sesion.')}</p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white dark:divide-white/5 dark:border-white/10 dark:bg-slate-900">
-              {events.map((e) => (
-                <li key={e.id} className="flex items-start gap-3 p-4">
-                  <span className={`mt-0.5 ${e.denied ? 'text-rose-600' : 'text-emerald-600'}`}>
-                    {e.denied ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {dt(e.kind.replace(/_/g, ' '))}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] text-slate-500">
-                      {e.attemptedAction} · {fmtDate(e.at)}
-                    </span>
-                    {e.denialReason && (
-                      <span className="mt-0.5 block text-[11px] text-rose-600">{dt(e.denialReason)}</span>
-                    )}
-                  </span>
+                  <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white">{c.category}{c.diagnosis ? ` · ${c.diagnosis}` : ''}</p>
+                  <p className="text-xs text-slate-500">{[c.age != null ? `${c.age} ${dt('vjeç')}` : '', c.gender, c.neighborhood].filter(Boolean).join(' · ')}</p>
+                  {c.description && <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{c.description}</p>}
+                  {c.needs.length > 0 && <p className="mt-1 text-[11px] text-slate-500">{dt('Nevojat:')} {c.needs.join(', ')}</p>}
+                  <DecisionBar kind="health" id={c.id} doc={c as unknown as Record<string, unknown>} className="mt-3" onDecided={() => void refreshHealth()} />
                 </li>
               ))}
             </ul>
@@ -591,35 +389,223 @@ export default function MunicipalityPanelPage() {
         </section>
       )}
 
-      {/* ============ POLICY ============ */}
+      {effective && tab === 'requests' && (
+        <section className="space-y-3">
+          <p className="text-xs text-slate-500">{dt('Çdo kërkesë ruhet. Ato që kërkojnë shqyrtim presin vendimin e redaksisë, dhe arsyen e shihni këtu.')}</p>
+          {deskError && <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{deskError}</p>}
+          {!canWork ? (
+            <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">{dt('Kërkesat shihen nga llogaria e komunës.')}</p>
+          ) : !desk || desk.requests.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">{dt('Asnjë kërkesë ende.')}</p>
+          ) : (
+            <ul className="space-y-2">
+              {desk.requests.map(item => {
+                const state = REQUEST_STATUS[item.status] ?? REQUEST_STATUS.pending;
+                return (
+                  <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                      <span className="text-slate-700 dark:text-slate-200">{dt(REQUEST_LABELS[item.kind] ?? item.kind)}</span>
+                      <span className={`rounded-full px-2 py-0.5 ${state.tone}`}>{dt(state.label)}</span>
+                      <span className="ml-auto text-slate-400">{fmt(item.at)}</span>
+                    </div>
+                    {item.reportTitle && <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{item.reportTitle}{item.trackingId && <span className="ml-2 font-mono text-slate-400">#{item.trackingId}</span>}</p>}
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{item.note}</p>
+                    {item.decisionReason && <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"><strong>{dt('Përgjigja e redaksisë:')}</strong> {item.decisionReason}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {effective && tab === 'works' && (
+        <section className="space-y-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Fakte të regjistruara" value={desk?.workFacts.length ?? 0} tone="emerald" />
+            <Stat label="Në verifikim" value={desk?.workFacts.filter(f => f.review === 'pending').length ?? 0} tone="amber" />
+            <Stat label="Të verifikuara" value={desk?.workFacts.filter(f => f.review === 'confirmed').length ?? 0} tone="emerald" />
+            <Stat label="Të refuzuara" value={desk?.workFacts.filter(f => f.review === 'rejected').length ?? 0} tone="rose" />
+          </div>
+          {!canWork || !desk || desk.workFacts.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-white/10">{dt('Asnjë fakt pune i regjistruar. Regjistrojini te dosja e një raportimi në punim.')}</p>
+          ) : (
+            <ul className="space-y-2">
+              {desk.workFacts.map(f => (
+                <li key={f.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                  <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{f.description}</p>
+                  <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                    <span>{fmt(f.at)}</span>
+                    <span className={`rounded-full px-1.5 py-0.5 font-bold ${f.review === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : f.review === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {f.review === 'confirmed' ? dt('Verifikuar') : f.review === 'rejected' ? dt('Refuzuar') : dt('Në verifikim')}
+                    </span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {effective && tab === 'performance' && (
+        <section className="space-y-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Të reja" value={totals.Approved ?? '—'} tone="blue" />
+            <Stat label="Në punim" value={totals.working ?? '—'} tone="indigo" />
+            <Stat label="Të vonuara" value={totals.Overdue ?? '—'} tone="rose" />
+            <Stat label="Të zgjidhura" value={totals.Resolved ?? '—'} tone="emerald" />
+          </div>
+          <p className="text-[11px] text-slate-500">{dt('Numrat janë të saktë për gjithë komunën, jo vetëm për rreshtat e ngarkuar.')}</p>
+        </section>
+      )}
+
       {tab === 'policy' && (
         <section className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
-            <h2 className="flex items-center gap-2 text-sm font-black text-emerald-900 dark:text-emerald-200">
-              <CheckCircle2 className="h-4 w-4" /> {dt('Komuna mund të')}
-            </h2>
-            <ul className="mt-3 space-y-1.5 text-xs text-emerald-900/90 dark:text-emerald-100/80">
-              {MUNICIPALITY_MAY.map((x) => (
-                <li key={x}>✓ {dt(x)}</li>
-              ))}
-            </ul>
+            <h2 className="flex items-center gap-2 text-sm font-black text-emerald-900 dark:text-emerald-200"><CheckCircle2 className="h-4 w-4" /> {dt('Komuna mund të')}</h2>
+            <ul className="mt-3 space-y-1.5 text-xs text-emerald-900/90 dark:text-emerald-100/80">{MUNICIPALITY_MAY.map(x => <li key={x}>✓ {dt(x)}</li>)}</ul>
           </div>
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 dark:border-rose-500/20 dark:bg-rose-500/[0.06]">
-            <h2 className="flex items-center gap-2 text-sm font-black text-rose-900 dark:text-rose-200">
-              <Gavel className="h-4 w-4" /> {dt('Komuna nuk mund të')}
-            </h2>
-            <ul className="mt-3 space-y-1.5 text-xs text-rose-900/90 dark:text-rose-100/80">
-              {MUNICIPALITY_MAY_NOT.map((x) => (
-                <li key={x}>✕ {dt(x)}</li>
-              ))}
-            </ul>
+            <h2 className="flex items-center gap-2 text-sm font-black text-rose-900 dark:text-rose-200"><Gavel className="h-4 w-4" /> {dt('Komuna nuk mund të')}</h2>
+            <ul className="mt-3 space-y-1.5 text-xs text-rose-900/90 dark:text-rose-100/80">{MUNICIPALITY_MAY_NOT.map(x => <li key={x}>✕ {dt(x)}</li>)}</ul>
           </div>
           <p className="text-[11px] leading-relaxed text-slate-500 md:col-span-2">
             <ShieldCheck className="mr-1 inline h-3.5 w-3.5" />
-            {dt('Këto kufizime zbatohen në kod, jo vetëm në kontratë. Pagesa e abonimit nuk jep kontroll mbi përmbajtjen.')}
+            {dt('Këto kufizime zbatohen nga serveri, jo vetëm në kontratë. Pagesa e abonimit nuk jep kontroll mbi përmbajtjen.')}
           </p>
         </section>
       )}
+    </div>
+  );
+}
+
+/** One report, with everything the municipality may do about it. */
+function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Report; canWork: boolean; canRegisterWorks: boolean; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [plan, setPlan] = useState('');
+  const [fact, setFact] = useState({ description: '', completedAt: '', performedBy: '', cost: '' });
+  const [kind, setKind] = useState<RequestKind>('respond');
+  const [note, setNote] = useState('');
+
+  // A new report starts with empty forms.
+  useEffect(() => { setPlan(''); setNote(''); setFact({ description: '', completedAt: '', performedBy: '', cost: '' }); }, [report.id]);
+
+  const run = async (work: () => Promise<unknown>, done: string, after?: () => void) => {
+    setBusy(true);
+    try {
+      await work();
+      toast.success(done);
+      after?.();
+      onChanged();
+    } catch (error) {
+      toast.error((error as Error)?.message || dt('Veprimi nuk u krye.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const meta = statusMeta(report.status);
+  const photos = report.images ?? [];
+  const input = 'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white';
+  const primary = 'inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-40';
+
+  return (
+    <>
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${TONE_CLASSES[meta.tone]}`}>{dt(meta.label)}</span>
+          {report.trackingId && <span className="font-mono text-[10px] text-slate-400">#{report.trackingId}</span>}
+        </div>
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">{report.title}</h2>
+        <p className="text-[11px] text-slate-500"><MapPin className="mr-1 inline h-3 w-3" />{report.location?.address || report.location?.municipality} · {report.category}</p>
+        <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-600 dark:text-slate-300">{report.description}</p>
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {photos.slice(0, 6).map(url => (
+              <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="h-16 w-16 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+                <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+              </a>
+            ))}
+          </div>
+        )}
+        {(report.timeline ?? []).length > 0 && (
+          <ol className="max-h-40 space-y-1.5 overflow-y-auto border-t border-slate-100 pt-3 text-[11px] dark:border-white/10">
+            {[...report.timeline].reverse().slice(0, 8).map(event => (
+              <li key={event.id} className="text-slate-600 dark:text-slate-300">
+                <span className="font-bold">{event.updatedBy}</span> · <span className="text-slate-400">{fmt(event.date)}</span>
+                {event.comment && <span className="block">{event.comment}</span>}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      {canWork && report.status === 'Approved' && (
+        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+          <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Merre përsipër punën')}</h3>
+          <textarea value={plan} onChange={e => setPlan(e.target.value)} rows={3} maxLength={1200} placeholder={dt('Çfarë do të bëhet, nga kush dhe kur (e lexon qytetari)…')} className={input} />
+          <button type="button" disabled={busy || plan.trim().length < 10} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_accept', note: plan.trim() }), dt('E morët përsipër.'))} className={primary}>
+            {dt('Merr përsipër')}
+          </button>
+        </div>
+      )}
+
+      {canWork && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && !canRegisterWorks && (
+        <>
+          <PlanLock feature="workFacts" what="Regjistrimi i fakteve të punimeve" />
+          <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u shënuan të kryera.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
+            <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Punimet u kryen')}
+          </button>
+        </>
+      )}
+
+      {canWork && canRegisterWorks && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (
+        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+          <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Fakte për punimet e kryera')}</h3>
+          <p className="text-[10px] leading-relaxed text-slate-500">{dt('Përshkruani çka u rregullua. Redaksia e verifikon para se të shfaqet si fakt i konfirmuar.')}</p>
+          <textarea value={fact.description} onChange={e => setFact({ ...fact, description: e.target.value })} rows={3} maxLength={2000} placeholder={dt('Çka u rregullua, ku, me çfarë…')} className={input} />
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={fact.completedAt} onChange={e => setFact({ ...fact, completedAt: e.target.value })} aria-label={dt('Data e përfundimit')} className={input} />
+            <input value={fact.performedBy} onChange={e => setFact({ ...fact, performedBy: e.target.value })} placeholder={dt('Kush e kreu')} className={input} />
+          </div>
+          <input value={fact.cost} onChange={e => setFact({ ...fact, cost: e.target.value })} placeholder={dt('Kostoja (opsionale)')} className={input} />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={busy || fact.description.trim().length < 10} onClick={() => void run(() => addWorkFact({ reportId: report.id, ...fact }), dt('Faktet u regjistruan dhe presin verifikimin.'), () => setFact({ description: '', completedAt: '', performedBy: '', cost: '' }))} className={primary}>
+              {dt('Regjistro faktet')}
+            </button>
+            <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u shënuan të kryera.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Punimet u kryen')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {canWork && (
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+          <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Shkruaj te redaksia ose publiku')}</h3>
+          <select value={kind} onChange={e => setKind(e.target.value as RequestKind)} aria-label={dt('Lloji')} className={input}>
+            {(Object.keys(REQUEST_LABELS) as RequestKind[]).map(k => <option key={k} value={k}>{dt(REQUEST_LABELS[k])}</option>)}
+          </select>
+          <p className="text-[10px] text-slate-400">
+            {kind === 'respond' ? dt('Shfaqet menjëherë te historiku publik i raportimit.') : dt('Ruhet dhe e shqyrton redaksia; përgjigjen e shihni te "Kërkesat e mia".')}
+          </p>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={4} maxLength={1200} placeholder={dt('Teksti…')} className={input} />
+          <button type="button" disabled={busy || note.trim().length < 10} onClick={() => void run(() => fileRequest(report.id, kind, note.trim()), kind === 'respond' ? dt('Përgjigjja u publikua.') : dt('Kërkesa u dërgua te redaksia.'), () => setNote(''))} className={primary}>
+            <Send className="h-3.5 w-3.5" /> {kind === 'respond' ? dt('Publiko përgjigjen') : dt('Dërgo kërkesën')}
+          </button>
+          <p className="border-t border-slate-100 pt-2 text-[10px] leading-relaxed text-slate-400 dark:border-white/10">{dt('Komuna nuk mund të fshijë, fshehë ose ndryshojë raportime qytetarësh.')}</p>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** A part of the console the current plan does not include, with what to do about it. */
+function PlanLock({ feature, what }: { feature: string; what: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-5 text-center dark:border-amber-500/30 dark:bg-amber-500/10">
+      <p className="text-sm font-bold text-amber-900 dark:text-amber-200">{dt(what)} {dt('përfshihen nga plani')} {FEATURE_FROM_PLAN[feature] ?? 'më i lartë'}</p>
+      <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{dt('Kontaktoni administratorin e platformës për ta ndryshuar planin e komunës suaj. Çdo gjë tjetër vazhdon të punojë.')}</p>
     </div>
   );
 }

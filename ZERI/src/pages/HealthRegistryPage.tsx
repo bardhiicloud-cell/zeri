@@ -475,13 +475,13 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-rose-200">
               <HeartPulse className="h-3.5 w-3.5" />
-              <span>Shërbim qytetar · Privatësi si parazgjedhje</span>
+              <span>{dt('Shërbim qytetar · Privatësi si parazgjedhje')}</span>
             </div>
             <h1 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Kujdes i organizuar. Të dhëna të mbrojtura.
+              {dt('Kujdes i organizuar. Të dhëna të mbrojtura.')}
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              Një hapësirë e sigurt për të paraqitur nevoja shëndetësore, ndjekur kërkesat e tua dhe gjetur institucionin përkatës. Rastet dhe dokumentet mjekësore nuk janë publike.
+              {dt('Një hapësirë e sigurt për të paraqitur nevoja shëndetësore, ndjekur kërkesat e tua dhe gjetur institucionin përkatës. Rastet dhe dokumentet mjekësore nuk janë publike.')}
             </p>
           </div>
 
@@ -490,7 +490,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               onClick={handleExportCSV}
               disabled={!currentUser || currentUser.role === 'guest' || cases.length === 0}
               className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 text-xs font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-              title="Shkarko evidencën në formatin CSV / Excel"
+              title={dt('Shkarko evidencën në formatin CSV / Excel')}
             >
               <Download className="h-4 w-4 text-emerald-300" />
               <span>Shkarko CSV</span>
@@ -501,7 +501,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-500 px-4 text-sm font-black text-white shadow-lg shadow-rose-950/30 transition hover:bg-rose-400"
             >
               <Plus className="h-4 w-4 stroke-[3]" />
-              <span>Regjistro Rast / Kërko Ndihmë</span>
+              <span>{dt('Regjistro Rast / Kërko Ndihmë')}</span>
             </button>
           </div>
           </div>
@@ -509,7 +509,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <section className="grid gap-3 sm:grid-cols-3" aria-label="Si funksionon mbështetja shëndetësore">
+        <section className="grid gap-3 sm:grid-cols-3" aria-label={dt('Si funksionon mbështetja shëndetësore')}>
           {[
             { number: '01', title: 'Paraqite nevojën', description: 'Dërgo kërkesën pa llogari, në mënyrë anonime ose me identitet dhe pëlqim të qartë.', icon: FileText, tone: 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-400/10' },
             { number: '02', title: 'Shqyrtim i sigurt', description: 'Kërkesa merr kod gjurmimi dhe kalon në verifikim nga stafi i autorizuar.', icon: ShieldCheck, tone: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-400/10' },
@@ -526,7 +526,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
           ))}
         </section>
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-300/15 dark:bg-amber-300/[0.06] dark:text-amber-100">
-          <strong>Shënim i rëndësishëm:</strong> Regjistri koordinon kërkesat qytetare dhe nuk zëvendëson këshillën, diagnozën apo kujdesin urgjent mjekësor.
+          <strong>{dt('Shënim i rëndësishëm:')}</strong> {dt('Regjistri koordinon kërkesat qytetare dhe nuk zëvendëson këshillën, diagnozën apo kujdesin urgjent mjekësor.')}
         </p>
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -538,7 +538,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-2">
               {totalCount}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">Të dhëna personale të mbrojtura</p>
+            <p className="text-[11px] text-slate-400 mt-1">{dt('Të dhëna personale të mbrojtura')}</p>
           </div>
 
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -549,7 +549,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             <p className="text-2xl sm:text-3xl font-black text-purple-600 dark:text-purple-400 mt-2">
               {cancerCount}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">Vetëm nga rastet e tua</p>
+            <p className="text-[11px] text-slate-400 mt-1">{dt('Vetëm nga rastet e tua')}</p>
           </div>
 
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -560,23 +560,23 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 mt-2">
               {urgentCount}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">Sipas urgjencës së regjistruar</p>
+            <p className="text-[11px] text-slate-400 mt-1">{dt('Sipas urgjencës së regjistruar')}</p>
           </div>
 
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-xs">
             <div className="flex items-center justify-between text-emerald-600 text-xs font-bold uppercase">
-              <span>Dokumente Mjekësore</span>
+              <span>{dt('Dokumente Mjekësore')}</span>
               <FileText className="w-4 h-4 text-emerald-500" />
             </div>
             <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
               {withDocCount}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">Dokumente në hapësirë private</p>
+            <p className="text-[11px] text-slate-400 mt-1">{dt('Dokumente në hapësirë private')}</p>
           </div>
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2 dark:border-zinc-800" role="tablist" aria-label="Pamjet e regjistrit shëndetësor">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2 dark:border-zinc-800" role="tablist" aria-label={dt('Pamjet e regjistrit shëndetësor')}>
           <button
             type="button"
             role="tab"
@@ -604,7 +604,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             }`}
           >
             <Building2 className="h-4 w-4" aria-hidden="true" />
-            <span>Përmbledhja ime (private)</span>
+            <span>{dt('Përmbledhja ime (private)')}</span>
           </button>
 
           <button
@@ -619,7 +619,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             }`}
           >
             <Stethoscope className="h-4 w-4" aria-hidden="true" />
-            <span>Spitalet & QKMF e Kosovës</span>
+            <span>{dt('Spitalet & QKMF e Kosovës')}</span>
           </button>
 
           <button
@@ -653,7 +653,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Kërko me emër, diagnozë, komunë..."
+                    placeholder={dt('Kërko me emër, diagnozë, komunë...')}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-rose-500 font-medium"
                   />
                 </div>
@@ -665,7 +665,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     onChange={e => setSelectedMunicipality(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
                   >
-                    <option value="Të Gjitha">📍 Të Gjitha 38 Komunat</option>
+                    <option value="Të Gjitha">{dt('📍 Të Gjitha 38 Komunat')}</option>
                     {KOSOVO_MUNICIPALITIES.map(m => (
                       <option key={m} value={m}>{m} ({municipalityStats[m]?.total || 0} raste)</option>
                     ))}
@@ -679,9 +679,9 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     onChange={e => setSelectedUrgency(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
                   >
-                    <option value="all">⚡ Të gjitha Nivelet e Urgjencës</option>
-                    <option value="Urgjente">Urgjente</option>
-                    <option value="Mesatare">Mesatare</option>
+                    <option value="all">{dt('⚡ Të gjitha Nivelet e Urgjencës')}</option>
+                    <option value="Urgjente">{dt('Urgjente')}</option>
+                    <option value="Mesatare">{dt('Mesatare')}</option>
                     <option value="Kronike e Stabilizuar">Kronike e Stabilizuar</option>
                   </select>
                 </div>
@@ -720,7 +720,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
                   {currentUser && currentUser.role !== 'guest' ? 'Regjistro një rast për të ndjekur shqyrtimin dhe hapat e mbështetjes.' : 'Dërgo kërkesë shëndetësore anonime ose me identitet. Për arsye privatësie, rastet pa llogari nuk shfaqen në këtë listë.'}
                 </p>
-                <button onClick={() => setIsRegisterModalOpen(true)} className="mt-4 min-h-10 rounded-xl bg-rose-600 px-4 text-xs font-bold text-white hover:bg-rose-700">Regjistro Rast të Ri</button>
+                <button onClick={() => setIsRegisterModalOpen(true)} className="mt-4 min-h-10 rounded-xl bg-rose-600 px-4 text-xs font-bold text-white hover:bg-rose-700">{dt('Regjistro Rast të Ri')}</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -780,7 +780,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           </div>
                           {c.status === 'rejected' ? (
                             <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-100 px-2 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-                              <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> Rasti kërkon rishikim
+                              <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Rasti kërkon rishikim')}
                             </span>
                           ) : (
                             <div className="grid grid-cols-4 gap-1.5">
@@ -830,9 +830,9 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                                 <div>
                                   <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
                                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                                    <span>Dokument Mjekësor / Epikrizë</span>
+                                    <span>{dt('Dokument Mjekësor / Epikrizë')}</span>
                                   </p>
-                                  <p className="text-[11px] text-slate-400">Kliko për ta parë në madhësi të plotë</p>
+                                  <p className="text-[11px] text-slate-400">{dt('Kliko për ta parë në madhësi të plotë')}</p>
                                 </div>
                               </div>
                               <Eye className="w-4 h-4 text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors mr-1" />
@@ -877,7 +877,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           <button
                             onClick={() => handleOpenHospitalModal(c)}
                             className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
-                            title="Njofto Spitalin ose QKMF-në për këtë rast"
+                            title={dt('Njofto Spitalin ose QKMF-në për këtë rast')}
                           >
                             <Send className="w-3 h-3" />
                             <span>Njofto Spitalin</span>
@@ -891,7 +891,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 group"
-                                title="Kontribo me donacion përmes GoFundMe për këtë pacient"
+                                title={dt('Kontribo me donacion përmes GoFundMe për këtë pacient')}
                               >
                                 <Heart className="w-3 h-3 fill-white/80 text-white group-hover:scale-110 transition-transform" />
                                 <span>Kontribo</span>
@@ -900,7 +900,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                               <button
                                 onClick={() => handleOpenGoFundMeModal(c)}
                                 className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                                title="Ndrysho ose shiko linkun e GoFundMe"
+                                title={dt('Ndrysho ose shiko linkun e GoFundMe')}
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
@@ -909,7 +909,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                             <button
                               onClick={() => handleOpenGoFundMeModal(c)}
                               className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                              title="Vendos linkun e GoFundMe për të mbledhur donacione"
+                              title={dt('Vendos linkun e GoFundMe për të mbledhur donacione')}
                             >
                               <Heart className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               <span>Kontribo</span>
@@ -919,7 +919,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                         </div>
 
                         <div className="flex items-center gap-1.5 sm:gap-2">
-                          <span className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-800/70 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-zinc-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5" title="Numri nuk publikohet; adminët e autorizuar e shohin në panelin e tyre.">
+                          <span className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-800/70 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-zinc-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5" title={dt('Numri nuk publikohet; adminët e autorizuar e shohin në panelin e tyre.')}>
                             <ShieldCheck className="w-3 h-3 text-emerald-600" />
                             Kontakt privat
                           </span>
@@ -950,7 +950,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                               }
                             }}
                             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
-                            title="Shpërndaj"
+                            title={dt('Shpërndaj')}
                           >
                             <Share2 className="w-4 h-4" />
                           </button>
@@ -970,10 +970,10 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                  Tabela e Evidencës Shëndetësore sipas 38 Komunave
+                  {dt('Tabela e Evidencës Shëndetësore sipas 38 Komunave')}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Transparencë e plotë mbi rastet onkologjike, kardiake dhe nevojat urgjente për çdo komunë.
+                  {dt('Transparencë e plotë mbi rastet onkologjike, kardiake dhe nevojat urgjente për çdo komunë.')}
                 </p>
               </div>
 
@@ -982,7 +982,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-all"
               >
                 <Download className="w-4 h-4" />
-                <span>Shkarko Tabelën (CSV)</span>
+                <span>{dt('Shkarko Tabelën (CSV)')}</span>
               </button>
             </div>
 
@@ -990,13 +990,13 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-zinc-800/60 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider">
                   <tr>
-                    <th className="py-3.5 px-4">Komuna</th>
+                    <th className="py-3.5 px-4">{dt('Komuna')}</th>
                     <th className="py-3.5 px-4 text-center">Totali i Rasteve</th>
                     <th className="py-3.5 px-4 text-center">Kancer / Onkologji</th>
-                    <th className="py-3.5 px-4 text-center">Sëmundje Zemre</th>
-                    <th className="py-3.5 px-4 text-center">Sëmundje Mushkërie</th>
+                    <th className="py-3.5 px-4 text-center">{dt('Sëmundje Zemre')}</th>
+                    <th className="py-3.5 px-4 text-center">{dt('Sëmundje Mushkërie')}</th>
                     <th className="py-3.5 px-4 text-center">Raste Urgjente</th>
-                    <th className="py-3.5 px-4 text-right">Spitali Përgjegjës</th>
+                    <th className="py-3.5 px-4 text-right">{dt('Spitali Përgjegjës')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium">
@@ -1057,10 +1057,10 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
           <div className="space-y-4">
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs">
               <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                Drejtoria e Spitaleve Rajonale & QKMF-ve për 38 Komunat e Kosovës
+                {dt('Drejtoria e Spitaleve Rajonale & QKMF-ve për 38 Komunat e Kosovës')}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Kontaktet zyrtare të urgjencës për të gjitha rajonet: Prishtinë (QKUK), Prizren, Pejë, Gjakovë, Gjilan, Ferizaj, dhe Mitrovicë.
+                {dt('Kontaktet zyrtare të urgjencës për të gjitha rajonet: Prishtinë (QKUK), Prizren, Pejë, Gjakovë, Gjilan, Ferizaj, dhe Mitrovicë.')}
               </p>
             </div>
 
@@ -1094,7 +1094,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       >
                         <span className="flex items-center gap-1.5">
                           <Phone className="w-3.5 h-3.5" />
-                          <span>Urgjenca:</span>
+                          <span>{dt('Urgjenca:')}</span>
                         </span>
                         <span>{hosp.emergencyPhone}</span>
                       </a>
@@ -1105,7 +1105,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       >
                         <span className="flex items-center gap-1.5">
                           <Mail className="w-3.5 h-3.5 text-blue-500" />
-                          <span>Email:</span>
+                          <span>{dt('Email:')}</span>
                         </span>
                         <span className="truncate max-w-[150px]">{hosp.email}</span>
                       </a>
@@ -1136,10 +1136,10 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   </div>
                   <div>
                     <h3 className="font-black text-lg text-slate-900 dark:text-white">
-                      Regjistro Rast Shëndetësor
+                      {dt('Regjistro Rast Shëndetësor')}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Evidenca regjistrohet sipas komunës përkatëse në Kosovë.
+                      {dt('Evidenca regjistrohet sipas komunës përkatëse në Kosovë.')}
                     </p>
                   </div>
                 </div>
@@ -1153,7 +1153,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
 
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 dark:border-zinc-700/60 dark:bg-zinc-800/60">
-                  <p className="mb-2 text-xs font-bold text-slate-900 dark:text-white">Si dëshironi ta dërgoni kërkesën?</p>
+                  <p className="mb-2 text-xs font-bold text-slate-900 dark:text-white">{dt('Si dëshironi ta dërgoni kërkesën?')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => setForm(prev => ({
                       ...prev, isAnonymous: true, fullName: '', contactPhone: '', contactName: '',
@@ -1164,7 +1164,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     </button>
                     <button type="button" onClick={() => setForm(prev => ({ ...prev, isAnonymous: false }))} aria-pressed={!form.isAnonymous}
                       className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.isAnonymous ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200' : 'border-slate-200 text-slate-600 dark:border-zinc-700 dark:text-slate-300'}`}>
-                      Me identitet
+                      {dt('Me identitet')}
                     </button>
                   </div>
                   <p className="mt-2 text-[11px] text-slate-500">
@@ -1185,7 +1185,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       maxLength={120}
                       value={form.fullName}
                       onChange={e => setForm({ ...form, fullName: e.target.value })}
-                      placeholder="Shfaqet vetëm për stafin e autorizuar"
+                      placeholder={dt('Shfaqet vetëm për stafin e autorizuar')}
                       className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
                     />
                   </div>
@@ -1194,14 +1194,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 {!form.isAnonymous && <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Numri i Telefonit / Kontaktit</label>
                   <input type="text" maxLength={40} value={form.contactPhone} onChange={e => setForm({ ...form, contactPhone: e.target.value })} placeholder="+383 44 123 456" className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium" />
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">Kontakti ruhet në regjistrin e kufizuar për pronarin dhe stafin e autorizuar; nuk publikohet në faqen publike.</p>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{dt('Kontakti ruhet në regjistrin e kufizuar për pronarin dhe stafin e autorizuar; nuk publikohet në faqen publike.')}</p>
                 </div>}
 
                 {/* Age, Gender, Year */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Mosha (vjeç)
+                      {dt('Mosha (vjeç)')}
                     </label>
                     <input
                       type="number"
@@ -1223,14 +1223,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
                     >
                       <option value="Mashkull">Mashkull</option>
-                      <option value="Femër">Femër</option>
-                      <option value="Tjetër">Tjetër</option>
+                      <option value="Femër">{dt('Femër')}</option>
+                      <option value="Tjetër">{dt('Tjetër')}</option>
                     </select>
                   </div>
 
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Viti i Diagnozës
+                      {dt('Viti i Diagnozës')}
                     </label>
                     <input
                       type="number"
@@ -1247,7 +1247,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Komuna (nga 38 Komunat) *
+                      {dt('Komuna (nga 38 Komunat) *')}
                     </label>
                     <select
                       value={form.municipality}
@@ -1291,7 +1291,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Kategoria e Sëmundjes *
+                      {dt('Kategoria e Sëmundjes *')}
                     </label>
                     <select
                       value={form.category}
@@ -1299,26 +1299,26 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
                     >
                       <option value="Kancer / Onkologji">Kancer / Onkologji</option>
-                      <option value="Sëmundje të Zemrës">Sëmundje të Zemrës (Kardiake)</option>
-                      <option value="Sëmundje të Mushkërive">Sëmundje të Mushkërive (Pulmonare)</option>
-                      <option value="Sëmundje të Veshkave & Dializë">Sëmundje të Veshkave & Dializë</option>
-                      <option value="Diabet me Komplikime">Diabet me Komplikime</option>
-                      <option value="Sëmundje Neurologjike">Sëmundje Neurologjike</option>
-                      <option value="Sëmundje e Rrallë">Sëmundje e Rrallë</option>
-                      <option value="Tjetër">Tjetër</option>
+                      <option value="Sëmundje të Zemrës">{dt('Sëmundje të Zemrës (Kardiake)')}</option>
+                      <option value="Sëmundje të Mushkërive">{dt('Sëmundje të Mushkërive (Pulmonare)')}</option>
+                      <option value="Sëmundje të Veshkave & Dializë">{dt('Sëmundje të Veshkave & Dializë')}</option>
+                      <option value="Diabet me Komplikime">{dt('Diabet me Komplikime')}</option>
+                      <option value="Sëmundje Neurologjike">{dt('Sëmundje Neurologjike')}</option>
+                      <option value="Sëmundje e Rrallë">{dt('Sëmundje e Rrallë')}</option>
+                      <option value="Tjetër">{dt('Tjetër')}</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Niveli i Urgjencës
+                      {dt('Niveli i Urgjencës')}
                     </label>
                     <select
                       value={form.urgency}
                       onChange={e => setForm({ ...form, urgency: e.target.value as any })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
                     >
-                      <option value="Urgjente">Urgjente (Ka nevojë për ndërhyrje/barna menjëherë)</option>
+                      <option value="Urgjente">{dt('Urgjente (Ka nevojë për ndërhyrje/barna menjëherë)')}</option>
                       <option value="Mesatare">Mesatare (Terapia kronike e rregullt)</option>
                       <option value="Kronike e Stabilizuar">Kronike e Stabilizuar</option>
                     </select>
@@ -1336,7 +1336,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     maxLength={300}
                     value={form.diagnosis}
                     onChange={e => setForm({ ...form, diagnosis: e.target.value })}
-                    placeholder="psh. Adenokarcinomë, Kardiomiopati e Dilatuar, SPOK, Leuçemi..."
+                    placeholder={dt('psh. Adenokarcinomë, Kardiomiopati e Dilatuar, SPOK, Leuçemi...')}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
                   />
                 </div>
@@ -1344,7 +1344,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 {/* Private attachments require a signed-in, identified owner. */}
                 {!form.isAnonymous && auth.currentUser && !auth.currentUser.isAnonymous && <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Foto e Dokumentit Mjekësor / Epikrizës / Recetës (Opsionale)
+                    {dt('Foto e Dokumentit Mjekësor / Epikrizës / Recetës (Opsionale)')}
                   </label>
                   
                   {form.imageUrl ? (
@@ -1383,27 +1383,27 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                         {isUploadingDocument ? 'Duke ngarkuar dokumentin privat…' : 'Ngarko epikrizë, analizë ose recetë'}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        JPG, PNG, WEBP ose PDF · Maksimumi 5MB · Qasje vetëm për ju dhe stafin shëndetësor
+                        {dt('JPG, PNG, WEBP ose PDF · Maksimumi 5MB · Qasje vetëm për ju dhe stafin shëndetësor')}
                       </p>
                     </div>
                   )}
                 </div>}
                 {!form.isAnonymous && (!auth.currentUser || auth.currentUser.isAnonymous) && (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-                    Bashkëngjitja e dokumenteve është opsionale dhe kërkon llogari të kyçur. Kërkesën mund ta dërgoni tani pa dokument.
+                    {dt('Bashkëngjitja e dokumenteve është opsionale dhe kërkon llogari të kyçur. Kërkesën mund ta dërgoni tani pa dokument.')}
                   </p>
                 )}
 
                 {/* Primary Needs */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Nevojat Kryesore (të ndara me presje)
+                    {dt('Nevojat Kryesore (të ndara me presje)')}
                   </label>
                   <input
                     type="text"
                     value={form.needsInput}
                     onChange={e => setForm({ ...form, needsInput: e.target.value })}
-                    placeholder="psh. Barna Citostatike, Dializë, Koncentrator Oksigjeni, Ndihmë Financiare"
+                    placeholder={dt('psh. Barna Citostatike, Dializë, Koncentrator Oksigjeni, Ndihmë Financiare')}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
                   />
                 </div>
@@ -1411,14 +1411,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 {/* Description */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Përshkrimi i Situatës dhe Nevoja për Ndihmë
+                    {dt('Përshkrimi i Situatës dhe Nevoja për Ndihmë')}
                   </label>
                   <textarea
                     rows={3}
                     maxLength={2000}
                     value={form.description}
                     onChange={e => setForm({ ...form, description: e.target.value })}
-                    placeholder="Shpjegoni shkurtimisht gjendjen shëndetësore, barnat që mungojnë në spital apo nevojën për trajtim..."
+                    placeholder={dt('Shpjegoni shkurtimisht gjendjen shëndetësore, barnat që mungojnë në spital apo nevojën për trajtim...')}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium resize-none"
                   />
                 </div>
@@ -1430,7 +1430,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       <Heart className="w-3.5 h-3.5 text-emerald-500" />
                       <span>Linku i GoFundMe / Donacionit (Opsionale)</span>
                     </span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Për butonin "Kontribo"</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{dt('Për butonin "Kontribo"')}</span>
                   </label>
                   <div className="relative">
                     <input
@@ -1443,7 +1443,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Nëse keni hapur fushatë në GoFundMe apo platformë tjetër, vendosni linkun këtu që qytetarët të mund të dhurojnë drejtpërdrejt.
+                    {dt('Nëse keni hapur fushatë në GoFundMe apo platformë tjetër, vendosni linkun këtu që qytetarët të mund të dhurojnë drejtpërdrejt.')}
                   </p>
                 </div>}
 
@@ -1456,7 +1456,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     className="mt-0.5 h-4 w-4 shrink-0 accent-rose-600"
                   />
                   <span>
-                    Pajtohem që këto të dhëna shëndetësore të përpunohen vetëm për shqyrtimin e kërkesës nga stafi i autorizuar. E kuptoj se kërkesa nuk është publike dhe se kodi shërben për referim gjatë komunikimit me stafin. *
+                    {dt('Pajtohem që këto të dhëna shëndetësore të përpunohen vetëm për shqyrtimin e kërkesës nga stafi i autorizuar. E kuptoj se kërkesa nuk është publike dhe se kodi shërben për referim gjatë komunikimit me stafin. *')}
                   </span>
                 </label>
 
@@ -1466,7 +1466,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     onClick={() => setIsRegisterModalOpen(false)}
                     className="px-5 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                   >
-                    Anulo
+                    {dt('Anulo')}
                   </button>
                   <button
                     type="submit"
@@ -1500,7 +1500,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                      Njofto Spitalin / QKMF Përkatëse
+                      {dt('Njofto Spitalin / QKMF Përkatëse')}
                     </h3>
                     <p className="text-xs text-slate-500">
                       Dërgim alarmi zyrtar për Komunën e {hospitalModalCase.municipality}
@@ -1549,7 +1549,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               {/* Notification Message Text Area */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Mesazhi i Njoftimit për Spitalin / Mjekët Kujdestarë
+                  {dt('Mesazhi i Njoftimit për Spitalin / Mjekët Kujdestarë')}
                 </label>
                 <textarea
                   rows={6}
@@ -1566,7 +1566,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   className="px-3.5 py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
                 >
                   <Mail className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Hap në Email</span>
+                  <span>{dt('Hap në Email')}</span>
                 </a>
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(hospitalNotes)}`}
@@ -1575,7 +1575,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 rounded-xl font-bold flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Dërgo në WhatsApp</span>
+                  <span>{dt('Dërgo në WhatsApp')}</span>
                 </a>
               </div>
 
@@ -1585,7 +1585,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   onClick={() => setHospitalModalCase(null)}
                   className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 >
-                  Mbyll
+                  {dt('Mbyll')}
                 </button>
                 <button
                   type="button"
@@ -1636,7 +1636,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
                 >
                   <ArrowUpRight className="w-4 h-4" />
-                  <span>Hap në madhësi të plotë</span>
+                  <span>{dt('Hap në madhësi të plotë')}</span>
                 </a>
               </div>
             </motion.div>
@@ -1677,7 +1677,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               </div>
 
               <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
-                Vendosni linkun zyrtar të fushatës së hapur në <strong>GoFundMe</strong> (ose platformë tjetër bamirësie). Me t'u ruajtur ky link, çdo qytetar mund të klikojë butonin <strong>"Kontribo"</strong> dhe të dhurojë ndihmë financiare menjëherë.
+                {dt('Vendosni linkun zyrtar të fushatës së hapur në')} <strong>GoFundMe</strong> (ose platformë tjetër bamirësie). Me t'u ruajtur ky link, çdo qytetar mund të klikojë butonin <strong>"Kontribo"</strong> {dt('dhe të dhurojë ndihmë financiare menjëherë.')}
               </div>
 
               <form onSubmit={handleSaveGoFundMe} className="space-y-4">
@@ -1696,7 +1696,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Shembull: https://www.gofundme.com/f/ndihme-per-sherim
+                    {dt('Shembull: https://www.gofundme.com/f/ndihme-per-sherim')}
                   </p>
                 </div>
 
@@ -1717,7 +1717,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     onClick={() => setGoFundMeModalCase(null)}
                     className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
                   >
-                    Anulo
+                    {dt('Anulo')}
                   </button>
                   <button
                     type="submit"

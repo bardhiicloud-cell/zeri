@@ -163,7 +163,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                         to={item.href}
                         onClick={onNavigate}
                         aria-current={active ? 'page' : undefined}
-                        title={collapsed ? item.label : undefined}
+                        title={collapsed ? dt(item.label) : undefined}
                         className={cn(
                           'group relative flex h-8 items-center rounded-lg py-1.5 text-[13px] font-semibold transition-colors',
                           collapsed ? 'justify-center px-0' : 'gap-2.5 px-2.5',
@@ -181,7 +181,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           )}
                           aria-hidden="true"
                         />
-                        {!collapsed && <span className="truncate leading-none">{item.label}</span>}
+                        {!collapsed && <span className="truncate leading-none">{dt(item.label)}</span>}
                       </Link>
                     </li>
                   );
@@ -260,14 +260,14 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             key={link.href}
             to={link.href}
             onClick={onNavigate}
-            title={collapsed ? link.label : undefined}
+            title={collapsed ? dt(link.label) : undefined}
             className={cn(
               'flex h-7 items-center rounded-lg py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800',
               collapsed ? 'justify-center px-0' : 'gap-2 px-2.5'
             )}
           >
             <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {!collapsed && <span className="truncate leading-none">{link.label}</span>}
+            {!collapsed && <span className="truncate leading-none">{dt(link.label)}</span>}
           </Link>
         ))}
 

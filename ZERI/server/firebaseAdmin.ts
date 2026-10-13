@@ -20,6 +20,8 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
+import appletConfig from '../firebase-applet-config.json';
 import { readFileSync } from 'node:fs';
 
 export const FIREBASE_PROJECT_ID =
@@ -99,10 +101,42 @@ export function adminApp(): App {
   return appInstance;
 }
 
-/** Firestore bound to the same named database the web client uses. */
+let firestoreInstance: Firestore | null = null;
+
+/**
+ * Firestore bound to the same named database the web client uses.
+ *
+ * `ignoreUndefinedProperties` is on because the code base writes `value || undefined`
+ * throughout to mean "leave this field out". Without the setting the Admin SDK
+ * rejects the whole write ("Cannot use undefined as a Firestore value"), which
+ * made report creation fail for any report with an attachment and made the live
+ * report-event feed fail for any status change without a note. `settings()` may be
+ * called only once and only before first use, hence the single shared instance.
+ */
 export function db(): Firestore {
+  if (!firestoreInstance) {
+    adminApp();
+    firestoreInstance = FIRESTORE_DATABASE_ID ? getFirestore(FIRESTORE_DATABASE_ID) : getFirestore();
+    firestoreInstance.settings({ ignoreUndefinedProperties: true });
+  }
+  return firestoreInstance;
+}
+
+/**
+ * Default Storage bucket. The web SDK reads the same value from its config; the
+ * server needs it to erase a person's uploaded files.
+ */
+export const STORAGE_BUCKET: string =
+  process.env.FIREBASE_STORAGE_BUCKET ||
+  process.env.VITE_FIREBASE_STORAGE_BUCKET ||
+  (appletConfig as { storageBucket?: string }).storageBucket ||
+  '';
+
+/** The Storage bucket, or null when none is configured. */
+export function storageBucket() {
+  if (!STORAGE_BUCKET) return null;
   adminApp();
-  return FIRESTORE_DATABASE_ID ? getFirestore(FIRESTORE_DATABASE_ID) : getFirestore();
+  return getStorage().bucket(STORAGE_BUCKET);
 }
 
 /** Admin Auth handle. */

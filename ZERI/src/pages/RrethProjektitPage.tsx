@@ -6,7 +6,9 @@ import {
   BarChart3, Clock, HelpCircle, HeartHandshake, Eye
 } from 'lucide-react';
 import { MunicipalityShield } from '../components/MunicipalityShield';
+import { PageHero, heroPrimaryClass, heroSecondaryClass } from '../components/layout/PageHero';
 
+import { dt } from '@/src/lib/dt';
 export default function RrethProjektitPage() {
   const navigate = useNavigate();
 
@@ -14,53 +16,37 @@ export default function RrethProjektitPage() {
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#070e1c] text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-12">
         
-        {/* Hero Section */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-200/80 dark:border-white/10 shadow-xs relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="max-w-3xl space-y-4 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/60 dark:border-blue-900">
-              <Info className="w-3.5 h-3.5" />
-              <span>Rreth Platformës Kombëtare</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-              Zëri i Qytetarëve
-            </h1>
-            
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-              Platforma zyrtare digjitale e Republikës së Kosovës që bashkon qytetarët me 38 komunat 
-              për raportimin në kohë reale të problemeve, rritjen e transparencës publike dhe 
-              pjesëmarrjen aktive në vendimmarrjen lokale.
-            </p>
-
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => navigate('/raporto')}
-                className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-xs cursor-pointer"
-              >
-                <span>Raporto një Problem</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+        <PageHero
+          eyebrow={dt('Rreth Platformës Kombëtare')}
+          icon={Info}
+          title={dt('Zëri i Qytetarëve')}
+          subtitle={dt('Platforma zyrtare digjitale e Republikës së Kosovës që bashkon qytetarët me 38 komunat për raportimin në kohë reale të problemeve, rritjen e transparencës publike dhe pjesëmarrjen aktive në vendimmarrjen lokale.')}
+          actions={
+            <>
+              <button onClick={() => navigate('/raporto')} className={heroPrimaryClass}>
+                {dt('Raporto një Problem')} <ArrowRight className="w-3.5 h-3.5" />
               </button>
-
-              <button
-                onClick={() => navigate('/komunat')}
-                className="px-5 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
-              >
-                Eksploro 38 Komunat
+              <button onClick={() => navigate('/komunat')} className={heroSecondaryClass}>
+                {dt('Eksploro 38 Komunat')}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          stats={[
+            { value: '38', label: dt('komuna në një platformë') },
+            { value: '30 s', label: dt('për të dërguar një raportim') },
+            { value: '#ZQ', label: dt('kod unik publik për çdo rast') },
+            { value: '100%', label: dt('mundësi raportimi anonim') },
+          ]}
+        />
 
         {/* 1. MISSION & PURPOSE (Për Çka Është Ndërtuar) */}
         <section className="space-y-6">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              Për Çka Është Ndërtuar Ky Projekt?
+              {dt('Për Çka Është Ndërtuar Ky Projekt?')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Qëllimet kryesore që udhëheqin funksionimin e përditshëm të platformës "Zëri i Qytetarëve"
+              {dt('Qëllimet kryesore që udhëheqin funksionimin e përditshëm të platformës "Zëri i Qytetarëve"')}
             </p>
           </div>
 
@@ -70,11 +56,10 @@ export default function RrethProjektitPage() {
                 <Clock className="w-6 h-6" />
               </div>
               <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Eliminimi i Burokracisë
+                {dt('Eliminimi i Burokracisë')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Nuk ka më nevojë për shkuarje fizike në sportele komunale apo shkresave të gjata. 
-                Çdo qytetar raporton çështjen e lagjes me foto dhe lokacion GPS brenda 30 sekondave nga telefoni.
+                {dt('Nuk ka më nevojë për shkuarje fizike në sportele komunale apo shkresave të gjata. Çdo qytetar raporton çështjen e lagjes me foto dhe lokacion GPS brenda 30 sekondave nga telefoni.')}
               </p>
             </div>
 
@@ -83,11 +68,10 @@ export default function RrethProjektitPage() {
                 <Eye className="w-6 h-6" />
               </div>
               <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Transparencë 100% Radikale
+                {dt('Transparencë 100% Radikale')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Çdo raportim i dërguar hyn në Regjistrin Publik me kod unik. Ecuria e punimeve, 
-                afatet e reagimit (SLA) dhe fotografitë para/pas janë të hapura për çdo qytetar dhe media.
+                {dt('Çdo raportim i dërguar hyn në Regjistrin Publik me kod unik. Ecuria e punimeve, afatet e reagimit (SLA) dhe fotografitë para/pas janë të hapura për çdo qytetar dhe media.')}
               </p>
             </div>
 
@@ -96,11 +80,10 @@ export default function RrethProjektitPage() {
                 <Users className="w-6 h-6" />
               </div>
               <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Pjesëmarrje Qytetare
+                {dt('Pjesëmarrje Qytetare')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Përmes sondazheve zyrtare, forumeve tematike dhe buxhetimit pjesëmarrës, 
-                komuniteti vendos drejtpërdrejt se cilat projekte infrastrukturore duhet të financohen.
+                {dt('Përmes sondazheve zyrtare, forumeve tematike dhe idesë së qytetarëve, komuniteti ndikon drejtpërdrejt në prioritetet që ndjekin komunat dhe institucionet.')}
               </p>
             </div>
           </div>
@@ -113,10 +96,10 @@ export default function RrethProjektitPage() {
               Rrjedha Operative
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              Si Funksionon Platforma (Qysh Tek)?
+              {dt('Si Funksionon Platforma (Qysh Tek)?')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Nga momenti kur një qytetar vëren një problem në lagje, deri te zgjidhja e verifikuar në terren:
+              {dt('Nga momenti kur një qytetar vëren një problem në lagje, deri te zgjidhja e verifikuar në terren:')}
             </p>
           </div>
 
@@ -127,9 +110,9 @@ export default function RrethProjektitPage() {
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">
                 1
               </div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Raportimi</h3>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">{dt('Raportimi')}</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Qytetari bën fotografinë, zgjedh kategorinë dhe vendndodhja caktohet automatikisht në hartën GIS.
+                {dt('Qytetari bën fotografinë, zgjedh kategorinë dhe vendndodhja caktohet automatikisht në hartën GIS.')}
               </p>
             </div>
 
@@ -140,7 +123,7 @@ export default function RrethProjektitPage() {
               </div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Triazhi Digjital</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Gjenerohet kodi unik publik (#ZQ-XXXX) me nivel urgjence dhe orar të garantuar reagimi (SLA).
+                {dt('Gjenerohet kodi unik publik (#ZQ-XXXX) me nivel urgjence dhe orar të garantuar reagimi (SLA).')}
               </p>
             </div>
 
@@ -149,9 +132,9 @@ export default function RrethProjektitPage() {
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">
                 3
               </div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Delegimi Komunal</h3>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">{dt('Delegimi Komunal')}</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Raporti dërgohet automatikisht te drejtoria përkatëse komunale (Shërbime Publike, Ndriçim, Mjedis).
+                {dt('Raporti dërgohet automatikisht te drejtoria përkatëse komunale (Shërbime Publike, Ndriçim, Mjedis).')}
               </p>
             </div>
 
@@ -160,9 +143,9 @@ export default function RrethProjektitPage() {
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">
                 4
               </div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Ndërhyrja në Terren</h3>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">{dt('Ndërhyrja në Terren')}</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Ekipet teknike ose kompanitë e mirëmbajtjes dalin në lokacion dhe kryejnë punimet e kërkuara.
+                {dt('Ekipet teknike ose kompanitë e mirëmbajtjes dalin në lokacion dhe kryejnë punimet e kërkuara.')}
               </p>
             </div>
 
@@ -173,7 +156,7 @@ export default function RrethProjektitPage() {
               </div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Verifikimi & Mbyllja</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Ngarkohet foto e punës së kryer, qytetari njoftohet dhe raporti merr statusin "I Zgjidhur".
+                {dt('Ngarkohet foto e punës së kryer, qytetari njoftohet dhe raporti merr statusin "I Zgjidhur".')}
               </p>
             </div>
 
@@ -184,7 +167,7 @@ export default function RrethProjektitPage() {
         <section className="space-y-6">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              Arkitektura Teknike dhe Teknologjitë
+              {dt('Arkitektura Teknike dhe Teknologjitë')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Platforma është ndërtuar me standardet më moderne të inxhinierisë softuerike për shpejtësi, siguri dhe shkallëzim
@@ -197,7 +180,7 @@ export default function RrethProjektitPage() {
               <Cpu className="w-8 h-8 text-blue-600" />
               <h3 className="text-sm font-black text-slate-900 dark:text-white">React 18 & TypeScript</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Arkitekturë moderne SPA me tipizim të plotë statik, modularitet të lartë dhe kohë përgjigjeje të menjëhershme.
+                {dt('Arkitekturë moderne SPA me tipizim të plotë statik, modularitet të lartë dhe kohë përgjigjeje të menjëhershme.')}
               </p>
             </div>
 
@@ -205,7 +188,7 @@ export default function RrethProjektitPage() {
               <Map className="w-8 h-8 text-emerald-600" />
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Leaflet & OpenStreetMap</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Motor gjeohapësinor GIS me koordinata reale gjeografike për të 38 komunat e Kosovës dhe filtra me rreze veprimi.
+                {dt('Motor gjeohapësinor GIS me koordinata reale gjeografike për të 38 komunat e Kosovës dhe filtra me rreze veprimi.')}
               </p>
             </div>
 
@@ -213,15 +196,15 @@ export default function RrethProjektitPage() {
               <Database className="w-8 h-8 text-amber-600" />
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Firebase & Realtime Sync</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Sinkronizim në kohë reale i raporteve, sondazheve dhe njoftimeve me shpejtësi milisekondash dhe siguri të të dhënave.
+                {dt('Sinkronizim në kohë reale i raporteve, sondazheve dhe njoftimeve me shpejtësi milisekondash dhe siguri të të dhënave.')}
               </p>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
               <ShieldCheck className="w-8 h-8 text-indigo-600" />
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Siguria & Privatësia</h3>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">{dt('Siguria & Privatësia')}</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Përputhshmëri e plotë me Ligjin për Mbrojtjen e të Dhënave Personale të Kosovës dhe mundësi raportimi 100% anonim.
+                {dt('Përputhshmëri e plotë me Ligjin për Mbrojtjen e të Dhënave Personale të Kosovës dhe mundësi raportimi 100% anonim.')}
               </p>
             </div>
 
@@ -236,11 +219,10 @@ export default function RrethProjektitPage() {
                 Shtrirja Gjeografike
               </span>
               <h2 className="text-2xl sm:text-3xl font-black">
-                Mbulueshmëri 100% në të Gjitha 38 Komunat
+                {dt('Mbulueshmëri 100% në të Gjitha 38 Komunat')}
               </h2>
               <p className="text-xs sm:text-sm text-blue-200 mt-1 max-w-2xl">
-                Nga qendrat e mëdha urbane deri te vendbanimet më të thella rurale, çdo banor i Kosovës 
-                ka zë të barabartë në zgjidhjen e problemeve të komunitetit.
+                {dt('Nga qendrat e mëdha urbane deri te vendbanimet më të thella rurale, çdo banor i Kosovës ka zë të barabartë në zgjidhjen e problemeve të komunitetit.')}
               </p>
             </div>
 
@@ -248,7 +230,7 @@ export default function RrethProjektitPage() {
               to="/komunat"
               className="px-5 py-3 bg-white text-blue-950 hover:bg-blue-50 rounded-xl text-xs font-black transition-all shrink-0 shadow-sm"
             >
-              Shiko Listën e Komunave
+              {dt('Shiko Listën e Komunave')}
             </Link>
           </div>
 

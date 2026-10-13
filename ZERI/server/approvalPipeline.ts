@@ -114,6 +114,9 @@ export function pipelineRoleOf(role: string, permissions?: readonly string[]): P
 
   // A per-section grant can promote a differently-named account into the agent
   // role for the pipeline, mirroring how `/agent` opens on `permissions:['agents']`.
+  // SECURITY: `permissions` must come from verified token claims
+  // (`permissionsFromClaims` in server/auth.ts), never from the client-writable
+  // profile document, or any citizen could grant themselves this role.
   if (Array.isArray(permissions) && permissions.includes('agents')) return 'agent';
 
   return null;
@@ -314,6 +317,11 @@ export interface TransitionDecision {
   toStatus?: IssueStatus;
   /** The stage the report was in when the decision was made. */
   fromStage?: PipelineStage;
+  /**
+   * Set when an owner (admin, superadmin) performed a step that belongs to another
+   * role. The step is allowed, but it is recorded as done on that role's behalf.
+   */
+  onBehalfOf?: PipelineRole;
 }
 
 const deny = (code: string, reason: string, fromStage?: PipelineStage): TransitionDecision => ({
@@ -351,7 +359,12 @@ export function decideTransition(
 
   const stage = stageOf(report);
 
-  if (rule.by !== actorRole) {
+  // The owner may do the agents' work: the superadmin has every access an agent
+  // has. Only the agents' steps - the owner does not attest to a municipality's
+  // physical work, and the municipality's own steps stay with the municipality.
+  const onBehalfOf: PipelineRole | undefined = actorRole === 'staff' && rule.by === 'agent' ? 'agent' : undefined;
+
+  if (rule.by !== actorRole && !onBehalfOf) {
     return deny(
       'WRONG_ROLE',
       `Veprimi "${rule.label}" kryhet nga ${rule.by}, jo nga ${actorRole}.`,
@@ -382,7 +395,7 @@ export function decideTransition(
     }
   }
 
-  return { allowed: true, code: 'ALLOW', reason: '', toStatus: rule.toStatus, fromStage: stage };
+  return { allowed: true, code: 'ALLOW', reason: '', toStatus: rule.toStatus, fromStage: stage, ...(onBehalfOf ? { onBehalfOf } : {}) };
 }
 
 /**

@@ -7,6 +7,7 @@ import type { ReportTimelineEvent } from '@/src/types';
 import { statusLabel, statusMeta, TONE_CLASSES } from '@/src/lib/reportStatus';
 import { ReportAttachments } from './ReportAttachments';
 
+import { dt } from '@/src/lib/dt';
 /**
  * The report lifecycle timeline.
  *
@@ -51,7 +52,7 @@ export function ReportTimeline({ events }: { events: ReportTimelineEvent[] }) {
   if (!events || events.length === 0) {
     return (
       <p className="rounded-xl bg-(--color-surface-subtle) p-4 text-sm text-(--color-text-muted)">
-        Raporti është regjistruar dhe pret shqyrtimin e parë.
+        {dt('Raporti është regjistruar dhe pret shqyrtimin e parë.')}
       </p>
     );
   }

@@ -11,10 +11,24 @@
  * of a different country, which is the failure mode that actually occurred.
  */
 
+import { createHash } from 'node:crypto';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** Language codes that differ from our internal ones at the provider. */
-const PROVIDER_CODE = { gsw: 'de-CH', nb: 'no' };
+/**
+ * Language codes that differ from our internal ones at the provider, and the
+ * regional variants that read another language's table.
+ *
+ * `gsw` has no Google code of its own (de-CH is the honest substitute) and
+ * Argos names Norwegian `no`. Canada and Australia carry a region for the URL
+ * and the switcher but read English — they keep their own entry here so the
+ * resolution is stated once rather than re-derived in every caller.
+ */
+const PROVIDER_CODE: Record<string, string> = {
+  gsw: 'de-CH',
+  nb: 'no',
+  ca: 'en',
+  au: 'en',
+};
 
 interface Health {
   failures: number;
@@ -90,7 +104,7 @@ const PROVIDERS: Array<{ name: string; fn: (t: string, l: string) => Promise<str
  * noun is corrected after the fact. Kept in sync with src/lib/glossary.ts.
  */
 const PROPER_NOUNS: Record<string, Record<string, string>> = {
-  'Kosovë': { en: 'Kosovo', de: 'Kosovo', fr: 'Kosovo', it: 'Kosovo', es: 'Kosovo', pt: 'Kosovo', nl: 'Kosovo', sv: 'Kosovo', nb: 'Kosovo', ro: 'Kosovo', hr: 'Kosovo', sl: 'Kosovo', mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', hy: 'Կոսովո', gsw: 'Kosovo', bs: 'Kosovo' },
+  'Kosovë': { en: 'Kosovo', de: 'Kosovo', fr: 'Kosovo', it: 'Kosovo', pt: 'Kosovo', nl: 'Kosovo', sv: 'Kosovo', nb: 'Kosovo', hr: 'Kosovo', sl: 'Kosovo', mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', gsw: 'Kosovo', bs: 'Kosovo', ja: 'コソボ', ko: '코소보', pl: 'Kosowo', bg: 'Косово', ca: 'Kosovo', au: 'Kosovo' },
 };
 
 /** Words the translator wrongly substitutes for a proper noun. */
@@ -103,8 +117,10 @@ const WRONG_SUBSTITUTIONS = [
 function repairProperNouns(text: string, target: string): string {
   let out = text;
   for (const re of WRONG_SUBSTITUTIONS) out = out.replace(re, '');
+  // Regional variants render through their base language's column.
+  const column = baseLanguageFor(target);
   for (const [sq, byLang] of Object.entries(PROPER_NOUNS)) {
-    const correct = byLang[target];
+    const correct = (byLang as Record<string, string>)[column];
     if (!correct) continue;
     const head = correct.slice(0, 4).toLowerCase();
     if (!out.toLowerCase().includes(head)) {
@@ -118,9 +134,30 @@ function repairProperNouns(text: string, target: string): string {
  * Translate `text` into `target`, trying each healthy provider in turn.
  * Returns null when every provider is unavailable, letting the caller decide.
  */
+/** Longest text the public translation endpoint will accept. */
+export const MAX_TRANSLATE_CHARS = 5000;
+
+/**
+ * Cache key for a translation. Hashing the whole text matters: the previous key
+ * used only the first ~90 bytes (base64 sliced to 120 chars), so two different
+ * texts that shared an opening paragraph were served each other's translation.
+ */
+export function translationCacheKey(source: string, target: string, text: string): string {
+  return `tr:${source}:${target}:${createHash('sha256').update(text).digest('hex')}`;
+}
+
+/**
+ * Resolve a regional variant to the language whose table it reads.
+ * Canada and Australia are served by English, so a translation request for
+ * them is an English request rather than a missing-table error.
+ */
+export function baseLanguageFor(target: string): string {
+  return PROVIDER_CODE[target] || target;
+}
+
 export async function translateText(text: string, target: string, _source = 'sq'): Promise<string | null> {
   if (!text.trim()) return text;
-  const code = PROVIDER_CODE[target] || target;
+  const code = baseLanguageFor(target);
 
   for (const provider of PROVIDERS) {
     if (!healthy(provider.name)) continue;

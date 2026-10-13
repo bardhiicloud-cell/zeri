@@ -21,17 +21,20 @@ export const SEO_LOCALES = {
   sr: { ogLocale: 'sr_RS', nativeName: 'Srpski', pathPrefix: 'sr' },
   fr: { ogLocale: 'fr_FR', nativeName: 'Français', pathPrefix: 'fr' },
   it: { ogLocale: 'it_IT', nativeName: 'Italiano', pathPrefix: 'it' },
-  es: { ogLocale: 'es_ES', nativeName: 'Español', pathPrefix: 'es' },
   pt: { ogLocale: 'pt_PT', nativeName: 'Português', pathPrefix: 'pt' },
   gsw: { ogLocale: 'de_CH', nativeName: 'Deutsch (Schweiz)', pathPrefix: 'ch' },
   mk: { ogLocale: 'mk_MK', nativeName: 'Македонски', pathPrefix: 'mk' },
   sl: { ogLocale: 'sl_SI', nativeName: 'Slovenščina', pathPrefix: 'sl' },
   hr: { ogLocale: 'hr_HR', nativeName: 'Hrvatski', pathPrefix: 'hr' },
-  ro: { ogLocale: 'ro_RO', nativeName: 'Română', pathPrefix: 'ro' },
   sv: { ogLocale: 'sv_SE', nativeName: 'Svenska', pathPrefix: 'sv' },
   nb: { ogLocale: 'nb_NO', nativeName: 'Norsk', pathPrefix: 'nb' },
-  hy: { ogLocale: 'hy_AM', nativeName: 'Հայերեն', pathPrefix: 'hy' },
   nl: { ogLocale: 'nl_NL', nativeName: 'Nederlands', pathPrefix: 'nl' },
+  ja: { ogLocale: 'ja_JP', nativeName: '日本語', pathPrefix: 'ja' },
+  ko: { ogLocale: 'ko_KR', nativeName: '한국어', pathPrefix: 'ko' },
+  pl: { ogLocale: 'pl_PL', nativeName: 'Polski', pathPrefix: 'pl' },
+  bg: { ogLocale: 'bg_BG', nativeName: 'Български', pathPrefix: 'bg' },
+  ca: { ogLocale: 'en_CA', nativeName: 'Canada (English/Français)', pathPrefix: 'ca' },
+  au: { ogLocale: 'en_AU', nativeName: 'Australia (English)', pathPrefix: 'au' },
 };
 
 /** Production origin for canonical and hreflang URLs. */
@@ -61,4 +64,16 @@ export function buildLocalizedPath(pagePath, language) {
 /** Absolute URL for canonical/hreflang tags. */
 export function absoluteUrl(pagePath, language) {
   return SITE_ORIGIN + buildLocalizedPath(pagePath, language);
+}
+
+/**
+ * The language whose translation table a code reads.
+ *
+ * Canada and Australia are destinations, not translations: their visitors read
+ * English. Resolving them here means the arrays stay free of duplicate English
+ * strings and one English fix reaches every variant.
+ */
+export function translationLanguageFor(language) {
+  if (language === 'ca' || language === 'au') return 'en';
+  return language;
 }

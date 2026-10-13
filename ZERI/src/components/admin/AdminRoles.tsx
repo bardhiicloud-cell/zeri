@@ -84,6 +84,7 @@ const ROLE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   responder: Headphones,
   dispatcher: UserCog,
   adsadmin: Megaphone,
+  debatwp: Megaphone,
   municipality: Building2,
 };
 

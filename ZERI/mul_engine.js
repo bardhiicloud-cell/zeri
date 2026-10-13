@@ -1,9 +1,9 @@
 /**
  * Offline engine for the languages Argos does not publish.
  *
- * Argos covers 12 targets. Bosnian, Serbian, Croatian, Macedonian and Armenian
- * have no Argos model at all, so they are served by Helsinki-NLP's
- * `opus-mt-en-mul` — one many-to-many model that covers exactly those five.
+ * Argos covers most targets. Bosnian, Serbian, Croatian and Macedonian have no
+ * Argos model at all, so they are served by Helsinki-NLP's `opus-mt-en-mul` —
+ * one many-to-many model that covers exactly those four.
  *
  * Same subprocess protocol as ArgosEngine so the generator can swap between them
  * without branching: one JSON request line in, one JSON response line out.
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Languages served by the multilingual model. */
-export const MUL_LANGUAGES = new Set(['bs', 'sr', 'hr', 'mk', 'hy']);
+export const MUL_LANGUAGES = new Set(['bs', 'sr', 'hr', 'mk']);
 
 const BATCH_SIZE = 8; // small: this model is heavier per string than Argos
 

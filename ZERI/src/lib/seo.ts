@@ -31,17 +31,26 @@ export const SEO_LOCALES: Record<SupportedLanguageCode, SeoLocale> = {
   sr: { ogLocale: 'sr_RS', nativeName: 'Srpski', pathPrefix: 'sr' },
   fr: { ogLocale: 'fr_FR', nativeName: 'Français', pathPrefix: 'fr' },
   it: { ogLocale: 'it_IT', nativeName: 'Italiano', pathPrefix: 'it' },
-  es: { ogLocale: 'es_ES', nativeName: 'Español', pathPrefix: 'es' },
   pt: { ogLocale: 'pt_PT', nativeName: 'Português', pathPrefix: 'pt' },
   gsw: { ogLocale: 'de_CH', nativeName: 'Deutsch (Schweiz)', pathPrefix: 'ch' },
   mk: { ogLocale: 'mk_MK', nativeName: 'Македонски', pathPrefix: 'mk' },
   sl: { ogLocale: 'sl_SI', nativeName: 'Slovenščina', pathPrefix: 'sl' },
   hr: { ogLocale: 'hr_HR', nativeName: 'Hrvatski', pathPrefix: 'hr' },
-  ro: { ogLocale: 'ro_RO', nativeName: 'Română', pathPrefix: 'ro' },
   sv: { ogLocale: 'sv_SE', nativeName: 'Svenska', pathPrefix: 'sv' },
   nb: { ogLocale: 'nb_NO', nativeName: 'Norsk', pathPrefix: 'nb' },
-  hy: { ogLocale: 'hy_AM', nativeName: 'Հայերեն', pathPrefix: 'hy' },
   nl: { ogLocale: 'nl_NL', nativeName: 'Nederlands', pathPrefix: 'nl' },
+  ja: { ogLocale: 'ja_JP', nativeName: '日本語', pathPrefix: 'ja' },
+  ko: { ogLocale: 'ko_KR', nativeName: '한국어', pathPrefix: 'ko' },
+  pl: { ogLocale: 'pl_PL', nativeName: 'Polski', pathPrefix: 'pl' },
+  bg: { ogLocale: 'bg_BG', nativeName: 'Български', pathPrefix: 'bg' },
+  /*
+   * Regional English. Canada and Australia reuse the `en` translation (Canada
+   * also offers French), so they carry their own prefix and og locale while the
+   * rendered strings resolve through the English table. Without a distinct
+   * og:locale a shared /ca/… link looks identical to /en/… to a crawler.
+   */
+  ca: { ogLocale: 'en_CA', nativeName: 'Canada (English/Français)', pathPrefix: 'ca' },
+  au: { ogLocale: 'en_AU', nativeName: 'Australia (English)', pathPrefix: 'au' },
 };
 
 /** Production origin, used to build absolute canonical and hreflang URLs. */
@@ -71,6 +80,20 @@ export function parseLocalePath(pathname: string): {
 }
 
 /**
+ * Which translation table a language should read from.
+ *
+ * Canada and Australia are real destinations but not real translations: their
+ * visitors read English (Canada also French, which is reachable because `fr`
+ * sits next to `ca` in the switcher). Resolving them through the English table
+ * means the overlay does not have to hold two duplicate copies of every string,
+ * and a fix made in English reaches all three variants at once.
+ */
+export function translationLanguageFor(language: SupportedLanguageCode): SupportedLanguageCode {
+  if (language === 'ca' || language === 'au') return 'en';
+  return language;
+}
+
+/**
  * Build the URL for a page in a given language.
  *
  * This is what makes switching language keep you on the same page: the caller
@@ -80,6 +103,24 @@ export function buildLocalizedPath(pagePath: string, language: SupportedLanguage
   const prefix = SEO_LOCALES[language]?.pathPrefix ?? '';
   const clean = pagePath === '/' ? '' : pagePath;
   return '/' + [prefix, clean.replace(/^\//, '')].filter(Boolean).join('/');
+}
+
+/**
+ * Pages that exist only at one address, with no `/en/...` twin: sign-in and the
+ * staff consoles. Prefixing them with the visitor's language sent anyone who had
+ * picked English (or any non-Albanian language) from /login or /admin to
+ * /en/admin, which is a 404, so staff could not open the panel in any language
+ * but Albanian. They still render in the chosen language; only the URL is left
+ * alone.
+ */
+const UNLOCALIZED_ROUTES = [
+  '/login', '/register', '/admin', '/approvals', '/agent', '/menagjer',
+  '/monitorim', '/moderim', '/komuna', '/komuna-panel', '/debatwp', '/debatiwp',
+] as const;
+
+export function isUnlocalizedPath(pagePath: string): boolean {
+  const first = '/' + (pagePath.split('/').filter(Boolean)[0] ?? '');
+  return (UNLOCALIZED_ROUTES as readonly string[]).includes(first);
 }
 
 /** Absolute URL for canonical/hreflang tags. */

@@ -12,6 +12,8 @@
  * "please retranslate" step for an editor to forget.
  */
 
+import { authHeaders } from './apiAuth';
+
 /** Fields of a news article that carry human-readable text. */
 export interface TranslatableArticle {
   id: string;
@@ -84,7 +86,7 @@ async function translateField(text: string, language: string): Promise<string | 
   try {
     const res = await fetch('/api/translate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ text, target: language, source: 'sq' }),
     });
     if (!res.ok) return null;

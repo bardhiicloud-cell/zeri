@@ -33,6 +33,8 @@ import {
   AlertTriangle, Loader2, Save,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import RemoveAccountDialog from './RemoveAccountDialog';
+import { MUNICIPALITY_PLANS } from '../../lib/municipalityProvisioning';
 
 /** Every section the console knows, with the label shown to the operator. */
 const SECTION_LABELS: Array<[AdminSection, string]> = [
@@ -74,6 +76,8 @@ interface Props {
    */
   account: Pick<User, 'id' | 'name' | 'email' | 'role' | 'isBanned'> & {
     permissions?: readonly string[];
+    /** The plan of a municipal account, so the selector starts on the stored value. */
+    municipalityPlan?: string;
   };
   /** Called after a successful write so the caller can refresh its data. */
   onChanged?: () => void;
@@ -84,6 +88,8 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [plan, setPlan] = useState<string>(account.municipalityPlan || 'basic');
 
   /**
    * The grants held directly by this account, as distinct from those implied by
@@ -395,6 +401,60 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
           {dt('Pezullimi çaktivizon identitetin në Firebase Auth dhe revokon sesionet — llogaria ndalon menjëherë.')}
         </p>
+
+        {account.role === 'municipality' && (
+          <div className="mt-3 rounded-lg border border-slate-200 p-3 dark:border-white/10">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{dt('Plani i komunës')}</label>
+            <div className="mt-1.5 flex gap-2">
+              <select value={plan} onChange={event => setPlan(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-white/10 dark:bg-slate-800 dark:text-white">
+                {MUNICIPALITY_PLANS.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
+              </select>
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={async () => {
+                  setIsBusy(true);
+                  try {
+                    const token = await requireAdminToken();
+                    const response = await fetch(`/api/v1/admin/users/${encodeURIComponent(account.id)}/plan`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ plan }),
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(describeApiFailure(response.status, result));
+                    toast.success(dt('Plani u ruajt.'));
+                    onChanged?.();
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : dt('Plani nuk u ruajt.'));
+                  } finally {
+                    setIsBusy(false);
+                  }
+                }}
+                className="rounded-lg bg-indigo-700 px-3 py-1.5 text-[11px] font-black text-white hover:bg-indigo-800 disabled:opacity-40"
+              >
+                {dt('Ruaj')}
+              </button>
+            </div>
+            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">{dt('Bazë: përgjigje dhe kërkesa. Standard: + shëndetësia, faktet, eksporti. Pro: + email te institucionet.')}</p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setRemoving(true)}
+          disabled={isBusy}
+          className="mt-3 w-full rounded-lg border border-rose-300 px-3 py-2 text-[11px] font-black text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-40 dark:border-rose-500/40 dark:hover:bg-rose-500/10"
+        >
+          {dt('Hiq llogarinë përgjithmonë…')}
+        </button>
+        {removing && (
+          <RemoveAccountDialog
+            target={{ id: account.id, email: account.email ?? '', name: account.name }}
+            onClose={() => setRemoving(false)}
+            onRemoved={() => { setRemoving(false); onChanged?.(); }}
+          />
+        )}
       </div>
     </div>
   );

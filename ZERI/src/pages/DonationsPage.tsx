@@ -190,7 +190,7 @@ const ITEMS_PER_PAGE = 6;
           <div className="absolute top-0 left-0 w-2 h-full bg-rose-600" />
           <div className="flex justify-between items-center mb-6 border-b border-rose-50 pb-4">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">{dt(`Aplikoni për Donacion`)}</h3>
-            <button aria-label="Mbyll"  onClick={() => setIsApplying(false)} className="text-slate-400 hover:text-slate-500 dark:text-slate-400 p-1 hover:bg-slate-50 dark:bg-slate-900 rounded-2xl transition-colors">
+            <button aria-label={dt('Mbyll')}  onClick={() => setIsApplying(false)} className="text-slate-400 hover:text-slate-500 dark:text-slate-400 p-1 hover:bg-slate-50 dark:bg-slate-900 rounded-2xl transition-colors">
 <X className="w-6 h-6" /></button>
           </div>
           <form onSubmit={handleSubmitApplication} className="space-y-5">
@@ -443,7 +443,7 @@ const ITEMS_PER_PAGE = 6;
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={activePage === 1}
             className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
-            aria-label="Faqja e mëparshme"
+            aria-label={dt('Faqja e mëparshme')}
           >
             <ChevronLeft className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           </button>
@@ -478,7 +478,7 @@ const ITEMS_PER_PAGE = 6;
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={activePage === totalPages}
             className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
-            aria-label="Faqja tjetër"
+            aria-label={dt('Faqja tjetër')}
           >
             <ChevronRight className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           </button>

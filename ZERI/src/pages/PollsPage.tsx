@@ -62,7 +62,7 @@ export default function PollsPage() {
     }
   };
 
-  const handleVote = (pollId: string, optionId: string) => {
+  const handleVote = async (pollId: string, optionId: string) => {
     if (!currentUser) {
       toast.error(dt('Identifikohu për të votuar'));
       return;
@@ -71,7 +71,22 @@ export default function PollsPage() {
       toast.error(dt('Keni votuar tashmë'));
       return;
     }
-    votePoll(pollId, optionId);
+    // The server decides: it holds the one-vote-per-account record. Only a
+    // confirmed vote is celebrated or remembered locally.
+    const result = await votePoll(pollId, optionId);
+    if (result.status !== 'voted') {
+      if (result.status === 'already_voted') {
+        toast.error(dt('Keni votuar tashmë'));
+        persistVote(pollId, result.votedOptionId || optionId);
+      } else if (result.status === 'expired') {
+        toast.error(dt('Ky sondazh ka përfunduar.'));
+      } else if (result.status === 'unauthorized') {
+        toast.error(dt('Identifikohu për të votuar'));
+      } else {
+        toast.error(dt('Vota nuk u regjistrua. Provoni përsëri.'));
+      }
+      return;
+    }
     toast.success(dt('Vota juaj u regjistrua. Faleminderit për kontributin!'));
     persistVote(pollId, optionId);
     // Reveal the breakdown immediately: the citizen just committed, and the
@@ -158,11 +173,11 @@ export default function PollsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 min-w-[260px] md:max-w-[320px] w-full md:w-auto">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">Qytetarë</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">{dt('Qytetarë')}</div>
               <div className="mt-1 text-2xl font-black text-white">{polls.reduce((acc, p) => acc + (p.totalVotes || 0), 0).toLocaleString()}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">Aktive</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">{dt('Aktive')}</div>
               <div className="mt-1 text-2xl font-black text-white">{polls.filter(p => new Date(p.expiresAt) >= new Date()).length}</div>
             </div>
           </div>
@@ -238,8 +253,8 @@ export default function PollsPage() {
         <div className="mb-8 rounded-[28px] border border-slate-200/80 bg-white/80 p-4 shadow-[0_15px_50px_-18px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 md:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">Prioritetet e qytetit</p>
-              <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white md:text-2xl">Debate të hapura dhe vendimmarrje me ndikim të drejtpërdrejtë</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">{dt('Prioritetet e qytetit')}</p>
+              <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white md:text-2xl">{dt('Debate të hapura dhe vendimmarrje me ndikim të drejtpërdrejtë')}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {leadingPriorities.length > 0 ? leadingPriorities.map((item) => (
@@ -268,7 +283,7 @@ export default function PollsPage() {
                     : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:text-white dark:text-slate-100 hover:bg-slate-200/50 dark:bg-slate-700/50 dark:hover:bg-slate-800 dark:bg-slate-800/50'
                 )}
               >
-                {f === 'active' ? 'Aktive' : f === 'all' ? 'Të Gjitha' : 'Të Mbyllura'}
+                {dt(f === 'active' ? 'Aktive' : f === 'all' ? 'Të Gjitha' : 'Të Mbyllura')}
               </button>
             ))}
           </div>

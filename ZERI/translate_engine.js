@@ -15,8 +15,15 @@
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// gsw has no Google code; de-CH is the closest honest match.
-const API_CODE = { gsw: 'de-CH', nb: 'no' };
+/*
+ * Provider codes, two kinds.
+ *
+ * gsw has no Google code at all and nb is called `no` by Argos. Canada and
+ * Australia are regions, not languages: their readers get English (Canada also
+ * French), so they must be translated as English rather than requested as a
+ * `ca`/`au` pair, which every provider rejects.
+ */
+const API_CODE = { gsw: 'de-CH', nb: 'no', ca: 'en', au: 'en' };
 
 /**
  * Provider health, kept in memory for the life of the run.

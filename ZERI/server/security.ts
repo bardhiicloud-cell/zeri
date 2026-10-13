@@ -6,22 +6,14 @@ const isProduction = process.env.NODE_ENV === 'production';
 /**
  * Resolve the client IP.
  *
- * `X-Forwarded-For` is only trustworthy because `app.set('trust proxy', 1)` is set
- * and the service sits behind exactly one known proxy (Cloud Run / App Engine).
- * Taking the *last* entry would be wrong behind multiple proxies, and taking the
- * first is what allows a client to spoof its way past the limiter by sending its
- * own header, so the first hop is used and the deployment guarantees exactly one.
+ * Express already does this correctly once `app.set('trust proxy', 1)` is set:
+ * it takes the entry the single trusted proxy appended (the one *before* the
+ * proxy's own address), which a client cannot forge. Reading the FIRST
+ * `X-Forwarded-For` entry by hand, as this function used to, does the opposite:
+ * that is the part the caller writes, so sending `X-Forwarded-For: <random>` gave
+ * every request a fresh rate-limit bucket and the limiter never limited anything.
  */
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    const first = forwarded.split(',')[0]?.trim();
-    if (first) return first;
-  }
-  if (Array.isArray(forwarded) && forwarded.length > 0) {
-    const first = forwarded[0]?.trim();
-    if (first) return first;
-  }
   return req.ip || req.socket.remoteAddress || '127.0.0.1';
 }
 
@@ -140,8 +132,8 @@ export const aiRateLimiter: RequestHandler = createIpRateLimiter({
   code: 'AI_RATE_LIMIT',
 });
 
-/** Generous ceiling for the rest of the public API. */
-export const apiRateLimiter: RequestHandler = createIpRateLimiter({
+/** Generous ceiling for the rest of the public API (anonymous traffic). */
+const anonymousApiLimiter: RequestHandler = createIpRateLimiter({
   windowMs: 60_000,
   max: 120,
   floodFactor: 3,
@@ -149,6 +141,37 @@ export const apiRateLimiter: RequestHandler = createIpRateLimiter({
   message: 'Keni tejkaluar limitin e kërkesave për këtë shërbim.',
   code: 'API_RATE_LIMIT',
 });
+
+/**
+ * Signed-in traffic gets its own, larger bucket.
+ *
+ * Staff in one municipal office or ministry usually share one public IP, and the
+ * admin panel makes many requests (paginated lists, counters, decisions, review
+ * mode). At 120 per minute for the whole IP, a team working together was throttled
+ * and then blocked as a whole office. Requests that carry a bearer token are
+ * counted separately, at 900 per minute per IP.
+ *
+ * The limiter runs before the token is verified, so a forged header only buys the
+ * larger bucket: every protected route still verifies the token, and flooding
+ * with forged tokens still ends in the same temporary ban at three times the
+ * ceiling. Anonymous traffic keeps the strict 120.
+ */
+const authenticatedApiLimiter: RequestHandler = createIpRateLimiter({
+  windowMs: 60_000,
+  max: 900,
+  floodFactor: 3,
+  banMs: 120_000,
+  message: 'Keni tejkaluar limitin e kërkesave për këtë shërbim.',
+  code: 'API_RATE_LIMIT',
+});
+
+export function hasBearerToken(req: Request): boolean {
+  const header = req.headers.authorization;
+  return typeof header === 'string' && /^Bearer\s+\S{20,}$/.test(header);
+}
+
+export const apiRateLimiter: RequestHandler = (req, res, next) =>
+  (hasBearerToken(req) ? authenticatedApiLimiter : anonymousApiLimiter)(req, res, next);
 
 /** Login and registration: strict, because these are the brute-force targets. */
 export const authRateLimiter: RequestHandler = createIpRateLimiter({
@@ -164,6 +187,7 @@ export const authRateLimiter: RequestHandler = createIpRateLimiter({
 export const RATE_LIMIT_POLICY = {
   ai: { windowMs: 60_000, max: 5 },
   api: { windowMs: 60_000, max: 120 },
+  apiAuthenticated: { windowMs: 60_000, max: 900 },
   auth: { windowMs: 15 * 60_000, max: 10 },
 } as const;
 

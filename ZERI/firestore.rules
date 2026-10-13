@@ -15,8 +15,20 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
+    // Despite the name this is "admin or superadmin": the admin role is the
+    // superadmin's operational deputy (see roleCatalog.ts). Use isOwner() for the
+    // few things reserved to the superadmin alone.
     function isSuperAdmin() {
       return isAuthenticated() && (request.auth.token.admin == true || request.auth.token.superadmin == true);
+    }
+
+    function isOwner() {
+      return isAuthenticated() && request.auth.token.superadmin == true;
+    }
+
+    /** Read-only oversight role. Grants reads below; no write rule mentions it. */
+    function isMonitor() {
+      return isAuthenticated() && request.auth.token.monitor == true;
     }
 
     function isApprover() {
@@ -39,6 +51,47 @@ service cloud.firestore {
         request.auth.token.adsadmin == true ||
         request.auth.token.newsadmin == true ||
         request.auth.token.agent == true
+      );
+    }
+
+    /**
+     * Staff who may handle the health registry (special-category personal data).
+     *
+     * Mirrors the role table in src/lib/adminPermissions.ts: admins and
+     * superadmins, approvers, and any account explicitly granted the `health`
+     * section (`perm_health`, written by buildRoleClaims). `isStaff()` is too
+     * broad here - it also covers ad and news editors and frontline agents, none
+     * of whom have the health section.
+     */
+    function isHealthStaff() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.superadmin == true ||
+        request.auth.token.approver == true ||
+        request.auth.token.perm_health == true
+      );
+    }
+
+    /**
+     * Accounts that may read other people's profiles (name, email, phone).
+     *
+     * Profiles are personal data, and `isStaff()` is far too wide for them: it
+     * includes frontline agents, approvers and ad/news editors, none of whom open
+     * the citizen register or the staff console. Owner-level roles may; so may an
+     * account explicitly granted one of the sections that list people (a grant
+     * is written as a `perm_*` claim by buildRoleClaims).
+     */
+    function canReadUserDirectory() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.superadmin == true ||
+        request.auth.token.perm_users == true ||
+        request.auth.token.perm_agents == true ||
+        request.auth.token.perm_monitoring == true ||
+        request.auth.token.perm_monitorim == true ||
+        request.auth.token.perm_moderim == true ||
+        request.auth.token.perm_municipalities == true ||
+        request.auth.token.perm_komunapanel == true
       );
     }
 
@@ -72,8 +125,11 @@ service cloud.firestore {
       return status in ['Approved', 'Assigned', 'In Progress', 'Resolved', 'Overdue'];
     }
 
+    // `.get('isBanned', false)` matters: profiles created by /api/v1/auth/sync have
+    // no `isBanned` field, and reading the missing property directly raised an
+    // evaluation error, which denied every write for that (non-banned) account.
     function isBanned() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBanned == true;
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isBanned', false) == true;
     }
 
     // Ensure a non-banned, authenticated user
@@ -85,6 +141,19 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
+    /**
+     * Fields on a user document that only the server may set. Keep in step with
+     * `buildRoleClaims` and the admin routes in server.ts.
+     */
+    function privilegedUserFields() {
+      return [
+        'role', 'isBanned', 'points', 'isVerified', 'permissions', 'municipality',
+        'municipalityPlan', 'badges', 'email', 'internalNote', 'passwordSetDirectly',
+        'bannedAt', 'bannedBy', 'banReason',
+        'editorialClauseAcceptedAt', 'editorialClauseText'
+      ];
+    }
+
     // ──────────────────────────────────────────────
     // Users collection — PII is private
     // ──────────────────────────────────────────────
@@ -94,23 +163,38 @@ service cloud.firestore {
     // A user reads only their own document; staff read what their role needs.
     match /users/{userId} {
       allow read: if isAuthenticated() && (
-        request.auth.uid == userId || isStaff()
+        request.auth.uid == userId || canReadUserDirectory()
+        // The manager of the agents watches staff, so may read staff and
+        // municipal profiles - never a citizen's.
+        || (isMonitor() && resource.data.role in [
+             'agent', 'approver', 'newsadmin', 'adsadmin', 'responder', 'dispatcher',
+             'moderator', 'monitor', 'municipality'
+           ])
       );
 
-      // A citizen creates their own profile on first sign-in. The role check
-      // stops a client from writing `role: "admin"` into its own document,
-      // which the previous rule happily allowed.
+      // A citizen creates their own profile on first sign-in. Privileged fields
+      // are never client-assignable: the server (Admin SDK) is the only writer of
+      // role, ban state, section permissions and municipality scope. Several of
+      // these were once trusted by server.ts, so a self-written `permissions`
+      // array was enough to act as an agent in the report pipeline.
       allow create: if (isAuthenticated() && request.auth.uid == userId
                         && request.resource.data.id == request.auth.uid
-                        && !request.resource.data.keys().hasAny(['role', 'isBanned']))
+                        && !request.resource.data.keys().hasAny(privilegedUserFields()))
                     || isSuperAdmin();
 
       allow update: if isAuthenticated() && (
         (request.auth.uid == userId
-         // Self-service: role and ban status are not self-assignable.
+         // Self-service: privileged fields are not self-assignable.
          && !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(['role', 'isBanned', 'points', 'isVerified']))
-        || isAdmin()
+              .hasAny(privilegedUserFields()))
+        // An administrator may correct harmless fields (name, phone, notes). The
+        // privileged ones - role, permissions, ban state, points, verification,
+        // municipality - are written only by the server (Admin SDK), which checks
+        // who may change what. Before this, `isAdmin()` could write any field on
+        // any profile, which let an admin hand out roles without the superadmin-
+        // only checks the role route enforces.
+        || (isAdmin() && !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(privilegedUserFields()))
       );
 
       allow delete: if isSuperAdmin();
@@ -133,7 +217,12 @@ service cloud.firestore {
                     request.resource.data.description is string &&
                     request.resource.data.category is string &&
                     request.resource.data.location is map &&
-                    request.resource.data.createdAt == request.time;
+                    request.resource.data.createdAt == request.time &&
+                    // Pipeline state belongs to the server; a client-written timeline,
+                    // assignment or counter would forge the public history of a report.
+                    !request.resource.data.keys().hasAny(['timeline', 'assignedTo', 'resolvedAt', 'resolvedImage', 'upvotes', 'commentsCount']) &&
+                    (!('trackingId' in request.resource.data) ||
+                      (request.resource.data.trackingId is string && request.resource.data.trackingId.size() <= 40));
 
       // Update: the author may edit the *content* of their own still-pending
       // report; nobody may change the pipeline fields from the client.
@@ -197,36 +286,44 @@ service cloud.firestore {
     // ──────────────────────────────────────────────
     // Polls
     // ──────────────────────────────────────────────
-    // `hasAll(['options'])` alone is not a meaningful guard: every poll already
-    // has an `options` field, so the condition was true for writes that also
-    // replaced the question or the expiry. The rule now requires that only
-    // `options` actually changed, and that the totals are not rewritten wholesale.
+    // Vote counters are written only by the server's vote transaction
+    // (POST /api/v1/polls/:id/vote, server/polls.ts), which also records one
+    // `votes/{uid}` document per account. The previous rule let any signed-in or
+    // guest user replace the whole `options` array, so a single request could set
+    // any result, and "already voted" was only a localStorage flag.
     match /polls/{pollId} {
       allow read: if true;
       allow create: if isAdmin() || isNewsAdmin();
-      allow update: if isAdmin() || isNewsAdmin()
-                    || (isAuthenticated() &&
-                        request.resource.data.diff(resource.data)
-                              .affectedKeys().hasOnly(['options']));
+      allow update: if isAdmin() || isNewsAdmin();
       allow delete: if isSuperAdmin();
+
+      // A voter may see their own ballot record (to know they already voted on
+      // another device); nobody can write one from a client.
+      match /votes/{voterId} {
+        allow read: if isAuthenticated() && request.auth.uid == voterId;
+        allow write: if false;
+      }
     }
 
     // Published news is public; drafts and editorial writes are restricted.
     match /newsArticles/{articleId} {
       allow read: if resource.data.published == true ||
                   isNewsAdmin() || isAdmin() || isSuperAdmin();
+      // Editors write the text. Going public, or coming down, is a decision taken
+      // through POST /api/v1/admin/decisions/news/:id, which records who and why;
+      // so a client may create only drafts and may never flip `published` itself.
       allow create: if (isNewsAdmin() || isAdmin() || isSuperAdmin()) &&
                     request.resource.data.title is string &&
                     request.resource.data.summary is string &&
                     request.resource.data.content is string &&
                     request.resource.data.category is string &&
-                    request.resource.data.published is bool;
+                    request.resource.data.published == false;
       allow update: if (isNewsAdmin() || isAdmin() || isSuperAdmin()) &&
                     request.resource.data.title is string &&
                     request.resource.data.summary is string &&
                     request.resource.data.content is string &&
                     request.resource.data.category is string &&
-                    request.resource.data.published is bool;
+                    request.resource.data.published == resource.data.published;
       allow delete: if isNewsAdmin() || isAdmin() || isSuperAdmin();
     }
 
@@ -254,10 +351,16 @@ service cloud.firestore {
       allow read: if isPublishedBroadcast(resource.data) ||
                   (isAuthenticated() &&
                    (resource.data.userId == request.auth.uid || isStaff()));
-      allow create: if canAct() && (
-        isAdmin() || isStaff() ||
-        (request.resource.data.audience == 'user' && request.resource.data.actorId == request.auth.uid)
-      );
+      // Citizens notify each other only about forum activity (a reply, a repost, a
+      // direct message) and only with an in-app link. The previous rule accepted any
+      // `audience: 'user'` document with the caller as actor, so anyone could send
+      // any user a notification with an arbitrary title, message and external link:
+      // an in-app phishing channel.
+      // Citizen-to-citizen notifications (replies, likes, mentions, quotes, follows,
+      // direct messages) are created ONLY by the server after it has verified the
+      // action (server/forumPosts.ts, server/directMessages.ts). A citizen can no
+      // longer write a notification into another person's bell.
+      allow create: if canAct() && (isAdmin() || isStaff());
       allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) ||
                       isAdmin() || isStaff();
       allow delete: if isAdmin() || isSuperAdmin();
@@ -286,7 +389,7 @@ service cloud.firestore {
     // these rules; clients may never forge an event. Public events feed the news
     // sidebar's live commune-response activity; staff see the full history.
     match /report_events/{eventId} {
-      allow read: if resource.data.isPublic == true || isStaff();
+      allow read: if resource.data.isPublic == true || isStaff() || isMonitor();
       allow create, update, delete: if false;
     }
 
@@ -308,7 +411,11 @@ service cloud.firestore {
     // ──────────────────────────────────────────────
     match /categories/{categoryId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin() || isStaff();
+      // Admins, approvers (who own the geography and routing section) and any
+      // account granted it. Not every staff role: a frontline agent could
+      // otherwise reroute every category's reports.
+      allow create, update, delete: if isSuperAdmin() || isApprover()
+                                    || (isAuthenticated() && request.auth.token.perm_categories == true);
     }
 
     // ──────────────────────────────────────────────
@@ -323,9 +430,24 @@ service cloud.firestore {
     // Forum Posts — authenticated create, ownership-based write
     // ──────────────────────────────────────────────
     match /forumStories/{storyId} {
-      allow read: if true;
+      // Hiding is enforced here, not just in the app. A single story is readable by
+      // the public only while visible AND live (get checks the server clock).
+      // A LIST query cannot be checked against the clock — Firestore cannot prove a
+      // client-supplied bound against request.time — so lists enforce `isHidden ==
+      // false` and the app's query adds the `expiresAt` bound (ForumStories.tsx).
+      // Consequence, stated plainly: a hand-written list query can still enumerate
+      // expired-but-not-hidden stories; it can never read hidden ones. Authors keep
+      // access to their own stories and staff to all of them.
+      allow get: if (resource.data.isHidden == false && resource.data.expiresAt > request.time)
+                 || (isAuthenticated() && resource.data.authorId == request.auth.uid)
+                 || isStaff();
+      allow list: if resource.data.isHidden == false
+                  || (isAuthenticated() && resource.data.authorId == request.auth.uid)
+                  || isStaff();
       allow create: if canAct() &&
                     !isGuest() &&
+                    request.resource.data.isHidden == false &&
+                    request.resource.data.get('status', 'published') == 'published' &&
                     request.resource.data.authorId == request.auth.uid &&
                     request.resource.data.authorName is string &&
                     request.resource.data.mediaUrl is string &&
@@ -335,7 +457,7 @@ service cloud.firestore {
                     request.resource.data.expiresAt > request.time &&
                     request.resource.data.keys().hasOnly([
                       'authorId', 'authorName', 'authorAvatar', 'mediaUrl',
-                      'mediaType', 'textOverlay', 'effect', 'createdAt', 'expiresAt',
+                      'mediaType', 'textOverlay', 'effect', 'createdAt', 'expiresAt', 'isHidden',
                       // Live story-editor fields (overlay placement + styling).
                       'overlayX', 'overlayY', 'overlayColor', 'overlaySize',
                       // Full editor: image adjustments, layers, badges, links,
@@ -347,45 +469,217 @@ service cloud.firestore {
       // The author may edit their own story (Save Draft → Publish, reschedule);
       // staff (moderators/agents) may hide or annotate any story. Authorship and
       // timestamps are fixed for everyone, so moderation can only add flags.
+      // An author cannot lift a moderator's hide or push the expiry out: those keys
+      // are staff-only (hiding) or fixed at creation (expiry).
       allow update: if isAuthenticated() && !isBanned() && (
         (resource.data.authorId == request.auth.uid
          && !request.resource.data.diff(resource.data)
-              .affectedKeys().hasAny(['authorId', 'createdAt']))
+              .affectedKeys().hasAny(['authorId', 'createdAt', 'expiresAt', 'isHidden', 'hiddenBy', 'hiddenAt', 'hiddenReason']))
         || isStaff()
       );
       allow delete: if isAuthenticated() &&
                     (resource.data.authorId == request.auth.uid || isStaff());
     }
 
-    match /forumPosts/{postId} {
-      allow read: if true;
+    // ──────────────────────────────────────────────
+    // Forum Reels — short vertical videos (src/lib/reels.ts). Unlike stories
+    // they do not expire. Media lives in Storage forum_reels/{uid}/…
+    // ──────────────────────────────────────────────
+    match /forumReels/{reelId} {
+      // Public while not hidden by moderation. List queries must filter
+      // isHidden == false. Authors and staff can still open hidden reels.
+      allow read: if resource.data.isHidden == false
+                  || isStaff()
+                  || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+
       allow create: if canAct() &&
+                    !isGuest() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.authorName is string &&
+                    request.resource.data.authorName.size() <= 120 &&
+                    request.resource.data.mediaUrl is string &&
+                    request.resource.data.mediaPath is string &&
+                    request.resource.data.mediaPath.matches('forum_reels/' + request.auth.uid + '/.+') &&
+                    request.resource.data.mediaType == 'video' &&
+                    // Optional cover frame and music credit set by the editor.
+                    (!('coverUrl' in request.resource.data) ||
+                      (request.resource.data.coverUrl is string &&
+                       request.resource.data.coverPath is string &&
+                       request.resource.data.coverPath.matches('forum_reels/' + request.auth.uid + '/.+'))) &&
+                    (!('audioTitle' in request.resource.data) ||
+                      (request.resource.data.audioTitle is string && request.resource.data.audioTitle.size() <= 80)) &&
+                    request.resource.data.caption is string &&
+                    request.resource.data.caption.size() <= 300 &&
+                    request.resource.data.hashtags is list &&
+                    request.resource.data.hashtags.size() <= 10 &&
+                    request.resource.data.durationSec is number &&
+                    request.resource.data.durationSec > 0 &&
+                    request.resource.data.durationSec <= 91 &&
+                    request.resource.data.isHidden == false &&
+                    request.resource.data.likedBy == [] &&
+                    request.resource.data.createdAt == request.time &&
+                    request.resource.data.keys().hasOnly([
+                      'authorId', 'authorName', 'authorAvatar', 'mediaUrl', 'mediaPath',
+                      'coverUrl', 'coverPath', 'audioTitle',
+                      'mediaType', 'caption', 'hashtags', 'durationSec', 'isHidden',
+                      'likedBy', 'createdAt'
+                    ]);
+
+      allow update: if canAct() && (
+        // Like: exactly the caller's uid is added. Counters cannot be inflated.
+        (!isGuest() &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy']) &&
+         request.resource.data.likedBy.hasAll(resource.data.likedBy) &&
+         request.resource.data.likedBy.size() == resource.data.likedBy.size() + 1 &&
+         request.auth.uid in request.resource.data.likedBy)
+        ||
+        // Unlike: exactly the caller's uid is removed.
+        (!isGuest() &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy']) &&
+         resource.data.likedBy.hasAll(request.resource.data.likedBy) &&
+         request.resource.data.likedBy.size() == resource.data.likedBy.size() - 1 &&
+         request.auth.uid in resource.data.likedBy &&
+         !(request.auth.uid in request.resource.data.likedBy))
+        ||
+        // The author may edit the caption only.
+        (resource.data.authorId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caption', 'hashtags']) &&
+         request.resource.data.caption is string &&
+         request.resource.data.caption.size() <= 300)
+        ||
+        // Staff moderation: hide/restore with a reason; nothing else.
+        (isStaff() &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['isHidden', 'hiddenReason', 'hiddenBy', 'hiddenAt']) &&
+         request.resource.data.isHidden is bool)
+      );
+
+      // Authors delete through DELETE /api/v1/forum/reels/:id, which also removes the
+      // video and cover from Storage, the comments and the reports. Staff may delete directly.
+      allow delete: if isStaff();
+
+      // Comments follow the reel: readable while it is visible. Authors write
+      // and remove their own; staff can remove any. Comments are never edited.
+      match /comments/{commentId} {
+        allow read: if get(/databases/$(database)/documents/forumReels/$(reelId)).data.isHidden == false
+                    || isStaff();
+        allow create: if canAct() &&
+                      !isGuest() &&
+                      get(/databases/$(database)/documents/forumReels/$(reelId)).data.isHidden == false &&
+                      request.resource.data.authorId == request.auth.uid &&
+                      request.resource.data.authorName is string &&
+                      request.resource.data.authorName.size() <= 120 &&
+                      request.resource.data.text is string &&
+                      request.resource.data.text.size() > 0 &&
+                      request.resource.data.text.size() <= 300 &&
+                      request.resource.data.createdAt == request.time &&
+                      request.resource.data.keys().hasOnly(['authorId', 'authorName', 'authorAvatar', 'text', 'createdAt']);
+        allow update: if false;
+        allow delete: if isAuthenticated() &&
+                      (resource.data.authorId == request.auth.uid || isStaff());
+      }
+    }
+
+    // Reel reports: one per (reel, reporter) — the document id enforces it.
+    // Only staff can read them; the reporter cannot see or alter the queue.
+    match /forumReelReports/{reportId} {
+      allow read: if isStaff();
+      allow create: if canAct() &&
+                    !isGuest() &&
+                    reportId == request.resource.data.reelId + '_' + request.auth.uid &&
+                    request.resource.data.reporterId == request.auth.uid &&
+                    request.resource.data.reelId is string &&
+                    request.resource.data.reason in ['spam', 'abuse', 'misinformation', 'violence', 'privacy', 'other'] &&
+                    request.resource.data.details is string &&
+                    request.resource.data.details.size() <= 300 &&
+                    request.resource.data.status == 'open' &&
+                    request.resource.data.createdAt == request.time &&
+                    request.resource.data.keys().hasOnly(['reelId', 'reporterId', 'reason', 'details', 'status', 'createdAt']);
+      allow update: if isStaff() &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedBy', 'resolvedAt']);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /forumPosts/{postId} {
+      // Public posts are readable by everyone; a followers-only post only by its author and
+      // staff. Followers read those through GET /api/v1/forum/followers-feed, where the
+      // server checks the follow relationship. List queries must filter
+      // `visibility == 'public'` (or `authorId == me`); see scripts/backfill-post-visibility.ts
+      // for posts written before the field was mandatory.
+      allow read: if resource.data.visibility == 'public'
+                  || (isAuthenticated() && resource.data.authorId == request.auth.uid)
+                  || isStaff();
+      // A new post starts empty: engagement, edit and delete state, counters and the
+      // sponsored flag cannot be pre-seeded by the browser. Only ads staff may mark a
+      // post as sponsored, and the author's e-mail is never stored on a public post.
+      allow create: if canAct() &&
+                    !isGuest() &&
                     request.resource.data.authorId == request.auth.uid &&
                     request.resource.data.content is string &&
-                    request.resource.data.content.size() <= 5000;
-      allow update: if isAuthenticated() && !isBanned() && (
-        (resource.data.authorId == request.auth.uid
-         && !request.resource.data.diff(resource.data)
-              .affectedKeys().hasAny(['authorId', 'createdAt']))
-        || isAdmin()
-        || (canAct() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'reposts', 'comments', 'reactions', 'poll']))
-      );
-      allow delete: if isSuperAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+                    request.resource.data.content.size() <= 5000 &&
+                    request.resource.data.get('visibility', '') in ['public', 'followers'] &&
+                    request.resource.data.get('likes', []) == [] &&
+                    request.resource.data.get('reposts', []) == [] &&
+                    request.resource.data.get('comments', []) == [] &&
+                    request.resource.data.get('reactions', {}) == {} &&
+                    (request.resource.data.get('poll', null) == null || request.resource.data.poll.totalVotes == 0) &&
+                    !request.resource.data.keys().hasAny([
+                      'deletedAt', 'deletedBy', 'editedAt', 'viewCount', 'adClicks', 'authorEmail'
+                    ]) &&
+                    (request.resource.data.get('isAd', false) != true || isAdsAdmin());
+      // Everything that changes an existing post goes through the server
+      // (server/forumPosts.ts, POST …/action for likes and reposts, the admin
+      // decision endpoint for moderation): comments, replies, reactions, poll
+      // votes, edits, soft delete and restore are transactions there. The browser
+      // can no longer rewrite those fields. Staff keep the narrow moderation edit.
+      allow update: if isAuthenticated() && !isBanned() && isAdmin()
+                    && !request.resource.data.diff(resource.data)
+                         .affectedKeys().hasAny(['isApproved', 'isHidden', 'decidedAt', 'deletedAt', 'deletedBy', 'comments', 'reactions', 'poll', 'likes', 'reposts', 'viewCount', 'adClicks', 'isAd']);
+      // Hard delete is for the superadmin; authors soft-delete (restorable for 30
+      // days) or erase permanently through the server.
+      allow delete: if isSuperAdmin();
     }
 
     // ──────────────────────────────────────────────
     // Direct Messages (forum_conversations & messages subcollection)
     // ──────────────────────────────────────────────
+    // The conversation id is `<uidA>_<uidB>` (see DirectMessagesModal), so it is
+    // guessable from two public uids. Access therefore never rests on knowing the
+    // id: every read and write is checked against the `participants` list.
+    function isConversationMember(convId) {
+      return isAuthenticated() && request.auth.uid in
+        get(/databases/$(database)/documents/forum_conversations/$(convId)).data.participants;
+    }
+
     match /forum_conversations/{convId} {
       allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
-      allow create: if canAct() && !isGuest() && request.auth.uid in request.resource.data.participants;
-      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
+
+      // Conversations and messages are written ONLY by the server
+      // (server/directMessages.ts): it enforces blocks, privacy and message
+      // requests and owns the unread counters and the recipient's notification.
+      // The browser reads (live) and calls the API; it can no longer create a
+      // thread, flip a request to "active", or set anyone's counter.
+      allow create, update: if false;
 
       match /messages/{messageId} {
-        allow read: if isAuthenticated();
-        allow create: if canAct() && !isGuest() && request.resource.data.senderId == request.auth.uid;
-        allow update, delete: if isSuperAdmin() || (isAuthenticated() && resource.data.senderId == request.auth.uid);
+        allow read: if isConversationMember(convId);
+        allow create: if false;
+        allow update, delete: if isSuperAdmin()
+                      || (isConversationMember(convId) && resource.data.senderId == request.auth.uid);
       }
+    }
+
+    // Blocks and DM privacy: readable by their owner, written only by the server
+    // (which also ends the follow relationship when it records a block). The
+    // blocked person can never read the list, so a block is not detectable.
+    match /forum_blocks/{blockDocId} {
+      allow read: if isAuthenticated() && resource.data.blockerId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /forum_dm_settings/{settingsUid} {
+      allow read: if isAuthenticated() && settingsUid == request.auth.uid;
+      allow write: if false;
     }
 
     // ──────────────────────────────────────────────
@@ -413,30 +707,39 @@ service cloud.firestore {
     // below; only the fields the public site genuinely needs stay here.
     match /settings/general {
       allow read: if true;
-      allow create, update: if isSuperAdmin() &&
-                             !request.resource.data.diff(resource.data)
-                               .affectedKeys().hasAny([
-                                 'adSenseEnabled', 'adSenseClientId',
-                                 'adSenseSlot', 'adSenseCode'
-                               ]);
+      // An admin may edit the public settings but not the AdSense fields, which
+      // belong to the owner (superadmin) alone.
+      allow create: if isSuperAdmin() &&
+                    (isOwner() || !request.resource.data.keys().hasAny([
+                      'adSenseEnabled', 'adSenseClientId', 'adSenseSlot', 'adSenseCode'
+                    ]));
+      allow update: if isSuperAdmin() &&
+                    (isOwner() || !request.resource.data.diff(resource.data)
+                      .affectedKeys().hasAny([
+                        'adSenseEnabled', 'adSenseClientId', 'adSenseSlot', 'adSenseCode'
+                      ]));
       allow delete: if isSuperAdmin();
     }
 
-    // AdSense credentials — staff-only read, superadmin write.
+    // AdSense credentials — owner (superadmin) only, for reads and writes.
     // These are secrets, not public-interest data: an exposed client id and
     // slot let anyone point ad traffic at the platform's account, and the ad
-    // code field is injected into the page. Kept in its own document so the
-    // public settings read cannot leak it.
+    // code field is injected into the page.
     match /settings/ads-private {
-      allow read: if isSuperAdmin();
-      allow create, update, delete: if isSuperAdmin();
+      allow read, create, update, delete: if isOwner();
     }
 
     // Any other settings document keeps the original public-read contract,
-    // except for writes, which remain superadmin-only.
+    // except for writes, which remain admin-only.
+    //
+    // Firestore ORs every `match` that covers a document, so a wildcard sibling
+    // silently re-grants whatever the specific blocks above restrict. The
+    // wildcard therefore has to exclude the two documents that have their own
+    // rules; before this, `settings/ads-private` was readable by the whole
+    // internet and the AdSense guard on `settings/general` could be bypassed.
     match /settings/{settingId} {
-      allow read: if true;
-      allow create, update, delete: if isSuperAdmin();
+      allow read: if settingId != 'general' && settingId != 'ads-private';
+      allow create, update, delete: if settingId != 'general' && settingId != 'ads-private' && isSuperAdmin();
     }
 
     // ──────────────────────────────────────────────
@@ -480,7 +783,8 @@ service cloud.firestore {
     // subscribes to the whole collection is one read per document per listener.
     match /liveMessages/{messageId} {
       allow read: if true;
-      allow create: if request.resource.data.userId is string &&
+      allow create: if canAct() &&
+                    request.resource.data.userId == request.auth.uid &&
                     request.resource.data.text is string &&
                     request.resource.data.text.size() <= 1000 &&
                     request.resource.data.createdAt == request.time;
@@ -494,7 +798,7 @@ service cloud.firestore {
       // NO public read. Only the owner or staff can read.
       allow read: if isAuthenticated() && (
         resource.data.authorId == request.auth.uid ||
-        isStaff()
+        isHealthStaff()
       );
       // Authenticated owners retain private records; unauthenticated submissions
       // are accepted only as bounded, unverified requests with explicit consent.
@@ -591,7 +895,7 @@ service cloud.firestore {
           request.resource.data.authorId == request.auth.uid
         )
       );
-      allow update: if isStaff() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow update: if isHealthStaff() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
       allow delete: if isSuperAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
     }
 
@@ -653,8 +957,11 @@ service cloud.firestore {
     // where that matters most. The previous rule let a superadmin delete
     // entries, which would have made the log useless as evidence.
     match /auditLogs/{logId} {
-      allow read, create: if isStaff();
-      allow update, delete: if false;
+      allow read: if isStaff() || isMonitor();
+      // Written only by the server (POST /api/v1/audit and audit() in server/auth.ts),
+      // which stamps the actor from the verified token. A client path let any staff
+      // account file entries under somebody else's name.
+      allow create, update, delete: if false;
     }
 
     // ──────────────────────────────────────────────
@@ -672,12 +979,11 @@ service cloud.firestore {
     // summarises it instead, which is the accountability that was promised.
     match /editorialLog/{entryId} {
       allow read: if isStaff();
-      // Written by the server (Admin SDK), which bypasses rules. The client path
-      // exists only so a failed request can still be recorded, and it must not
-      // be able to forge another municipality's entry.
-      allow create: if isAuthenticated() &&
-                      request.resource.data.actorUserId == request.auth.uid &&
-                      request.resource.data.at == request.time;
+      // Written only by the server (Admin SDK), which bypasses rules. A client
+      // path would let any signed-in user forge entries - including `denied`
+      // ones for another municipality, which feed the public transparency
+      // report - so it is closed outright.
+      allow create: if false;
       allow update, delete: if false;
     }
 

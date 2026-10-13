@@ -1,4 +1,5 @@
 import { Report } from '../types';
+import { escapeHtml } from './escapeHtml';
 
 export const exportToCSV = (filename: string, headers: string[], data: string[][]) => {
   const processRow = (row: string[]) => {
@@ -60,7 +61,7 @@ const getCompetentOrgan = (category: string) => {
   }
 };
 
-const buildHTMLContent = (reports: Report[], subtitle: string): string => {
+export const buildHTMLContent = (reports: Report[], subtitle: string): string => {
   const groupedReports = reports.reduce((acc, report) => {
     const organ = getCompetentOrgan(report.category || '');
     if (!acc[organ]) acc[organ] = [];
@@ -100,41 +101,41 @@ const buildHTMLContent = (reports: Report[], subtitle: string): string => {
   <body>
     <div class="header">
       <h1>Raportet dhe Aprovimet Qytetare</h1>
-      <p>Gjeneruar më: ${new Date().toLocaleString('sq-AL')} | ${subtitle}</p>
+      <p>Gjeneruar më: ${new Date().toLocaleString('sq-AL')} | ${escapeHtml(subtitle)}</p>
     </div>
   `;
 
   for (const [organ, reportsGroup] of Object.entries(groupedReports)) {
-    htmlContent += `<h2>Institucioni Përgjegjës: ${organ.toUpperCase()}</h2>`;
+    htmlContent += `<h2>Institucioni Përgjegjës: ${escapeHtml(organ.toUpperCase())}</h2>`;
     htmlContent += `<p style="font-weight: bold; font-size: 14px; text-transform: uppercase;">Totali i raporteve: <span style="background: #0f172a; color: white; padding: 2px 8px; border-radius: 12px;">${reportsGroup.length}</span></p>`;
     
     reportsGroup.forEach(r => {
       const imagesMarkup = r.images && r.images.length > 0 
-        ? `<div class="images">${r.images.map(img => `<img src="${img}" alt="Dëshmi" />`).join('')}</div>`
+        ? `<div class="images">${r.images.map(img => `<img src="${escapeHtml(img)}" alt="Dëshmi" />`).join('')}</div>`
         : '';
 
       htmlContent += `
       <div class="report-card">
         <div class="grid">
           <div>
-            <h3 style="margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase;">Referenca: ${r.id}</h3>
-            <h4 style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #e11d48; text-transform: uppercase;">${r.title}</h4>
-            <span class="status">${r.status}</span>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase;">Referenca: ${escapeHtml(r.id)}</h3>
+            <h4 style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #e11d48; text-transform: uppercase;">${escapeHtml(r.title)}</h4>
+            <span class="status">${escapeHtml(r.status)}</span>
             <table>
-              <tr><th>Kategoria</th><td><strong>${r.category}</strong></td></tr>
-              <tr><th>Urgjenca</th><td>${r.urgency}</td></tr>
+              <tr><th>Kategoria</th><td><strong>${escapeHtml(r.category)}</strong></td></tr>
+              <tr><th>Urgjenca</th><td>${escapeHtml(r.urgency)}</td></tr>
               <tr><th>Data e Hapjes</th><td>${new Date(r.createdAt).toLocaleString('sq-AL')}</td></tr>
-              <tr><th>Raportuesi</th><td>${r.isAnonymous ? 'Anonim (Mbrojtur)' : r.authorName}</td></tr>
+              <tr><th>Raportuesi</th><td>${r.isAnonymous ? 'Anonim (Mbrojtur)' : escapeHtml(r.authorName)}</td></tr>
             </table>
           </div>
           <div>
             <div class="desc-title">Të Dhënat Gjeografike</div>
             <table>
-              <tr><th>Komuna</th><td>${r.location?.municipality || 'N/A'}</td></tr>
-              <tr><th>Adresa</th><td>${r.location?.address || 'N/A'}</td></tr>
+              <tr><th>Komuna</th><td>${escapeHtml(r.location?.municipality || 'N/A')}</td></tr>
+              <tr><th>Adresa</th><td>${escapeHtml(r.location?.address || 'N/A')}</td></tr>
             </table>
             <div class="desc-title">Përshkrimi</div>
-            <p class="desc-content">${r.description}</p>
+            <p class="desc-content">${escapeHtml(r.description)}</p>
           </div>
         </div>
         ${imagesMarkup}

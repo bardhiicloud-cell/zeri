@@ -6,6 +6,7 @@ import { Report } from '../../types';
 import { cn } from '../../lib/utils';
 import { getReportTopic } from '../../lib/reportTopics';
 
+import { dt } from '@/src/lib/dt';
 interface RegistryRowProps {
   report: Report;
   dt: (text: string) => string;
@@ -34,7 +35,7 @@ export function RegistryRow({ report, dt, onOpen, onShare }: RegistryRowProps) {
         {mediaUrl && mediaType === 'image' ? (
           <img src={mediaUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : mediaUrl && mediaType === 'video' ? (
-          <video src={mediaUrl} className="h-full w-full object-cover" muted playsInline aria-label="Video e raportimit" />
+          <video src={mediaUrl} className="h-full w-full object-cover" muted playsInline aria-label={dt('Video e raportimit')} />
         ) : (
           <span className="grid h-full w-full place-items-center text-slate-400"><Layers className="h-8 w-8" aria-hidden="true" /></span>
         )}
@@ -67,7 +68,7 @@ export function RegistryRow({ report, dt, onOpen, onShare }: RegistryRowProps) {
             <Share2 className="h-4 w-4" aria-hidden="true" />
           </button>
           <button type="button" onClick={onOpen} className="inline-flex min-h-10 items-center gap-1.5 rounded-[10px] bg-(--color-brand-dark) px-3 text-xs font-black text-white transition-colors hover:bg-(--color-brand-primary)" aria-label={`Hap raportimin ${report.title}`}>
-            <span className="hidden sm:inline">Hap</span><ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{dt('Hap')}</span><ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>

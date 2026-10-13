@@ -5,8 +5,10 @@ import {
   MessageSquare, Sparkles
 } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
+import { PageHero } from '../components/layout/PageHero';
 import toast from 'react-hot-toast';
 
+import { dt } from '@/src/lib/dt';
 export default function KontaktPage() {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -48,24 +50,16 @@ export default function KontaktPage() {
     <div className="page-shell min-h-screen bg-(--color-page) dark:bg-(--color-brand-dark) text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header Hero */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-white/10 shadow-xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/60 dark:border-blue-900 mb-3">
-              <Phone className="w-3.5 h-3.5" />
-              <span>Qendra e Komunikimit me Qytetarët</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-              Kontakt & Ndihmë e Drejtpërdrejtë
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2">
-              Jemi këtu për t'ju ndihmuar. Kontaktoni drejtpërdrejt administratën e komunës tuaj, 
-              ekipin teknik të platformës "Zëri i Qytetarëve" ose linjat emergjente kombëtare.
-            </p>
-          </div>
-        </div>
+        <PageHero
+          eyebrow={dt('Qendra e Komunikimit me Qytetarët')}
+          icon={Phone}
+          title={dt('Kontakt & Ndihmë e Drejtpërdrejtë')}
+          subtitle={dt("Jemi këtu për t'ju ndihmuar. Kontaktoni drejtpërdrejt administratën e komunës tuaj, ekipin teknik të platformës \"Zëri i Qytetarëve\" ose linjat emergjente kombëtare.")}
+          stats={[
+            { value: '112', label: dt('Emergjenca Qendrore · 24/7') },
+            { value: '38', label: dt('komuna me kontakt të drejtpërdrejtë') },
+          ]}
+        />
 
         {/* Emergency Quick Contacts Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -78,7 +72,7 @@ export default function KontaktPage() {
             </div>
             <div>
               <div className="text-xs font-black text-red-900 dark:text-red-200">Emergjenca Qendrore</div>
-              <div className="text-[10px] text-red-700/80 dark:text-red-300">24/7 Pa Pagesë</div>
+              <div className="text-[10px] text-red-700/80 dark:text-red-300">{dt('24/7 Pa Pagesë')}</div>
             </div>
           </a>
 
@@ -90,7 +84,7 @@ export default function KontaktPage() {
               192
             </div>
             <div>
-              <div className="text-xs font-black text-blue-900 dark:text-blue-200">Policia e Kosovës</div>
+              <div className="text-xs font-black text-blue-900 dark:text-blue-200">{dt('Policia e Kosovës')}</div>
               <div className="text-[10px] text-blue-700/80 dark:text-blue-300">Rend & Siguri</div>
             </div>
           </a>
@@ -103,8 +97,8 @@ export default function KontaktPage() {
               193
             </div>
             <div>
-              <div className="text-xs font-black text-amber-900 dark:text-amber-200">Zjarrfikësit</div>
-              <div className="text-[10px] text-amber-700/80 dark:text-amber-300">Shpëtim & Zjarre</div>
+              <div className="text-xs font-black text-amber-900 dark:text-amber-200">{dt('Zjarrfikësit')}</div>
+              <div className="text-[10px] text-amber-700/80 dark:text-amber-300">{dt('Shpëtim & Zjarre')}</div>
             </div>
           </a>
 
@@ -116,8 +110,8 @@ export default function KontaktPage() {
               194
             </div>
             <div>
-              <div className="text-xs font-black text-emerald-900 dark:text-emerald-200">Ndihma e Shpejtë</div>
-              <div className="text-[10px] text-emerald-700/80 dark:text-emerald-300">Emergjenca Mjekësore</div>
+              <div className="text-xs font-black text-emerald-900 dark:text-emerald-200">{dt('Ndihma e Shpejtë')}</div>
+              <div className="text-[10px] text-emerald-700/80 dark:text-emerald-300">{dt('Emergjenca Mjekësore')}</div>
             </div>
           </a>
         </div>
@@ -130,7 +124,7 @@ export default function KontaktPage() {
             <div className="flex items-center gap-2 mb-6">
               <MessageSquare className="w-5 h-5 text-blue-600" />
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                Dërgo Kërkesë apo Pyetje Administrative
+                {dt('Dërgo Kërkesë apo Pyetje Administrative')}
               </h2>
             </div>
 
@@ -140,7 +134,7 @@ export default function KontaktPage() {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                  Kërkesa Juaj u Dërgua me Sukses!
+                  {dt('Kërkesa Juaj u Dërgua me Sukses!')}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                   Numri i referencës suaj është <strong className="text-blue-600 font-mono text-base">{ticketId}</strong>. 
@@ -161,7 +155,7 @@ export default function KontaktPage() {
                   }}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
-                  Dërgo një Kërkesë Tjetër
+                  {dt('Dërgo një Kërkesë Tjetër')}
                 </button>
               </div>
             ) : (
@@ -169,7 +163,7 @@ export default function KontaktPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Emri dhe Mbiemri *
+                      {dt('Emri dhe Mbiemri *')}
                     </label>
                     <input 
                       type="text" 
@@ -183,7 +177,7 @@ export default function KontaktPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Adresa e Emailit
+                      {dt('Adresa e Emailit')}
                     </label>
                     <input 
                       type="email" 
@@ -198,7 +192,7 @@ export default function KontaktPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Numri i Telefonit
+                      {dt('Numri i Telefonit')}
                     </label>
                     <input 
                       type="tel" 
@@ -211,7 +205,7 @@ export default function KontaktPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Komuna Përkatëse *
+                      {dt('Komuna Përkatëse *')}
                     </label>
                     <select
                       value={formData.municipality}
@@ -227,7 +221,7 @@ export default function KontaktPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Drejtoria Komunale
+                    {dt('Drejtoria Komunale')}
                   </label>
                   <select
                     value={formData.department}
@@ -242,12 +236,12 @@ export default function KontaktPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Titulli / Subjekti i Kërkesës *
+                    {dt('Titulli / Subjekti i Kërkesës *')}
                   </label>
                   <input 
                     type="text" 
                     required
-                    placeholder="Përmbledhje e shkurtër e kërkesës suaj"
+                    placeholder={dt('Përmbledhje e shkurtër e kërkesës suaj')}
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -256,12 +250,12 @@ export default function KontaktPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Përshkrimi i Detajuar *
+                    {dt('Përshkrimi i Detajuar *')}
                   </label>
                   <textarea 
                     rows={4}
                     required
-                    placeholder="Shkruani hollësisht kërkesën, pyetjen apo ankesën tuaj drejtuar komunës..."
+                    placeholder={dt('Shkruani hollësisht kërkesën, pyetjen apo ankesën tuaj drejtuar komunës...')}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
@@ -273,7 +267,7 @@ export default function KontaktPage() {
                   className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Dërgo Kërkesën Zyrtarisht</span>
+                  <span>{dt('Dërgo Kërkesën Zyrtarisht')}</span>
                 </button>
               </form>
             )}
@@ -288,9 +282,9 @@ export default function KontaktPage() {
                 <Phone className="w-5 h-5 text-blue-200" />
               </div>
               <div>
-                <h3 className="text-base font-black">Linja Qytetare pa Pagesë</h3>
+                <h3 className="text-base font-black">{dt('Linja Qytetare pa Pagesë')}</h3>
                 <p className="text-xs text-blue-200 mt-1">
-                  Për çdo vështirësi në përdorimin e shërbimeve digjitale apo pyetje mbi procedurat komunale.
+                  {dt('Për çdo vështirësi në përdorimin e shërbimeve digjitale apo pyetje mbi procedurat komunale.')}
                 </p>
               </div>
               <div className="bg-white/10 p-3.5 rounded-2xl border border-white/10">
@@ -298,7 +292,7 @@ export default function KontaktPage() {
                   0800 11 222
                 </div>
                 <div className="text-[11px] text-slate-300 mt-0.5">
-                  E Hënë – E Premte: 08:00 – 16:00
+                  {dt('E Hënë – E Premte: 08:00 – 16:00')}
                 </div>
               </div>
             </div>
@@ -307,7 +301,7 @@ export default function KontaktPage() {
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <Building className="w-4 h-4 text-blue-600" />
-                <span>Qendra Kombëtare e Koordinimit</span>
+                <span>{dt('Qendra Kombëtare e Koordinimit')}</span>
               </h3>
 
               <div className="space-y-3 text-xs text-slate-600 dark:text-slate-400">
@@ -323,7 +317,7 @@ export default function KontaktPage() {
 
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Orari i punës me palë: 08:30 – 15:30</span>
+                  <span>{dt('Orari i punës me palë: 08:30 – 15:30')}</span>
                 </div>
               </div>
             </div>
@@ -332,16 +326,16 @@ export default function KontaktPage() {
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
               <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-blue-600" />
-                <span>Pyetje të Shpeshta (FAQ)</span>
+                <span>{dt('Pyetje të Shpeshta (FAQ)')}</span>
               </h3>
               <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
                 <div>
-                  <strong className="text-slate-800 dark:text-slate-200 block mb-0.5">Sa zgjat shqyrtimi i një kërkese?</strong>
-                  <span>Kërkesat administrative shqyrtohen brenda 48 orëve të punës nga drejtoria përgjegjëse.</span>
+                  <strong className="text-slate-800 dark:text-slate-200 block mb-0.5">{dt('Sa zgjat shqyrtimi i një kërkese?')}</strong>
+                  <span>{dt('Kërkesat administrative shqyrtohen brenda 48 orëve të punës nga drejtoria përgjegjëse.')}</span>
                 </div>
                 <div className="pt-2 border-t border-slate-100 dark:border-white/5">
-                  <strong className="text-slate-800 dark:text-slate-200 block mb-0.5">A mund të raportoj anonimisht?</strong>
-                  <span>Po, në modulin "Raporto Problem" mund të zgjidhni opsionin e plotë të privatësisë.</span>
+                  <strong className="text-slate-800 dark:text-slate-200 block mb-0.5">{dt('A mund të raportoj anonimisht?')}</strong>
+                  <span>{dt('Po, në modulin "Raporto Problem" mund të zgjidhni opsionin e plotë të privatësisë.')}</span>
                 </div>
               </div>
             </div>

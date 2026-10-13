@@ -1,7 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../lib/store';
-import { useCitizenDirectory } from '../../lib/useCitizenDirectory';
+import { useStaffDirectory } from '../../lib/useCitizenDirectory';
 import type { AdminSection, StaffRole } from '../../lib/adminPermissions';
 import { STAFF_ROLES } from '../../lib/adminPermissions';
 import {
@@ -16,10 +16,11 @@ import type { User } from '../../types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { requireAdminToken, describeApiFailure } from '../../lib/adminApi';
+import RemoveAccountDialog, { type RemoveAccountTarget } from './RemoveAccountDialog';
 import { getReportTopicLabel } from '../../lib/reportTopics';
 
 /** The directory row, which already carries every field the form needs. */
-type UserRow = ReturnType<typeof useCitizenDirectory>['citizens'][number];
+type UserRow = ReturnType<typeof useStaffDirectory>['staff'][number];
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminAgents() {
@@ -33,7 +34,7 @@ export default function AdminAgents() {
    * `state.users`, which every visitor's session populated by subscribing to
    * the entire users collection.
    */
-  const { citizens, isLoading, error } = useCitizenDirectory();
+  const { staff: citizens, isLoading, error } = useStaffDirectory();
 
   /**
    * The directory already returns every field these views need, in the shape
@@ -152,8 +153,8 @@ export default function AdminAgents() {
    * in `allowedRoles`, so nothing the form can create is invisible here.
    */
   const staffRoles = [
-    'agent', 'approver', 'newsadmin', 'adsadmin',
-    'responder', 'dispatcher', 'moderator', 'municipality',
+    'agent', 'approver', 'newsadmin', 'adsadmin', 'debatwp',
+    'responder', 'dispatcher', 'moderator', 'monitor', 'municipality',
   ];
   const agents = useMemo(() => {
     return users.filter(user => {
@@ -307,7 +308,7 @@ export default function AdminAgents() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email) {
-      alert("Ju lutem plotësoni fushat e detyrueshme: Emri dhe Emaili!");
+      toast.error("Ju lutem plotësoni fushat e detyrueshme: Emri dhe Emaili!");
       return;
     }
 
@@ -315,15 +316,15 @@ export default function AdminAgents() {
     // learns the rule before the account is created rather than after.
     const wantsPassword = formData.password.trim().length > 0;
     if (wantsPassword && formData.password.length < 8) {
-      alert('Fjalëkalimi duhet të ketë së paku 8 shenja.');
+      toast.error('Fjalëkalimi duhet të ketë së paku 8 shenja.');
       return;
     }
     if (wantsPassword && !/[a-zA-Z]/.test(formData.password)) {
-      alert('Fjalëkalimi duhet të përmbajë së paku një shkronjë.');
+      toast.error('Fjalëkalimi duhet të përmbajë së paku një shkronjë.');
       return;
     }
     if (wantsPassword && !/\d/.test(formData.password)) {
-      alert('Fjalëkalimi duhet të përmbajë së paku një numër.');
+      toast.error('Fjalëkalimi duhet të përmbajë së paku një numër.');
       return;
     }
 
@@ -331,7 +332,7 @@ export default function AdminAgents() {
       try {
         await saveStaffAccess(editingAgentId, formData.role, formData.permissions, formData.isBanned);
       } catch (error) {
-        alert(error instanceof Error ? error.message : 'Qasja e agjentit nuk u përditësua.');
+        toast.error(error instanceof Error ? error.message : 'Qasja e agjentit nuk u përditësua.');
         return;
       }
 
@@ -363,13 +364,13 @@ export default function AdminAgents() {
           const result = await response.json();
           if (!response.ok) throw new Error(describeApiFailure(response.status, result));
           addAuditLog('Agent Password Set', 'warning', `Fjalëkalimi u ndryshua për ${formData.email}`);
-          alert('Agenti u përditësua dhe fjalëkalimi u ndryshua.');
+          toast.success('Agenti u përditësua dhe fjalëkalimi u ndryshua.');
         } catch (error) {
-          alert(error instanceof Error ? error.message : 'Fjalëkalimi nuk u vendos.');
+          toast.error(error instanceof Error ? error.message : 'Fjalëkalimi nuk u vendos.');
           return;
         }
       } else {
-        alert("Agenti u përditësua me sukses!");
+        toast.success("Agenti u përditësua me sukses!");
       }
     } else {
       try {
@@ -406,7 +407,7 @@ export default function AdminAgents() {
         /**
          * Report the outcome where the operator is looking, not in an alert.
          *
-         * The old flow ended in `alert()`, which on some browsers is suppressed
+         * The old flow ended in `toast.error()`, which on some browsers is suppressed
          * during a focus change — so the account was created and the operator
          * was told nothing, concluded it had failed, and tried again into a
          * duplicate-email error. The result is now held in state and rendered,
@@ -441,7 +442,7 @@ export default function AdminAgents() {
         setFormData(initialFormState);
         return;
       } catch (error) {
-        alert(error instanceof Error ? error.message : 'Agjenti nuk u krijua.');
+        toast.error(error instanceof Error ? error.message : 'Agjenti nuk u krijua.');
         return;
       }
     }
@@ -450,16 +451,12 @@ export default function AdminAgents() {
     setFormData(initialFormState);
   };
 
+  /** The account being removed, while the confirmation dialog is open. */
+  const [removal, setRemoval] = useState<RemoveAccountTarget | null>(null);
+
   const handleDeleteAgent = (id: string, email: string) => {
-    if (window.confirm(`A jeni të sigurt që dëshironi të fshini agentin ${email}?`)) {
-      deleteUser(id);
-      addAuditLog(
-        'Agent Deleted',
-        'danger',
-        `U fshi llogaria e agentit/puntorit: ${email}`
-      );
-      if (selectedAgentId === id) setSelectedAgentId(null);
-    }
+    const person = agents.find(x => x.id === id);
+    setRemoval({ id, email, name: person?.name ?? email });
   };
 
   const togglePermission = (perm: string) => {
@@ -516,7 +513,7 @@ export default function AdminAgents() {
       await saveStaffAccess(selectedAgent.id, selectedAgent.role as User['role'], (selectedAgent.permissions || []) as AdminSection[], nextBanned);
       await updateUser(selectedAgent.id, { isBanned: nextBanned });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Statusi i llogarisë nuk u përditësua.');
+      toast.error(error instanceof Error ? error.message : 'Statusi i llogarisë nuk u përditësua.');
     }
   };
 
@@ -532,7 +529,9 @@ export default function AdminAgents() {
      * mismatch here degrades the UI, never the security boundary.
      */
     let nextRole: User['role'] = selectedAgent.role as User['role'];
-    if (next.includes('reports')) {
+    if (nextRole === 'monitor') {
+      // Oversight is a role of its own, not something derived from sections.
+    } else if (next.includes('reports')) {
       nextRole = 'approver';
     } else if (next.includes('ads')) {
       nextRole = 'adsadmin';
@@ -544,7 +543,7 @@ export default function AdminAgents() {
       await saveStaffAccess(selectedAgent.id, nextRole, next, !!selectedAgent.isBanned);
       await updateUser(selectedAgent.id, { permissions: next, role: nextRole });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Lejet e agjentit nuk u përditësuan.');
+      toast.error(error instanceof Error ? error.message : 'Lejet e agjentit nuk u përditësuan.');
     }
   };
 
@@ -1663,6 +1662,32 @@ export default function AdminAgents() {
                   />
                 </div>
 
+                {/* Role. The server decides who may assign which role. */}
+                <div>
+                  <label htmlFor="staff-role" className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 font-mono">{dt(`Roli`)}</label>
+                  <select
+                    id="staff-role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({...formData, role: e.target.value as User['role']})}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-800 dark:text-slate-200"
+                  >
+                    <option value="agent">{dt(`Agjent terreni`)}</option>
+                    <option value="approver">{dt(`Zyrtar aprovimi`)}</option>
+                    <option value="responder">{dt(`Përgjegjës`)}</option>
+                    <option value="dispatcher">{dt(`Dispatcher`)}</option>
+                    <option value="moderator">{dt(`Moderator`)}</option>
+                    <option value="monitor">{dt(`Monitorues (vetëm lexim)`)}</option>
+                    <option value="newsadmin">{dt(`Redaktor i lajmeve`)}</option>
+                    <option value="adsadmin">{dt(`Menaxher reklamash`)}</option>
+                    <option value="debatwp">{dt(`Admin i Debatit Publik`)}</option>
+                  </select>
+                  {formData.role === 'monitor' && (
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                      {dt(`Sheh raportimet, afatet dhe auditimin. Nuk mund të ndryshojë asgjë; serveri i refuzon të gjitha veprimet e shkrimit.`)}
+                    </p>
+                  )}
+                </div>
+
                 {/* Granular Permissions Section */}
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/60 dark:border-white/10">
                   <span className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">{dt(`Kategorizimi dhe Sektorët e Lejuar (Qasja)`)}
@@ -1933,6 +1958,17 @@ export default function AdminAgents() {
           </div>
         )}
       </AnimatePresence>
+
+      {removal && (
+        <RemoveAccountDialog
+          target={removal}
+          onClose={() => setRemoval(null)}
+          onRemoved={() => {
+            if (selectedAgentId === removal.id) setSelectedAgentId(null);
+            setRemoval(null);
+          }}
+        />
+      )}
     </div>
   );
 }

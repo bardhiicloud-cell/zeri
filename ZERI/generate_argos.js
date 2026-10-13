@@ -6,13 +6,14 @@
  * it supports, in one pass, without being rate-limited.
  *
  * Coverage, verified against Argos's own package index:
- *   direct via English : ar de fr it es pt ro sl sv nb nl (+ tr)  = 12 targets
+ *   direct via English : ar de fr it pt sl sv nb nl ja ko pl bg (+ tr)
  *   gsw                : served by standard German
  *   sq -> en           : gives English natively, no pivot needed
- *   not published      : bs sr mk hr hy  (Argos has no model at all)
+ *   not published      : bs sr mk hr  (Argos has no model at all)
  *
- * The five unavailable languages are reported, never faked. Their strings are
- * left for the hosted path or a human, and the coverage report says so.
+ * The unavailable languages are reported, never faked. Their strings are left
+ * for the multilingual model, the hosted path or a human, and the coverage
+ * report says so. Canada and Australia need no model: they read English.
  *
  * Usage:  node generate_argos.js [--lang=fr,nl] [--limit=N]
  */
@@ -27,11 +28,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Languages this generator will attempt. */
 const ALL_TARGETS = [
-  'en', 'de', 'gsw', 'ar', 'tr', 'fr', 'it', 'es', 'pt',
-  'sl', 'ro', 'sv', 'nb', 'nl',
+  'en', 'de', 'gsw', 'ar', 'tr', 'fr', 'it', 'pt',
+  'sl', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg',
   // Served by the multilingual model rather than Argos, which publishes
-  // nothing for these five.
-  'bs', 'sr', 'hr', 'mk', 'hy',
+  // nothing for these four.
+  'bs', 'sr', 'hr', 'mk',
 ];
 
 const CACHE_FILE = path.join(__dirname, '_translation_cache.json');
@@ -63,7 +64,10 @@ const PROTECTED_SORTED = [
 
 const LOCALIZED = { Kosovë: 'Kosova', Kosova: 'Kosova', KOSOVA: 'Kosova' };
 const WRONG = [/\bkaza[cjksz][a-z]*stan\b/gi, /\bkaza[cjksz]h?st[ae]n\b/gi, /\bqazaqstan\b/gi];
-const CYRILLIC_NAME = { mk: 'Косово', sr: 'Косово', ar: 'كوسوفو', hy: 'Կոսովո', tr: 'Kosova' };
+const CYRILLIC_NAME = {
+  mk: 'Косово', sr: 'Косово', ar: 'كوسوفو', tr: 'Kosova',
+  bg: 'Косово', ja: 'コソボ', ko: '코소보', pl: 'Kosowo',
+};
 
 /** Restore proper nouns the translator dropped or replaced. */
 function repairProperNouns(text, lang, sources) {

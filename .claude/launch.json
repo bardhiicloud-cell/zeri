@@ -1,0 +1,61 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "zeri-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "ZERI", "run", "dev"],
+      "port": 3002
+    },
+    {
+      "name": "zeri-dev-social",
+      "runtimeExecutable": "C:\\Users\\bardh\\AppData\\Local\\nvm\\v22.18.0\\node.exe",
+      "runtimeArgs": ["node_modules/tsx/dist/cli.mjs", "server.ts"],
+      "cwd": "ZERI",
+      "env": { "PORT": "3020" },
+      "port": 3020
+    },
+    {
+      "name": "zeri-prototype-social",
+      "runtimeExecutable": "C:\\Users\\bardh\\AppData\\Local\\nvm\\v22.18.0\\node.exe",
+      "runtimeArgs": ["qa/run-admin-prototype.mjs"],
+      "cwd": "ZERI",
+      "env": {
+        "PROTOTYPE_ADMIN_PORT": "3012",
+        "PROTOTYPE_JAVA_HOME": "C:\\Users\\bardh\\.kombai\\tools\\temurin-21\\jdk-21.0.12.1+1-jre",
+        "FIREBASE_SERVICE_ACCOUNT_PATH": "",
+        "FIREBASE_SERVICE_ACCOUNT": ""
+      },
+      "port": 3012
+    },
+    {
+      "name": "zeri-attach-emulators",
+      "runtimeExecutable": "C:\\Users\\bardh\\AppData\\Local\\nvm\\v22.18.0\\node.exe",
+      "runtimeArgs": ["node_modules/tsx/dist/cli.mjs", "server.ts"],
+      "cwd": "ZERI",
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "3021",
+        "CLUSTER_ENABLED": "false",
+        "VITE_PROTOTYPE_ADMIN": "true",
+        "VITE_PROTOTYPE_FIREBASE_EMULATORS": "true",
+        "VITE_FIREBASE_PROJECT_ID": "demo-zeri-admin-prototype",
+        "VITE_FIREBASE_API_KEY": "demo-api-key",
+        "VITE_FIREBASE_AUTH_DOMAIN": "demo-zeri-admin-prototype.firebaseapp.com",
+        "VITE_FIREBASE_STORAGE_BUCKET": "demo-zeri-admin-prototype.firebasestorage.app",
+        "VITE_FIREBASE_MESSAGING_SENDER_ID": "000000000000",
+        "VITE_FIREBASE_APP_ID": "1:000000000000:web:prototype-local-only",
+        "VITE_FIREBASE_DATABASE_ID": "",
+        "FIREBASE_PROJECT_ID": "demo-zeri-admin-prototype",
+        "GCLOUD_PROJECT": "demo-zeri-admin-prototype",
+        "FIREBASE_DATABASE_ID": "",
+        "FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:9099",
+        "FIRESTORE_EMULATOR_HOST": "127.0.0.1:8080",
+        "FIREBASE_STORAGE_EMULATOR_HOST": "127.0.0.1:9199",
+        "FIREBASE_SERVICE_ACCOUNT_PATH": "",
+        "FIREBASE_SERVICE_ACCOUNT": ""
+      },
+      "port": 3021
+    }
+  ]
+}

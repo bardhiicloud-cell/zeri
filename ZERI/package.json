@@ -9,7 +9,7 @@
     "prototype:seed": "tsx qa/seed-prototype-emulator.ts",
     "prototype:server": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
+    "start": "node scripts/start-prod.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "i18n:extract": "node extract_page_strings.js",
@@ -17,7 +17,11 @@
     "i18n:export": "node export_pending.js",
     "i18n:import": "node import_translations.js",
     "i18n:check": "node check_translations.js",
-    "i18n:verify": "node qa/verify-i18n.mjs"
+    "i18n:verify": "node qa/verify-i18n.mjs",
+    "test": "vitest run tests/server tests/lib",
+    "test:rules": "firebase emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-zeri-rules \"vitest run --no-file-parallelism tests/rules tests/emulator\"",
+    "claims:sync": "tsx scripts/sync-claims.ts",
+    "mail:test": "tsx scripts/test-mail.ts"
   },
   "dependencies": {
     "@google-cloud/translate": "^10.0.1",
@@ -61,6 +65,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",

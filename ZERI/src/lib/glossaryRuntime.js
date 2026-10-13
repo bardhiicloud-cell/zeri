@@ -22,17 +22,20 @@ export const AI_LANGUAGE_NAMES = {
   sr: 'Serbian (Srpski)',
   fr: 'French (Français)',
   it: 'Italian (Italiano)',
-  es: 'Spanish (Español)',
   pt: 'Portuguese (Português)',
   gsw: 'Swiss German (Schweizerdeutsch)',
   mk: 'Macedonian (Македонски)',
   sl: 'Slovenian (Slovenščina)',
   hr: 'Croatian (Hrvatski)',
-  ro: 'Romanian (Română)',
   sv: 'Swedish (Svenska)',
   nb: 'Norwegian (Norsk)',
-  hy: 'Armenian (Հայերեն)',
   nl: 'Dutch (Nederlands)',
+  ja: 'Japanese (日本語)',
+  ko: 'Korean (한국어)',
+  pl: 'Polish (Polski)',
+  bg: 'Bulgarian (Български)',
+  ca: 'English (Canada)',
+  au: 'English (Australia)',
 };
 
 /**
@@ -40,12 +43,12 @@ export const AI_LANGUAGE_NAMES = {
  * The AI is told to use these exact words so one concept keeps one name.
  */
 const TERMS = [
-  { sq: 'Kosovë', proper: true, t: { en: 'Kosovo', de: 'Kosovo', fr: 'Kosovo', it: 'Kosovo', es: 'Kosovo', pt: 'Kosovo', nl: 'Kosovo', sv: 'Kosovo', nb: 'Kosovo', ro: 'Kosovo', hr: 'Kosovo', sl: 'Kosovo', mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', hy: 'Կոսովո', gsw: 'Kosovo', bs: 'Kosovo' } },
-  { sq: 'raportim', t: { en: 'report', de: 'Meldung', fr: 'signalement', it: 'segnalazione', es: 'reporte', pt: 'relatório', nl: 'melding', sv: 'rapport', nb: 'rapport', ro: 'raportare', hr: 'prijava', sl: 'prijava', mk: 'пријава', sr: 'пријава', tr: 'bildirim', ar: 'بلاغ', hy: 'հաղորդում', gsw: 'Mäldig', bs: 'prijava' } },
-  { sq: 'qytetar', t: { en: 'citizen', de: 'Bürger', fr: 'citoyen', it: 'cittadino', es: 'ciudadano', pt: 'cidadão', nl: 'burger', sv: 'medborgare', nb: 'innbygger', ro: 'cetățean', hr: 'građanin', sl: 'državljan', mk: 'граѓанин', sr: 'грађанин', tr: 'vatandaş', ar: 'مواطن', hy: 'քաղաքացի', gsw: 'Bürger', bs: 'građanin' } },
-  { sq: 'komunë', t: { en: 'municipality', de: 'Gemeinde', fr: 'municipalité', it: 'comune', es: 'municipio', pt: 'município', nl: 'gemeente', sv: 'kommun', nb: 'kommune', ro: 'municipalitate', hr: 'općina', sl: 'občina', mk: 'општина', sr: 'општина', tr: 'belediye', ar: 'بلدية', hy: 'համայնք', gsw: 'Gmeind', bs: 'općina' } },
-  { sq: 'shërbim publik', t: { en: 'public service', de: 'öffentlicher Dienst', fr: 'service public', it: 'servizio pubblico', es: 'servicio público', pt: 'serviço público', nl: 'openbare dienst', sv: 'offentlig tjänst', nb: 'offentlig tjeneste', ro: 'serviciu public', hr: 'javna usluga', sl: 'javna storitev', mk: 'јавна услуга', sr: 'јавна услуга', tr: 'kamu hizmeti', ar: 'خدمة عامة', hy: 'հանրային ծառայություն', gsw: 'öffentliche Dienst', bs: 'javna usluga' } },
-  { sq: 'transparencë', t: { en: 'transparency', de: 'Transparenz', fr: 'transparence', it: 'trasparenza', es: 'transparencia', pt: 'transparência', nl: 'transparantie', sv: 'transparens', nb: 'åpenhet', ro: 'transparență', hr: 'transparentnost', sl: 'preglednost', mk: 'транспарентност', sr: 'транспарентност', tr: 'şeffaflık', ar: 'شفافية', hy: 'թափանցիկություն', gsw: 'Transparänz', bs: 'transparentnost' } },
+  { sq: 'Kosovë', proper: true, t: { en: 'Kosovo', de: 'Kosovo', fr: 'Kosovo', it: 'Kosovo', pt: 'Kosovo', nl: 'Kosovo', sv: 'Kosovo', nb: 'Kosovo', hr: 'Kosovo', sl: 'Kosovo', mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', gsw: 'Kosovo', bs: 'Kosovo', ja: 'コソボ', ko: '코소보', pl: 'Kosowo', bg: 'Косово', ca: 'Kosovo', au: 'Kosovo' } },
+  { sq: 'raportim', t: { en: 'report', de: 'Meldung', fr: 'signalement', it: 'segnalazione', pt: 'relatório', nl: 'melding', sv: 'rapport', nb: 'rapport', hr: 'prijava', sl: 'prijava', mk: 'пријава', sr: 'пријава', tr: 'bildirim', ar: 'بلاغ', gsw: 'Mäldig', bs: 'prijava', ja: '通報', ko: '신고', pl: 'zgłoszenie', bg: 'докладване', ca: 'report', au: 'report' } },
+  { sq: 'qytetar', t: { en: 'citizen', de: 'Bürger', fr: 'citoyen', it: 'cittadino', pt: 'cidadão', nl: 'burger', sv: 'medborgare', nb: 'innbygger', hr: 'građanin', sl: 'državljan', mk: 'граѓанин', sr: 'грађанин', tr: 'vatandaş', ar: 'مواطن', gsw: 'Bürger', bs: 'građanin', ja: '市民', ko: '시민', pl: 'obywatel', bg: 'гражданин', ca: 'citizen', au: 'citizen' } },
+  { sq: 'komunë', t: { en: 'municipality', de: 'Gemeinde', fr: 'municipalité', it: 'comune', pt: 'município', nl: 'gemeente', sv: 'kommun', nb: 'kommune', hr: 'općina', sl: 'občina', mk: 'општина', sr: 'општина', tr: 'belediye', ar: 'بلدية', gsw: 'Gmeind', bs: 'općina', ja: '自治体', ko: '지방자치단체', pl: 'gmina', bg: 'община', ca: 'municipality', au: 'municipality' } },
+  { sq: 'shërbim publik', t: { en: 'public service', de: 'öffentlicher Dienst', fr: 'service public', it: 'servizio pubblico', pt: 'serviço público', nl: 'openbare dienst', sv: 'offentlig tjänst', nb: 'offentlig tjeneste', hr: 'javna usluga', sl: 'javna storitev', mk: 'јавна услуга', sr: 'јавна услуга', tr: 'kamu hizmeti', ar: 'خدمة عامة', gsw: 'öffentliche Dienst', bs: 'javna usluga', ja: '公共サービス', ko: '공공 서비스', pl: 'usługa publiczna', bg: 'обществена услуга', ca: 'public service', au: 'public service' } },
+  { sq: 'transparencë', t: { en: 'transparency', de: 'Transparenz', fr: 'transparence', it: 'trasparenza', pt: 'transparência', nl: 'transparantie', sv: 'transparens', nb: 'åpenhet', hr: 'transparentnost', sl: 'preglednost', mk: 'транспарентност', sr: 'транспарентност', tr: 'şeffaflık', ar: 'شفافية', gsw: 'Transparänz', bs: 'transparentnost', ja: '透明性', ko: '투명성', pl: 'przejrzystość', bg: 'прозрачност', ca: 'transparency', au: 'transparency' } },
 ];
 
 /**

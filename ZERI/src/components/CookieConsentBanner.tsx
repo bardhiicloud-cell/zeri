@@ -303,10 +303,10 @@ export default function CookieConsentBanner() {
             <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-blue-100 text-lg font-black text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">16+</div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">Para vazhdimit</p>
             <h2 id="age-verification-title" className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-              Sa vjeç jeni?
+              {dt('Sa vjeç jeni?')}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Platforma është për persona 16 vjeç e lart. Shkruani moshën tuaj për të vazhduar. Mosha nuk ruhet.
+              {dt('Platforma është për persona 16 vjeç e lart. Shkruani moshën tuaj për të vazhduar. Mosha nuk ruhet.')}
             </p>
             <form onSubmit={verifyAge} className="mt-6 space-y-4">
               <label htmlFor="age-verification-input" className="block text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -334,7 +334,7 @@ export default function CookieConsentBanner() {
               {ageError && <p id="age-verification-error" role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">{ageError}</p>}
               {isUnderage && (
                 <p id="age-verification-blocked" role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold leading-relaxed text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
-                  Nuk mund të vazhdoni në platformë nëse jeni nën 16 vjeç.
+                  {dt('Nuk mund të vazhdoni në platformë nëse jeni nën 16 vjeç.')}
                 </p>
               )}
               <button type="submit" className="min-h-12 w-full rounded-xl bg-blue-700 px-4 text-sm font-black text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-500/30">

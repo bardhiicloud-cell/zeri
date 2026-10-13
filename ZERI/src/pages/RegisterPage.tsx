@@ -183,6 +183,8 @@ export default function RegisterPage() {
         setError('Shfletësi bllokoi dritaren e Google. Lejo popup dhe provoni përsëri.');
       } else if (err?.code === 'auth/operation-not-allowed') {
         setError('Regjistrimi me Google nuk është i aktivizuar në projekt. Aktivizoje në Firebase Console → Authentication.');
+      } else if (err?.code === 'auth/firebase-app-check-token-is-invalid') {
+        setError('Firebase App Check është i detyrueshëm për hyrjen por ky aplikacion nuk po dërgon token të vlefshëm. Kontakto administratorin.');
       } else {
         setError('Regjistrimi me Google dështoi. Provoni përsëri.');
       }
@@ -439,7 +441,7 @@ export default function RegisterPage() {
               <div className="mt-6 w-full">
                 <div className="flex items-center my-2">
                   <div className="flex-1 border-t border-white/10"></div>
-                  <span className="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest">Ose</span>
+                  <span className="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest">{dt('Ose')}</span>
                   <div className="flex-1 border-t border-white/10"></div>
                 </div>
                 <button

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+Armenian:wght@400;600;700&display=swap');
 @import "tailwindcss";
 /* Base marker-cluster stylesheet: react-leaflet-cluster does not import it for us.
    Only the fly-in/spiderfy transition rules are needed - the colours below are
@@ -228,8 +228,8 @@ html.dark input:-webkit-autofill:focus {
 }
 @theme {
   /* Fonts */
-  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: "Merriweather", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", "Noto Sans", "Noto Sans Arabic", "Noto Sans Armenian", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Merriweather", "Noto Serif", Georgia, "Times New Roman", serif;
 
   /* Core Colors — Kosovo flag palette (blue & gold) */
   --color-brand-primary: #1E40AF;
@@ -386,6 +386,10 @@ html.dark input:-webkit-autofill:focus {
 
 @layer base {
   html {
+    /* Landscape phones otherwise inflate text and break the layout. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
     background: var(--color-page);
     /**
      * Reduced-motion is honoured first: `prefers-reduced-motion: reduce` is a
@@ -429,6 +433,14 @@ html.dark input:-webkit-autofill:focus {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Long words in the 20 supported languages (German, Armenian, Swiss German)
+       wrap inside their card instead of pushing the page sideways. */
+    overflow-wrap: break-word;
+  }
+
+  /* Media never exceeds its column on narrow screens. */
+  img, video, canvas, svg {
+    max-width: 100%;
   }
 
   html.dark body {
@@ -588,6 +600,7 @@ html.dark input:-webkit-autofill:focus {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /**
@@ -756,3 +769,51 @@ html.dark .leaflet-container a.leaflet-popup-close-button:hover { color: #F8F9FA
 }
 
 .marker-cluster span { line-height: 30px; }
+
+
+/**
+ * Touch devices.
+ *
+ * Pinch-zoom is enabled (the viewport no longer forbids it), so iOS Safari will
+ * zoom the page when a focused field has a font size under 16px. Fields stay at
+ * 16px on touch screens, and on desktop keep whatever size the component chose.
+ */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Notched phones in landscape: keep content out from under the cut-out. */
+@supports (padding: max(0px)) {
+  .safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Right-to-left (Arabic): arrows that point "forward" must flip with the text. */
+html[dir="rtl"] .lucide-arrow-right,
+html[dir="rtl"] .lucide-chevron-right,
+html[dir="rtl"] .lucide-chevron-left,
+html[dir="rtl"] .lucide-arrow-left {
+  transform: scaleX(-1);
+}
+
+/* Forced-colours / high-contrast: keep real borders on cards and controls. */
+@media (forced-colors: active) {
+  .section-card,
+  .luxury-card {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* Printing: no fixed navigation chrome. */
+@media print {
+  .app-shell-header,
+  nav {
+    display: none !important;
+  }
+}

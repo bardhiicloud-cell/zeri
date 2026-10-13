@@ -23,7 +23,7 @@ import { dynamicTranslations } from './src/lib/dynamicTranslations.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NEW_LANGS = ['ar', 'fr', 'it', 'es', 'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl'];
+const NEW_LANGS = ['ar', 'fr', 'it', 'pt', 'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg'];
 const CACHE_FILE = path.join(__dirname, '_translation_cache.json');
 const OUT_DIR = path.join(__dirname, 'translations');
 const OUT_FILE = path.join(OUT_DIR, 'to-translate.json');

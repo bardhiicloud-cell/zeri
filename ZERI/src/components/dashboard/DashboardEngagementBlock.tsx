@@ -64,7 +64,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Track ID — dark, high contrast, the primary "I already filed" action. */}
         <section
-          aria-label="Gjurmimi i raportimit"
+          aria-label={dt('Gjurmimi i raportimit')}
           className="relative overflow-hidden rounded-3xl border border-blue-900/40 bg-gradient-to-br from-blue-950 via-slate-900 to-slate-950 p-6"
         >
           {/* Decorative glow; purely presentational. */}
@@ -142,7 +142,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
 
         {/* Ideas bank — light, warm accent, the "I want to change something" action. */}
         <section
-          aria-label="Banka e ideve qytetare"
+          aria-label={dt('Banka e ideve qytetare')}
           className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">

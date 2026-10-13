@@ -1,5 +1,5 @@
 /**
- * Generate translations for the 14 languages added on top of the original six
+ * Generate translations for the languages added on top of the original six
  * (sq, en, bs, sr, tr, de).
  *
  * The original six live in dynamicTranslations.ts and uiTranslations.ts. Rather
@@ -22,7 +22,15 @@ import { translateWithFallback, providerStatus } from './translate_engine.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NEW_LANGS = ['ar', 'fr', 'it', 'es', 'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl'];
+/*
+ * The added languages, minus the three that were removed (es, ro, hy) and plus
+ * the three that replaced them (ja, ko, pl) together with bg.
+ *
+ * `ca` and `au` are deliberately absent: they are regions, not translations.
+ * Their strings resolve through the English table at render time, so generating
+ * duplicate copies here would be 20,000 dead rows nobody reads.
+ */
+const NEW_LANGS = ['ar', 'fr', 'it', 'pt', 'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg'];
 
 // API language codes live in translate_engine.js, which owns provider details.
 

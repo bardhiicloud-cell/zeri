@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { escapeHtml } from '../../lib/escapeHtml';
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../lib/store';
 import { Download, Search, Trash2, CheckCircle2, FileText, Calendar, Filter, X, ChevronLeft, ChevronRight, CheckSquare, Square, Edit, MapPin, LayoutGrid, List, Cpu, Mail, ContactRound, Plus } from 'lucide-react';
@@ -8,12 +9,29 @@ import ReportDetailModal from '../ReportDetailModal.tsx';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../lib/LanguageContext';
-import { getAccountabilityProfile, getAccountabilityDueDate } from '../../lib/accountability';
+import { getAccountabilityProfile } from '../../lib/accountability';
+import { isReportOverdue, reportDueAt } from '../../lib/reportDue';
 import { db } from '../../lib/firebase';
 import { collection, deleteDoc, doc, onSnapshot, query, setDoc, writeBatch, limit } from 'firebase/firestore';
 import { getReportTopic, getReportTopicLabel, getReportTopicValueLabel, REPORT_TOPICS } from '../../lib/reportTopics';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import toast from 'react-hot-toast';
+import { filterByScope, isSpecificScope, normalizeScope } from '../../lib/municipalityScope';
+import {
+  EMPTY_FILTERS,
+  csvCell,
+  filterQueue,
+  paginate,
+  type QueueContext,
+  type QueueFilters,
+} from '../../lib/reportQueue';
+import { useOptionalAdminCounts } from './AdminCountsContext';
+import { looksLikeCode, mergePages, useServerReports, type ReportListParams } from '../../lib/adminReportsApi';
+import type { Figure } from './dashboard/DashboardParts';
+import { ReportRow } from './reports/ReportRow';
+import ReviewMode from './ReviewMode';
+import EmailInstitutionDialog from './EmailInstitutionDialog';
+import { ReportsToolbar } from './reports/ReportsToolbar';
 
 interface ReportRoutingContact {
   id: string;
@@ -69,22 +87,18 @@ function parseCsv(text: string): string[][] {
   return rows;
 }
 
-export default function AdminReports({ department }: { department?: 'infrastrukture' | 'tjera' }) {
+export default function AdminReports({ department, openReportId }: { department?: 'infrastrukture' | 'tjera'; openReportId?: string }) {
   const { dt } = useLanguage();
   const reports = useStore(state => state.reports);
-  const isOverdueReport = (report: (typeof reports)[number]) => {
-    const responseHours = getAccountabilityProfile(report.category).responseHours;
-    const dueDate = getAccountabilityDueDate(report.createdAt, responseHours);
-    return !['Resolved', 'Rejected'].includes(report.status) && new Date(dueDate).getTime() < Date.now();
-  };
+  const isOverdueReport = (report: (typeof reports)[number]) => isReportOverdue(report);
   const deleteReport = useStore(state => state.deleteReport);
   const updateReportStatus = useStore(state => state.updateReportStatus);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMunicipality, setSelectedMunicipality] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState('');
-  const [timeFilter, setTimeFilter] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
+  const [filters, setFilters] = useState<QueueFilters>(EMPTY_FILTERS);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  /** Review Mode: the records to walk through, frozen when it starts. */
+  const [review, setReview] = useState<{ queue: typeof reports; startId?: string } | null>(null);
+  /** The report being sent to an institution, with the contact chosen from the directory. */
+  const [emailing, setEmailing] = useState<{ report: (typeof reports)[number]; contact: { id: string; name: string; email: string; institution: string } } | null>(null);
   const [routingContacts, setRoutingContacts] = useState<ReportRoutingContact[]>([]);
   const [isContactDirectoryOpen, setIsContactDirectoryOpen] = useState(false);
   const [newContact, setNewContact] = useState({
@@ -97,12 +111,31 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
   // Pagination & Multi-select
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const itemsPerPage = 8; // keeping it low for nice list, but board will show more or scroll
+  const itemsPerPage = 20;
+  const changeFilters = (patch: Partial<QueueFilters>) => {
+    setFilters(current => ({ ...current, ...patch }));
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  };
 
   // AI Summary states
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+
+  // A link from the work inbox opens straight onto its report. If that report is
+  // not among those loaded yet, the code is put in the search box instead, so
+  // the person lands on a filtered list rather than an unexplained empty one.
+  React.useEffect(() => {
+    if (!openReportId) return;
+    if (knownReports.some(report => report.id === openReportId)) {
+      setSelectedReportId(openReportId);
+    } else {
+      setFilters(current => ({ ...current, query: openReportId }));
+    }
+    // Only when the requested report changes, not on every report update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openReportId]);
 
   React.useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -153,84 +186,125 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
     }
   };
 
-  const reportsInScope = useMemo(() => reports.filter(r => {
+  const scope = useStore(state => state.userMunicipality);
+  const hasMoreReports = useStore(state => state.hasMoreReports);
+  const loadMoreReports = useStore(state => state.loadMoreReports);
+  const reportsStatus = useStore(state => state.reportsStatus);
+  const currentUser = useStore(state => state.currentUser);
+  const adminCounts = useOptionalAdminCounts();
+
+  // The header's municipality scope governs this list, like every other section.
+  // A private dropdown here used to disagree with it.
+  const isScoped = isSpecificScope(scope);
+  const scopeName = isScoped ? normalizeScope(scope) : null;
+  const selectedMunicipality = scopeName ?? '';
+  const timeFilter = filters.time;
+
+  /**
+   * Where the list comes from.
+   *
+   * The server returns one filtered, authorised page at a time (see
+   * server/adminReports.ts), so the screen works the same with 30 reports or 30
+   * million. The status tab, the header's municipality scope and a typed tracking
+   * code become server filters; the rest (topic, period, free text) narrow the
+   * loaded pages. If the server cannot answer - offline, or an index not yet
+   * deployed - the screen falls back to the reports already in memory and says so.
+   */
+  const codeQuery = looksLikeCode(filters.query) ? filters.query.trim() : '';
+  // "Overdue" depends on each category's deadline, which the server cannot filter
+  // on, so that tab asks for every open report and narrows them here.
+  const serverStatus = filters.status === 'overdue' ? 'unresolved' : filters.status;
+  // "Të miat": what this person has taken on. Combined with the status tab only;
+  // the server pins it to the signed-in account.
+  const [onlyMine, setOnlyMine] = useState(false);
+  const canHaveMine = currentUser?.role !== 'municipality' && currentUser?.role !== 'monitor';
+  const serverParams = useMemo<ReportListParams>(
+    () => (codeQuery
+      ? { code: codeQuery }
+      : onlyMine && canHaveMine
+        ? { status: serverStatus || undefined, assignee: 'me' }
+        : { status: serverStatus || undefined, municipality: scopeName || undefined }),
+    [codeQuery, serverStatus, scopeName, onlyMine, canHaveMine]
+  );
+  const serverList = useServerReports(serverParams, !department);
+  const serverActive = !department && serverList.status !== 'error';
+  const sourceReports = serverActive ? serverList.items : reports;
+  // Everything the screen has seen, so a link can open a report on any page.
+  const knownReports = useMemo(() => mergePages(serverList.items, reports), [serverList.items, reports]);
+  const moreAvailable = serverActive ? Boolean(serverList.nextCursor) : hasMoreReports;
+  const loadMore = serverActive ? serverList.loadMore : loadMoreReports;
+  const listLoading = serverActive ? serverList.status === 'loading' && serverList.items.length === 0 : reportsStatus === 'loading';
+
+  // Deadlines and "N days ago" move without data changing, so time is state.
+  const [now, setNow] = useState(() => Date.now());
+  React.useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Permanent deletion is reserved to admin/superadmin by the Firestore rules; a
+  // button that can only fail is not offered to anyone else.
+  const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  // A monitor reads. The server refuses its writes either way; the buttons that
+  // would only fail are not drawn.
+  const canChange = currentUser?.role !== 'monitor';
+  // Photos are the staff's to take down; the server also refuses a municipality or a monitor.
+  const canEditPhotos = canChange && currentUser?.role !== 'municipality';
+
+  const reportsInScope = useMemo(() => filterByScope(sourceReports, scope).filter(r => {
     if (!department) return true;
     const cat = r.category || '';
     const infra = ['infrastrukturë', 'urbanizëm', 'ambient', 'infrastrukturë rrugore'];
     const isInfra = infra.some(i => cat.toLowerCase().includes(i));
     if (department === 'infrastrukture') return isInfra;
     return !isInfra;
-  }), [reports, department]);
+  }), [sourceReports, scope, department]);
 
-  let filteredReports = reportsInScope;
+  const queueContext = useMemo<QueueContext<(typeof reports)[number]>>(() => ({
+    now,
+    isOverdue: isOverdueReport,
+    searchText: r => [
+      r.title, r.description, r.id, r.trackingId, r.location?.address, r.location?.municipality,
+      r.category, getReportTopicLabel(r), r.responsibleInstitution,
+      // Topic keywords are synonyms ("gropë", "asfalt"): searching them finds the report.
+      getReportTopic(r)?.keywords.join(' '),
+    ].filter(Boolean).join(' '),
+    topicId: r => getReportTopic(r)?.id,
+  }), [now]);
 
-  const now = new Date();
-  if (timeFilter !== 'all') {
-    filteredReports = filteredReports.filter(r => {
-      const reportDate = new Date(r.createdAt);
-      if (timeFilter === 'daily') {
-        return reportDate.toDateString() === now.toDateString();
-      } else if (timeFilter === 'weekly') {
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return reportDate >= oneWeekAgo;
-      } else if (timeFilter === 'monthly') {
-        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        return reportDate >= oneMonthAgo;
-      }
-      return true;
+  const filteredReports = useMemo(
+    () => filterQueue(reportsInScope, filters, queueContext),
+    [reportsInScope, filters, queueContext]
+  );
+
+  /**
+   * Tab counts. The browser holds only the newest page of reports, so a count
+   * taken from it is a lower bound once more exist. For the whole country the
+   * server's exact counters are used where they exist; otherwise the figure is
+   * marked "≥". "Overdue" depends on each category's deadline, which the server
+   * cannot count, so it always comes from the loaded reports.
+   */
+  const tabCounts = useMemo<Record<string, Figure>>(() => {
+    const sample = (predicate: (r: (typeof reports)[number]) => boolean): Figure => ({
+      value: reportsInScope.filter(predicate).length,
+      atLeast: moreAvailable,
     });
-  }
-
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    filteredReports = filteredReports.filter(r => 
-      r.title?.toLocaleLowerCase('sq-AL').includes(q) ||
-      r.description?.toLocaleLowerCase('sq-AL').includes(q) ||
-      r.id?.toLocaleLowerCase('sq-AL').includes(q) ||
-      r.location?.address?.toLocaleLowerCase('sq-AL').includes(q) ||
-      r.category?.toLocaleLowerCase('sq-AL').includes(q) ||
-      getReportTopicLabel(r).toLocaleLowerCase('sq-AL').includes(q) ||
-      (getReportTopic(r)?.keywords.some(keyword => keyword.includes(q) || q.includes(keyword)) ?? false) ||
-      r.responsibleInstitution?.toLocaleLowerCase('sq-AL').includes(q)
-    );
-  }
-  if (selectedTopic) filteredReports = filteredReports.filter(report => getReportTopic(report)?.id === selectedTopic);
-  if (selectedMunicipality) {
-    filteredReports = filteredReports.filter(r => r.location?.municipality === selectedMunicipality);
-  }
-  if (selectedStatus === 'unapproved') {
-    filteredReports = filteredReports.filter(r => r.status === 'Pending Review');
-  } else if (selectedStatus === 'in-progress') {
-    filteredReports = filteredReports.filter(r => ['Approved', 'Assigned', 'In Progress'].includes(r.status));
-  } else if (selectedStatus === 'unresolved') {
-    filteredReports = filteredReports.filter(r => !['Resolved', 'Rejected'].includes(r.status));
-  } else if (selectedStatus === 'resolved') {
-    filteredReports = filteredReports.filter(r => r.status === 'Resolved');
-  } else if (selectedStatus === 'rejected') {
-    filteredReports = filteredReports.filter(r => r.status === 'Rejected');
-  } else if (selectedStatus === 'overdue') {
-    filteredReports = filteredReports.filter(isOverdueReport);
-  } else if (selectedStatus) {
-    filteredReports = filteredReports.filter(r => r.status === selectedStatus);
-  }
-
-  // Status totals stay stable while search and table filters change.
-  const stats = useMemo(() => {
-    const overdue = reportsInScope.filter(isOverdueReport);
+    const server = !isScoped && !department && adminCounts?.updatedAt != null ? adminCounts.counts : null;
+    const exact = (value: number | undefined, fallback: Figure): Figure =>
+      value === undefined ? fallback : { value };
     return {
-      total: reportsInScope.length,
-      unapproved: reportsInScope.filter(r => r.status === 'Pending Review').length,
-      inProgress: reportsInScope.filter(r => ['In Progress', 'Assigned', 'Approved'].includes(r.status)).length,
-      unresolved: reportsInScope.filter(r => !['Resolved', 'Rejected'].includes(r.status)).length,
-      resolved: reportsInScope.filter(r => r.status === 'Resolved').length,
-      rejected: reportsInScope.filter(r => r.status === 'Rejected').length,
-      overdue: overdue.length,
+      '': exact(server?.reports, { value: reportsInScope.length, atLeast: moreAvailable }),
+      unapproved: exact(server?.reportsPending, sample(r => r.status === 'Pending Review')),
+      'in-progress': exact(server?.reportsActive, sample(r => ['Approved', 'Assigned', 'In Progress'].includes(r.status))),
+      overdue: sample(isOverdueReport),
+      resolved: exact(server?.reportsResolved, sample(r => r.status === 'Resolved')),
+      rejected: sample(r => r.status === 'Rejected'),
     };
-  }, [reportsInScope]);
+  }, [reportsInScope, moreAvailable, isScoped, department, adminCounts?.updatedAt, adminCounts?.counts]);
 
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
-  const paginatedReports = filteredReports.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const pageData = paginate(filteredReports, currentPage, itemsPerPage);
+  const totalPages = pageData.totalPages;
+  const paginatedReports = pageData.items;
 
   const toggleSelectAll = () => {
     if (selectedIds.size === paginatedReports.length && paginatedReports.length > 0) {
@@ -270,8 +344,11 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
       }
     }
     setSelectedIds(new Set());
+    void serverList.refresh();
     if (refused.length > 0) {
-      alert(`Disa dosje nuk u ndryshuan nga rrjedha e aprovimit:\n${refused.join('\n')}`);
+      toast.error(`${refused.length} ${dt('dosje nuk u ndryshuan nga rrjedha e aprovimit')}: ${refused[0]}`, { duration: 8000 });
+    } else {
+      toast.success(dt('Veprimi u krye.'));
     }
   };
 
@@ -279,7 +356,34 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
     try {
       await updateReportStatus(id, newStatus, `Statusi u ndryshua në ${newStatus}`);
     } catch (error) {
-      alert((error as Error)?.message || 'Statusi nuk u ndryshua.');
+      toast.error((error as Error)?.message || dt('Statusi nuk u ndryshua.'));
+    }
+  };
+
+  /** One-click approval from a row: the same server-checked transition as the bulk action. */
+  const approveOne = async (id: string) => {
+    try {
+      await updateReportStatus(id, 'Approved', 'Aprovuar.');
+      toast.success(dt('Raporti u aprovua dhe u dërgua te komuna.'));
+      void serverList.refresh();
+    } catch (error) {
+      toast.error((error as Error)?.message || dt('Raporti nuk u aprovua.'));
+    }
+  };
+
+  /** Start Review Mode on what the list is showing now, beginning at one record or the first. */
+  const startReview = (startId?: string) => {
+    if (filteredReports.length === 0) return;
+    setReview({ queue: filteredReports, startId });
+  };
+
+  const reviewReject = async (id: string, reason: string) => {
+    await updateReportStatus(id, 'Rejected', reason);
+  };
+
+  const deleteOne = (report: (typeof reports)[number]) => {
+    if (window.confirm(`${dt('Të fshihet përgjithmonë raporti')} "${report.title}"? ${dt('Ky veprim nuk mund të zhbëhet.')}`)) {
+      void Promise.resolve(deleteReport(report.id)).then(() => serverList.refresh());
     }
   };
 
@@ -382,7 +486,7 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
     }
   };
 
-  const handleEmailReport = (report: (typeof reports)[number]) => {
+  const handleEmailReport = (report: (typeof reports)[number], viaMailProgram = false) => {
     const contact = getMatchingContact(report);
     if (!contact) {
       setNewContact(current => ({
@@ -392,6 +496,11 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
       }));
       setIsContactDirectoryOpen(true);
       toast.error(dt('Nuk ka ende kontakt të verifikuar për këtë komunë dhe institucion.'));
+      return;
+    }
+    if (!viaMailProgram) {
+      // The platform sends it and records it; the mail program stays as an alternative in the dialog.
+      setEmailing({ report, contact: { id: contact.id, name: contact.name, email: contact.email, institution: contact.institution } });
       return;
     }
     const subject = `Raportim qytetar: ${report.title}`;
@@ -433,19 +542,19 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
       filteredReports.forEach(r => {
         const row = [
           r.id,
-          `"${r.title.replace(/"/g, '""')}"`,
-          `"${r.description.replace(/"/g, '""')}"`,
+          r.title,
+          r.description,
           r.status,
           getReportTopicLabel(r),
           r.category,
           r.urgency,
           new Date(r.createdAt).toISOString(),
           r.location?.municipality || 'N/A',
-          `"${(r.location?.address || '').replace(/"/g, '""')}"`,
+          r.location?.address || '',
           r.location?.lat || 0,
           r.location?.lng || 0,
-          `"${r.isAnonymous ? 'Anonim' : (r.authorName || 'N/A')}"`
-        ];
+          r.isAnonymous ? 'Anonim' : (r.authorName || 'N/A'),
+        ].map(csvCell);
         csvRows.push(row.join(','));
       });
       
@@ -500,13 +609,13 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
     <body>
       <div class="header">
         <h1>Raportet dhe Aprovimet Qytetare</h1>
-        <p>Gjeneruar më: ${new Date().toLocaleString('sq-AL')} | Lokalizimi: ${selectedMunicipality || 'E Tërë Kosova'}</p>
+        <p>Gjeneruar më: ${new Date().toLocaleString('sq-AL')} | Lokalizimi: ${escapeHtml(selectedMunicipality || 'E Tërë Kosova')}</p>
         <p>Të filtruara për kohën: ${timeFilter === 'daily' ? 'Ditore' : timeFilter === 'weekly' ? 'Javore' : timeFilter === 'monthly' ? 'Mujore' : 'Të Gjitha'}</p>
       </div>
     `;
 
     for (const [organ, reportsGroup] of Object.entries(groupedReports)) {
-      htmlContent += `<h2>Kategoria tematike: ${organ.toUpperCase()}</h2>`;
+      htmlContent += `<h2>Kategoria tematike: ${escapeHtml(organ.toUpperCase())}</h2>`;
       htmlContent += `<p style="font-weight: bold; font-size: 14px; text-transform: uppercase;">Totali i raporteve: <span style="background: #0f172a; color: white; padding: 2px 8px; border-radius: 12px;">${reportsGroup.length}</span></p>`;
       
       reportsGroup.forEach(r => {
@@ -514,25 +623,25 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
         <div class="report-card">
           <div class="grid">
             <div>
-              <h3 style="margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase;">Referenca: ${r.id}</h3>
-              <h4 style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #e11d48; text-transform: uppercase;">${r.title}</h4>
-              <span class="status">${r.status}</span>
+              <h3 style="margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase;">Referenca: ${escapeHtml(r.id)}</h3>
+              <h4 style="margin: 5px 0 0 0; font-size: 16px; font-weight: 600; color: #e11d48; text-transform: uppercase;">${escapeHtml(r.title)}</h4>
+              <span class="status">${escapeHtml(r.status)}</span>
               <table>
-                <tr><th>Tema</th><td><strong>${getReportTopicLabel(r)}</strong></td></tr>
-                <tr><th>Sektori / institucioni</th><td>${r.category}</td></tr>
-                <tr><th>Urgjenca</th><td>${r.urgency}</td></tr>
+                <tr><th>Tema</th><td><strong>${escapeHtml(getReportTopicLabel(r))}</strong></td></tr>
+                <tr><th>Sektori / institucioni</th><td>${escapeHtml(r.category)}</td></tr>
+                <tr><th>Urgjenca</th><td>${escapeHtml(r.urgency)}</td></tr>
                 <tr><th>Data e Hapjes</th><td>${new Date(r.createdAt).toLocaleString('sq-AL')}</td></tr>
-                <tr><th>Raportuesi</th><td>${r.isAnonymous ? 'Anonim (Mbrojtur)' : r.authorName}</td></tr>
+                <tr><th>Raportuesi</th><td>${r.isAnonymous ? 'Anonim (Mbrojtur)' : escapeHtml(r.authorName)}</td></tr>
               </table>
             </div>
             <div>
               <div class="desc-title">Të Dhënat Gjeografike</div>
               <table>
-                <tr><th>Komuna</th><td>${r.location?.municipality || 'N/A'}</td></tr>
-                <tr><th>Adresa</th><td>${r.location?.address || 'N/A'}</td></tr>
+                <tr><th>Komuna</th><td>${escapeHtml(r.location?.municipality || 'N/A')}</td></tr>
+                <tr><th>Adresa</th><td>${escapeHtml(r.location?.address || 'N/A')}</td></tr>
               </table>
               <div class="desc-title">Përshkrimi</div>
-              <p class="desc-content">${r.description}</p>
+              <p class="desc-content">${escapeHtml(r.description)}</p>
             </div>
           </div>
         </div>
@@ -590,29 +699,29 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
     { id: 'Resolved', title: 'Të Zgjidhura' }
   ];
 
+  const toolbarTopics = REPORT_TOPICS.map(topic => ({ id: topic.id, label: `${topic.icon} ${getReportTopicValueLabel(topic.id)}` }));
+  const hasAnyFilter = Boolean(filters.query || filters.status || filters.topic || filters.time !== 'all');
+  const allOnPageSelected = paginatedReports.length > 0 && selectedIds.size === paginatedReports.length;
+
   return (
-    <div className="flex flex-col gap-6">
-      <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm dark:border-indigo-400/20 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-200"><ContactRound className="h-5 w-5" /></span>
-            <div>
-              <h2 className="text-sm font-black text-slate-900 dark:text-white">{dt('Kontaktet dhe dërgimi i raportimeve')}</h2>
-              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {dt('Draft-emaili hapet vetëm kur ka kontakt që përputhet saktësisht me komunën dhe institucionin përgjegjës. Shtoni vetëm email publik profesional dhe burim zyrtar verifikimi.')}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsContactDirectoryOpen(open => !open)}
-            aria-expanded={isContactDirectoryOpen}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-200 px-4 text-xs font-black text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-400/30 dark:text-indigo-200 dark:hover:bg-indigo-400/10"
-          >
-            <ContactRound className="h-4 w-4" />
-            {isContactDirectoryOpen ? dt('Mbyll drejtorinë') : `${dt('Drejtoria')} (${routingContacts.length})`}
-          </button>
-        </div>
+    <div className="flex flex-col gap-4">
+      <section className="relative rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-white/10 dark:bg-slate-900">
+        <ReportsToolbar
+          filters={filters}
+          onChange={changeFilters}
+          onClear={() => changeFilters({ ...EMPTY_FILTERS })}
+          tabCounts={tabCounts}
+          topics={toolbarTopics}
+          scopeName={scopeName}
+          view={viewMode}
+          onView={setViewMode}
+          onExport={handleDownload}
+          onSummary={handleGetSummary}
+          contactsCount={routingContacts.length}
+          contactsOpen={isContactDirectoryOpen}
+          onToggleContacts={() => setIsContactDirectoryOpen(open => !open)}
+        />
+
         {isContactDirectoryOpen && (
           <div className="grid gap-5 p-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
             <form onSubmit={handleAddContact} className="grid content-start gap-3 sm:grid-cols-2">
@@ -669,324 +778,159 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
             </div>
           </div>
         )}
-      </section>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
-        {[
-          { label: 'Të gjitha', value: stats.total, filter: '', color: 'text-slate-900 dark:text-white', bg: 'bg-white dark:bg-slate-900', border: 'border-slate-200/60 dark:border-white/10' },
-          { label: 'Pa u aprovuar', value: stats.unapproved, filter: 'unapproved', color: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-900' },
-          { label: 'Në proces', value: stats.inProgress, filter: 'in-progress', color: 'text-blue-700 dark:text-blue-300', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-900' },
-          { label: 'Të pazgjidhura', value: stats.unresolved, filter: 'unresolved', color: 'text-orange-700 dark:text-orange-300', bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-900' },
-          { label: 'Të zgjidhura', value: stats.resolved, filter: 'resolved', color: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-900' },
-          { label: 'Të refuzuara', value: stats.rejected, filter: 'rejected', color: 'text-slate-700 dark:text-slate-300', bg: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-200 dark:border-white/10' },
-          { label: 'Mbi afat', value: stats.overdue, filter: 'overdue', color: 'text-rose-700 dark:text-rose-300', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-900' }
-        ].map(stat => (
-          <button type="button" key={stat.label} onClick={() => setSelectedStatus(stat.filter)} aria-pressed={selectedStatus === stat.filter} className={cn("p-4 rounded-xl border flex flex-col justify-center text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:shadow-none", stat.bg, stat.border, selectedStatus === stat.filter && "ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-950")}>
-            <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-widest">{stat.label}</div>
-            <div className={cn("text-3xl font-bold title-serif mt-1", stat.color)}>{stat.value}</div>
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl shadow-sm dark:shadow-none hover:shadow transition-all duration-300 flex flex-col max-w-full mx-auto w-full mb-6">
-        <div className="p-4 md:p-6 border-b border-slate-100 dark:border-white/5 flex flex-col xl:flex-row items-center justify-between gap-4 md:gap-6 bg-white dark:bg-slate-900 rounded-t-xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-wrap items-center gap-3 md:gap-4 w-full xl:w-auto">
-          <div className="relative col-span-1 sm:col-span-2 lg:col-span-1 xl:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-900 dark:text-white" />
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={dt(`KËRKO DOSJE...`)} 
-              className="w-full pl-10 md:pl-12 pr-4 py-2.5 md:py-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-bold tracking-wide focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-300 ease-in-out placeholder:text-neutral-500 dark:text-slate-400" 
-            />
-          </div>
-          <select 
-            value={selectedMunicipality} 
-            onChange={(e) => setSelectedMunicipality(e.target.value)}
-            className="py-2.5 md:py-3 px-3 md:px-4 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-bold tracking-wide focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-300 ease-in-out"
-          >
-            <option value="">{dt(`LOKALITETI`)}</option>
-            {KOSOVO_MUNICIPALITIES.map(m => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-          <select 
-            value={selectedStatus} 
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="col-span-1 py-2.5 md:py-3 px-3 md:px-4 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-bold tracking-wide focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-300 ease-in-out"
-          >
-            <option value="">{dt(`TË GJITHA STATUSET`)}</option>
-            <option value="unapproved">{dt(`PA U APROVUAR`)}</option>
-            <option value="unresolved">{dt(`TË PAZGJIDHURA`)}</option>
-            <option value="in-progress">{dt(`NË PROCES`)}</option>
-            <option value="resolved">{dt(`TË ZGJIDHURA`)}</option>
-            <option value="rejected">{dt(`TË REFUZUARA`)}</option>
-            <option value="overdue">{dt(`MBI AFAT`)}</option>
-            <option value="Approved">{dt(`E HAPUR / APROVUAR`)}</option>
-            <option value="Assigned">{dt(`E CAKTUAAR`)}</option>
-            <option value="In Progress">{dt(`NË ANALIZË`)}</option>
-          </select>
-          <select
-            value={selectedTopic}
-            onChange={event => { setSelectedTopic(event.target.value); setCurrentPage(1); }}
-            aria-label={dt('Filtro sipas temës')}
-            className="col-span-1 py-2.5 md:py-3 px-3 md:px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-bold tracking-wide focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">{dt('TË GJITHA TEMAT')}</option>
-            {REPORT_TOPICS.map(topic => <option key={topic.id} value={topic.id}>{topic.icon} {getReportTopicValueLabel(topic.id)}</option>)}
-          </select>
-          <select 
-            value={timeFilter} 
-            onChange={(e) => setTimeFilter(e.target.value as any)}
-            className="col-span-1 lg:col-span-1 xl:w-48 py-2.5 md:py-3 px-3 md:px-4 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-bold tracking-wide focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-300 ease-in-out"
-          >
-            <option value="all">{dt(`E GJITHË KOHA`)}</option>
-            <option value="daily">{dt(`DITORE`)}</option>
-            <option value="weekly">{dt(`JAVORE`)}</option>
-            <option value="monthly">{dt(`MUJORE`)}</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2 w-full xl:w-auto overflow-x-auto pb-1 xl:pb-0">
-          
-          <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl mr-2">
-            <button 
-              onClick={() => setViewMode('list')} 
-              className={cn("p-2 rounded-2xl flex items-center justify-center transition-colors", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-sm dark:shadow-none text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-500 dark:text-slate-400")}
-              title={dt(`Pamja Tabelare`)}
-            >
-              <List className="w-4 h-4" />
+        {!department && serverList.status === 'error' && (
+          <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100">
+            <span>
+              {dt(`Lista e plotë nga serveri nuk është e disponueshme tani`)}
+              {serverList.error?.message ? ` (${serverList.error.message})` : ''}. {dt(`Po shfaqen raportet e fundit të ngarkuara.`)}
+            </span>
+            <button type="button" onClick={() => void serverList.refresh()} className="rounded-md border border-amber-300 px-2.5 py-1 font-bold hover:bg-amber-100 dark:border-amber-500/40 dark:hover:bg-amber-900/40">
+              {dt(`Provo përsëri`)}
             </button>
-            <button 
-              onClick={() => setViewMode('board')} 
-              className={cn("p-2 rounded-2xl flex items-center justify-center transition-colors", viewMode === 'board' ? "bg-white dark:bg-slate-900 shadow-sm dark:shadow-none text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-500 dark:text-slate-400")}
-              title={dt(`Pamja Kanban (Bordi)`)}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-          </div>
-
-          {selectedIds.size > 0 ? (
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex items-center gap-2 bg-slate-900 px-2 py-1.5 rounded-xl shadow-sm dark:shadow-none border border-slate-800"
-            >
-              <span className="text-white text-xs font-bold px-2 whitespace-nowrap">{selectedIds.size}{dt(`zgjedhur`)}</span>
-              <button onClick={() => handleBulkAction('approve')} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-colors">{dt(`Aprovo`)}</button>
-              <button onClick={() => handleBulkAction('resolve')} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition-colors">{dt(`Zgjidh`)}</button>
-              <button onClick={handleGetSummary} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-indigo-600/25">
-                <Cpu className="w-3.5 h-3.5" />{dt(`Përmbledh me AI`)}
-              </button>
-              <button onClick={() => handleBulkAction('delete')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl text-xs font-bold transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-            </motion.div>
-          ) : (
-            <>
-              <button 
-                onClick={handleGetSummary}
-                className="flex-1 whitespace-nowrap flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold tracking-wide text-[10px] xl:text-xs transition-all duration-300 rounded-xl border border-slate-950 flex items-center justify-center gap-1.5 shadow-sm dark:shadow-none shadow-slate-900/10"
-                title={dt(`Gjenero Përmbledhje Ekzekutive me AI`)}
-              >
-                <Cpu className="w-4 h-4 text-rose-500 animate-pulse" />{dt(`Përmbledh me AI`)}
-              </button>
-              <button 
-                onClick={() => handleDownload('html')}
-                className="flex-1 whitespace-nowrap flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold tracking-wide text-[10px] xl:text-xs transition-colors rounded-xl border border-rose-200"
-                title={dt(`Eksporto HTML`)}
-              >
-                <FileText className="w-4 h-4" />{dt(`HTML`)}
-              </button>
-              <button 
-                onClick={() => handleDownload('pdf')}
-                className="flex-1 whitespace-nowrap flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold tracking-wide text-[10px] xl:text-xs transition-colors rounded-xl border border-indigo-200"
-                title={dt(`Eksporto PDF`)}
-              >
-                <FileText className="w-4 h-4" />{dt(`PDF`)}
-              </button>
-              <button 
-                onClick={() => handleDownload('csv')}
-                className="flex-1 whitespace-nowrap flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold tracking-wide text-[10px] xl:text-xs transition-colors rounded-xl border border-emerald-200"
-                title={dt(`Eksporto CSV`)}
-              >
-                <Download className="w-4 h-4" />{dt(`CSV`)}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      
-      {viewMode === 'list' ? (
-        <>
-        <div className="overflow-x-auto min-h-[400px] bg-white dark:bg-slate-900 relative rounded-b-xl">
-          <div className="absolute top-0 right-0 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-4 py-2 text-[10px] font-bold tracking-widest uppercase border-b border-l border-slate-100 dark:border-white/5 z-10 rounded-bl-xl hidden sm:block">
-            {department === 'infrastrukture' ? 'Sektori Qendror: Infrastrukturë & Urbanizëm' : department === 'tjera' ? 'Sektori Sekondar: Tjera' : 'Gjitha Raportimet'}
-          </div>
-          <table className="w-full text-left text-sm whitespace-nowrap min-w-[900px]">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] tracking-widest uppercase font-bold border-b border-slate-100 dark:border-white/5">
-              <tr>
-                <th className="px-4 py-4 w-12 text-center">
-                  <button onClick={toggleSelectAll} className="text-slate-400 hover:text-slate-500 dark:text-slate-400">
-                    {paginatedReports.length > 0 && selectedIds.size === paginatedReports.length ? (
-                      <CheckSquare className="w-5 h-5 text-indigo-600" />
-                    ) : (
-                      <Square className="w-5 h-5" />
-                    )}
-                  </button>
-                </th>
-                <th className="px-6 py-4">{dt(`Statusi & ID`)}</th>
-                <th className="px-6 py-4">{dt(`Objekti Raportimit`)}</th>
-                <th className="px-6 py-4">{dt(`Tema, sektori & urgjenca`)}</th>
-                <th className="px-6 py-4">{dt(`Koha e Regjistrimit`)}</th>
-                <th className="px-6 py-4 text-right">{dt(`Veprime`)}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-              <AnimatePresence mode="popLayout">
-                {paginatedReports.map((report) => {
-                  const isSelected = selectedIds.has(report.id);
-                  const accountability = getAccountabilityProfile(report.category);
-                  const responseDueAt = report.responseDueAt || getAccountabilityDueDate(report.createdAt, accountability.responseHours);
-                  const isOverdue = report.status !== 'Resolved' && new Date(responseDueAt).getTime() < Date.now();
-                  return (
-                    <motion.tr 
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      key={report.id} 
-                      className={cn(
-                        "hover:bg-slate-50 dark:bg-slate-800 transition-colors group",
-                        isSelected && "bg-indigo-50/50"
-                      )}
-                    >
-                      <td className="px-4 py-4 align-top text-center">
-                        <button onClick={() => toggleSelectBlock(report.id)} className="text-slate-400 hover:text-slate-500 dark:text-slate-400">
-                          {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5" />}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="flex flex-col gap-1.5 items-start">
-                          <select
-                            value={report.status}
-                            onChange={(e) => handleStatusChange(report.id, e.target.value)}
-                            className={cn(
-                              "px-2 py-1 text-[10px] uppercase font-bold tracking-widest rounded outline-none border focus:ring-2 focus:ring-indigo-500/20 cursor-pointer appearance-none transition-colors",
-                              getStatusColor(report.status)
-                            )}
-                          >
-                            <option value="Pending Review">{dt(`Në Pritje`)}</option>
-                            <option value="Approved">{dt(`Aprovuar / Hapur`)}</option>
-                            <option value="Assigned">{dt(`Caktuar`)}</option>
-                            <option value="In Progress">{dt(`Në Analizë`)}</option>
-                            <option value="Resolved">{dt(`E Përfunduar`)}</option>
-                            <option value="Rejected">{dt(`E Refuzuar`)}</option>
-                            <option value="Overdue">{dt(`Mbi Afat`)}</option>
-                          </select>
-                          <span className="font-mono text-[10px] text-blue-600 bg-blue-50 dark:bg-blue-950/30 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-900">{report.trackingId || `ZQ-${report.id.substring(0, 8).toUpperCase()}`}</span>
-                          {report.assignedTo && <span className="text-[10px] font-bold tracking-widest text-indigo-600 truncate max-w-[120px] uppercase mt-1">{dt(`Ref:`)} {report.assignedTo}
-                          </span>}
-                          <span className={cn("text-[9px] font-bold truncate max-w-[180px]", isOverdue ? "text-rose-600" : "text-slate-400")}>{isOverdue ? 'Përgjegjësi e vonuar' : 'Afati'}: {new Date(responseDueAt).toLocaleDateString('sq-AL')}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="flex items-start gap-3">
-                          {report.images?.[0] && <img src={report.images[0]} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-white/10 shrink-0" />}
-                          <p className="font-bold text-slate-900 dark:text-white max-w-[250px] truncate text-sm hover:text-indigo-600 cursor-pointer transition-colors" onClick={() => setSelectedReportId(report.id)} title={report.title}>
-                            {report.title}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1 text-slate-500 dark:text-slate-400">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                          <p className="text-[11px] font-bold tracking-wide truncate max-w-[230px] uppercase">{report.location?.address || 'Nuk ka adresë'}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="w-max max-w-[220px] truncate rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-black text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-200" title="Kategoria tematike">{getReportTopicLabel(report)}</span>
-                          <span className="text-slate-900 dark:text-white font-bold text-xs truncate max-w-[200px]" title="Sektori / institucioni">{dt(report.category)}</span>
-                          <span className="text-[10px] font-bold text-blue-600 truncate max-w-[220px]" title={report.responsibleInstitution || accountability.institution}>{report.responsibleInstitution || accountability.institution}</span>
-                          <span className={cn("text-[9px] font-bold tracking-widest px-1.5 py-0.5 rounded w-max uppercase", 
-                            report.urgency === 'Kritike' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
-                            report.urgency === 'E lartë' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 
-                            'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-white/5')}
-                          >
-                            {dt(report.urgency)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-xs align-top">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="font-bold">{format(new Date(report.createdAt), 'dd MMM yyyy')}</span>
-                        </div>
-                        <div className="text-slate-400 mt-0.5 ml-5.5 text-[10px] font-bold tracking-widest">{format(new Date(report.createdAt), 'HH:mm')}</div>
-                      </td>
-                      <td className="px-6 py-4 text-right align-top">
-                        <div className="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => handleEmailReport(report)}
-                            className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 text-[10px] font-black text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-400/20 dark:bg-indigo-400/10 dark:text-indigo-200 dark:hover:bg-indigo-400/20"
-                            title={getMatchingContact(report) ? `${dt('Hap draft-email për')} ${getMatchingContact(report)?.name}` : dt('Shto kontaktin për këtë komunë dhe institucion')}
-                          >
-                            <Mail className="h-3.5 w-3.5" /> {getMatchingContact(report) ? dt('Email') : dt('Shto kontakt')}
-                          </button>
-                          <button 
-                            onClick={() => setSelectedReportId(report.id)}
-                            className="px-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 hover:border-indigo-600 hover:text-indigo-600 text-slate-500 dark:text-slate-400 rounded-2xl text-xs font-bold transition-colors shadow-sm dark:shadow-none flex items-center gap-2"
-                          >
-                            <Edit className="w-3.5 h-3.5" />{dt(`Shiko`)}
-                          </button>
-                          <button 
-                            onClick={() => { if(window.confirm('A jeni i sigurt?')) deleteReport(report.id); }}
-                            className="p-1.5 bg-white dark:bg-slate-900 text-rose-500 hover:text-white border border-slate-200/60 dark:border-white/10 hover:bg-rose-500 hover:border-rose-500 rounded-2xl transition-colors shadow-sm dark:shadow-none"
-                            title={dt(`Fshij Dosjen`)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </AnimatePresence>
-            </tbody>
-          </table>
-          {paginatedReports.length === 0 && (
-            <div className="text-center py-24">
-              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-white/5">
-                <Search className="w-8 h-8 text-slate-300" />
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">{dt(`Asnjë raport nuk u gjet me këto kritere.`)}</p>
-            </div>
-          )}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800 rounded-b-xl flex items-center justify-between">
-            <span className="text-xs font-bold tracking-widest uppercase text-slate-400">{dt(`Duke shfaqur`)} {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredReports.length)}{dt(`nga`)} {filteredReports.length}</span>
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-xl hover:bg-slate-200 disabled:opacity-50 text-slate-500 dark:text-slate-400 transition-colors bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 shadow-sm dark:shadow-none"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="text-sm font-bold text-slate-900 dark:text-white min-w-[2.5rem] text-center">{currentPage}</span>
-              <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-xl hover:bg-slate-200 disabled:opacity-50 text-slate-500 dark:text-slate-400 transition-colors bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 shadow-sm dark:shadow-none"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
           </div>
         )}
-        </>
-      ) : (
+        {serverActive && filters.query.trim() && !codeQuery && moreAvailable && (
+          <p className="border-b border-slate-100 bg-slate-50/60 px-4 py-2 text-[11px] text-slate-500 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-400">
+            {dt(`Kërkimi me fjalë shfaq vetëm raportet e ngarkuara. Për të gjetur çdo raport, shkruani kodin e ndjekjes (p.sh. ZQ-1042).`)}
+          </p>
+        )}
+
+        {viewMode === 'list' ? (
+          <>
+            {paginatedReports.length > 0 && (
+              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-3 py-2 text-[11px] font-semibold text-slate-500 sm:px-4 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={allOnPageSelected}
+                  onChange={toggleSelectAll}
+                  aria-label={dt(`Zgjidh të gjitha në këtë faqe`)}
+                  className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-rose-600"
+                />
+                <span>
+                  {pageData.total.toLocaleString('sq')} {dt(`raporte`)}
+                  {moreAvailable && <span className="font-normal"> · {dt(`të ngarkuara deri tani`)}</span>}
+                </span>
+                {canHaveMine && (
+                  <button
+                    type="button"
+                    onClick={() => setOnlyMine(value => !value)}
+                    aria-pressed={onlyMine}
+                    className={cn(
+                      'ml-auto rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors',
+                      onlyMine ? 'bg-indigo-600 text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800'
+                    )}
+                    title={dt(`Vetëm raportimet që i keni marrë përsipër`)}
+                  >
+                    {dt(`Të miat`)}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => startReview()}
+                  className={cn('inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 dark:bg-rose-600 dark:hover:bg-rose-500', !canHaveMine && 'ml-auto')}
+                  title={dt(`Hap rekordin e parë dhe kalo një nga një`)}
+                >
+                  {dt(`Fillo rishikimin`)}
+                </button>
+              </div>
+            )}
+
+            {paginatedReports.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full border border-slate-100 bg-slate-50 dark:border-white/5 dark:bg-slate-800">
+                  <Search className="h-6 w-6 text-slate-300" />
+                </div>
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                  {listLoading
+                    ? dt(`Duke ngarkuar raportet…`)
+                    : hasAnyFilter || scopeName
+                      ? dt(`Asnjë raport nuk përputhet me këto kritere.`)
+                      : dt(`Nuk ka ende raporte.`)}
+                </p>
+                {hasAnyFilter && !listLoading && (
+                  <button
+                    type="button"
+                    onClick={() => changeFilters({ ...EMPTY_FILTERS })}
+                    className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 dark:bg-rose-600 dark:hover:bg-rose-500"
+                  >
+                    {dt(`Pastro filtrat`)}
+                  </button>
+                )}
+                {scopeName && !hasAnyFilter && !listLoading && (
+                  <p className="mt-1 text-xs text-slate-400">{dt(`Kufizimi aktiv:`)} {scopeName}</p>
+                )}
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100 dark:divide-white/10">
+                {paginatedReports.map(report => {
+                  const accountability = getAccountabilityProfile(report.category);
+                  const contact = getMatchingContact(report);
+                  return (
+                    <ReportRow
+                      key={report.id}
+                      report={report}
+                      selected={selectedIds.has(report.id)}
+                      onToggle={() => toggleSelectBlock(report.id)}
+                      onOpen={() => startReview(report.id)}
+                      now={now}
+                      dueAt={reportDueAt(report)}
+                      topicLabel={getReportTopicLabel(report)}
+                      institution={report.responsibleInstitution || accountability.institution}
+                      onApprove={canChange && report.status === 'Pending Review' ? () => void approveOne(report.id) : undefined}
+                      onEmail={() => handleEmailReport(report)}
+                      hasContact={Boolean(contact)}
+                      onDelete={canDelete ? () => deleteOne(report) : undefined}
+                    />
+                  );
+                })}
+              </ul>
+            )}
+
+            {(totalPages > 1 || moreAvailable) && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+                <span className="font-semibold">
+                  {pageData.from}–{pageData.to} {dt(`nga`)} {pageData.total.toLocaleString('sq')}
+                </span>
+                <div className="flex items-center gap-2">
+                  {moreAvailable && pageData.page === totalPages && (
+                    <button
+                      type="button"
+                      disabled={serverList.isLoadingMore}
+                      onClick={() => void loadMore()}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      {serverList.isLoadingMore ? dt(`Duke ngarkuar…`) : dt(`Ngarko më shumë raporte`)}
+                    </button>
+                  )}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(pageData.page - 1)}
+                        disabled={pageData.page === 1}
+                        aria-label={dt(`Faqja e mëparshme`)}
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:hover:bg-slate-800"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="min-w-[4rem] text-center font-bold text-slate-700 dark:text-slate-200">{pageData.page} / {totalPages}</span>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(pageData.page + 1)}
+                        disabled={pageData.page === totalPages}
+                        aria-label={dt(`Faqja tjetër`)}
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:hover:bg-slate-800"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
         /* KANBAN BOARD VIEW */
         <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl overflow-x-auto min-h-[500px]">
           <div className="flex gap-4 min-w-max pb-4 h-full items-start">
@@ -1052,13 +996,53 @@ export default function AdminReports({ department }: { department?: 'infrastrukt
             })}
           </div>
         </div>
+        )}
+
+        {selectedIds.size > 0 && (
+          <div className="sticky bottom-3 z-30 mx-auto mb-3 flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white shadow-2xl">
+            <span className="px-1 font-bold">{selectedIds.size} {dt(`të zgjedhura`)}</span>
+            {canChange && <button type="button" onClick={() => handleBulkAction('approve')} className="rounded-lg bg-emerald-600 px-3 py-1.5 font-bold hover:bg-emerald-500">{dt(`Aprovo`)}</button>}
+            <button type="button" onClick={handleGetSummary} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 font-bold hover:bg-indigo-500"><Cpu className="h-3.5 w-3.5" aria-hidden="true" />{dt(`Përmbledh me AI`)}</button>
+            {canDelete && (
+              <button type="button" onClick={() => handleBulkAction('delete')} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 font-bold hover:bg-rose-500"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{dt(`Fshi`)}</button>
+            )}
+            <button type="button" onClick={() => setSelectedIds(new Set())} className="rounded-lg px-2 py-1.5 font-bold text-slate-300 hover:text-white">{dt(`Pastro`)}</button>
+          </div>
+        )}
+      </section>
+
+      {emailing && (
+        <EmailInstitutionDialog
+          reportId={emailing.report.id}
+          reportTitle={emailing.report.title}
+          contact={emailing.contact}
+          canRetry={currentUser?.role === 'admin' || currentUser?.role === 'superadmin'}
+          onClose={() => setEmailing(null)}
+          onUseMailProgram={() => { const report = emailing.report; setEmailing(null); handleEmailReport(report, true); }}
+        />
       )}
-      </div>
+
+      {review && (
+        <ReviewMode
+          queue={review.queue}
+          startId={review.startId}
+          getReport={id => knownReports.find(r => r.id === id)}
+          canApprove={canChange}
+          canReject={canChange}
+          canDelete={canDelete}
+          canEditPhotos={canEditPhotos}
+          onApprove={id => updateReportStatus(id, 'Approved', 'Aprovuar.')}
+          onReject={reviewReject}
+          onDelete={async id => { await deleteReport(id); }}
+          onOpenFull={id => { setReview(null); setSelectedReportId(id); }}
+          onClose={() => { setReview(null); void serverList.refresh(); }}
+        />
+      )}
 
       {selectedReportId && (
         <ReportDetailModal 
-          report={reports.find(r => r.id === selectedReportId)!} 
-          onClose={() => setSelectedReportId(null)} 
+          report={knownReports.find(r => r.id === selectedReportId)!} 
+          onClose={() => { setSelectedReportId(null); void serverList.refresh(); }} 
         />
       )}
 

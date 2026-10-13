@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { escapeHtml } from '../../lib/escapeHtml';
 import {  dt } from '../../lib/dt';
 import {
   HeartPulse, Download, Search, Filter, Phone, Mail, 
@@ -8,6 +9,8 @@ import {
   Trash2, ShieldCheck, Check, Clock, UserCheck
 } from 'lucide-react';
 import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore';
+import DecisionBar from './DecisionBar';
+import { takeDecision } from '../../lib/decisionsApi';
 import { db, readPrivateHealthDocument } from '../../lib/firebase.ts';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { getHospitalInfoForMunicipality, HospitalContact } from '../../data/kosovoHospitals';
@@ -142,19 +145,12 @@ export default function AdminHealthRegistry() {
     if (previewImage?.url.startsWith('blob:')) URL.revokeObjectURL(previewImage.url);
   }, [previewImage]);
 
-  // Quick Status Updater
-  const handleUpdateStatus = async (caseId: string, newStatus: 'verified' | 'pending' | 'rejected' | 'resolved') => {
+  /** After the server accepted a decision, mirror it locally so the screen updates at once. */
+  const applyDecidedStatus = (caseId: string, newStatus: string) => {
     const statusUpdatedAt = new Date().toISOString();
-    try {
-      await updateDoc(doc(db, 'healthRegistry', caseId), { status: newStatus, statusUpdatedAt });
-      setCases(prev => prev.map(c => c.id === caseId ? { ...c, status: newStatus, statusUpdatedAt } : c));
-      setInspectingCase(prev => prev?.id === caseId ? { ...prev, status: newStatus, statusUpdatedAt } : prev);
-      const label = newStatus === 'verified' ? 'Verifikuar' : newStatus === 'pending' ? 'Në Shqyrtim' : newStatus === 'rejected' ? 'Refuzuar' : 'Zgjidhur';
-      toast.success(`Statusi u përditësua me sukses në: ${label}`);
-    } catch (err) {
-      console.error('Statusi shëndetësor nuk u ruajt:', err);
-      toast.error('Statusi nuk u ruajt. Kontrolloni lejet dhe provoni përsëri.');
-    }
+    const status = newStatus as HealthCase['status'];
+    setCases(prev => prev.map(c => c.id === caseId ? { ...c, status, statusUpdatedAt } : c));
+    setInspectingCase(prev => prev?.id === caseId ? { ...prev, status, statusUpdatedAt } : prev);
   };
 
   // Save Case Details
@@ -256,7 +252,7 @@ export default function AdminHealthRegistry() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Fletë-Referim Zyrtar - ${c.isAnonymous ? 'Rast Anonim' : c.fullName}</title>
+          <title>Fletë-Referim Zyrtar - ${c.isAnonymous ? 'Rast Anonim' : escapeHtml(c.fullName)}</title>
           <style>
             body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #0f172a; max-width: 800px; margin: auto; }
             .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 24px; }
@@ -279,31 +275,31 @@ export default function AdminHealthRegistry() {
             <div class="gov-title">REPUBLIKA E KOSOVËS • SHTABI QENDROR I SHËNDETËSISË</div>
             <div class="dept-title">DREJTORIA E REGJISTRIT TË RASTEVE TË VEÇANTA & SOLIDARITETIT</div>
             <div class="doc-title">FLETË-REFERIM DHE ALARM ZYRTAR SHËNDETËSOR</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Numri Protokollar: REF-KS-${c.id.slice(-6).toUpperCase()} • Data: ${new Date().toLocaleDateString('sq-AL')}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Numri Protokollar: REF-KS-${escapeHtml(c.id.slice(-6).toUpperCase())} • Data: ${new Date().toLocaleDateString('sq-AL')}</div>
           </div>
 
           <div class="grid">
-            <div class="field"><div class="field-label">Pacienti</div><div class="field-val">${c.isAnonymous ? 'Rast i Mbrojtur / Anonim' : c.fullName}</div></div>
-            <div class="field"><div class="field-label">Mosha dhe Gjinia</div><div class="field-val">${c.age} vjeç • ${c.gender}</div></div>
-            <div class="field"><div class="field-label">Komuna & Lagjja</div><div class="field-val">Komuna e ${c.municipality} (${c.neighborhood || 'Qendër'})</div></div>
-            <div class="field"><div class="field-label">Urgjenca</div><div class="field-val urgent-badge">${c.urgency}</div></div>
-            <div class="field"><div class="field-label">Kategoria Klinike</div><div class="field-val">${c.category}</div></div>
-            <div class="field"><div class="field-label">Telefoni i Kontaktit</div><div class="field-val">${c.contactPhone || 'Pa kontakt të shënuar'}</div></div>
+            <div class="field"><div class="field-label">Pacienti</div><div class="field-val">${c.isAnonymous ? 'Rast i Mbrojtur / Anonim' : escapeHtml(c.fullName)}</div></div>
+            <div class="field"><div class="field-label">Mosha dhe Gjinia</div><div class="field-val">${escapeHtml(c.age)} vjeç • ${escapeHtml(c.gender)}</div></div>
+            <div class="field"><div class="field-label">Komuna & Lagjja</div><div class="field-val">Komuna e ${escapeHtml(c.municipality)} (${escapeHtml(c.neighborhood || 'Qendër')})</div></div>
+            <div class="field"><div class="field-label">Urgjenca</div><div class="field-val urgent-badge">${escapeHtml(c.urgency)}</div></div>
+            <div class="field"><div class="field-label">Kategoria Klinike</div><div class="field-val">${escapeHtml(c.category)}</div></div>
+            <div class="field"><div class="field-label">Telefoni i Kontaktit</div><div class="field-val">${escapeHtml(c.contactPhone || 'Pa kontakt të shënuar')}</div></div>
           </div>
 
           <div style="margin-top: 15px;">
             <div class="field-label">Diagnoza Paraprake dhe Epikriza</div>
             <div class="box">
-              <strong>Diagnoza:</strong> ${c.diagnosis}<br/><br/>
+              <strong>Diagnoza:</strong> ${escapeHtml(c.diagnosis)}<br/><br/>
               <strong>Përshkrimi i Rastit:</strong><br/>
-              ${c.description || 'Nuk ka përshkrim të plotë të shtuar.'}<br/><br/>
-              <strong>Nevojat e Veçanta:</strong> ${(c.needs || []).join(' • ')}
+              ${escapeHtml(c.description || 'Nuk ka përshkrim të plotë të shtuar.')}<br/><br/>
+              <strong>Nevojat e Veçanta:</strong> ${escapeHtml((c.needs || []).join(' • '))}
             </div>
           </div>
 
           <div class="hosp-box">
-            <strong>Institucioni Shëndetësor Pritës:</strong> ${hosp.name}<br/>
-            <strong>Adresa:</strong> ${hosp.address} | <strong>Kontakti i Urgjencës:</strong> ${hosp.emergencyPhone}
+            <strong>Institucioni Shëndetësor Pritës:</strong> ${escapeHtml(hosp.name)}<br/>
+            <strong>Adresa:</strong> ${escapeHtml(hosp.address)} | <strong>Kontakti i Urgjencës:</strong> ${escapeHtml(hosp.emergencyPhone)}
           </div>
 
           <div class="signatures">
@@ -347,8 +343,17 @@ export default function AdminHealthRegistry() {
           hospitalNotifiedAt: new Date().toISOString(),
           hospitalTarget: hospitalInfo.name,
           notificationNotes: notificationNotes,
-          status: 'verified'
         });
+        // Telling a hospital means the case was checked: record that as a
+        // verification decision (with author and trace), not a silent status write.
+        if ((notifyingCase.status ?? 'pending') === 'pending') {
+          try {
+            await takeDecision('health', notifyingCase.id, 'approve');
+            setCases(prev => prev.map(item => item.id === notifyingCase.id ? { ...item, status: 'verified' } : item));
+          } catch (error) {
+            toast.error(`${dt('Spitali u njoftua, por rasti nuk u verifikua:')} ${(error as Error).message}`);
+          }
+        }
       }
 
       // Update local state
@@ -391,19 +396,21 @@ export default function AdminHealthRegistry() {
     }
 
     setIsAdminSavingGoFundMe(true);
+    const previousUrl = adminGoFundMeCase.donationUrl;
     try {
+      // Write first, then update the screen. This used to swallow a failed write
+      // and still announce success, leaving the list showing a link that was
+      // never stored.
+      await updateDoc(doc(db, 'healthRegistry', adminGoFundMeCase.id), {
+        donationUrl: url || null
+      });
       setCases(prev => prev.map(item => item.id === adminGoFundMeCase.id ? { ...item, donationUrl: url || undefined } : item));
-      try {
-        await updateDoc(doc(db, 'healthRegistry', adminGoFundMeCase.id), {
-          donationUrl: url || null
-        });
-      } catch (err) {
-        console.warn("Firestore save fallback for local demo record:", err);
-      }
       toast.success(url ? 'Linku i GoFundMe u ruajt!' : 'Linku i donacionit u hoq.');
       setAdminGoFundMeCase(null);
     } catch (err) {
-      toast.error('Gabim gjatë ruajtjes së linkut të GoFundMe.');
+      console.error('GoFundMe link not saved:', err);
+      setCases(prev => prev.map(item => item.id === adminGoFundMeCase.id ? { ...item, donationUrl: previousUrl } : item));
+      toast.error('Linku nuk u ruajt. Kontrolloni lejet dhe provoni përsëri.');
     } finally {
       setIsAdminSavingGoFundMe(false);
     }
@@ -487,8 +494,8 @@ export default function AdminHealthRegistry() {
 
     const rows = filteredCases.map(c => `
       <tr>
-        <td>${c.trackingId || c.id}</td>
-        <td>${c.isAnonymous ? '<em>' + dt('Anonim') + '</em>' : c.fullName}</td>
+        <td>${escapeHtml(c.trackingId || c.id)}</td>
+        <td>${c.isAnonymous ? '<em>' + escapeHtml(dt('Anonim')) + '</em>' : escapeHtml(c.fullName)}</td>
         <td>${c.age}</td>
         <td>${c.gender}</td>
         <td>${c.municipality}</td>
@@ -562,10 +569,10 @@ export default function AdminHealthRegistry() {
 
     const rows = filteredCases.map(c => `
       <tr>
-        <td>${c.trackingId || c.id}</td>
-        <td>${c.isAnonymous ? '<em>' + dt('Anonim') + '</em>' : c.fullName}</td>
-        <td>${c.age}</td><td>${c.municipality}</td><td>${c.category}</td>
-        <td>${c.diagnosis}</td><td>${c.urgency}</td>
+        <td>${escapeHtml(c.trackingId || c.id)}</td>
+        <td>${c.isAnonymous ? '<em>' + escapeHtml(dt('Anonim')) + '</em>' : escapeHtml(c.fullName)}</td>
+        <td>${escapeHtml(c.age)}</td><td>${escapeHtml(c.municipality)}</td><td>${escapeHtml(c.category)}</td>
+        <td>${escapeHtml(c.diagnosis)}</td><td>${escapeHtml(c.urgency)}</td>
       </tr>`).join('');
 
     const doc = `<!doctype html><html><head><meta charset="utf-8">
@@ -578,7 +585,7 @@ export default function AdminHealthRegistry() {
   th { background: #0f172a; color: #fff; padding: 5px 6px; text-align: left; }
   td { padding: 4px 6px; border-bottom: 1px solid #e2e8f0; }
 </style></head><body>
-<h1>${dt('Regjistri Shëndetësor')} — ${selectedMunicipality === 'all' ? dt('Të 38 komunat') : selectedMunicipality}</h1>
+<h1>${dt('Regjistri Shëndetësor')} — ${selectedMunicipality === 'all' ? dt('Të 38 komunat') : escapeHtml(selectedMunicipality)}</h1>
 <div class="meta">${filteredCases.length} ${dt('raste')} · ${new Date().toLocaleString('sq-AL')}</div>
 <table><thead><tr>
   <th>ID</th><th>${dt('Pacienti')}</th><th>${dt('Mosha')}</th><th>${dt('Komuna')}</th>
@@ -923,10 +930,8 @@ export default function AdminHealthRegistry() {
 
                       {/* Administrative Status */}
                       <td className="py-3.5 px-4">
-                        <select
-                          value={caseStatus}
-                          onChange={(e) => handleUpdateStatus(c.id, e.target.value as any)}
-                          className={`text-[11px] font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer ${
+                        <span
+                          className={`inline-flex text-[11px] font-bold px-2 py-1 rounded-lg border ${
                             caseStatus === 'verified'
                               ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                               : caseStatus === 'pending'
@@ -935,12 +940,10 @@ export default function AdminHealthRegistry() {
                               ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                               : 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
                           }`}
+                          title={dt('Gjendja ndryshohet te dosja e rastit, me arsye dhe histori.')}
                         >
-                          <option value="verified">✅ Verifikuar</option>
-                          <option value="pending">⏳ Në Shqyrtim</option>
-                          <option value="rejected">❌ Refuzuar</option>
-                          <option value="resolved">🕊️ Trajtuar</option>
-                        </select>
+                          {caseStatus === 'verified' ? dt('Verifikuar') : caseStatus === 'pending' ? dt('Në shqyrtim') : caseStatus === 'rejected' ? dt('Refuzuar') : dt('Trajtuar')}
+                        </span>
                       </td>
 
                       {/* GoFundMe / Donacion */}
@@ -1091,30 +1094,14 @@ export default function AdminHealthRegistry() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => handleUpdateStatus(inspectingCase.id, 'verified')}
-                  className="px-2.5 py-1 text-[11px] font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                >
-                  Verifiko
-                </button>
-                <button
-                  onClick={() => handleUpdateStatus(inspectingCase.id, 'pending')}
-                  className="px-2.5 py-1 text-[11px] font-bold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                >
-                  Në Shqyrtim
-                </button>
-                <button
-                  onClick={() => handleUpdateStatus(inspectingCase.id, 'rejected')}
-                  className="px-2.5 py-1 text-[11px] font-bold bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors"
-                >
-                  Refuzo
-                </button>
-                <button
-                  onClick={() => handleUpdateStatus(inspectingCase.id, 'resolved')}
-                  className="px-2.5 py-1 text-[11px] font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Përfundo
-                </button>
+                {!inspectingCase.id.startsWith('hc-') && (
+                  <DecisionBar
+                    kind="health"
+                    id={inspectingCase.id}
+                    doc={inspectingCase as any}
+                    onDecided={state => applyDecidedStatus(inspectingCase.id, state)}
+                  />
+                )}
 
                 {/*
                   The anonymity workflow. A health administrator reviews the

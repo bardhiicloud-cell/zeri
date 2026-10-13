@@ -492,7 +492,7 @@ export default function AgentPanelPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Të marrë përsipër" value={mine.length} tone="blue" />
             <Stat label="Në punim" value={mine.filter((r) => r.status === 'In Progress').length} tone="indigo" />
-            <Stat label="Të përfunduara" value={mine.filter((r) => r.status === 'Resolved').length} tone="emerald" />
+            <Stat label={dt('Të përfunduara')} value={mine.filter((r) => r.status === 'Resolved').length} tone="emerald" />
             <Stat label="Ora mes. zgjidhje" value={avgResolution} />
           </div>
 

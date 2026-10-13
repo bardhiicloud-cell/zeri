@@ -54,9 +54,12 @@ export default function AdminSettings() {
     try {
       await setDoc(doc(db, 'settings', 'general'), { showReels }, { merge: true });
       toast.success('Cilësimet e sistemit u ruajtën me sukses!');
-    } catch(e) { 
-      console.error(e); 
-      toast.success('Cilësimet u ruajtën lokalisht.');
+    } catch (e) {
+      // A failed write must say so. This used to report success ("saved
+      // locally"), so an administrator believed a setting was live when the
+      // platform never received it.
+      console.error(e);
+      toast.error('Cilësimet nuk u ruajtën. Kontrolloni lidhjen dhe provoni përsëri.');
     } finally {
       setIsSaving(false);
     }
@@ -71,7 +74,8 @@ export default function AdminSettings() {
           </h2>
           <button 
             onClick={handleSave}
-            className="flex w-full md:w-auto items-center justify-center gap-2 bg-rose-600 text-white px-6 py-3 font-bold tracking-wide text-xs hover:bg-slate-900 transition-colors border-2 border-transparent rounded-2xl"
+            disabled={isSaving}
+            className="flex w-full md:w-auto items-center justify-center gap-2 bg-rose-600 text-white px-6 py-3 font-bold tracking-wide text-xs hover:bg-slate-900 transition-colors border-2 border-transparent rounded-2xl disabled:opacity-60"
           >
             <Save className="w-4 h-4" />{dt(`Ruaj Ndryshimet`)}
           </button>

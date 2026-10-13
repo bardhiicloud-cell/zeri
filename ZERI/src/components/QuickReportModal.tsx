@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Camera, MapPin, Loader2, Send } from 'lucide-react';
 import { useStore } from '../lib/store';
-import { db, uploadFileToStorage } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { uploadFileToStorage } from '../lib/firebase';
+import { authHeaders } from '../lib/apiAuth';
+import { isSpecificScope } from '../lib/municipalityScope';
 import { useNavigate } from 'react-router-dom';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 
@@ -15,6 +16,7 @@ interface QuickReportModalProps {
 
 export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
   const currentUser = useStore(state => state.currentUser);
+  const municipality = useStore(state => state.userMunicipality);
   const navigate = useNavigate();
   
   const [title, setTitle] = useState('');
@@ -33,50 +35,49 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
       return;
     }
     
+    // The server needs a municipality to route the report; this form has no
+    // location picker, so it uses the one the citizen already chose.
+    if (!isSpecificScope(municipality)) {
+      alert("Zgjidhni komunën tuaj nga menyja e komunave para se të dërgoni një raportim të shpejtë.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let imageUrl = '';
       if (imageFile) {
         imageUrl = await uploadFileToStorage(imageFile, 'reports', { scope: 'quick' });
       }
-      
-      const docRef = await addDoc(collection(db, "reports"), {
-        title,
-        description,
-        category,
-        topicCategory,
-        urgency: 'Mesatare',
-        status: 'Approved',
-        location: { lat: null, lng: null },
-        locationName: '',
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        upvotes: [],
-        createdAt: serverTimestamp(),
-        imageUrl: imageUrl || null
-      });
 
-      try {
-        await addDoc(collection(db, "forumReels"), {
-          author: currentUser.name,
-          authorId: currentUser.id,
-          avatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=3b82f6&color=fff`,
-          description: `📍 [Raportim i Shpejtë] ${title}\n\n${description}`,
-          mediaUrl: imageUrl || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80',
-          isPhoto: true,
-          likes: [],
-          comments: [],
-          shares: 0,
-          views: 1,
-          song: 'Raportim i Shpejtë Qytetar',
-          createdAt: serverTimestamp(),
-          sourceReportId: docRef.id
-        });
-      } catch (e) {
-        console.error("Quick report auto reel error", e);
+      /*
+       * Goes through the server like the full report form. This used to write
+       * straight to Firestore with `status: 'Approved'`, which published the
+       * report with no review at all; the rules (rightly) refuse that, so the
+       * button only ever ended in an error. It also auto-created a public reel
+       * from the unreviewed text, which was the same bypass by another route.
+       */
+      const response = await fetch('/api/v1/reports', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          title,
+          description,
+          category,
+          topicCategory,
+          urgency: 'Mesatare',
+          location: { municipality, address: '' },
+          media: imageUrl ? [{ type: 'image', url: imageUrl }] : [],
+          isAnonymous: false,
+          authorName: currentUser.name,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(body?.error || 'Pati një gabim gjatë dërgimit.');
       }
-      
-      alert("Raportimi u dërgua me sukses!");
+      const created = await response.json() as { trackingId?: string };
+
+      alert(`Raportimi u dërgua me sukses!${created.trackingId ? ` Track ID: ${created.trackingId}` : ''}`);
       onClose();
       // Reset form
       setTitle('');
@@ -87,7 +88,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
       navigate('/');
     } catch (error) {
       console.error(error);
-      alert("Pati një gabim gjatë dërgimit.");
+      alert(error instanceof Error && error.message ? error.message : "Pati një gabim gjatë dërgimit.");
     } finally {
       setIsSubmitting(false);
     }

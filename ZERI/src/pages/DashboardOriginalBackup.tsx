@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../lib/LanguageContext';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
+import { authHeaders } from '../lib/apiAuth';
 
 
 import { Button } from '../components/ui/Button';
@@ -258,14 +259,12 @@ export default function Dashboard() {
 
         const res = await fetch('/api/dashboard/reporting-tips', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ userReports, userPoints })
         });
         if (res.ok) {
           const data = await res.json();
-          if (data && data.tips) {
+          if (data && data.tips && !data.degraded) {
             setTips(data.tips);
           }
         }
@@ -292,14 +291,21 @@ export default function Dashboard() {
     try {
       const res = await fetch('/api/dashboard/ai-news', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ municipality: muni })
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        // The model writes the alerts from the recent reports it is given. The
+        // request used to carry only the municipality name while the server read
+        // `issues`, so every "breaking news" item was invented from nothing.
+        body: JSON.stringify({
+          municipality: muni,
+          issues: reports
+            .filter(r => !muni || (r.location?.municipality || '').toLowerCase() === muni.toLowerCase())
+            .slice(0, 10)
+            .map(r => ({ title: r.title, category: r.category })),
+        })
       });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.alerts) {
+        if (data && data.alerts && !data.degraded) {
           setActiveAlerts(data.alerts);
           setCurrentAlertIndex(0);
         }
@@ -435,12 +441,12 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap items-center gap-[var(--spacing-4)] mb-[var(--spacing-8)]">
             <Button size="lg" variant="primary" onClick={() => navigate('/raporto')}>
-              Raporto një problem
+              {dt('Raporto një problem')}
             </Button>
             <Button size="lg" variant="outline" onClick={() => {
               document.getElementById('raportimet-section')?.scrollIntoView({ behavior: 'smooth' });
             }}>
-              Shfleto Raportimet
+              {dt('Shfleto Raportimet')}
             </Button>
           </div>
           
@@ -448,7 +454,7 @@ export default function Dashboard() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Kërko raporte, zona ose kategori..." 
+              placeholder={dt('Kërko raporte, zona ose kategori...')} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 dark:text-white"

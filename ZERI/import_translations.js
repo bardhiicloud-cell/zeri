@@ -18,7 +18,7 @@ import { dynamicTranslations } from './src/lib/dynamicTranslations.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NEW_LANGS = ['ar', 'fr', 'it', 'es', 'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl'];
+const NEW_LANGS = ['ar', 'fr', 'it', 'pt', 'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg'];
 const CACHE_FILE = path.join(__dirname, '_translation_cache.json');
 const OUT_FILE = path.join(__dirname, 'src', 'lib', 'newLanguageTranslations.ts');
 
@@ -34,7 +34,7 @@ function repair(text, lang) {
   let out = text;
   if (/kosov/i.test(out) || WRONG_SUBSTITUTIONS.some((re) => re.test(out))) {
     for (const re of WRONG_SUBSTITUTIONS) out = out.replace(re, '');
-    const correct = { mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', hy: 'Կոսովո' }[lang] || 'Kosovo';
+    const correct = { mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', bg: 'Косово', ja: 'コソボ', ko: '코소보', pl: 'Kosowo' }[lang] || 'Kosovo';
     if (!out.toLowerCase().includes(correct.slice(0, 4).toLowerCase())) {
       out = `${correct} ${out}`.trim();
     }
@@ -81,7 +81,7 @@ function writeOutput(cache, strings) {
  * An entry here wins for its language; a string that is absent falls through to
  * the Albanian original, so a partial file is always safe to ship.
  *
- * Languages: ar, fr, it, es, pt, gsw, mk, sl, hr, ro, sv, nb, hy, nl
+ * Languages: ar, fr, it, pt, gsw, mk, sl, hr, sv, nb, nl, ja, ko, pl, bg
  */
 `;
   fs.writeFileSync(

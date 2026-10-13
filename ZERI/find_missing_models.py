@@ -1,19 +1,19 @@
 """
-Find models for Macedonian, Croatian and Armenian under any of the code
-spellings Argos uses, then install whichever exists.
+Find models for Macedonian and Croatian under any of the code spellings Argos
+uses, then install whichever exists.
 
-These three were reported NOT AVAILABLE under their plain ISO codes, but Argos
-does not always index a language under the code we use internally — Romanian is
-"ro", Norwegian is "nb", and a language may also be listed only as a source of a
-model rather than a target. This scans the whole index rather than guessing.
+These two were reported NOT AVAILABLE under their plain ISO codes, but Argos
+does not always index a language under the code we use internally — Norwegian is
+listed as "no" while we call it "nb", and a language may also be listed only as
+a source of a model rather than a target. This scans the whole index rather than
+guessing. (Bulgarian, a target in its own right, is indexed as plain "bg".)
 """
 import argostranslate.package as pkg
 
 # Every code spelling that might refer to each missing language.
 WANTED = {
-    'mk': ['mk', 'mkd', 'mac', 'mk_MK', 'bg'],       # Macedonian; bg only as last resort
+    'mk': ['mk', 'mkd', 'mac', 'mk_MK'],              # Macedonian
     'hr': ['hr', 'hrv', 'sr', 'bs', 'sh'],            # Croatian; close South-Slavic fallbacks
-    'hy': ['hy', 'hye', 'arm', 'hy_AM'],              # Armenian
 }
 
 # Codes we will NOT accept even as a fallback, because the result would be the

@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc, writeBatch, query, limit, orderBy } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, setDoc, writeBatch, query, limit, orderBy } from 'firebase/firestore';
+import DecisionBar from './DecisionBar';
+import { DECISION_KINDS } from '../../lib/decisionRules';
+import { takeDecision } from '../../lib/decisionsApi';
 import { CheckCircle2, Link2, Newspaper, Plus, Search, Trash2, X, Filter, Pencil } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
@@ -71,7 +74,7 @@ export default function AdminNews() {
   const [reportFilter, setReportFilter] = useState<ReportStateFilter>('open');
   const [reportQuery, setReportQuery] = useState('');
   const [listQuery, setListQuery] = useState('');
-  const [listFilter, setListFilter] = useState<'all' | 'published' | 'draft' | 'linked'>('all');
+  const [listFilter, setListFilter] = useState<'all' | 'published' | 'draft' | 'rejected' | 'linked'>('all');
 
   const fieldClass = 'w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500';
 
@@ -109,8 +112,10 @@ export default function AdminNews() {
     const needle = listQuery.trim().toLowerCase();
     return items
       .filter(item => {
-        if (listFilter === 'published' && !item.published) return false;
-        if (listFilter === 'draft' && item.published) return false;
+        const state = DECISION_KINDS.news.stateOf(item as any);
+        if (listFilter === 'published' && state !== 'published') return false;
+        if (listFilter === 'draft' && state !== 'draft') return false;
+        if (listFilter === 'rejected' && state !== 'rejected') return false;
         if (listFilter === 'linked' && !(item.relatedReportIds?.length)) return false;
         if (!needle) return true;
         return (
@@ -146,16 +151,30 @@ export default function AdminNews() {
         readTime: existingItem?.readTime || '3 min lexim',
         date: existingItem?.date || new Date().toLocaleDateString('sq-AL', { day: '2-digit', month: 'long', year: 'numeric' }),
         createdAt: existingItem?.createdAt || now,
-        publishedAt: form.published
-          ? existingItem?.published && existingItem.publishedAt ? existingItem.publishedAt : now
-          : null,
+        // Saving writes the text only. Going public, or coming down, is a decision
+        // with an author and a trace, taken through the acceptance system below.
+        published: existingItem?.published === true,
+        publishedAt: existingItem?.published ? existingItem.publishedAt ?? null : null,
+        status: existingItem ? (existingItem as any).status ?? 'Draft' : 'Draft',
         updatedAt: now,
       };
       await setDoc(doc(db, 'newsArticles', id), articleData, { merge: Boolean(editingId) });
+      const wantsPublish = !editingId && form.published;
+      if (wantsPublish) {
+        try {
+          await takeDecision('news', id, 'publish');
+        } catch (error) {
+          toast.error(`${dt('Lajmi u ruajt si draft, por nuk u publikua:')} ${(error as Error).message}`);
+          setForm(emptyForm);
+          setEditingId(null);
+          setIsCreating(false);
+          return;
+        }
+      }
       setForm(emptyForm);
       setEditingId(null);
       setIsCreating(false);
-      toast.success(editingId ? dt('Lajmi u përditësua me sukses.') : dt('Lajmi u publikua me sukses.'));
+      toast.success(editingId ? dt('Lajmi u përditësua me sukses.') : wantsPublish ? dt('Lajmi u publikua me sukses.') : dt('Lajmi u ruajt si draft.'));
     } catch (error) {
       console.error('Gabim gjatë ruajtjes së lajmit:', error);
       toast.error(dt('Lajmi nuk u ruajt. Provoni përsëri.'));
@@ -192,24 +211,6 @@ export default function AdminNews() {
     if (!window.confirm(dt('A dëshironi ta hiqni këtë lajm?'))) return;
     await deleteDoc(doc(db, 'newsArticles', id));
     toast.success(dt('Lajmi u hoq.'));
-  };
-
-  /** Flip published without opening the editor, so a retraction is one click. */
-  const handleTogglePublished = async (item: AdminNewsItem) => {
-    if (item.isDemo) {
-      toast.error(dt('Redaktojeni dhe ruajeni shembullin demo para publikimit.'));
-      return;
-    }
-    try {
-      await updateDoc(doc(db, 'newsArticles', item.id), {
-        published: !item.published,
-        publishedAt: !item.published ? new Date().toISOString() : null,
-      });
-      toast.success(item.published ? dt('Lajmi u tërhoq nga publikimi.') : dt('Lajmi u publikua.'));
-    } catch (error) {
-      console.error(error);
-      toast.error(dt('Statusi nuk u ndryshua.'));
-    }
   };
 
   const handleSeedDemoArticles = async () => {
@@ -420,10 +421,12 @@ export default function AdminNews() {
               </div>
             </fieldset>
             <div className="flex flex-col gap-4">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200">
-                <input type="checkbox" checked={form.published} onChange={e => setForm({ ...form, published: e.target.checked })} className="h-4 w-4 accent-blue-700" />
-                Publikoje menjëherë
-              </label>
+              {!editingId && (
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200">
+                  <input type="checkbox" checked={form.published} onChange={e => setForm({ ...form, published: e.target.checked })} className="h-4 w-4 accent-blue-700" />
+                  {dt('Publikoje menjëherë')}
+                </label>
+              )}
               <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-relaxed text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
                 <strong>{form.relatedReportIds.length} raportime</strong> do të lidhen me këtë njoftim për gjurmim të përgjigjes komunale.
               </div>
@@ -482,7 +485,7 @@ export default function AdminNews() {
             </article>
           </details>
           <div className="flex justify-end">
-            <button type="submit" className="px-5 py-3 rounded-xl bg-slate-950 text-white font-bold text-sm dark:bg-blue-700">{editingId ? 'Ruaj ndryshimet' : form.published ? 'Publiko lajmin' : 'Ruaj si draft'}</button>
+            <button type="submit" className="px-5 py-3 rounded-xl bg-slate-950 text-white font-bold text-sm dark:bg-blue-700">{editingId ? dt('Ruaj tekstin') : form.published ? dt('Ruaj dhe publiko') : dt('Ruaj si draft')}</button>
           </div>
         </form>
       )}
@@ -497,6 +500,7 @@ export default function AdminNews() {
             { id: 'all', label: 'Të gjitha' },
             { id: 'published', label: 'Të publikuara' },
             { id: 'draft', label: 'Drafts' },
+            { id: 'rejected', label: 'Të refuzuara' },
             { id: 'linked', label: 'Me raportime' },
           ] as const).map((option) => (
             <button
@@ -546,19 +550,6 @@ export default function AdminNews() {
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePublished(item)}
-                      title={item.published ? dt('Tërhiq nga publikimi') : dt('Publiko')}
-                      className={cn(
-                        'rounded-lg p-2 transition-colors',
-                        item.published
-                          ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
-                          : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      )}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                    </button>
                     <button onClick={() => handleDelete(item.id)} className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30" title={dt('Fshi lajmin')}>
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -597,15 +588,27 @@ export default function AdminNews() {
                       {dt('Të gjitha të zgjidhura')}
                     </span>
                   )}
-                  <span className={cn(
-                    'rounded-full px-2 py-0.5',
-                    item.published
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                  )}>
-                    {item.published ? dt('Publikuar') : dt('Draft')}
-                  </span>
+                  {(() => {
+                    const state = DECISION_KINDS.news.stateOf(item as any);
+                    return (
+                      <span className={cn(
+                        'rounded-full px-2 py-0.5',
+                        state === 'published'
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          : state === 'rejected'
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                      )}>
+                        {state === 'published' ? dt('Publikuar') : state === 'rejected' ? dt('Refuzuar') : dt('Draft')}
+                      </span>
+                    );
+                  })()}
                 </div>
+                {item.isDemo ? (
+                  <p className="mt-3 text-[11px] text-amber-700 dark:text-amber-300">{dt('Redaktojeni dhe ruajeni shembullin para publikimit.')}</p>
+                ) : (
+                  <DecisionBar kind="news" id={item.id} doc={item as any} className="mt-3" />
+                )}
               </div>
             </article>
           );

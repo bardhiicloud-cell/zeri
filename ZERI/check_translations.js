@@ -10,8 +10,8 @@
  *   1. Proper nouns mangled or dropped (Kosovo, Albanian names, institutions).
  *   2. Placeholders / format tokens destroyed  ({name}, %s, (10s), ZQ-4587).
  *   3. Strings that came back identical to Albanian (i.e. not translated).
- *   4. Language-script mismatches (Arabic must contain Arabic script, Armenian
- *      Armenian script, Macedonian/Slovenian Cyrillic where expected, etc).
+ *   4. Language-script mismatches (Arabic must contain Arabic script, Japanese
+ *      Japanese script, Bulgarian/Macedonian Cyrillic where expected, etc).
  *   5. Punctuation drift: a trailing period invented or dropped.
  *   6. Empty or suspiciously short output for a long input.
  *
@@ -21,7 +21,7 @@
 import fs from 'fs';
 
 const CACHE_FILE = '_translation_cache.json';
-const LANGS = ['ar', 'fr', 'it', 'es', 'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl'];
+const LANGS = ['ar', 'fr', 'it', 'pt', 'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg'];
 
 // Names and terms that must survive translation verbatim.
 const PROPER_NOUNS = [
@@ -40,9 +40,13 @@ const TOKEN_RE = /\{[^}]+\}|%[sd]|\bZQ-\d+\b|\(\d+s\)|\b\d[\d.,]*\s*€/g;
 
 const SCRIPTS = {
   ar: /[\u0600-\u06FF]/,
-  hy: /[\u0530-\u058F]/,
+  // Japanese and Korean must come back in their own scripts; a Latin-only
+  // answer means the provider echoed a transliteration instead of translating.
+  ja: /[\u3040-\u30FF\u4E00-\u9FFF]/,
+  ko: /[\uAC00-\uD7AF]/,
   mk: /[\u0400-\u04FF]/,
-  // Serbian/Macedonian Cyrillic; Slovenian/Croatian/Romanian are Latin.
+  bg: /[\u0400-\u04FF]/,
+  // Serbian/Macedonian/Bulgarian Cyrillic; Slovenian/Croatian/Polish are Latin.
 };
 
 const problems = [];

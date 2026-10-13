@@ -41,6 +41,7 @@ const COLUMNS = [
       { to: '/kushtet-e-perdorimit', label: 'Kushtet e Përdorimit' },
       { to: '/trackid', label: 'Gjej Raportin Tim' },
       { to: '/rreth-projektit', label: 'Rreth Projektit' },
+      { to: '/partneret', label: 'Partnerët & Reklama' },
     ],
   },
 ];
@@ -128,9 +129,9 @@ export function AppFooter() {
           </div>
 
           {COLUMNS.map((column) => (
-            <nav key={column.title} aria-label={column.title}>
+            <nav key={column.title} aria-label={dt(column.title)}>
               <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                {column.title}
+                {dt(column.title)}
               </h2>
               <ul className="mt-3 space-y-2">
                 {column.links.map((link) => (
@@ -139,7 +140,7 @@ export function AppFooter() {
                       to={link.to}
                       className="text-xs text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                     >
-                      {link.label}
+                      {dt(link.label)}
                     </Link>
                   </li>
                 ))}

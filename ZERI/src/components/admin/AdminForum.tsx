@@ -2,16 +2,20 @@ import { dt } from '@/src/lib/dt';
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../lib/store';
 import { db } from '../../lib/firebase';
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc, limit } from 'firebase/firestore';
-import { Trash2, MessageSquare, Search, AlertCircle, CheckCircle, CirclePlay } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc, limit } from 'firebase/firestore';
+import { Trash2, MessageSquare, Search, AlertCircle, CheckCircle, CirclePlay, EyeOff, Film } from 'lucide-react';
+import toast from 'react-hot-toast';
+import DecisionBar from './DecisionBar';
+import { DECISION_KINDS } from '../../lib/decisionRules';
 import { cn } from '../../lib/utils';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import AdminForumStories from './AdminForumStories.tsx';
+import AdminReelReports from './AdminReelReports.tsx';
 
 export default function AdminForum() {
   const [posts, setPosts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [forumTab, setForumTab] = useState<'posts' | 'stories'>('posts');
+  const [forumTab, setForumTab] = useState<'posts' | 'stories' | 'reels'>('posts');
   const currentUser = useStore(state => state.currentUser);
 
   useEffect(() => {
@@ -27,35 +31,29 @@ export default function AdminForum() {
     return () => unsubscribe();
   }, [forumTab]);
 
+  // Deleting is permanent and reserved to the superadmin by the rules; hiding (with a
+  // reason, kept in the history) is the normal way to take a post down.
+  const canDelete = currentUser?.role === 'superadmin';
+  const [view, setView] = useState<'pending' | 'approved' | 'hidden' | 'all'>('pending');
+
   const handleDelete = async (id: string) => {
-    if (window.confirm("A jeni të sigurt që dëshironi ta fshini këtë postim?")) {
-      try {
-        await deleteDoc(doc(db, 'forumPosts', id));
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const handleToggleVisibility = async (id: string, isHidden: boolean) => {
+    if (!window.confirm(dt('Të fshihet përgjithmonë ky postim? Për ta hequr nga publiku mjafton "Fshih nga publiku".'))) return;
     try {
-      await updateDoc(doc(db, 'forumPosts', id), { isHidden: !isHidden });
+      await deleteDoc(doc(db, 'forumPosts', id));
+      toast.success(dt('Postimi u fshi.'));
     } catch (err) {
       console.error(err);
+      toast.error(dt('Postimi nuk u fshi.'));
     }
   };
 
-  const handleApprove = async (id: string, isApproved: boolean) => {
-    try {
-      await updateDoc(doc(db, 'forumPosts', id), { isApproved: !isApproved });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const filteredPosts = posts.filter(p => 
-    p.content?.toLowerCase().includes(search.toLowerCase()) || 
-    p.authorName?.toLowerCase().includes(search.toLowerCase())
+  const stateOf = (p: any) => DECISION_KINDS.forum.stateOf(p);
+  const counts = { pending: 0, approved: 0, hidden: 0, all: posts.length };
+  for (const p of posts) counts[stateOf(p) as 'pending' | 'approved' | 'hidden'] += 1;
+  const filteredPosts = posts.filter(p =>
+    (view === 'all' || stateOf(p) === view) &&
+    (p.content?.toLowerCase().includes(search.toLowerCase()) ||
+     p.authorName?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -86,9 +84,23 @@ export default function AdminForum() {
         >
           <CirclePlay className="w-4 h-4" /> {dt('Debat Story')}
         </button>
+        <button
+          type="button"
+          onClick={() => setForumTab('reels')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            forumTab === 'reels'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800',
+          )}
+        >
+          <Film className="w-4 h-4" /> {dt('Raportimet e Reels')}
+        </button>
       </div>
 
-      {forumTab === 'stories' ? (
+      {forumTab === 'reels' ? (
+        <AdminReelReports />
+      ) : forumTab === 'stories' ? (
         <AdminForumStories />
       ) : (
         <>
@@ -112,6 +124,20 @@ export default function AdminForum() {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {([['pending', 'Në pritje'], ['approved', 'Aprovuar'], ['hidden', 'Të fshehura'], ['all', 'Të gjitha']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setView(id)}
+            aria-pressed={view === id}
+            className={cn('rounded-xl px-3.5 py-2 text-xs font-bold', view === id ? 'bg-slate-900 text-white dark:bg-emerald-600' : 'border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300')}
+          >
+            {dt(label)} <span className="ml-1 tabular-nums opacity-70">{counts[id]}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-none overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -131,7 +157,7 @@ export default function AdminForum() {
                   <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{post.authorRole}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-slate-700 dark:text-slate-300 max-w-md truncate">
+                  <div className="text-sm text-slate-700 dark:text-slate-300 max-w-md line-clamp-3 whitespace-pre-wrap">
                     {post.content}
                   </div>
                 </td>
@@ -139,7 +165,11 @@ export default function AdminForum() {
                   {post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleDateString('sq-AL') : 'Sapo postuar'}
                 </td>
                 <td className="px-6 py-4">
-                  {post.isApproved ? (
+                  {stateOf(post) === 'hidden' ? (
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 text-[10px] font-bold uppercase tracking-wider">
+                       <EyeOff className="w-3 h-3" />{dt(`E fshehur`)}
+                     </span>
+                  ) : stateOf(post) === 'approved' ? (
                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
                        <CheckCircle className="w-3 h-3" />{dt(`Aprovuar`)}
                      </span>
@@ -149,25 +179,17 @@ export default function AdminForum() {
                      </span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button 
-                      onClick={() => handleApprove(post.id, !!post.isApproved)}
-                      className={cn(
-                        "p-2 rounded-2xl transition-colors",
-                        post.isApproved ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"
-                      )}
-                      title={post.isApproved ? "Hiq Aprovimin" : "Aprovo"}
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(post.id)}
-                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-2xl transition-colors"
-                      title={dt(`Fshij Postimin`)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col items-end gap-2">
+                    <DecisionBar kind="forum" id={post.id} doc={post} />
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> {dt(`Fshi përgjithmonë`)}
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

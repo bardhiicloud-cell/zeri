@@ -24,9 +24,12 @@ export type StaffRole =
   | 'approver'
   | 'adsadmin'
   | 'newsadmin'
+  /** Admin of the public debate: payments, verification, debate ads and post moderation. */
+  | 'debatwp'
   | 'agent'
   | 'responder'
   | 'dispatcher'
+  | 'monitor'
   | 'municipality';
 
 /** A role as stored on a record, which may predate the current union. */
@@ -34,6 +37,12 @@ export type UserRoleLike = User['role'];
 
 export type AdminSection =
   | 'dashboard'
+  /**
+   * The work inbox. Derived, never granted: whoever may open the dashboard sees
+   * what is waiting on them, and each item inside is still filtered by the
+   * section it belongs to (a record is only listed if its own section is open).
+   */
+  | 'inbox'
   | 'updates'
   | 'reports'
   | 'workfacts'
@@ -64,6 +73,14 @@ export type AdminSection =
   | 'videos'
   | 'notifications'
   | 'forum'
+  /** The public-debate console (`/debatwp`): payments, ticks, debate ads, post moderation. */
+  | 'debate'
+  /**
+   * The staged approval board: reports, donations, health cases and news on one set of
+   * stages. It has no grant of its own - it opens for whoever may open any of those
+   * four, and each move is still checked by the server for the field it belongs to.
+   */
+  | 'workflow'
   | 'support'
   | 'polls'
   | 'news'
@@ -82,7 +99,7 @@ export const FULL_ACCESS: readonly AdminSection[] = [
   'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users',
   'agents', 'municipalities', 'monitoring', 'monitorim', 'agentpanel', 'komunapanel', 'moderim',
   'roles',
-  'ads', 'videos', 'notifications', 'forum', 'support', 'polls', 'news', 'security', 'settings', 'categories',
+  'ads', 'videos', 'notifications', 'forum', 'debate', 'support', 'polls', 'news', 'security', 'settings', 'categories',
 ];
 
 /**
@@ -106,13 +123,17 @@ export const BY_ROLE: Partial<Record<UserRole, readonly AdminSection[]>> = {
   // Editorial: publishes news and moderates the public debate.
   newsadmin: ['dashboard', 'notifications', 'news', 'videos', 'forum', 'polls'],
 
+  // Public debate: owns the debate's payments, verification ticks, ads and post moderation.
+  // Deliberately no reports, users, health or platform settings.
+  debatwp: ['dashboard', 'debate', 'forum'],
+
   // Frontline staff: handle the queue, moderate the public debate, publish
   // notices and answer citizen support — change no platform setting.
   // `forum`, `news` and `support` are granted so a section lead can spread the
   // work without granting full admin. Removing one is a single-array edit.
-  agent: ['dashboard', 'reports', 'support', 'forum', 'news', 'notifications'],
-  responder: ['dashboard', 'reports', 'support', 'forum'],
-  dispatcher: ['dashboard', 'reports', 'support', 'forum', 'notifications'],
+  agent: ['dashboard', 'reports', 'support', 'forum', 'news', 'notifications', 'agentpanel'],
+  responder: ['dashboard', 'reports', 'support', 'forum', 'agentpanel'],
+  dispatcher: ['dashboard', 'reports', 'support', 'forum', 'notifications', 'agentpanel'],
 
   /**
    * Paying municipal account.
@@ -133,11 +154,19 @@ export const BY_ROLE: Partial<Record<UserRole, readonly AdminSection[]>> = {
    * destructive actions even where a section is otherwise visible.
    */
   municipality: ['dashboard', 'reports', 'health', 'donations'],
+
+  /**
+   * Oversight. Reads the reports queue, the monitoring consoles and the audit
+   * trail; every write path (status changes, assignments, moderation, user
+   * management) refuses this role on the server, so these sections open in a
+   * read-only state. It has no health, donations, users, ads, news or settings.
+   */
+  monitor: ['dashboard', 'reports', 'monitorim', 'updates', 'security'],
 };
 
 export const STAFF_ROLES: readonly StaffRole[] = [
-  'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin',
-  'agent', 'responder', 'dispatcher', 'municipality',
+  'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin', 'debatwp',
+  'agent', 'responder', 'dispatcher', 'monitor', 'municipality',
 ];
 
 export const isStaffRole = (role: unknown): role is StaffRole =>
@@ -164,6 +193,11 @@ export function canAccessSection(
   section: AdminSection
 ): boolean {
   if (!user) return false;
+
+  if (section === 'inbox') return canAccessSection(user, 'dashboard');
+  if (section === 'workflow') {
+    return (['reports', 'donations', 'health', 'news'] as const).some(s => canAccessSection(user, s));
+  }
 
   // A full admin always has every section.
   if (user.role === 'admin' || user.role === 'superadmin') return true;
@@ -210,9 +244,11 @@ export function roleLabel(user: Pick<User, 'role' | 'name'> | null | undefined, 
     case 'approver': return english ? 'Approval Officer' : 'Zyrtar Aprovimi';
     case 'adsadmin': return english ? 'Ads Manager' : 'Menaxher Reklamash';
     case 'newsadmin': return english ? 'News Editor' : 'Redaktor i Lajmeve';
+    case 'debatwp': return english ? 'Debate Admin' : 'Admin i Debatit Publik';
     case 'agent': return english ? 'Field Agent' : 'Agjent Terreni';
     case 'responder': return english ? 'Responder' : 'Përgjegjës';
     case 'dispatcher': return english ? 'Dispatcher' : 'Dispatcher';
+    case 'monitor': return english ? 'Monitor (read-only)' : 'Monitorues (vetëm lexim)';
     case 'municipality': return english ? 'Municipality' : 'Komuna';
     default: return english ? 'Staff' : 'Staf';
   }

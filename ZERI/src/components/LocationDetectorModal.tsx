@@ -131,10 +131,12 @@ export function LocationDetectorModal() {
     [searchQuery]
   );
 
-  // Sampled once on mount: answering the prompt must dismiss it for good, and
-  // re-reading the flag on every render would pop it back on the next unrelated
-  // re-render of the shell.
-  const [hasAnswered] = useState(() => hasPersistedScope());
+  // Reactive, not sampled: answering the prompt (or picking a municipality
+  // anywhere else) must dismiss it for good. A one-time read left the modal
+  // stuck on screen when the choice was made by a sibling component after
+  // mount — the citizen could see their municipality saved while the gate
+  // stayed up, and every in-app navigation re-showed it.
+  const hasAnswered = useStore(state => state.hasChosenMunicipality);
   if (hasAnswered) return null;
 
 

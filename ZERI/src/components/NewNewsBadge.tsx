@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, X, MessageSquare, Megaphone, FileText, AlertTriangle, CheckCircle2, Info, Link2 } from 'lucide-react';
+import { Bell, X, MessageSquare, Megaphone, FileText, AlertTriangle, CheckCircle2, Info, Link2, Settings2, CheckCheck } from 'lucide-react';
 import { collection, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where, doc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { sq } from 'date-fns/locale';
@@ -92,9 +92,42 @@ const TYPE_TONE: Record<string, string> = {
 
 type Tab = 'report' | 'general';
 
+/**
+ * Which channels may ring the badge. Muting a channel only silences its count;
+ * its items stay readable in the dropdown, so nothing is ever lost.
+ */
+const PREFS_KEY = 'zeri-notification-prefs';
+interface NotificationPrefs {
+  report: boolean;
+  general: boolean;
+}
+
+function readPrefs(): NotificationPrefs {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    return { report: raw.report !== false, general: raw.general !== false };
+  } catch {
+    return { report: true, general: true };
+  }
+}
+
 export function ResponseNotificationsBell() {
   const [tab, setTab] = useState<Tab>('report');
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [prefs, setPrefs] = useState<NotificationPrefs>(readPrefs);
+
+  const updatePrefs = (patch: Partial<NotificationPrefs>) => {
+    setPrefs((current) => {
+      const next = { ...current, ...patch };
+      try {
+        localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+      } catch {
+        // The choice still applies for this visit without storage.
+      }
+      return next;
+    });
+  };
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const currentUser = useStore((s) => s.currentUser);
@@ -180,7 +213,7 @@ export function ResponseNotificationsBell() {
   }, [currentUserId]);
 
   const generalUnread = broadcasts.filter((n) => !generalRead.has(n.id));
-  const totalUnread = reportUnread.length + generalUnread.length;
+  const totalUnread = (prefs.report ? reportUnread.length : 0) + (prefs.general ? generalUnread.length : 0);
 
   const markGeneralRead = (ids: string[]) => {
     if (ids.length === 0) return;
@@ -242,7 +275,7 @@ export function ResponseNotificationsBell() {
       <button
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : openBell())}
-        aria-label={`Njoftime: ${totalUnread} të palexuara`}
+        aria-label={`${dt('Njoftime')}: ${totalUnread} ${dt('të palexuara')}`}
         aria-expanded={isOpen}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
       >
@@ -290,13 +323,75 @@ export function ResponseNotificationsBell() {
             })}
             <button
               type="button"
+              onClick={() => setShowSettings((value) => !value)}
+              aria-label={dt('Cilësimet e njoftimeve')}
+              aria-expanded={showSettings}
+              className={cn(
+                'px-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800',
+                showSettings && 'text-indigo-600 dark:text-indigo-300'
+              )}
+            >
+              <Settings2 className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               onClick={() => setIsOpen(false)}
               aria-label={dt('Mbyll')}
               className="px-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
+
+          {showSettings && (
+            <div className="space-y-1 border-b border-slate-100 bg-slate-50/70 p-3 dark:border-white/5 dark:bg-slate-800/40">
+              <p className="px-1 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                {dt('Cilësimet e njoftimeve')}
+              </p>
+              {(
+                [
+                  { key: 'report' as const, label: dt('Përgjigjet për raportimet e mia') },
+                  { key: 'general' as const, label: dt('Njoftime të përgjithshme') },
+                ]
+              ).map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  role="switch"
+                  aria-checked={prefs[item.key]}
+                  onClick={() => updatePrefs({ [item.key]: !prefs[item.key] } as Partial<NotificationPrefs>)}
+                  className="flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-2 text-left text-xs font-semibold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  <span>{item.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'relative h-5 w-9 shrink-0 rounded-full transition-colors',
+                      prefs[item.key] ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all',
+                        prefs[item.key] ? 'left-[1.1rem]' : 'left-0.5'
+                      )}
+                    />
+                  </span>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  markReportsRead(reportUpdates.map((u) => u.id));
+                  markGeneralRead(broadcasts.map((n) => n.id));
+                }}
+                className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-xs font-bold text-indigo-600 hover:bg-white dark:text-indigo-300 dark:hover:bg-slate-800"
+              >
+                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                {dt('Shëno të gjitha si të lexuara')}
+              </button>
+            </div>
+          )}
 
           {/* Body */}
           {tab === 'report' ? (

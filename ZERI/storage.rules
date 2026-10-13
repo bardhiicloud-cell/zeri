@@ -3,84 +3,123 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // ──────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Raster images only. `image/.*` also matched image/svg+xml, which can carry
+    // script and is served from the storage origin.
+    function isImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+    }
+
+    function isVideo() {
+      return request.resource.contentType.matches('video/(mp4|webm)');
+    }
+
+    function isAudio() {
+      return request.resource.contentType.matches('audio/(mpeg|mp4|wav|ogg|webm)');
+    }
+
+    function isDocument() {
+      return request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          || request.resource.contentType == 'text/plain';
+    }
+
+    // ──────────────────────────────────────────────
     // Report media (images/videos/documents/audio uploaded by citizens)
     // ──────────────────────────────────────────────
+    // The client also stores forum post images, story media, ad creatives and
+    // videos under this prefix (scope = 'forum', 'ads', 'videos', ...).
     match /reports/{userId}/{reportId}/{imageId} {
       // Read: anyone with the URL can view (public content)
       allow read: if true;
 
-      // Write: authenticated user uploading their own report media.
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 15 * 1024 * 1024  // 15 MB max
-                   && (
-                     request.resource.contentType.matches('image/.*') ||
-                     request.resource.contentType.matches('video/.*') ||
-                     request.resource.contentType.matches('application/pdf') ||
-                     request.resource.contentType.matches('application/msword') ||
-                     request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
-                     request.resource.contentType.matches('text/plain') ||
-                     request.resource.contentType.matches('audio/.*')
-                   );
+      // `write` covers delete as well, and on a delete `request.resource` is null,
+      // so size/type conditions raise an error and the owner could never remove
+      // their own upload. Create/update and delete are therefore separate.
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 15 * 1024 * 1024  // 15 MB max
+                            && (isImage() || isVideo() || isAudio() || isDocument());
+      allow delete: if isOwner(userId);
     }
 
     // ──────────────────────────────────────────────
-    // Forum & Social Media Uploads (Posts, DMs, Stories, Reels)
+    // Direct-message media
     // ──────────────────────────────────────────────
+    // A recipient views an attachment through the tokenised download URL stored in
+    // the message document (which Firestore rules limit to the two participants),
+    // not through an SDK read, so SDK reads and listing are limited to the
+    // uploader. Previously any signed-in user - including anonymous guests - could
+    // read and list every user's DM attachments.
     match /forum_dms/{userId}/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 15 * 1024 * 1024;
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 15 * 1024 * 1024
+                            && (isImage() || isVideo());
+      allow delete: if isOwner(userId);
     }
 
+    // ──────────────────────────────────────────────
+    // Forum & social media uploads (legacy prefixes)
+    // ──────────────────────────────────────────────
+    // The current client writes forum media under reports/{uid}/..., so these
+    // prefixes are unused by it. They are kept for older clients but now require
+    // an image or video instead of accepting any file type up to 30 MB, which made
+    // the bucket free public file hosting.
     match /forum_reels/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 30 * 1024 * 1024;
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 30 * 1024 * 1024
+                            && (isImage() || isVideo());
+      allow delete: if isOwner(userId);
     }
 
     match /forumStories/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 30 * 1024 * 1024;
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 30 * 1024 * 1024
+                            && (isImage() || isVideo());
+      allow delete: if isOwner(userId);
     }
 
     match /forum/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 15 * 1024 * 1024;
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 15 * 1024 * 1024
+                            && (isImage() || isVideo());
+      allow delete: if isOwner(userId);
     }
 
     // ──────────────────────────────────────────────
-    // User avatars — owner-only
+    // User avatars - public read, owner write
     // ──────────────────────────────────────────────
     match /avatars/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 5 * 1024 * 1024  // 5 MB max
-                   && request.resource.contentType.matches('image/.*');
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 5 * 1024 * 1024  // 5 MB max
+                            && isImage();
+      allow delete: if isOwner(userId);
     }
 
     // ──────────────────────────────────────────────
-    // Health registry images — staff or owner only
+    // Health registry images - staff or owner only
     // ──────────────────────────────────────────────
     match /health/{uid}/{recordId}/{imageId} {
       allow read: if request.auth != null
               && (request.auth.uid == uid ||
                 request.auth.token.admin == true ||
                 request.auth.token.role in ['admin', 'superadmin', 'approver']);
-      allow write: if request.auth != null
-                   && request.auth.uid == uid
-                   && request.resource.size < 10 * 1024 * 1024  // 10 MB max
-                   && (
-                     request.resource.contentType.matches('image/.*') ||
-                     request.resource.contentType.matches('application/pdf')
-                   );
+      allow create, update: if isOwner(uid)
+                            && request.resource.size < 10 * 1024 * 1024  // 10 MB max
+                            && (request.resource.contentType.matches('image/(jpeg|png|webp)')
+                                || request.resource.contentType == 'application/pdf');
+      allow delete: if isOwner(uid);
     }
 
     // Deny all other storage access

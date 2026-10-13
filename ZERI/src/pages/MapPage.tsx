@@ -314,7 +314,7 @@ export default function MapPage() {
 
       {/* Dedicated Exit Fullscreen Button - Only visible in fullscreen */}
       {isFullscreen && (
-        <button aria-label="Mbyll"  
+        <button aria-label={dt('Mbyll')}  
           onClick={() => setIsFullscreen(false)}
           className="fixed top-4 right-4 md:top-6 md:right-6 z-[11000] bg-rose-600 text-white p-4 sm:p-5 border-2 border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-xl md:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-xl active:shadow-none active:translate-x-1 active:translate-y-1 transition-all pointer-events-auto flex items-center gap-2 font-bold uppercase text-sm sm:text-xs tracking-widest group min-h-[48px]"
         >
@@ -539,7 +539,7 @@ export default function MapPage() {
                <Filter className="w-5 h-5 text-rose-600" />
                {t('map_filters')}
             </h3>
-            <button aria-label="Mbyll"  onClick={() => setIsHudOpen(false)} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors border border-white/10">
+            <button aria-label={dt('Mbyll')}  onClick={() => setIsHudOpen(false)} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors border border-white/10">
 <X className="w-5 h-5" />
             </button>
           </div>
@@ -679,7 +679,7 @@ export default function MapPage() {
                     {t('map_ad_space')}
                  </span>
               </div>
-              <button aria-label="Mbyll" 
+              <button aria-label={dt('Mbyll')} 
                 onClick={() => setIsAdVisible(false)}
                 className="text-slate-400 hover:text-slate-700 dark:text-slate-300 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] hover:bg-neutral-100 p-1.5 rounded-2xl border border-transparent hover:border-slate-200/60 dark:border-white/10 transition-colors"
                 title={t('map_close_ad')}
@@ -690,8 +690,8 @@ export default function MapPage() {
              <div className="p-4 sm:p-6 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] flex-1">
                 <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                   <MapPin className="w-8 h-8 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-                  <p className="text-sm font-medium">Harta e raportimeve të gjithë Kosovës</p>
-                  <p className="text-xs mt-1">Kliko në ndonjë gjashtë për të shfaqur detajet</p>
+                  <p className="text-sm font-medium">{dt('Harta e raportimeve të gjithë Kosovës')}</p>
+                  <p className="text-xs mt-1">{dt('Kliko në ndonjë gjashtë për të shfaqur detajet')}</p>
                 </div>
              </div>
           </div>
@@ -828,7 +828,7 @@ export default function MapPage() {
         {/* Modern Map Legend */}
         <div className={cn("absolute bottom-6 left-6 z-[1000] hidden md:flex flex-col gap-3 bg-slate-900/95 backdrop-blur-xl p-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/15 animate-in slide-in-from-bottom-4 duration-500 min-w-[200px]", selectedReportId && "hidden")}>
           <div className="text-[10px] font-black tracking-widest text-rose-400 uppercase mb-1.5 border-b border-white/10 pb-1">{t('map_urgency_level')}</div>
-          <p className="max-w-56 text-[11px] leading-relaxed text-slate-400">Numri në rreth tregon raportimet e grupuara në atë zonë. Kliko rrethin për t’i parë më afër.</p>
+          <p className="max-w-56 text-[11px] leading-relaxed text-slate-400">{dt('Numri në rreth tregon raportimet e grupuara në atë zonë. Kliko rrethin për t’i parë më afër.')}</p>
           {Object.entries(urgencyColors).map(([level, colorClass]) => {
             const isActive = legendFilters[level] !== false;
             return (

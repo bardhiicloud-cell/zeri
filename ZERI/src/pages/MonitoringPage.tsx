@@ -25,7 +25,7 @@ import { useStore } from '../lib/store';
 import type { AuditLog } from '../types';
 import { useAgentActivity, useMunicipalityLoad } from '../lib/agentActivity';
 import type { User } from '../types';
-import { useCitizenDirectory } from '../lib/useCitizenDirectory';
+import { useStaffDirectory } from '../lib/useCitizenDirectory';
 import {
   collectActorAudit,
   touchedSubjects,
@@ -39,6 +39,7 @@ import {
 import { collectAgents, collectMunicipalities, isModerationCenterUser } from '../lib/moderationCenter';
 import { sessionFacts } from '../lib/workFactQueue';
 import ActorAccessControl from '../components/admin/ActorAccessControl';
+import TeamOverviewPanel from '../components/admin/TeamOverviewPanel';
 import {
   buildDepartmentBoard,
   summariseBoard,
@@ -51,11 +52,12 @@ import {
   Activity, Users, Building2, AlertTriangle, Radio, Search, ShieldCheck,
   Clock, Eye, ChevronRight, MapPin, TrendingUp, UserSearch, LayoutGrid,
 } from 'lucide-react';
-type Tab = 'actor' | 'pulse' | 'departments' | 'agents' | 'municipalities' | 'anomalies' | 'stream';
+type Tab = 'team' | 'actor' | 'pulse' | 'departments' | 'agents' | 'municipalities' | 'anomalies' | 'stream';
 
 const TABS: { id: Tab; label: string; icon: typeof Activity }[] = [
   // Actor first: the operator's usual task is "audit this one person", and the
   // previous layout made that the last thing they could reach.
+  { id: 'team', label: 'Ekipi', icon: Users },
   { id: 'actor', label: 'Zgjidh personin', icon: UserSearch },
   { id: 'pulse', label: 'Pulsi', icon: Activity },
   { id: 'departments', label: 'Repartet', icon: LayoutGrid },
@@ -115,14 +117,14 @@ export default function MonitoringPage() {
    * paginated directory the rest of the admin panel uses fixes that and keeps the
    * read cost flat as the platform grows.
    */
-  const { citizens } = useCitizenDirectory();
-  const users = citizens;
+  const { staff } = useStaffDirectory();
+  const users = staff;
   const auditLogs = useStore((s) => s.auditLogs ?? []);
   const reports = useStore((s) => s.reports ?? []);
   const scope = useStore((s) => s.userMunicipality);
   const setUserMunicipality = useStore((s) => s.setUserMunicipality);
 
-  const [tab, setTab] = useState<Tab>('actor');
+  const [tab, setTab] = useState<Tab>('team');
   const [query, setQuery] = useState('');
   /** Search over the actor list, separate from the log-stream search. */
   const [actorQuery, setActorQuery] = useState('');
@@ -454,6 +456,10 @@ export default function MonitoringPage() {
       </nav>
 
       {/* ============ ACTOR — pick a person, then audit and control them ============ */}
+      {tab === 'team' && (
+        <TeamOverviewPanel onOpenPerson={uid => { setInspectId(uid); setTab('actor'); }} />
+      )}
+
       {tab === 'actor' && (
         <section className="grid gap-4 lg:grid-cols-[380px_1fr]">
           {/* Left: who. Searchable, active actors first. */}
@@ -577,6 +583,7 @@ export default function MonitoringPage() {
                       role: inspectActor.role as User['role'],
                       permissions: inspectActor.permissions,
                       isBanned: inspectActor.isBanned,
+                      municipalityPlan: (inspectActor as { municipalityPlan?: string }).municipalityPlan,
                     }}
                     onChanged={() => setAccessRefresh((v) => v + 1)}
                   />

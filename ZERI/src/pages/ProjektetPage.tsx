@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import { MunicipalityShield } from '../components/MunicipalityShield';
 import { cn } from '../lib/utils';
+import { PageHero, heroPrimaryClass, heroSecondaryClass } from '../components/layout/PageHero';
 
+import { dt } from '@/src/lib/dt';
 interface MunicipalProject {
   id: string;
   title: string;
@@ -232,44 +234,24 @@ export default function ProjektetPage() {
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#070e1c] text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header Hero */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-white/10 shadow-xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/60 dark:border-blue-900 mb-3">
-                <Briefcase className="w-3.5 h-3.5" />
-                <span>Zhvillimi i Platformës</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                Projektet e Zërit Qytetarëve
-              </h1>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 max-w-2xl">
-                Ndiqni iniciativat, modulet dhe zhvillimet që e bëjnë platformën Zëri Qytetarëve më të dobishme,
-                më transparente dhe më afër qytetarëve.
-              </p>
-            </div>
+        <PageHero
+          eyebrow={dt('Zhvillimi i Platformës')}
+          icon={Briefcase}
+          title={dt('Projektet e Zërit Qytetarëve')}
+          subtitle={dt('Ndiqni iniciativat, modulet dhe zhvillimet që e bëjnë platformën Zëri Qytetarëve më të dobishme, më transparente dhe më afër qytetarëve.')}
+          stats={[
+            { value: String(PROJECTS_DATA.length), label: dt('Iniciativa aktive') },
+            { value: `${Math.round(PROJECTS_DATA.reduce((sum, prj) => sum + prj.progress, 0) / PROJECTS_DATA.length)}%`, label: dt('Progresi i platformës') },
+          ]}
+        />
 
-            {/* Quick Metrics */}
-            <div className="flex flex-wrap gap-3">
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-white/5 text-center min-w-[110px]">
-                <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">6</div>
-                <div className="text-[10px] font-semibold text-slate-500">Iniciativa aktive</div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-white/5 text-center min-w-[100px]">
-                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">77%</div>
-                <div className="text-[10px] font-semibold text-slate-500">Progresi i platformës</div>
-              </div>
-            </div>
-          </div>
-
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           {/* Search and Filters Bar */}
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <input 
                 type="text" 
-                placeholder="Kërkoni iniciativa sipas emrit, fushës apo përshkrimit..."
+                placeholder={dt('Kërkoni iniciativa sipas emrit, fushës apo përshkrimit...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -284,10 +266,10 @@ export default function ProjektetPage() {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
-                <option value="all">Të gjitha Statuset</option>
-                <option value="Në Zhvillim">Në Zhvillim</option>
-                <option value="Përfunduar">Përfunduar</option>
-                <option value="Në Prokurim">Në Prokurim</option>
+                <option value="all">{dt('Të gjitha Statuset')}</option>
+                <option value="Në Zhvillim">{dt('Në Zhvillim')}</option>
+                <option value="Përfunduar">{dt('Përfunduar')}</option>
+                <option value="Në Prokurim">{dt('Në Prokurim')}</option>
               </select>
 
               {/* Komuna Select */}
@@ -296,8 +278,8 @@ export default function ProjektetPage() {
                 onChange={(e) => setSelectedMunicipality(e.target.value)}
                 className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
-                <option value="all">Të gjitha iniciativat</option>
-                <option value="Zëri Qytetarëve">Zëri Qytetarëve</option>
+                <option value="all">{dt('Të gjitha iniciativat')}</option>
+                <option value="Zëri Qytetarëve">{dt('Zëri Qytetarëve')}</option>
               </select>
 
               {/* Sektori Select */}
@@ -306,7 +288,7 @@ export default function ProjektetPage() {
                 onChange={(e) => setSelectedSector(e.target.value)}
                 className="col-span-2 sm:col-span-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
-                <option value="all">Të gjitha fushat</option>
+                <option value="all">{dt('Të gjitha fushat')}</option>
                 {sectors.slice(1).map(sector => <option key={sector} value={sector}>{sector}</option>)}
               </select>
             </div>
@@ -387,7 +369,7 @@ export default function ProjektetPage() {
                     <span className="font-medium text-slate-800 dark:text-slate-200">{prj.startDate} - {prj.endDate}</span>
                   </div>
                   <div className="flex items-center justify-between truncate">
-                    <span className="text-[11px] text-slate-400 shrink-0">Përgjegjësi:</span>
+                    <span className="text-[11px] text-slate-400 shrink-0">{dt('Përgjegjësi:')}</span>
                     <span className="font-medium text-slate-800 dark:text-slate-200 truncate ml-2">{prj.contractor}</span>
                   </div>
                 </div>
@@ -413,8 +395,8 @@ export default function ProjektetPage() {
         {filteredProjects.length === 0 && (
           <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 p-8">
             <Briefcase className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Nuk u gjet asnjë projekt</h3>
-            <p className="text-xs text-slate-500 mt-1">Provoni të ndryshoni fushën ose kërkimin.</p>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{dt('Nuk u gjet asnjë projekt')}</h3>
+            <p className="text-xs text-slate-500 mt-1">{dt('Provoni të ndryshoni fushën ose kërkimin.')}</p>
           </div>
         )}
 

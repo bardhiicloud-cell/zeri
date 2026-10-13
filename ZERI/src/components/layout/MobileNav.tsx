@@ -491,10 +491,10 @@ export function MobileNav() {
                                   <item.icon className="h-4 w-4" aria-hidden="true" />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-sm font-bold">{item.label}</span>
+                                  <span className="block truncate text-sm font-bold">{dt(item.label)}</span>
                                   {item.hint && (
                                     <span className="block truncate text-[10px] font-medium text-slate-400">
-                                      {item.hint}
+                                      {dt(item.hint)}
                                     </span>
                                   )}
                                 </span>
@@ -531,7 +531,7 @@ export function MobileNav() {
                     onClick={close}
                     className="flex min-h-11 items-center rounded-2xl px-3 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
                   >
-                    {link.label}
+                    {dt(link.label)}
                   </Link>
                 ))}
 
@@ -609,7 +609,7 @@ function DockTab({
       to={tab.href}
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      aria-label={tab.label}
+      aria-label={dt(tab.label)}
       className={cn(
         'relative flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-bold transition-colors',
         active
@@ -626,7 +626,7 @@ function DockTab({
         />
       )}
       <tab.icon className="h-[22px] w-[22px]" aria-hidden="true" />
-      <span>{tab.label}</span>
+      <span>{dt(tab.label)}</span>
     </Link>
   );
 }

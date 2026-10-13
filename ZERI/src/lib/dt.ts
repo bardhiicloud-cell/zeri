@@ -1,6 +1,7 @@
 import { dynamicTranslations } from './dynamicTranslations';
 import { uiTranslations } from './uiTranslations';
 import { newLanguageTranslations } from './newLanguageTranslations';
+import { siteTranslations } from './siteTranslations';
 import {
   DEFAULT_LANGUAGE,
   isSupportedLanguage,
@@ -9,6 +10,7 @@ import {
   SUPPORTED_LANGUAGES,
   type SupportedLanguageCode,
 } from './languageConstants';
+import { translationLanguageFor } from './seo';
 
 type SupportedLanguage = SupportedLanguageCode;
 
@@ -24,9 +26,10 @@ const isSupported = (value: string | null): value is SupportedLanguage =>
  *
  * Lookup order, most specific first:
  *   1. newLanguageTranslations — the 14 added languages (ar, fr, it, ... nl)
- *   2. uiTranslations          — short UI labels that override the big table
- *   3. dynamicTranslations     — the original six languages
- *   4. Albanian, then the input text itself
+ *   2. siteTranslations        — gap-fills for strings missing from every table
+ *   3. uiTranslations          — short UI labels that override the big table
+ *   4. dynamicTranslations     — the original six languages
+ *   5. Albanian, then the input text itself
  */
 export function dt(text: string, forcedLang?: string): string {
   if (!text) return text;
@@ -40,10 +43,22 @@ export function dt(text: string, forcedLang?: string): string {
     lang = readStoredLanguage();
   }
 
-  // The 14 added languages live in their own overlay; check it first so an
+  /*
+   * Regional variants (Canada, Australia) are destinations, not separate
+   * translations. Resolving them to their base language here means the same
+   * strings render for /ca/ and /au/ as for /en/, so no duplicate table is
+   * needed and an English fix reaches all three at once.
+   */
+  lang = translationLanguageFor(lang);
+
+  // The added languages live in their own overlay; check it first so an
   // entry there always wins for its language.
   const addedLanguage = newLanguageTranslations[text]?.[lang];
   if (addedLanguage) return addedLanguage;
+
+  // Gap-fills for strings no other table covers (see siteTranslations.ts).
+  const siteTranslation = siteTranslations[text]?.[lang];
+  if (siteTranslation) return siteTranslation;
 
   const uiTranslation = uiTranslations[text]?.[lang];
   if (uiTranslation) return uiTranslation;

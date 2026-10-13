@@ -302,10 +302,10 @@ export default function ModerationCenter() {
         <section className="space-y-5">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Total raportime" value={stats.total} />
-            <Stat label="Në pritje" value={stats.pendingReview} tone="amber" />
-            <Stat label="Zgjidhur" value={stats.resolved} tone="emerald" />
+            <Stat label={dt('Në pritje')} value={stats.pendingReview} tone="amber" />
+            <Stat label={dt('Zgjidhur')} value={stats.resolved} tone="emerald" />
             <Stat label="Retarduar" value={stats.overdue} tone="rose" />
-            <Stat label="Aprovuar" value={stats.approved} tone="indigo" />
+            <Stat label={dt('Aprovuar')} value={stats.approved} tone="indigo" />
             <Stat label="Refuzuar" value={stats.rejected} tone="rose" />
             <Stat label="Shkelje gjuhe" value={violations} tone="rose" />
             <Stat label="Ora mes. zgjidhje" value={stats.avgResolutionHours} />
@@ -527,7 +527,7 @@ export default function ModerationCenter() {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <Stat label="Vetëm 24h" value={row.last24h} />
                         <Stat label="Vetëm 7 ditë" value={row.last7d} />
-                        <Stat label="Aprovime" value={row.approvals} tone="emerald" />
+                        <Stat label={dt('Aprovime')} value={row.approvals} tone="emerald" />
                         <Stat label="Refuzime" value={row.rejections} tone="rose" />
                       </div>
                       <div className="mt-3">
@@ -652,9 +652,9 @@ export default function ModerationCenter() {
                   {isExpanded && (
                     <div className="border-t border-slate-100 p-4 dark:border-white/5">
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <Stat label="Raportime" value={muniReports.length} />
-                        <Stat label="Zgjidhur" value={muniReports.filter((r) => r.status === 'Resolved').length} tone="emerald" />
-                        <Stat label="Veprime" value={row.totalActions} />
+                        <Stat label={dt('Raportime')} value={muniReports.length} />
+                        <Stat label={dt('Zgjidhur')} value={muniReports.filter((r) => r.status === 'Resolved').length} tone="emerald" />
+                        <Stat label={dt('Veprime')} value={row.totalActions} />
                         <Stat label="Refuzime" value={row.deniedAttempts} tone="rose" />
                       </div>
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -701,10 +701,10 @@ export default function ModerationCenter() {
                           {dt('Punët e komunës — statusi i zgjerimit')}
                         </p>
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                          <Stat label="Në pritje" value={muniReports.filter((r) => r.status === 'Pending Review').length} tone="amber" />
+                          <Stat label={dt('Në pritje')} value={muniReports.filter((r) => r.status === 'Pending Review').length} tone="amber" />
                           <Stat label="Në punim" value={muniReports.filter((r) => r.status === 'In Progress').length} tone="indigo" />
                           <Stat label="Të caktuara" value={muniReports.filter((r) => r.status === 'Assigned').length} />
-                          <Stat label="Të përfunduara" value={muniReports.filter((r) => r.status === 'Resolved').length} tone="emerald" />
+                          <Stat label={dt('Të përfunduara')} value={muniReports.filter((r) => r.status === 'Resolved').length} tone="emerald" />
                         </div>
                       </div>
                       <div className="mt-3">

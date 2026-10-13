@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 import { dynamicTranslations } from './src/lib/dynamicTranslations.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ALL_LANGS = ['ar', 'fr', 'it', 'es', 'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl'];
+const ALL_LANGS = ['ar', 'fr', 'it', 'pt', 'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg'];
 const MAIN_CACHE = path.join(__dirname, '_translation_cache.json');
 const SHARD_DIR = path.join(__dirname, '_shards');
 const OUT_FILE = path.join(__dirname, 'src', 'lib', 'newLanguageTranslations.ts');
@@ -24,7 +24,7 @@ function repair(text, lang) {
   let out = text;
   if (/kosov/i.test(out) || WRONG.some((re) => re.test(out))) {
     for (const re of WRONG) out = out.replace(re, '');
-    const correct = { mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', hy: 'Կոսովո' }[lang] || 'Kosovo';
+    const correct = { mk: 'Косово', sr: 'Косово', tr: 'Kosova', ar: 'كوسوفو', bg: 'Косово', ja: 'コソボ', ko: '코소보', pl: 'Kosowo' }[lang] || 'Kosovo';
     if (!out.toLowerCase().includes(correct.slice(0, 4).toLowerCase())) out = `${correct} ${out}`.trim();
     out = out.replace(/\s{2,}/g, ' ').replace(/\s+([.,!?])/g, '$1').trim();
   }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, limit, orderBy, type Query } from 'firebase/firestore';
+import { authHeaders } from './apiAuth';
+import { collection, onSnapshot, query, limit, orderBy, where, type Query } from 'firebase/firestore';
 import { db } from './firebase';
 import { useStore } from './store';
 
@@ -55,9 +56,34 @@ const PAGE_SIZE = 50;
 
 /** Staff roles permitted to read the directory. Mirrors server/auth.ts. */
 const STAFF_ROLES = new Set([
-  'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin',
-  'agent', 'responder', 'dispatcher', 'moderator',
+  'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin', 'debatwp',
+  'agent', 'responder', 'dispatcher', 'moderator', 'monitor',
 ]);
+
+/** One user document as a directory row. Contact details are carried for staff only. */
+function rowFromDoc(doc: { id: string; data: () => unknown }): CitizenSummary {
+  const data = doc.data() as Record<string, unknown>;
+  const role = String(data.role ?? 'citizen');
+  const isStaffAccount = STAFF_ROLES.has(role);
+  return {
+    id: doc.id,
+    name: String(data.name ?? 'Përdorues i panjohur'),
+    role,
+    points: Number(data.points ?? 0),
+    isBanned: data.isBanned === true,
+    isVerified: data.isVerified === true,
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : undefined,
+    permissions: Array.isArray(data.permissions) ? data.permissions.map(String) : [],
+    notes: String(data.notes ?? ''),
+    // Contact details are only carried for staff records. Leaving them empty for
+    // citizens keeps a list of 50 rows free of PII that the table does not display.
+    email: isStaffAccount ? String(data.email ?? '') : '',
+    phone: isStaffAccount ? String(data.phone ?? '') : '',
+    municipality: String(data.municipality ?? ''),
+    municipalityPlan: String(data.municipalityPlan ?? ''),
+    badges: Array.isArray(data.badges) ? data.badges.map(String) : [],
+  };
+}
 
 export function useCitizenDirectory() {
   const currentUser = useStore((state) => state.currentUser);
@@ -99,32 +125,7 @@ export function useCitizenDirectory() {
       (snapshot) => {
         if (cancelled) return;
 
-        const rows: CitizenSummary[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as Record<string, unknown>;
-          const role = String(data.role ?? 'citizen');
-          const isStaffAccount = STAFF_ROLES.has(role);
-          return {
-            id: doc.id,
-            name: String(data.name ?? 'Përdorues i panjohur'),
-            role,
-            points: Number(data.points ?? 0),
-            isBanned: data.isBanned === true,
-            isVerified: data.isVerified === true,
-            createdAt: typeof data.createdAt === 'string' ? data.createdAt : undefined,
-            permissions: Array.isArray(data.permissions)
-              ? data.permissions.map(String)
-              : [],
-            notes: String(data.notes ?? ''),
-            // Contact details are only carried for staff records. Leaving them
-            // empty for citizens keeps a list of 50 rows free of PII that the
-            // table does not display.
-            email: isStaffAccount ? String(data.email ?? '') : '',
-            phone: isStaffAccount ? String(data.phone ?? '') : '',
-            municipality: String(data.municipality ?? ''),
-            municipalityPlan: String(data.municipalityPlan ?? ''),
-            badges: Array.isArray(data.badges) ? data.badges.map(String) : [],
-          };
-        });
+        const rows: CitizenSummary[] = snapshot.docs.map(rowFromDoc);
 
         setCitizens(rows);
         setHasMore(snapshot.docs.length === PAGE_SIZE);
@@ -188,7 +189,8 @@ export function useCitizenCount() {
 
     // The aggregate count comes from the cached server endpoint, not from a
     // client-side tally of a partial page, which would be silently wrong.
-    void fetch('/api/v1/admin/users/count', { credentials: 'include' })
+    void authHeaders()
+      .then((headers) => fetch('/api/v1/admin/users/count', { headers }))
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (!cancelled && data && typeof data.count === 'number') setCount(data.count);
@@ -203,4 +205,56 @@ export function useCitizenCount() {
   }, [isStaff]);
 
   return count;
+}
+
+
+/** The roles the staff console lists. Owners (admin, superadmin) are managed elsewhere. */
+export const STAFF_DIRECTORY_ROLES = [
+  'agent', 'approver', 'newsadmin', 'adsadmin', 'debatwp', 'responder', 'dispatcher', 'moderator', 'monitor', 'municipality',
+] as const;
+
+/**
+ * Every staff and municipal account, by role.
+ *
+ * The staff console used to take the newest 50 *citizens* from the directory above
+ * and filter them for staff in the browser. As soon as 50 citizens had registered
+ * after the staff accounts were created, the list was empty ("0 agents") even
+ * though the accounts existed. Asking Firestore for the roles directly makes the
+ * answer independent of how many citizens there are. One equality-style filter on
+ * a single field, so it needs no composite index; bounded at 500.
+ */
+export function useStaffDirectory() {
+  const currentUser = useStore((state) => state.currentUser);
+  const canList = Boolean(currentUser && ['admin', 'superadmin', 'monitor'].includes(currentUser.role));
+  const [staff, setStaff] = useState<CitizenSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const role = currentUser?.role ?? '';
+
+  useEffect(() => {
+    if (!canList) {
+      setStaff([]);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    return onSnapshot(
+      query(collection(db, 'users'), where('role', 'in', [...STAFF_DIRECTORY_ROLES]), limit(500)),
+      (snapshot) => {
+        setStaff(snapshot.docs.map(rowFromDoc));
+        setIsLoading(false);
+      },
+      (err) => {
+        console.error('[Staff directory] query failed:', err.message);
+        setError(
+          err.code === 'permission-denied'
+            ? 'Nuk keni leje për të parë stafin.'
+            : 'Stafi nuk mund të ngarkohej. Provoni përsëri.'
+        );
+        setIsLoading(false);
+      }
+    );
+  }, [canList, role]);
+
+  return { staff, isLoading, error };
 }

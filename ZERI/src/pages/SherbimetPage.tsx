@@ -6,10 +6,12 @@ import {
   Home, Building, TreePine, HeartPulse, GraduationCap, AlertTriangle, Lightbulb, Star, Send
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { PageHero, heroPrimaryClass, heroSecondaryClass } from '../components/layout/PageHero';
 import toast from 'react-hot-toast';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+import { dt } from '@/src/lib/dt';
 interface ServiceItem {
   id: string;
   category: string;
@@ -295,73 +297,59 @@ export default function SherbimetPage() {
     <div className="page-shell min-h-screen bg-(--color-page) dark:bg-(--color-brand-dark) text-slate-800 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header Hero */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-white/10 shadow-xs relative overflow-hidden">
-          <div className="absolute -top-10 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div>
-
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/60 dark:border-blue-900 mb-3">
-                <FileText className="w-3.5 h-3.5" />
-                <span>Shërbimet e platformës</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                Shërbimet e Zërit Qytetarëve
-              </h1>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 max-w-2xl">
-                Raporto, përcjell, informohu dhe merr pjesë në jetën publike të komunës tënde. Për shërbimet administrative shtetërore përdor e-Kosova.
-              </p>
-            </div>
-
-            <div className="max-w-xs rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 p-4">
-              <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-sm">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                <span>Mendoni se platforma mund të bëhet më e mirë?</span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">Vlerësoni përvojën dhe ndani një ide që na ndihmon t’u shërbejmë më mirë qytetarëve.</p>
-              <Link to="/Idea" className="mt-3 w-full py-2 bg-[#0b2b57] hover:bg-blue-800 text-white rounded-lg text-xs font-black flex items-center justify-center gap-2">
-                Jepni një ide <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-        </div>
+        <PageHero
+          eyebrow={dt('Shërbimet e platformës')}
+          icon={FileText}
+          title={dt('Shërbimet e Zërit Qytetarëve')}
+          subtitle={dt('Raporto, përcjell, informohu dhe merr pjesë në jetën publike të komunës tënde. Për shërbimet administrative shtetërore përdor e-Kosova.')}
+          actions={
+            <>
+              <Link to="/raporto" className={heroPrimaryClass}>{dt('Raporto një problem')} <ArrowRight className="w-3.5 h-3.5" /></Link>
+              <Link to="/Idea" className={heroSecondaryClass}><Lightbulb className="w-3.5 h-3.5 text-amber-300" /> {dt('Jepni një ide')}</Link>
+            </>
+          }
+          stats={[
+            { value: '38', label: dt('komuna të mbuluara') },
+            { value: '24/7', label: dt('raportim në çdo kohë') },
+            { value: 'Track-ID', label: dt('ndjekje publike e çdo rasti') },
+            { value: '100%', label: dt('transparencë e veprimeve') },
+          ]}
+        />
 
         <section className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-4">
           <div className="rounded-2xl bg-[#0b2b57] p-6 sm:p-8 text-white shadow-lg border border-blue-900/50">
-            <div className="text-[10px] uppercase tracking-[0.2em] font-black text-blue-200 mb-3">Ideja jonë</div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-3">Një zë i vetëm për çdo problem publik.</h2>
-            <p className="text-sm leading-relaxed text-blue-100 max-w-2xl">Zëri Qytetarëve është platformë e pjesëmarrjes publike që e kthen një shqetësim të qytetarit në raportim të dokumentuar, me lokacion, Track-ID, përgjegjës dhe histori veprimesh.</p>
+            <div className="text-[10px] uppercase tracking-[0.2em] font-black text-blue-200 mb-3">{dt('Ideja jonë')}</div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-3">{dt('Një zë i vetëm për çdo problem publik.')}</h2>
+            <p className="text-sm leading-relaxed text-blue-100 max-w-2xl">{dt('Zëri Qytetarëve është platformë e pjesëmarrjes publike që e kthen një shqetësim të qytetarit në raportim të dokumentuar, me lokacion, Track-ID, përgjegjës dhe histori veprimesh.')}</p>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl bg-white/10 border border-white/10 p-3"><strong className="block text-lg">01</strong><span className="text-xs text-blue-100">Raporto</span></div>
-              <div className="rounded-xl bg-white/10 border border-white/10 p-3"><strong className="block text-lg">02</strong><span className="text-xs text-blue-100">Përcjell</span></div>
-              <div className="rounded-xl bg-white/10 border border-white/10 p-3"><strong className="block text-lg">03</strong><span className="text-xs text-blue-100">Merr përgjigje</span></div>
+              <div className="rounded-xl bg-white/10 border border-white/10 p-3"><strong className="block text-lg">01</strong><span className="text-xs text-blue-100">{dt('Raporto')}</span></div>
+              <div className="rounded-xl bg-white/10 border border-white/10 p-3"><strong className="block text-lg">02</strong><span className="text-xs text-blue-100">{dt('Përcjell')}</span></div>
+              <div className="rounded-xl bg-white/10 border border-white/10 p-3"><strong className="block text-lg">03</strong><span className="text-xs text-blue-100">{dt('Merr përgjigje')}</span></div>
             </div>
           </div>
           <div className="rounded-2xl bg-white dark:bg-slate-900 p-6 sm:p-8 border border-slate-200/80 dark:border-white/10 shadow-xs">
-            <div className="text-[10px] uppercase tracking-[0.2em] font-black text-blue-600 mb-3">Çfarë na duhet</div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-3">Bashkëpunim që prodhon rezultat.</h2>
+            <div className="text-[10px] uppercase tracking-[0.2em] font-black text-blue-600 mb-3">{dt('Çfarë na duhet')}</div>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-3">{dt('Bashkëpunim që prodhon rezultat.')}</h2>
             <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
-              <li><strong className="text-slate-900 dark:text-white">Qytetarë aktivë:</strong> raportime të sakta dhe me dëshmi.</li>
-              <li><strong className="text-slate-900 dark:text-white">Institucione të përgjegjshme:</strong> pranim, caktim dhe përditësim i rasteve.</li>
-              <li><strong className="text-slate-900 dark:text-white">Të dhëna publike:</strong> transparencë pa ekspozuar të dhënat personale.</li>
+              <li><strong className="text-slate-900 dark:text-white">{dt('Qytetarë aktivë:')}</strong> {dt('raportime të sakta dhe me dëshmi.')}</li>
+              <li><strong className="text-slate-900 dark:text-white">{dt('Institucione të përgjegjshme:')}</strong> {dt('pranim, caktim dhe përditësim i rasteve.')}</li>
+              <li><strong className="text-slate-900 dark:text-white">{dt('Të dhëna publike:')}</strong> {dt('transparencë pa ekspozuar të dhënat personale.')}</li>
             </ul>
           </div>
         </section>
 
         <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
           <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-white/5">
-            <h2 className="text-lg font-black text-slate-900 dark:text-white">Kush e ofron shërbimin?</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Përdorni platformën e duhur për kërkesën tuaj.</p>
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">{dt('Kush e ofron shërbimin?')}</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{dt('Përdorni platformën e duhur për kërkesën tuaj.')}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/70 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400"><tr><th className="px-5 py-3 font-black">Platforma</th><th className="px-5 py-3 font-black">Qëllimi</th><th className="px-5 py-3 font-black">Statusi</th><th className="px-5 py-3 font-black">Veprimi</th></tr></thead>
+              <thead className="bg-slate-50 dark:bg-slate-800/70 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400"><tr><th className="px-5 py-3 font-black">{dt('Platforma')}</th><th className="px-5 py-3 font-black">{dt('Qëllimi')}</th><th className="px-5 py-3 font-black">{dt('Statusi')}</th><th className="px-5 py-3 font-black">{dt('Veprimi')}</th></tr></thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                <tr><td className="px-5 py-4 font-black text-blue-700 dark:text-blue-300">Zëri Qytetarëve</td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">Raportime, Track-ID, harta, transparencë dhe pjesëmarrje qytetare.</td><td className="px-5 py-4"><span className="rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 font-bold text-emerald-700 dark:text-emerald-300">Aktive</span></td><td className="px-5 py-4"><Link to="/raporto" className="font-black text-blue-600 hover:text-blue-700">Raporto një problem</Link></td></tr>
-                <tr><td className="px-5 py-4 font-black text-slate-900 dark:text-white">e-Kosova</td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">Shërbime publike shtetërore të ofruara në mënyrë elektronike.</td><td className="px-5 py-4"><span className="rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 font-bold text-emerald-700 dark:text-emerald-300">Portali zyrtar</span></td><td className="px-5 py-4"><a href="https://ekosova.rks-gov.net" target="_blank" rel="noreferrer" className="font-black text-blue-600 hover:text-blue-700">Hap e-Kosova</a></td></tr>
-                <tr><td className="px-5 py-4 font-black text-slate-900 dark:text-white">e-Komuna</td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">Shërbime komunale të integruara në fazën e ardhshme të projektit.</td><td className="px-5 py-4"><span className="rounded-full bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1 font-bold text-amber-700 dark:text-amber-300">Së shpejti</span></td><td className="px-5 py-4 text-slate-500 dark:text-slate-400">Nuk është ende aktive</td></tr>
+                <tr><td className="px-5 py-4 font-black text-blue-700 dark:text-blue-300">{dt('Zëri Qytetarëve')}</td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">{dt('Raportime, Track-ID, harta, transparencë dhe pjesëmarrje qytetare.')}</td><td className="px-5 py-4"><span className="rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 font-bold text-emerald-700 dark:text-emerald-300">{dt('Aktive')}</span></td><td className="px-5 py-4"><Link to="/raporto" className="font-black text-blue-600 hover:text-blue-700">{dt('Raporto një problem')}</Link></td></tr>
+                <tr><td className="px-5 py-4 font-black text-slate-900 dark:text-white">e-Kosova</td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">{dt('Shërbime publike shtetërore të ofruara në mënyrë elektronike.')}</td><td className="px-5 py-4"><span className="rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 font-bold text-emerald-700 dark:text-emerald-300">Portali zyrtar</span></td><td className="px-5 py-4"><a href="https://ekosova.rks-gov.net" target="_blank" rel="noreferrer" className="font-black text-blue-600 hover:text-blue-700">{dt('Hap e-Kosova')}</a></td></tr>
+                <tr><td className="px-5 py-4 font-black text-slate-900 dark:text-white">{dt('e-Komuna')}</td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">{dt('Shërbime komunale të integruara në fazën e ardhshme të projektit.')}</td><td className="px-5 py-4"><span className="rounded-full bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1 font-bold text-amber-700 dark:text-amber-300">{dt('Së shpejti')}</span></td><td className="px-5 py-4 text-slate-500 dark:text-slate-400">{dt('Nuk është ende aktive')}</td></tr>
               </tbody>
             </table>
           </div>
@@ -370,13 +358,13 @@ export default function SherbimetPage() {
         <section id="platform-feedback" className="scroll-mt-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 shadow-xs p-6 sm:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-start">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.2em] font-black text-amber-600 mb-3">Zëri juaj na orienton</div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Çfarë duhet të shtojmë në platformë?</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-3">Na tregoni çfarë do ta bënte Zërin Qytetarëve më të dobishëm: një shërbim të ri, një mënyrë më të mirë për të ndjekur raportimin ose një ide për komunën tuaj.</p>
+              <div className="text-[10px] uppercase tracking-[0.2em] font-black text-amber-600 mb-3">{dt('Zëri juaj na orienton')}</div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{dt('Çfarë duhet të shtojmë në platformë?')}</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-3">{dt('Na tregoni çfarë do ta bënte Zërin Qytetarëve më të dobishëm: një shërbim të ri, një mënyrë më të mirë për të ndjekur raportimin ose një ide për komunën tuaj.')}</p>
             </div>
             <form onSubmit={handleFeedbackSubmit} className="rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-white/10 p-4 sm:p-5">
-              <label className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-2">Si e vlerësoni platformën?</label>
-              <div className="flex items-center gap-1 mb-4" aria-label="Vlerësimi nga 1 deri në 5">
+              <label className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-2">{dt('Si e vlerësoni platformën?')}</label>
+              <div className="flex items-center gap-1 mb-4" aria-label={dt('Vlerësimi nga 1 deri në 5')}>
                 {[1, 2, 3, 4, 5].map(value => (
                   <button key={value} type="button" onClick={() => setRating(value)} aria-label={`${value} yje`} className="p-1">
                     <Star className={cn('w-6 h-6 transition-colors', value <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600')} />
@@ -384,9 +372,9 @@ export default function SherbimetPage() {
                 ))}
               </div>
               <label htmlFor="platform-feedback-text" className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-2">Sugjerimi juaj</label>
-              <textarea id="platform-feedback-text" value={feedback} onChange={event => setFeedback(event.target.value)} rows={4} maxLength={1000} placeholder="Shkruani idenë, nevojën ose përmirësimin që dëshironi të shihni..." className="w-full resize-none rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500" />
+              <textarea id="platform-feedback-text" value={feedback} onChange={event => setFeedback(event.target.value)} rows={4} maxLength={1000} placeholder={dt('Shkruani idenë, nevojën ose përmirësimin që dëshironi të shihni...')} className="w-full resize-none rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500" />
               <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-[10px] text-slate-400">Sugjerimet shqyrtohen nga ekipi i platformës.</span>
+                <span className="text-[10px] text-slate-400">{dt('Sugjerimet shqyrtohen nga ekipi i platformës.')}</span>
                 <button type="submit" disabled={isSendingFeedback} className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 px-4 py-2.5 text-xs font-black text-white">
                   <Send className="w-3.5 h-3.5" /> {isSendingFeedback ? 'Duke dërguar...' : 'Dërgo sugjerimin'}
                 </button>
@@ -403,7 +391,7 @@ export default function SherbimetPage() {
             </div>
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="Kërko shërbim..." value={searchQuery} onChange={event => setSearchQuery(event.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-9 pr-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500" />
+              <input type="text" placeholder={dt('Kërko shërbim...')} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-9 pr-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Fusha</p>
             <div className="space-y-1.5">
@@ -429,7 +417,7 @@ export default function SherbimetPage() {
                   
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
                     <CheckCircle2 className="w-3 h-3" />
-                    <span>Shërbim i Zërit Qytetarëve</span>
+                    <span>{dt('Shërbim i Zërit Qytetarëve')}</span>
                   </span>
                 </div>
 
@@ -447,7 +435,7 @@ export default function SherbimetPage() {
                 {/* Requirements List */}
                 <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 border border-slate-100 dark:border-white/5 mb-4">
                   <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-2">
-                    Çfarë nevojitet:
+                    {dt('Çfarë nevojitet:')}
                   </span>
                   <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                     {service.requirements.map((req, i) => (
@@ -481,7 +469,7 @@ export default function SherbimetPage() {
                     rel="noreferrer"
                     className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs"
                   >
-                    <span>Apliko Menjëherë</span>
+                    <span>{dt('Apliko Menjëherë')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 ) : service.formName ? (
@@ -497,7 +485,7 @@ export default function SherbimetPage() {
                     onClick={() => navigate('/raporto')}
                     className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
-                    <span>Paraqit Kërkesën në Platformë</span>
+                    <span>{dt('Paraqit Kërkesën në Platformë')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -509,22 +497,22 @@ export default function SherbimetPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 shadow-xs">
-            <h3 className="text-base font-black text-slate-900 dark:text-white mb-2">Shërbime administrative: e-Kosova</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">Për certifikata, dokumente personale, tatime dhe aplikime shtetërore, përdorni portalin zyrtar e-Kosova. Zëri Qytetarëve ju orienton, por nuk e zëvendëson portalin shtetëror.</p>
-            <a href="https://ekosova.rks-gov.net" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-black text-blue-600 hover:text-blue-700">Hap e-Kosova <ExternalLink className="w-3.5 h-3.5" /></a>
+            <h3 className="text-base font-black text-slate-900 dark:text-white mb-2">{dt('Shërbime administrative: e-Kosova')}</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">{dt('Për certifikata, dokumente personale, tatime dhe aplikime shtetërore, përdorni portalin zyrtar e-Kosova. Zëri Qytetarëve ju orienton, por nuk e zëvendëson portalin shtetëror.')}</p>
+            <a href="https://ekosova.rks-gov.net" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-black text-blue-600 hover:text-blue-700">{dt('Hap e-Kosova')} <ExternalLink className="w-3.5 h-3.5" /></a>
           </div>
           <div className="bg-blue-950 rounded-2xl border border-blue-800/60 p-5 shadow-xs text-white">
-            <h3 className="text-base font-black mb-2">e-Komuna: së shpejti</h3>
-            <p className="text-xs text-blue-100 leading-relaxed">Pas përfundimit të projektit, e-Komuna do të sjellë shërbime komunale të integruara. Deri atëherë, përdorni Zërin Qytetarëve për raportime, transparencë dhe pjesëmarrje.</p>
+            <h3 className="text-base font-black mb-2">{dt('e-Komuna: së shpejti')}</h3>
+            <p className="text-xs text-blue-100 leading-relaxed">{dt('Pas përfundimit të projektit, e-Komuna do të sjellë shërbime komunale të integruara. Deri atëherë, përdorni Zërin Qytetarëve për raportime, transparencë dhe pjesëmarrje.')}</p>
           </div>
         </div>
 
         {/* Informative Assistance Box */}
         <div className="bg-gradient-to-r from-blue-900 via-blue-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-800/40 shadow-md">
           <div className="space-y-1 text-center sm:text-left">
-            <h3 className="text-lg font-black">Keni nevojë për ndihmë?</h3>
+            <h3 className="text-lg font-black">{dt('Keni nevojë për ndihmë?')}</h3>
             <p className="text-xs sm:text-sm text-blue-200 max-w-xl">
-              Për një problem publik, përdorni raportimin në Zërin Qytetarëve. Për kontakte dhe numra institucionalë, shikoni qendrën e kontakteve.
+              {dt('Për një problem publik, përdorni raportimin në Zërin Qytetarëve. Për kontakte dhe numra institucionalë, shikoni qendrën e kontakteve.')}
             </p>
           </div>
           <Link

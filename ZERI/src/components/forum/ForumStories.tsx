@@ -27,6 +27,8 @@ import toast from 'react-hot-toast';
 import { auth, db, MAX_UPLOAD_BYTES, uploadFileToStorage } from '../../lib/firebase';
 import type { User } from '../../types';
 
+
+import { dt } from '@/src/lib/dt';
 type StoryEffect = 'natural' | 'vivid' | 'warm' | 'mono';
 
 interface ForumStory {
@@ -97,6 +99,8 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
   useEffect(() => {
     const storiesQuery = query(
       collection(db, 'forumStories'),
+      // `isHidden == false` is what the rules need to allow this list at all.
+      where('isHidden', '==', false),
       where('expiresAt', '>', Timestamp.fromMillis(Date.now())),
       orderBy('expiresAt', 'desc'),
       limit(100),
@@ -233,6 +237,9 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
         overlaySize,
         createdAt: serverTimestamp(),
         expiresAt: Timestamp.fromMillis(Date.now() + DAY_MS),
+        // Required by the rules: visibility is a stored flag so that hiding a story
+        // is enforced server-side, not only filtered here.
+        isHidden: false,
       });
       toast.success('Debat Story u publikua dhe do të jetë aktiv për 24 orë.');
       resetComposer();
@@ -280,7 +287,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">Debat Story</h3>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Ide, foto dhe video nga komuniteti • 24 orë</p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{dt('Ide, foto dhe video nga komuniteti • 24 orë')}</p>
           </div>
           <CirclePlay className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
         </div>
@@ -324,9 +331,9 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
             <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-zinc-800">
               <div>
                 <h2 id="forum-story-title" className="font-black text-slate-900 dark:text-white">Krijo Debat Story</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Foto ose video, aktive për 24 orë</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{dt('Foto ose video, aktive për 24 orë')}</p>
               </div>
-              <button type="button" onClick={resetComposer} aria-label="Mbyll" className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800">
+              <button type="button" onClick={resetComposer} aria-label={dt('Mbyll')} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800">
                 <X className="h-5 w-5" />
               </button>
             </header>
@@ -348,7 +355,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                   <span className="flex flex-col items-center gap-2 p-6 text-center">
                     <Camera className="h-9 w-9 text-blue-600" />
                     <span className="font-bold text-slate-800 dark:text-white">Zgjidh media</span>
-                    <span className="text-xs">JPG, PNG, WebP, GIF, MP4 ose WebM • deri në 10 MB</span>
+                    <span className="text-xs">{dt('JPG, PNG, WebP, GIF, MP4 ose WebM • deri në 10 MB')}</span>
                   </span>
                 )}
                 {textOverlay && selectedFile && (
@@ -453,7 +460,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                       </div>
                     </fieldset>
                     <fieldset>
-                      <legend className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">Madhësia e tekstit</legend>
+                      <legend className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">{dt('Madhësia e tekstit')}</legend>
                       <div className="grid grid-cols-4 gap-1.5">
                         {OVERLAY_SIZES.map((size) => (
                           <button

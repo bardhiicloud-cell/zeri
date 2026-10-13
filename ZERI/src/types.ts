@@ -91,7 +91,7 @@ export interface User {
    * itself, and it is deliberately subject to the editorial firewall in
    * lib/editorialFirewall.ts: it can add context, never remove content.
    */
-  role: 'citizen' | 'admin' | 'superadmin' | 'agent' | 'responder' | 'dispatcher' | 'approver' | 'newsadmin' | 'adsadmin' | 'municipality' | 'guest';
+  role: 'citizen' | 'admin' | 'superadmin' | 'agent' | 'responder' | 'dispatcher' | 'monitor' | 'approver' | 'newsadmin' | 'adsadmin' | 'debatwp' | 'municipality' | 'guest';
   /**
    * The municipality this account represents or is scoped to.
    * For a municipality account this is the jurisdiction it may act within, and
@@ -108,6 +108,10 @@ export interface User {
   points: number;
   badges: string[];
   avatar?: string;
+  /** Short public bio shown on the Debati Publik profile (max 160 chars). */
+  bio?: string;
+  /** Debati Publik privacy / notification choices; see lib/forumPrefs.ts. */
+  forumPrefs?: import('./lib/forumPrefs').ForumPrefs;
   isBanned?: boolean;
   isVerified?: boolean;
   trustScore?: number;
@@ -370,6 +374,9 @@ export interface Report {
   isAd?: boolean;
   adLink?: string;
   assignedTo?: string; // e.g. "Drejtoria e Infrastrukturës"
+  /** The person holding the report while it is checked (server-written). */
+  assignedToUid?: string;
+  assignedAt?: string;
   timeline: ReportTimelineEvent[];
   aiSeverity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'; 
   aiTags?: string[]; 

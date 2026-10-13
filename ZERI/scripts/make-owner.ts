@@ -2,8 +2,8 @@
  * Sets bardhiicloud@gmail.com as the platform owner (superadmin).
  *
  *  1. Writes the Firestore profile document users/{uid} with role 'superadmin'.
- *  2. Sets the custom claims { role: 'superadmin', admin: true } — the
- *     security boundary trusted by requireAdmin.
+ *  2. Sets the custom claims for the superadmin role (see server/roleClaims.ts)
+ *     — the security boundary trusted by requireAdmin and the Firestore rules.
  *
  * Run:  npx tsx scripts/make-owner.ts
  */
@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { buildRoleClaims } from '../server/roleClaims';
 
 const serviceAccount = JSON.parse(
   readFileSync(new URL('../serviceAccountKey.json', import.meta.url), 'utf8')
@@ -27,8 +28,13 @@ async function main() {
   const user = await getAuth().getUserByEmail(OWNER_EMAIL);
   console.log('Found user:', user.uid, user.email);
 
-  await getAuth().setCustomUserClaims(user.uid, { role: 'superadmin', admin: true });
-  console.log('Custom claims set: { role: superadmin, admin: true }');
+  // Built by the shared helper so the owner carries every flag the Firestore
+  // rules test. This used to write only { role, admin }: without `superadmin`
+  // the owner could not satisfy the owner-only rules (for example reading
+  // settings/ads-private).
+  const claims = buildRoleClaims('superadmin', []);
+  await getAuth().setCustomUserClaims(user.uid, claims);
+  console.log('Custom claims set:', JSON.stringify(claims));
 
   await db.collection('users').doc(user.uid).set(
     {

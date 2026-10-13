@@ -86,7 +86,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
       </button>
 
       {/* Brand */}
-      <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Zëri Qytetarëve — Ballina">
+      <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={dt('Zëri Qytetarëve — Ballina')}>
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--color-brand-primary) text-sm font-black text-white">
           Z
         </span>
@@ -163,10 +163,17 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
             <span className="font-mono text-[10px] font-black uppercase">{currentLanguage.label}</span>
           </button>
 
+          {/*
+            The list is longer than the viewport can show at 23 languages
+            (23 rows x 36px plus padding is ~850px), so the menu scrolls with a
+            cap rather than running off the bottom of the screen and leaving the
+            last entries — Australia, Canada — unreachable. `w-56` gives the
+            longer native names room to sit on one line.
+          */}
           {openDropdown === 'language' && (
             <div
               role="menu"
-              className="absolute right-0 top-[calc(100%+8px)] z-50 w-44 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-(--shadow-floating) dark:border-white/10 dark:bg-slate-900"
+              className="absolute right-0 top-[calc(100%+8px)] z-50 max-h-[min(24rem,calc(100vh-6rem))] w-56 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-1.5 shadow-(--shadow-floating) dark:border-white/10 dark:bg-slate-900"
             >
               {LANGUAGE_OPTIONS.map((lang) => (
                 <button
@@ -249,7 +256,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
                   className="flex min-h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-                  Profili im dhe cilësimet
+                  {dt('Profili im dhe cilësimet')}
                 </button>
 
                 {canAccessAdmin(currentUser) && (
@@ -268,7 +275,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
                     to={link.href}
                     className="flex min-h-9 items-center rounded-xl px-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
-                    {link.label}
+                    {dt(link.label)}
                   </Link>
                 ))}
 
@@ -311,7 +318,7 @@ function NavBarLink({ link, active }: { link: NavLinkDef; active: boolean }) {
       )}
     >
       <span className={cn('relative', active && 'after:absolute after:-bottom-1 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-(--color-brand-primary)')}>
-        {link.label}
+        {dt(link.label)}
       </span>
     </NavLink>
   );

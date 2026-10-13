@@ -18,7 +18,6 @@ import './server/loadEnv';
 import express from "express";
 import helmet from 'helmet';
 import hpp from 'hpp';
-import sanitizeHtml from 'sanitize-html';
 import cors from 'cors';
 import compression from 'compression';
 import zlib from 'node:zlib';
@@ -31,7 +30,8 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { FieldValue } from 'firebase-admin/firestore';
-import { db, authAdmin, hasAdminCredentials, isLocalFirebaseEmulator } from './server/firebaseAdmin';
+import { db, authAdmin, hasAdminCredentials, isLocalFirebaseEmulator, storageBucket } from './server/firebaseAdmin';
+import { eraseUserData } from './server/gdpr';
 import {
   apiRateLimiter,
   aiRateLimiter,
@@ -42,7 +42,35 @@ import {
   SECURITY_CONFIG,
 } from './server/security';
 import { cache, cachedCollection, cachedDocument, invalidateCollection } from './server/cache';
-import { audit, requireAdmin, requireAuth, securityHeaders } from './server/auth';
+import { actingUser, audit, requireAdmin, requireAuth, requireSection, resolveActorRole, securityHeaders } from './server/auth';
+import { checkMessageParties, checkRoleChange } from './server/policy';
+import { registerAdminReportRoutes } from './server/adminReports';
+import { registerReportMediaRoutes } from './server/reportMedia';
+import { registerDecisionRoutes } from './server/decisions';
+import { registerReportAssignmentRoutes } from './server/reportAssignment';
+import { registerPhotoEditRoutes } from './server/reportPhotoEdit';
+import { registerMunicipalityDeskRoutes } from './server/municipalityDesk';
+import { registerInstitutionMailRoutes } from './server/institutionMail';
+import { registerTeamOverviewRoutes } from './server/teamOverview';
+import { createMailerFromEnv } from './server/mailer';
+import { cheapestPlanWith, hasFeature as planHasFeature, normalizePlan as normalizeMunicipalityPlan } from './server/municipalityPlans';
+import { registerUserModerationRoutes } from './server/userModeration';
+import { registerStaffRemovalRoutes } from './server/staffRemoval';
+import { registerForumSocialRoutes } from './server/forumSocial';
+import { registerForumAnalyticsRoutes } from './server/forumAnalytics';
+import { registerDirectMessageRoutes } from './server/directMessages';
+import { registerForumPostRoutes, notifyPostAction } from './server/forumPosts';
+import { registerAdRoutes } from './server/adTracking';
+import { registerForumReelRoutes } from './server/forumReels';
+import { registerForumFeedRoutes } from './server/forumFeed';
+import { registerForumPeopleRoutes } from './server/forumPeople';
+import { registerPaymentRoutes } from './server/paymentRoutes';
+import { registerDebateAdminRoutes } from './server/debateAdmin';
+import { buildRoleClaims } from './server/roleClaims';
+import { VoteError, castVote } from './server/polls';
+import { UpvoteError, castUpvote } from './server/upvotes';
+import { buildReportDocument, generateTrackingId, parseReportInput } from './server/reports';
+import { randomBytes } from 'node:crypto';
 import { validateDateOfBirth } from './src/lib/validation';
 import * as editorialFirewall from './server/editorialFirewall.js';
 import * as pipeline from './server/approvalPipeline.js';
@@ -360,8 +388,11 @@ async function generateContentWithFallback(options: {
   if (isQuotaOrAuth || !hasApiKey) {
     console.warn("[AI Fallback Engine] Active fallback engaged due to quota limitation or missing API key.");
     return {
-      text: getSafetyFallbackText(options.contents, options.config)
-    };
+      text: getSafetyFallbackText(options.contents, options.config),
+      // Canned content, not a model answer. Callers must not cache it or treat
+      // it as authoritative.
+      degraded: true,
+    } as { text: string; degraded: true };
   }
 
   throw lastError || new Error("All AI models failed to respond");
@@ -452,10 +483,16 @@ async function startServer() {
     ? requestedPort
     : await getAvailablePort(requestedPort);
 
-  // Baseline payload ceiling. The 50 MB AI endpoints opt in to a larger limit on
-  // their own route, so a single oversized report body cannot be pushed at the
-  // general API surface.
-  app.use(express.json({ limit: '1mb' }));
+  // Baseline payload ceiling of 1 MB, with a larger one only for the photo
+  // analysis route. The parser has to be chosen *here*: body-parser runs once per
+  // request, so a bigger `express.json()` on the route itself never saw the body
+  // (the global 1 MB parser had already rejected it), and every phone photo
+  // above ~750 KB failed analysis.
+  const defaultJson = express.json({ limit: '1mb' });
+  const imageJson = express.json({ limit: '12mb' });
+  // A cropped report photo also arrives as an image in JSON (server/reportPhotoEdit.ts).
+  const isImageRoute = (path: string) => path === '/api/analyze-issue' || /^\/api\/v1\/reports\/[^/]+\/media\/crop$/.test(path);
+  app.use((req, res, next) => (isImageRoute(req.path) ? imageJson : defaultJson)(req, res, next));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
   /**
@@ -488,14 +525,17 @@ async function startServer() {
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://apis.google.com"],
+        // www.google.com/recaptcha and www.gstatic.com/recaptcha: Firebase App Check attestation.
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://apis.google.com", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
         // Google Fonts is requested from index.css, so the stylesheet host must be allowed.
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
         // Map tiles (*.tile.openstreetmap.org, mt*.google.com), ad banners, hero photos
         // and Firebase Storage uploads are all served over https from third-party hosts.
-        imgSrc: ["'self'", "data:", "blob:", "https:"],
-        mediaSrc: ["'self'", "blob:", "https:"],
+        // The local Storage emulator serves uploads over plain http; without it
+        // no image or video uploaded in the sandbox could be displayed.
+        imgSrc: ["'self'", "data:", "blob:", "https:", ...(isLocalFirebaseEmulator ? ["http://127.0.0.1:9199"] : [])],
+        mediaSrc: ["'self'", "blob:", "https:", ...(isLocalFirebaseEmulator ? ["http://127.0.0.1:9199"] : [])],
         connectSrc: [
           "'self'",
           "https:",
@@ -505,7 +545,7 @@ async function startServer() {
             ? ["http://127.0.0.1:9099", "http://127.0.0.1:8080", "http://127.0.0.1:9199"]
             : []),
         ],
-        frameSrc: ["'self'", "https://accounts.google.com", "https://*.firebaseapp.com"],
+        frameSrc: ["'self'", "https://accounts.google.com", "https://*.firebaseapp.com", "https://www.google.com/recaptcha/", "https://recaptcha.google.com/recaptcha/"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
@@ -576,28 +616,12 @@ async function startServer() {
   // Permissions-Policy and friends, applied after helmet so they are not lost.
   app.use(securityHeaders);
 
-  // 🛡️ XSS SANITIZATION MIDDLEWARE (Global)
-  const sanitizeInput = (obj: any) => {
-    if (typeof obj === 'string') {
-      return sanitizeHtml(obj, { allowedTags: [], allowedAttributes: {} }); // Strip all HTML
-    }
-    if (Array.isArray(obj)) {
-      obj.forEach((v, k) => obj[k] = sanitizeInput(v));
-    } else if (obj !== null && typeof obj === 'object') {
-      Object.keys(obj).forEach(key => {
-        obj[key] = sanitizeInput(obj[key]);
-      });
-    }
-    return obj;
-  };
-
-  app.use('/api', (req, res, next) => {
-    if (req.body) sanitizeInput(req.body);
-    if (req.query) sanitizeInput(req.query);
-    if (req.params) sanitizeInput(req.params);
-    next();
-  });
-
+  // Request bodies are deliberately NOT rewritten here. A global HTML-stripping
+  // pass used to run over every string in body/query/params; it turned every "&"
+  // into "&amp;", cut text at any "<", and silently changed passwords containing
+  // either character (so a password an admin set did not match what they typed).
+  // React escapes on render, the API only returns JSON, and the one place that
+  // injects HTML (AdBanner) sanitises at the point of use.
 
   // Rate limiting is now three tiers, each owned by server/security.ts:
   //   auth  - login/register, 10 per 15 min (brute-force surface)
@@ -609,8 +633,6 @@ async function startServer() {
   app.use('/api/analyze-issue', aiRateLimiter);
   app.use('/api/moderate-comment', aiRateLimiter);
   app.use('/api/detect-duplicate', aiRateLimiter);
-  app.use('/api/verify-image', aiRateLimiter);
-  app.use('/api/check-botnet', aiRateLimiter);
   app.use('/api/admin/predictive-analysis', aiRateLimiter);
   app.use('/api/admin/generate-response', aiRateLimiter);
   app.use('/api/admin/summarize', aiRateLimiter);
@@ -642,6 +664,17 @@ function publicError(message: string, error: unknown): { message: string; reques
 }
 
 /**
+ * Send a 500 whose body is safe for the public internet: a fixed message plus a
+ * correlation id. The raw error is logged by `publicError` and only echoed back
+ * outside production. Handlers used to return `error.message` directly, which
+ * leaks Firebase and Gemini internals (project ids, quota text, stack fragments).
+ */
+function sendServerError(res: import('express').Response, message: string, error: unknown) {
+  const { message: shown, requestId } = publicError(message, error);
+  return res.status(500).json({ error: shown, requestId });
+}
+
+/**
  * Reply for a read that cannot run because the Admin SDK has no credentials.
  *
  * A missing service account is a deployment gap, not a bug in the data, and it
@@ -660,6 +693,15 @@ function adminUnavailable(res: import('express').Response): boolean {
   });
   return true;
 }
+
+/** Clamp untrusted text before it is interpolated into a model prompt. */
+function clip(value: unknown, max: number): string {
+  return typeof value === 'string' ? value.slice(0, max) : '';
+}
+
+const ALLOWED_ANALYSIS_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
+// base64 expands bytes by 4/3; this keeps the decoded image under ~8 MB.
+const MAX_ANALYSIS_BASE64_CHARS = 11 * 1024 * 1024;
 
 // --- PUBLIC READ API (cached) -------------------------------------------------
 // These are the documents every anonymous visitor's page load needs. Serving
@@ -726,14 +768,19 @@ app.get('/api/public/categories', async (_req, res) => {
 /**
  * On-demand translation for news articles and any other user-generated text.
  *
+ * Requires a session (anonymous guests count): the endpoint forwards text to
+ * external translation providers, so an anonymous, unmetered caller could use the
+ * platform as a free translation proxy and send arbitrary content off-platform.
+ *
  * Results are cached by a key the client supplies (which includes a hash of the
  * source text), so re-opening an article costs nothing and editing the article
  * produces a new key rather than serving a stale translation. The cache is the
  * module-level `cache` used elsewhere, so the TTL policy is consistent.
  */
-app.post('/api/translate', async (req, res) => {
+app.post('/api/translate', requireAuth, async (req, res) => {
   try {
     const { text, target, source = 'sq' } = req.body ?? {};
+    const { MAX_TRANSLATE_CHARS, translationCacheKey } = await import('./server/translate');
 
     if (typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ error: 'Missing text to translate.' });
@@ -743,7 +790,11 @@ app.post('/api/translate', async (req, res) => {
     }
     if (target === source) return res.json({ text });
 
-    const cacheKey = `tr:${source}:${target}:${Buffer.from(text).toString('base64').slice(0, 120)}`;
+    if (text.length > MAX_TRANSLATE_CHARS) {
+      return res.status(413).json({ error: 'Teksti për përkthim është shumë i gjatë.' });
+    }
+
+    const cacheKey = translationCacheKey(source, target, text);
     const hit = cache.get<string>(cacheKey);
     if (hit) {
       return res.json({ text: hit, cached: true });
@@ -828,8 +879,6 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     uptimeSeconds: Math.round(process.uptime()),
-    pid: process.pid,
-    worker: cluster.worker?.id ?? null,
     cache: cache.stats(),
     environment: isProduction ? 'production' : 'development',
     // Lets a client decide whether to bother calling the Firestore-backed routes
@@ -943,8 +992,9 @@ app.get('/robots.txt', (_req, res) => {
 
 // --- NEW API ROUTES (v1) ---
 app.post('/api/v1/auth/sync', requireAuth, async (req, res) => {
-  const user = (req as any).user;
-  const { name, dateOfBirth } = req.body;
+  const user = req.user!;
+  const { dateOfBirth } = req.body ?? {};
+  const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 120) : '';
   try {
     const userRef = db().collection('users').doc(user.uid);
     const doc = await userRef.get();
@@ -969,7 +1019,9 @@ app.post('/api/v1/auth/sync', requireAuth, async (req, res) => {
         createdAt: FieldValue.serverTimestamp(),
         points: 0,
         badges: [],
-        isVerified: user.email_verified || false
+        // `email_verified` is a token claim; it is not a property of `req.user`,
+        // so reading it there always produced `false`.
+        isVerified: user.claims.email_verified === true
       };
       await userRef.set(newUser);
       return res.status(201).json({ message: 'User synced successfully', user: newUser });
@@ -988,7 +1040,7 @@ app.get('/api/v1/users/me', requireAuth, async (req, res) => {
     if (!doc.exists) return res.status(404).json({ error: 'User not found' });
     res.json(doc.data());
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    sendServerError(res, 'Kërkesa nuk u përpunua. Provoni përsëri.', error);
   }
 });
 
@@ -1013,40 +1065,6 @@ app.post('/api/v1/admin/cache/invalidate', requireAuth, requireAdmin, (req, res)
   res.json({ message: `Cache u invalidua për "${collection}".`, cache: cache.stats() });
 });
 
-/**
- * Custom claims that mirror what firestore.rules checks.
- *
- * The rules file tests boolean flags (`token.admin == true`, `token.agent ==
- * true`, …), while the UI reasons about a single `role` string. Writing only
- * the string left every newly created staffer unauthorized against Firestore
- * — the classic "I created an agent but notifications won't send" failure.
- * Both shapes are written so either consumer keeps working.
- */
-function buildRoleClaims(role: string, permissions: string[], municipality?: string): Record<string, unknown> {
-  const claims: Record<string, unknown> = { role, permissions };
-  if (role === 'admin' || role === 'superadmin') claims.admin = true;
-  if (role === 'superadmin') claims.superadmin = true;
-  if (role === 'approver') claims.approver = true;
-  if (role === 'adsadmin') claims.adsadmin = true;
-  if (role === 'newsadmin') claims.newsadmin = true;
-  if (role === 'agent' || role === 'responder' || role === 'dispatcher' || role === 'moderator') claims.agent = true;
-  /**
-   * The municipality claims the Firestore rules read. `isMunicipality()` and
-   * `ownMunicipality()` in firestore.rules test `token.municipality_account`
-   * and `token.municipality`; without them every rules-side municipality
-   * grant is dead code and the account can only act through the server.
-   * A missing name would make `ownMunicipality()` compare against undefined,
-   * so the claim is only written when the provisioning call supplied one.
-   */
-  if (role === 'municipality') {
-    claims.municipality_account = true;
-    if (municipality) claims.municipality = municipality;
-  }
-  // Section permissions are also flattened so rules could reference them.
-  for (const permission of permissions) claims[`perm_${permission}`] = true;
-  return claims;
-}
-
 app.post('/api/v1/admin/users', requireAuth, requireAdmin, async (req, res) => {
   let createdUid: string | null = null;
 
@@ -1054,12 +1072,7 @@ app.post('/api/v1/admin/users', requireAuth, requireAdmin, async (req, res) => {
     const requestUser = req.user;
     if (!requestUser) return res.status(401).json({ error: 'Unauthorized' });
 
-    const claimRole = String(requestUser.claims.role ?? '');
-    let actorRole = claimRole || (requestUser.claims.admin === true ? 'admin' : '');
-    if (!actorRole) {
-      const actorProfile = await db().collection('users').doc(requestUser.uid).get();
-      actorRole = String(actorProfile.data()?.role ?? actorRole);
-    }
+    const actorRole = await resolveActorRole(requestUser);
     if (!['admin', 'superadmin'].includes(actorRole)) {
       return res.status(403).json({ error: 'Kërkohet roli administrator.' });
     }
@@ -1087,11 +1100,11 @@ app.post('/api/v1/admin/users', requireAuth, requireAdmin, async (req, res) => {
         return res.status(400).json({ error: 'Fjalëkalimi duhet të përmbajë shkronja dhe numra.' });
       }
     }
-    const allowedRoles = new Set(['agent', 'approver', 'adsadmin', 'newsadmin', 'responder', 'dispatcher', 'moderator']);
+    const allowedRoles = new Set(['agent', 'approver', 'adsadmin', 'newsadmin', 'debatwp', 'responder', 'dispatcher', 'moderator', 'monitor']);
     const allowedSections = new Set([
       'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users', 'forum',
       'polls', 'agents', 'municipalities', 'monitoring', 'monitorim', 'agentpanel', 'komunapanel', 'moderim',
-      'support', 'chat', 'ads', 'notifications', 'news',
+      'support', 'chat', 'ads', 'notifications', 'news', 'debate',
       'categories', 'security', 'settings',
     ]);
     const permissions = Array.isArray(req.body?.permissions)
@@ -1160,31 +1173,25 @@ app.put('/api/v1/admin/users/:uid/role', requireAuth, requireAdmin, async (req, 
   try {
     const { uid } = req.params;
     const role = String(req.body?.role ?? '');
-    const allowedRoles = ['agent', 'approver', 'adsadmin', 'newsadmin', 'responder', 'dispatcher', 'admin', 'superadmin'];
-    if (!allowedRoles.includes(role)) {
-      return res.status(400).json({ error: 'Invalid role' });
-    }
 
     const actor = req.user;
     if (!actor) return res.status(401).json({ error: 'Unauthorized' });
-    const claimRole = String(actor.claims.role ?? '');
-    let actorRole = claimRole || (actor.claims.admin === true ? 'admin' : '');
-    if (!actorRole) {
-      const actorProfile = await db().collection('users').doc(actor.uid).get();
-      actorRole = String(actorProfile.data()?.role ?? actorRole);
-    }
-    if (!['admin', 'superadmin'].includes(actorRole)) {
-      return res.status(403).json({ error: 'Kërkohet roli administrator.' });
-    }
+    const actorRole = await resolveActorRole(actor);
 
-    // A superadmin must not be able to demote themselves into lockout, and no
-    // route may grant `superadmin` unless the caller already holds it.
     const target = await db().collection('users').doc(uid).get();
     if (!target.exists) return res.status(404).json({ error: 'Staff account not found.' });
-    const currentTargetRole = target.exists ? String(target.data()?.role ?? '') : '';
-    if ((currentTargetRole === 'superadmin' || role === 'admin' || role === 'superadmin') && actorRole !== 'superadmin') {
-      return res.status(403).json({ error: 'Forbidden: Requires superadmin' });
-    }
+    const currentTargetRole = String(target.data()?.role ?? '');
+
+    // One tested decision (server/policy.ts): valid role, caller is an admin, no
+    // changing your own access, and only a superadmin touches admin-level accounts.
+    const decision = checkRoleChange({
+      actorUid: actor.uid,
+      actorRole,
+      targetUid: uid,
+      currentTargetRole,
+      nextRole: role,
+    });
+    if (decision.outcome === 'deny') return res.status(decision.status).json({ error: decision.error });
 
     const allowedSections = new Set([
       'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users', 'agents', 'municipalities',
@@ -1218,7 +1225,7 @@ app.put('/api/v1/admin/users/:uid/role', requireAuth, requireAdmin, async (req, 
     });
     res.json({ message: 'Role updated successfully' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    sendServerError(res, 'Kërkesa nuk u përpunua. Provoni përsëri.', error);
   }
 });
 
@@ -1233,12 +1240,7 @@ app.put('/api/v1/admin/users/:uid/role', requireAuth, requireAdmin, async (req, 
 app.get('/api/v1/admin/agents/:uid/activity', requireAuth, requireAdmin, async (req, res) => {
   try {
     const actor = req.user;
-    const claimRole = String(actor?.claims?.role ?? '');
-    let actorRole = claimRole || (actor?.claims?.admin === true ? 'admin' : '');
-    if (!actorRole) {
-      const profile = await db().collection('users').doc(actor.uid).get();
-      actorRole = String(profile.data()?.role ?? '');
-    }
+    const actorRole = await resolveActorRole(actor);
     if (actorRole !== 'superadmin') {
       return res.status(403).json({ error: 'Moderimi i detajuar kërkon superadmin.' });
     }
@@ -1287,12 +1289,7 @@ app.get('/api/v1/admin/agents/:uid/activity', requireAuth, requireAdmin, async (
 app.post('/api/v1/admin/users/:uid/set-password', requireAuth, requireAdmin, async (req, res) => {
   try {
     const actor = req.user;
-    const claimRole = String(actor?.claims?.role ?? '');
-    let actorRole = claimRole || (actor?.claims?.admin === true ? 'admin' : '');
-    if (!actorRole) {
-      const profile = await db().collection('users').doc(actor.uid).get();
-      actorRole = String(profile.data()?.role ?? '');
-    }
+    const actorRole = await resolveActorRole(actor);
     if (!['admin', 'superadmin'].includes(actorRole)) {
       return res.status(403).json({ error: 'Kërkohet roli administrator.' });
     }
@@ -1332,122 +1329,85 @@ app.use('/api/admin/', requireAuth);
 // --- PROFILES API ---
 app.put('/api/v1/profile', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
-    const { name, phone, avatar } = req.body;
+    const user = req.user!;
+    const { name, phone, avatar } = req.body ?? {};
 
-    const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
-    if (name) updateData.name = name;
-    if (phone) updateData.phone = phone;
-    if (avatar) updateData.avatar = avatar;
+    const updateData: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+    if (typeof name === 'string' && name.trim()) updateData.name = name.trim().slice(0, 120);
+    if (typeof phone === 'string' && phone.trim()) updateData.phone = phone.trim().slice(0, 40);
+    if (avatar !== undefined && avatar !== null && avatar !== '') {
+      // Rendered as an <img src>; only absolute https URLs are accepted so a
+      // profile can never carry a javascript:/data: payload or an enormous blob.
+      if (typeof avatar !== 'string' || avatar.length > 2048 || !/^https:\/\//i.test(avatar.trim())) {
+        return res.status(400).json({ error: 'Avatari duhet të jetë një lidhje https.' });
+      }
+      updateData.avatar = avatar.trim();
+    }
 
-    await db().collection('users').doc(user.uid).update(updateData);
+    const ref = db().collection('users').doc(user.uid);
+    if (!(await ref.get()).exists) return res.status(404).json({ error: 'Profili nuk u gjet.' });
+
+    await ref.update(updateData);
     audit('profile.updated', req, { fields: Object.keys(updateData).filter((key) => key !== 'updatedAt') });
     res.json({ message: 'Profile updated' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    sendServerError(res, 'Profili nuk u përditësua. Provoni përsëri.', error);
   }
 });
 
 // --- GDPR: RIGHT TO BE FORGOTTEN (Article 17) ---
 /**
- * Erase every trace of a citizen, not just the Auth row and the profile.
+ * Erase a citizen's personal data (the policy and its limits are documented in
+ * server/gdpr.ts).
  *
- * The previous version deleted two documents and left behind the forum posts,
- * comments, reports, Reels, votes and uploaded media that are still keyed to the
- * uid. That is not a right to be forgotten, it is a partial delete, and it is the
- * single most common finding in a GDPR assessment.
- *
- * Authored content is anonymised rather than removed: deleting a report that a
- * municipality is legally required to act on would destroy someone else's
- * right to a functioning complaint process. Replacing the author fields with
- * pseudonymous values satisfies both obligations, and matches what the citizen
- * sees when they post anonymously.
+ * The account is removed only after EVERY erasure step succeeded. The earlier
+ * version logged each failure and deleted the account anyway, which left personal
+ * data behind with no identity left to retry from. A partial failure now returns
+ * 500 with the names of the steps that failed and leaves the account in place;
+ * the steps are idempotent, so the request can simply be repeated.
  */
-const ANONYMIZED_AUTHOR = {
-  authorId: 'deleted-user',
-  authorName: 'Përdorues i fshiruar',
-  isAnonymous: true,
-};
-
 app.delete('/api/v1/profile', requireAuth, async (req, res) => {
+  if (adminUnavailable(res)) return;
   const uid = req.user!.uid;
 
   try {
     audit('gdpr.deletion.requested', req, { uid });
 
-    const batchDb = db();
-    const BATCH_LIMIT = 400;
-
-    // Collections where the citizen's content is replaced with a pseudonym.
-    const ANONYMIZE = ['reports', 'forumPosts', 'comments', 'liveMessages', 'reels'];
-
-    for (const collectionName of ANONYMIZE) {
-      try {
-        // Paginate: a citizen with hundreds of reports would exceed a single
-        // batch write and fail the whole request.
-        let cursor: any = null;
-        do {
-          let q: any = batchDb.collection(collectionName).where('authorId', '==', uid).limit(BATCH_LIMIT);
-          if (cursor) q = q.startAfter(cursor);
-
-          const snap = await q.get();
-          if (snap.empty) break;
-          cursor = snap.docs[snap.docs.length - 1];
-
-          const batch = batchDb.batch();
-          for (const doc of snap.docs) {
-            batch.set(doc.ref, ANONYMIZED_AUTHOR, { merge: true });
-          }
-          await batch.commit();
-        } while (cursor && cursor.id);
-      } catch (error) {
-        // A collection that does not exist, or has no index on authorId, must
-        // not abort the erasure of everything else.
-        console.error(`[GDPR] Anonymize "${collectionName}" failed:`, (error as Error)?.message);
-      }
-    }
-
-    // Collections that are purely the citizen's own and can be removed outright.
-    const PURGE = ['users', 'supportChats', 'adRequests', 'notifications', 'messages'];
-
-    for (const collectionName of PURGE) {
-      try {
-        const snap = await batchDb.collection(collectionName).where('userId', '==', uid).limit(BATCH_LIMIT).get();
-        if (snap.empty) continue;
-
-        const batch = batchDb.batch();
-        snap.docs.forEach((doc) => batch.delete(doc.ref));
-        await batch.commit();
-      } catch (error) {
-        console.error(`[GDPR] Purge "${collectionName}" failed:`, (error as Error)?.message);
-      }
+    const report = await eraseUserData(db(), storageBucket(), uid);
+    const failed = report.steps.filter((step) => step.error);
+    if (!report.ok) {
+      console.error('[GDPR] Erasure incomplete:', failed.map((step) => `${step.name}: ${step.error}`).join('; '));
+      audit('gdpr.deletion.failed', req, { uid, failedSteps: failed.map((step) => step.name) });
+      return res.status(500).json({
+        error: 'Fshirja nuk përfundoi. Llogaria juaj është ruajtur; provoni përsëri ose kontaktoni privacy@zeriqytetare.republiks.',
+        failedSteps: failed.map((step) => step.name),
+      });
     }
 
     // Identity goes last: once Auth is gone the citizen can no longer prove who
-    // they were, so every remaining step must already have completed.
-    await authAdmin().deleteUser(uid);
-    await batchDb.collection('users').doc(uid).delete();
+    // they were, so every other step has already completed.
+    await db().collection('users').doc(uid).delete();
+    await authAdmin().deleteUser(uid).catch((error: any) => {
+      if (error?.code !== 'auth/user-not-found') throw error;
+    });
 
-    audit('gdpr.deletion.completed', req, { uid });
-    res.json({ message: 'Llogaria dhe të dhënat tuaja personale u fshinë në përputhje me Ligjin Nr. 06/L-082.' });
+    audit('gdpr.deletion.completed', req, { uid, steps: report.steps.map((step) => `${step.name}:${step.matched}`) });
+    return res.json({
+      message: 'Llogaria dhe të dhënat tuaja personale u fshinë në përputhje me Ligjin Nr. 06/L-082.',
+      steps: report.steps,
+    });
   } catch (error: any) {
     console.error('[GDPR] Erasure failed:', error?.message);
-    res.status(500).json({ error: 'Erasure failed. Please contact privacy@zeriqytetare.republiks for assistance.' });
+    return res.status(500).json({ error: 'Erasure failed. Please contact privacy@zeriqytetare.republiks for assistance.' });
   }
 });
-
 
 app.post('/api/v1/admin/municipalities', requireAuth, requireAdmin, async (req, res) => {
   let createdUid: string | null = null;
 
   try {
     const actor = req.user!;
-    const claimRole = String(actor.claims.role ?? '');
-    let actorRole = claimRole || (actor.claims.admin === true ? 'admin' : '');
-    if (!actorRole) {
-      const profile = await db().collection('users').doc(actor.uid).get();
-      actorRole = String(profile.data()?.role ?? actorRole);
-    }
+    const actorRole = await resolveActorRole(actor);
     if (actorRole !== 'superadmin') {
       return res.status(403).json({ error: 'Krijimi i llogarive komunale kërkon superadmin.' });
     }
@@ -1558,12 +1518,7 @@ app.post('/api/v1/admin/municipalities', requireAuth, requireAdmin, async (req, 
 app.put('/api/v1/admin/municipalities/:uid', requireAuth, requireAdmin, async (req, res) => {
   try {
     const actor = req.user!;
-    const claimRole = String(actor.claims.role ?? '');
-    let actorRole = claimRole || (actor.claims.admin === true ? 'admin' : '');
-    if (!actorRole) {
-      const profile = await db().collection('users').doc(actor.uid).get();
-      actorRole = String(profile.data()?.role ?? actorRole);
-    }
+    const actorRole = await resolveActorRole(actor);
     if (actorRole !== 'superadmin') {
       return res.status(403).json({ error: 'Ndryshimi i llogarive komunale kërkon superadmin.' });
     }
@@ -1657,6 +1612,15 @@ app.post('/api/v1/messages', requireAuth, async (req, res) => {
       db().collection('users').doc(receiverId).get(),
     ]);
     if (!senderDoc.exists) return res.status(403).json({ error: 'Profili i dërguesit mungon.' });
+
+    // Staff <-> municipality only (documented intent of this API). Checked before
+    // revealing whether the receiver exists, so the endpoint cannot be used to
+    // probe which user ids are real.
+    const parties = checkMessageParties(
+      String(senderDoc.data()?.role ?? ''),
+      String(receiverDoc.data()?.role ?? '')
+    );
+    if (parties.outcome === 'deny') return res.status(parties.status).json({ error: parties.error });
     if (!receiverDoc.exists) return res.status(404).json({ error: 'Marrësi nuk u gjet.' });
 
     const newMsg = {
@@ -1695,32 +1659,37 @@ app.get('/api/v1/messages/:otherUid', requireAuth, async (req, res) => {
     const otherUid = String(req.params.otherUid ?? '').trim();
     if (!otherUid) return res.status(400).json({ error: 'Bashkëbiseduesi mungon.' });
 
-    const snapshot = await db()
-      .collection('messages')
-      .where('senderId', 'in', [user.uid, otherUid])
-      .orderBy('createdAt', 'asc')
-      .limit(500)
-      .get()
-      .catch(() => null);
+    /**
+     * One query per direction, merged here.
+     *
+     * The earlier version asked for `senderId in [me, other]` and, whenever that
+     * query failed (a missing composite index), fell back to reading only the
+     * messages *I* sent. The fallback then filtered for both directions, so the
+     * other party's replies never appeared and nothing signalled that the thread
+     * was half empty. Each direction is now read explicitly; if the ordered query
+     * cannot run, the same equality filters are read unordered (they need no
+     * composite index) and sorted here, so a thread is complete either way.
+     */
+    const readDirection = async (from: string, to: string) => {
+      const base = db().collection('messages').where('senderId', '==', from).where('receiverId', '==', to);
+      try {
+        return (await base.orderBy('createdAt', 'desc').limit(250).get()).docs;
+      } catch (error: any) {
+        console.warn('[MESSAGES] ordered thread query failed (index missing?); reading unordered:', error?.message);
+        return (await base.limit(500).get()).docs;
+      }
+    };
 
-    // A missing composite index returns an error rather than an empty thread, so
-    // the fallback reads one side and filters in memory. 500 rows is small.
-    let docs = snapshot?.docs ?? [];
-    if (!snapshot) {
-      const fallback = await db()
-        .collection('messages')
-        .where('senderId', '==', user.uid)
-        .limit(500)
-        .get();
-      docs = fallback.docs;
-    }
+    const [sent, received] = await Promise.all([
+      readDirection(user.uid, otherUid),
+      readDirection(otherUid, user.uid),
+    ]);
 
-    const items = docs
+    const millis = (value: any): number => (typeof value?.toMillis === 'function' ? value.toMillis() : 0);
+    const items = [...sent, ...received]
       .map((d: any) => ({ id: d.id, ...d.data() }))
-      .filter((m: any) =>
-        (m.senderId === user.uid && m.receiverId === otherUid) ||
-        (m.senderId === otherUid && m.receiverId === user.uid)
-      );
+      .sort((a: any, b: any) => millis(a.createdAt) - millis(b.createdAt))
+      .slice(-500);
 
     return res.json({ items });
   } catch (error: any) {
@@ -1730,13 +1699,13 @@ app.get('/api/v1/messages/:otherUid', requireAuth, async (req, res) => {
 });
 
 // --- ADMIN API ---
-app.get('/api/v1/admin/users', requireAuth, requireAdmin, async (req, res) => {
+app.get('/api/v1/admin/users', requireAuth, requireSection('users'), async (req, res) => {
   try {
     const snapshot = await db().collection('users').limit(100).get();
     const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(users);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    sendServerError(res, 'Kërkesa nuk u përpunua. Provoni përsëri.', error);
   }
 });
 
@@ -1764,6 +1733,11 @@ app.post('/api/v1/forum/posts/:postId/action', requireAuth, async (req, res) => 
     });
 
     audit(`forum.post.${action}`, req, { postId: req.params.postId, active: result.active });
+    // The author's bell is written here, by the server, once per person and post.
+    if (result.active) {
+      notifyPostAction(db(), { postId: req.params.postId, uid: actorUid, action: action as 'like' | 'repost' })
+        .catch((e) => console.warn('[FORUM] notify failed:', e?.message));
+    }
     return res.json(result);
   } catch (error: any) {
     if (error?.statusCode === 404) return res.status(404).json({ error: error.message });
@@ -1772,27 +1746,109 @@ app.post('/api/v1/forum/posts/:postId/action', requireAuth, async (req, res) => 
   }
 });
 
+/**
+ * Record an action from the admin UI in the audit trail.
+ *
+ * The browser used to write `auditLogs` documents itself (any staff account could,
+ * under the Firestore rule), so the "who" in an entry was whatever the client
+ * claimed and any staff member could file entries in someone else's name. The
+ * identity fields are now taken from the verified token; the client supplies
+ * only what happened. The collection is closed to client writes in firestore.rules.
+ */
+app.post('/api/v1/audit', requireAuth, requireAdmin, async (req, res) => {
+  const clip = (value: unknown, max: number) => String(value ?? '').slice(0, max);
+  const action = clip(req.body?.action, 160).trim();
+  if (!action) return res.status(400).json({ error: 'Veprimi mungon.' });
+
+  try {
+    const profile = await db().collection('users').doc(req.user!.uid).get();
+    await db().collection('auditLogs').add({
+      action,
+      status: clip(req.body?.status, 24) || 'success',
+      details: clip(req.body?.details, 1000),
+      municipality: clip(req.body?.municipality, 80),
+      // Identity comes from the token, never from the request body.
+      userId: req.user!.uid,
+      userEmail: req.user!.email ?? null,
+      userName: String(profile.data()?.name ?? ''),
+      actorUid: req.user!.uid,
+      actorRole: req.user!.role,
+      ip: req.ip ?? null,
+      source: 'client-reported',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    return res.status(201).json({ ok: true });
+  } catch (error: any) {
+    return sendServerError(res, 'Regjistrimi i veprimit dështoi.', error);
+  }
+});
+
+/**
+ * Support ("upvote") a report. One per account; the counter is changed only here
+ * (see server/upvotes.ts). The Firestore rules do not let anyone but the author
+ * update a report, so the browser's own increment never persisted.
+ */
+app.post('/api/v1/reports/:reportId/upvote', requireAuth, async (req, res) => {
+  if (adminUnavailable(res)) return;
+
+  try {
+    const result = await castUpvote(db(), String(req.params.reportId ?? '').trim(), req.user!.uid);
+    return res.status(201).json(result);
+  } catch (error: any) {
+    if (error instanceof UpvoteError) return res.status(error.statusCode).json({ error: error.message });
+    return sendServerError(res, 'Mbështetja nuk u regjistrua. Provoni përsëri.', error);
+  }
+});
+
+/**
+ * Total number of accounts, for the staff user directory header. Counted by
+ * Firestore (an aggregation, not a document read per user) and cached briefly.
+ */
+app.get('/api/v1/admin/users/count', requireAuth, requireSection('users'), async (_req, res) => {
+  try {
+    const cached = cache.get<number>('admin:users:count');
+    if (cached !== undefined) return res.json({ count: cached });
+
+    const snapshot = await db().collection('users').count().get();
+    const count = snapshot.data().count;
+    cache.set('admin:users:count', count, 60_000);
+    return res.json({ count });
+  } catch (error: any) {
+    return sendServerError(res, 'Numri i përdoruesve nuk u llogarit.', error);
+  }
+});
+
+/**
+ * Cast a vote in a poll.
+ *
+ * The only writer of poll counters (see server/polls.ts and the `polls` rule):
+ * one vote per account, enforced by a document the client cannot write.
+ */
+app.post('/api/v1/polls/:pollId/vote', requireAuth, async (req, res) => {
+  if (adminUnavailable(res)) return;
+
+  try {
+    const result = await castVote(
+      db(),
+      String(req.params.pollId ?? '').trim(),
+      req.user!.uid,
+      String(req.body?.optionId ?? '').trim()
+    );
+    return res.status(201).json(result);
+  } catch (error: any) {
+    if (error instanceof VoteError) {
+      return res.status(error.statusCode).json({
+        error: error.message,
+        ...(error.votedOptionId ? { votedOptionId: error.votedOptionId } : {}),
+      });
+    }
+    return sendServerError(res, 'Vota nuk u regjistrua. Provoni përsëri.', error);
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /* Municipality editorial endpoints                                    */
 /* ------------------------------------------------------------------ */
-
-/**
- * Resolve the acting account from the verified token.
- *
- * `user.municipality` is read from the token claim, never from the request body:
- * a client could otherwise name any municipality and act outside its own
- * jurisdiction. The claim is set at provisioning time and cannot be written by
- * the client.
- */
-function actingUser(req: any) {
-  const u = req.user || {};
-  return {
-    uid: String(u.uid || ''),
-    email: String(u.email || ''),
-    role: String(u.role || u.municipality_role || 'citizen'),
-    municipality: String(u.municipality || ''),
-  };
-}
 
 /**
  * Albanian labels for the internal status codes, mirrored from
@@ -1850,6 +1906,19 @@ app.post('/api/v1/municipality/work-facts', requireAuth, async (req, res) => {
 
   const shape = editorialFirewall.validateWorkFact({ description, attachments });
   if (!shape.ok) return res.status(400).json({ error: shape.error });
+
+  // Registering works is part of the Standard plan and above.
+  if (actor.role === 'municipality') {
+    try {
+      const plan = normalizeMunicipalityPlan((await db().collection('users').doc(actor.uid).get()).data()?.municipalityPlan);
+      if (!planHasFeature(plan, 'workFacts')) {
+        return res.status(403).json({ error: `Regjistrimi i punimeve përfshihet nga plani ${cheapestPlanWith('workFacts')}.`, code: 'PLAN_REQUIRED', plan });
+      }
+    } catch (error: any) {
+      console.error('[MUNICIPALITY] plan lookup failed:', error?.message);
+      return res.status(500).json({ error: 'Plani nuk u verifikua. Provoni përsëri.' });
+    }
+  }
 
   try {
     const reportRef = db().collection('reports').doc(String(reportId));
@@ -1931,21 +2000,13 @@ app.post('/api/v1/municipality/work-facts', requireAuth, async (req, res) => {
 app.post('/api/v1/reports', requireAuth, async (req, res) => {
   if (adminUnavailable(res)) return;
   const actor = actingUser(req);
-  const body = req.body || {};
 
-  // ── Field validation (mirrors firestore.rules) ─────────────────────────
-  const title = String(body.title ?? '').trim().slice(0, 200);
-  const description = String(body.description ?? '').trim().slice(0, 5000);
-  const category = String(body.category ?? '').trim().slice(0, 80);
-  const location = body.location && typeof body.location === 'object' ? body.location : null;
-  if (!title || !description || !category || !location) {
-    return res.status(400).json({ error: 'Të dhënat e raportit janë të pavlefshme.' });
+  // ── Field validation (server/reports.ts) ────────────────────────────────
+  const parsed = parseReportInput(req.body);
+  if (parsed.outcome === 'invalid') {
+    return res.status(400).json({ error: parsed.error });
   }
-
-  const municipality = String(location?.municipality ?? '').trim().slice(0, 80);
-  if (!municipality) {
-    return res.status(400).json({ error: 'Mungon komuna.' });
-  }
+  const report = parsed.value;
 
   // ── Duplicate-window check: same uid + same title within 10 minutes ──────
   try {
@@ -1953,7 +2014,7 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
     const dupQuery = await db().collection('reports')
       .where('authorId', '==', actor.uid)
       .where('createdAt', '>=', since)
-      .where('title', '==', title)
+      .where('title', '==', report.title)
       .limit(1)
     ;
     const dup = await dupQuery.get();
@@ -1974,48 +2035,29 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
     // a legitimate report), but keep the write validated server-side.
   }
 
-  // ── Assemble the document server-side ────────────────────────────────
-  const now = new Date().toISOString();
+  // ── Tracking id: honour the client's only if it is well formed and unused ─
+  // A client-chosen id used to be stored as is, so one citizen could register
+  // another report's tracking id and make the public lookup ambiguous.
   const nowMs = Date.now();
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  const trackId = body.trackingId && String(body.trackingId).trim()
-  ? String(body.trackingId).trim().slice(0, 40)
-  : `ZQ-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${nowMs.toString(36).toUpperCase()}${rand}`;
-  const reportDoc: Record<string, unknown> = {
-    title,
-    description,
-    category,
-    location: {
-      address: String(location?.address ?? '').slice(0, 300),
-      municipality,
-      lat: Number(location?.lat) || null,
-      lng: Number(location?.lng) || null,
-    },
-    authorId: actor.uid,
-    authorName: String(body.authorName ?? '').slice(0, 120),
-    status: 'Pending Review',
-    trackingId: trackId,
-    isAnonymous: body.isAnonymous === true,
-    createdAt: FieldValue.serverTimestamp(),
-    timeline: [{
-      id: `${nowMs.toString(36)}${rand.toLowerCase()}`,
-      status: 'Pending Review',
-      date: now,
-      updatedBy: 'Sistemi',
-      source: 'system',
-    }],
-  };
+  let trackId = report.requestedTrackingId;
+  if (trackId) {
+    try {
+      const taken = await db().collection('reports').where('trackingId', '==', trackId).limit(1).get();
+      if (!taken.empty) trackId = '';
+    } catch (error: any) {
+      console.error('[REPORTS] tracking id check failed:', error?.message);
+      trackId = '';
+    }
+  }
+  if (!trackId) trackId = generateTrackingId(nowMs, randomBytes(4).toString('hex'));
 
-  // Media URLs are Storage download URLs — accept only https, from our bucket.
-  const media = Array.isArray(body.media) ? body.media.slice(0, 6) : [];
-  reportDoc.media = media
-    .filter((m: any) => m && typeof m.url === 'string' && m.url.startsWith('https://'))
-    .map((m: any) => ({
-      type: m.type === 'video' ? 'video' : 'image',
-      url: String(m.url).slice(0, 2048),
-      path: m.path ? String(m.path).slice(0, 512) : undefined,
-    }));
-  reportDoc.images = (reportDoc.media as any[]).filter((m: any) => m.type === 'image').map((m: any) => m.url);
+  const reportDoc = buildReportDocument(report, {
+    uid: actor.uid,
+    nowMs,
+    trackingId: trackId,
+    createdAt: FieldValue.serverTimestamp(),
+    eventSuffix: randomBytes(3).toString('hex'),
+  });
 
   try {
     const ref = await db().collection('reports').add(reportDoc);
@@ -2078,22 +2120,13 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
 
     const report = snapshot.data() as any;
 
-    // The role check runs against the token claim, not the request body, so a
-    // client cannot claim to be staff. The profile document is the fallback for
-    // accounts that predate custom claims.
-    let permissions: string[] = [];
-    let roleFromProfile = '';
-    let municipalityFromProfile = '';
+    // Authority (role, jurisdiction, section permissions) comes from the verified
+    // token claims only. The profile document is client-writable, so it is read
+    // for a display name and nothing else.
     let actorName = '';
     try {
       const profile = await db().collection('users').doc(actor.uid).get();
-      if (profile.exists) {
-        const data = profile.data() as any;
-        roleFromProfile = String(data?.role ?? '');
-        municipalityFromProfile = String(data?.municipality ?? '');
-        actorName = String(data?.name ?? '');
-        permissions = Array.isArray(data?.permissions) ? data.permissions.map(String) : [];
-      }
+      if (profile.exists) actorName = String((profile.data() as any)?.name ?? '');
     } catch (error: any) {
       console.error('[REPORTS] profile lookup failed:', error?.message);
     }
@@ -2101,9 +2134,9 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
     const decision = pipeline.decideTransition(
       {
         uid: actor.uid,
-        role: actor.role || roleFromProfile,
-        municipality: actor.municipality || municipalityFromProfile,
-        permissions,
+        role: actor.role,
+        municipality: actor.municipality,
+        permissions: actor.permissions,
       },
       report,
       transition
@@ -2135,10 +2168,10 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
 
     // A privacy-safe display label for the actor. The public Track ID timeline
     // renders `updatedBy`, so this must never be an email address or uid.
-    const actorRole = pipeline.pipelineRoleOf(actor.role || roleFromProfile, permissions) || 'staff';
+    const actorRole = pipeline.pipelineRoleOf(actor.role, actor.permissions) || 'staff';
     const actorInstitution =
       actorRole === 'municipality'
-        ? `Komuna e ${actor.municipality || municipalityFromProfile || '—'}`
+        ? `Komuna e ${actor.municipality || '—'}`
         : actorRole === 'agent'
           ? 'Agjenti i platformës'
           : 'Administrata';
@@ -2155,6 +2188,7 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
       previousStatus,
       source: actorRole === 'municipality' ? 'municipality' : actorRole === 'agent' ? 'agent' : 'admin',
       comment: note,
+      ...(decision.onBehalfOf ? { onBehalfOf: decision.onBehalfOf } : {}),
     };
 
     const updates: Record<string, unknown> = {
@@ -2170,9 +2204,22 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
     }
     if (resolvedImage) updates.resolvedImage = resolvedImage;
 
-    // Claiming leaves the report in its current status but records who holds it.
+    // Claiming leaves the report in its current status but records who holds it -
+    // as a person (uid), not only as a label, so "Të miat" and each agent's load
+    // can be counted. An agent cannot take a report another agent already holds;
+    // the owner can (and the audit log says so).
     if (transition === 'claim') {
-      updates.assignedTo = String(req.body?.assignedTo || updatedByLabel).slice(0, 160);
+      const holder = String(report?.assignedToUid ?? '');
+      if (holder && holder !== actor.uid && actorRole !== 'staff') {
+        return res.status(409).json({
+          error: `Këtë raportim e ka marrë përsipër ${String(report?.assignedTo || 'një agjent tjetër')}.`,
+          code: 'ALREADY_CLAIMED',
+        });
+      }
+      updates.assignedTo = updatedByLabel.slice(0, 160);
+      updates.assignedToUid = actor.uid;
+      updates.assignedAt = now;
+      updates.assignedBy = actor.uid;
     }
 
     await reportRef.update(updates);
@@ -2248,12 +2295,12 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
 
     // A municipality touching its own report is an editorial event and belongs in
     // the append-only editorial log as well as the platform audit trail.
-    if (pipeline.pipelineRoleOf(actor.role || roleFromProfile, permissions) === 'municipality') {
+    if (pipeline.pipelineRoleOf(actor.role, actor.permissions) === 'municipality') {
       await logEditorialEvent({
         kind: transition === 'municipality_done' ? 'work_facts_added' : 'response_published',
         subjectId: reportId,
         subjectType: 'report',
-        actorMunicipality: actor.municipality || municipalityFromProfile,
+        actorMunicipality: actor.municipality,
         actorUserId: actor.uid,
         actorEmail: actor.email,
         attemptedAction: transition,
@@ -2266,6 +2313,7 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
       reportId,
       from: decision.fromStage,
       to: decision.toStatus,
+      ...(decision.onBehalfOf ? { onBehalfOf: decision.onBehalfOf } : {}),
     });
 
     return res.json({
@@ -2329,7 +2377,50 @@ app.get('/api/v1/municipality/reports', requireAuth, async (req, res) => {
  * which point it is shown next to the report as verified rather than as the
  * municipality's assertion.
  */
-app.get('/api/v1/admin/work-facts', requireAuth, requireAdmin, async (req, res) => {
+// Paginated, server-authorised reports list for the admin screens (replaces
+// filtering the newest 100 reports in the browser). See server/adminReports.ts.
+registerUserModerationRoutes(app, { requireAuth, db, authAdmin, actingUser, resolveActorRole, audit });
+registerStaffRemovalRoutes(app, { requireAuth, db, authAdmin, actingUser, resolveActorRole, audit });
+registerReportMediaRoutes(app, { requireAuth, db, actingUser, audit });
+registerDecisionRoutes(app, { requireAuth, db, actingUser, audit });
+registerReportAssignmentRoutes(app, { requireAuth, db, authAdmin, actingUser, audit });
+registerPhotoEditRoutes(app, { requireAuth, db, bucket: storageBucket, actingUser, audit });
+registerMunicipalityDeskRoutes(app, { requireAuth, db, authAdmin, actingUser, audit, logEditorialEvent });
+registerTeamOverviewRoutes(app, { requireAuth, db, actingUser });
+const institutionMailer = createMailerFromEnv();
+registerInstitutionMailRoutes(app, {
+  requireAuth, db, mailer: () => institutionMailer, actingUser, audit,
+  baseUrl: () => process.env.PUBLIC_APP_URL || process.env.APP_URL || '',
+});
+registerForumSocialRoutes(app, { requireAuth, requireUsersSection: requireSection('users'), db, audit });
+registerForumAnalyticsRoutes(app, { requireAuth, db });
+registerDirectMessageRoutes(app, { requireAuth, db });
+registerForumPostRoutes(app, { requireAuth, db });
+registerAdRoutes(app, { db });
+registerForumFeedRoutes(app, { requireAuth, db });
+registerForumPeopleRoutes(app, { requireAuth, db });
+registerForumReelRoutes(app, {
+  requireAuth,
+  db,
+  // Deletes a reel's video and cover from Storage; ignores files that are already gone.
+  removeFiles: async (paths) => {
+    const bucket = storageBucket();
+    if (!bucket) return;
+    for (const p of paths) await bucket.file(p).delete({ ignoreNotFound: true });
+  },
+});
+registerPaymentRoutes(app, { requireAuth, requireDebateSection: requireSection('debate'), db, audit });
+registerDebateAdminRoutes(app, { requireAuth, requireDebateSection: requireSection('debate'), db, audit });
+
+registerAdminReportRoutes(app, {
+  requireAuth,
+  db,
+  actingUser,
+  audit,
+  canSeeReportStatus: editorialFirewall.canSeeReportStatus,
+});
+
+app.get('/api/v1/admin/work-facts', requireAuth, requireSection('workfacts'), async (req, res) => {
   try {
     const status = String(req.query.status || 'pending');
     const snapshot = await db()
@@ -2354,7 +2445,7 @@ app.get('/api/v1/admin/work-facts', requireAuth, requireAdmin, async (req, res) 
  * editable — including by staff — so the record of who claimed what and when
  * survives even if the claim is later shown to be wrong.
  */
-app.put('/api/v1/admin/work-facts/:id', requireAuth, requireAdmin, async (req, res) => {
+app.put('/api/v1/admin/work-facts/:id', requireAuth, requireSection('workfacts'), async (req, res) => {
   const decision = String(req.body?.decision || '');
   if (!['confirmed', 'rejected'].includes(decision)) {
     return res.status(400).json({ error: 'Vendimi duhet të jetë confirmed ose rejected.' });
@@ -2396,7 +2487,7 @@ app.put('/api/v1/admin/work-facts/:id', requireAuth, requireAdmin, async (req, r
  * entries are about: a municipality cannot request a copy of the record of its
  * own denied attempts. The yearly transparency report summarises it instead.
  */
-app.get('/api/v1/admin/editorial-log', requireAuth, requireAdmin, async (req, res) => {
+app.get('/api/v1/admin/editorial-log', requireAuth, requireSection('security'), async (req, res) => {
   try {
     const maxLimit = Math.min(Number(req.query.limit) || 100, 500);
     const snapshot = await db().collection('editorialLog').orderBy('at', 'desc').limit(maxLimit).get();
@@ -2438,17 +2529,6 @@ app.get('/api/v1/public/editorial-transparency', async (_req, res) => {
 
 
   
-  // --- GLOBAL ERROR HANDLER ---
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled Server Error:', err);
-  const reqId = Math.random().toString(36).substring(7);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    requestId: reqId,
-    message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
-  });
-});
-
 app.use('/api/ai-assistant/', requireAuth);
 
 
@@ -2492,7 +2572,7 @@ Kthe PËRGJIGJEN VETËM SI NJË ARRAY JSON.`;
       res.json(result);
     } catch (e: any) {
       console.error(e);
-      res.status(500).json({ error: e.message || 'Gabim gjatë parashikimit' });
+      sendServerError(res, 'Gabim gjatë parashikimit', e);
     }
   });
 
@@ -2521,32 +2601,24 @@ Përgjigju VETËM me tekstin e përgjigjes zyrtare.`;
       res.json({ response: response.text });
     } catch (e: any) {
       console.error(e);
-      res.status(500).json({ error: e.message || 'Gabim gjatë gjenerimit' });
-    }
-  });
-
-  // 3. Forensic Image Scanning (Bypassed logic on backend as requested)
-  app.post("/api/verify-image", async (req, res) => {
-    try {
-      res.json({ is_authentic: true, confidence_score: 1, reason: "Bypassed verification" });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  // 4. AI Cyber-Security & Botnet Detection
-  app.post("/api/check-botnet", async (req, res) => {
-    try {
-      res.json({ is_bot: false, confidence: 0, block_reason: "Bypassed" });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Gabim gjatë gjenerimit', e);
     }
   });
 
   // NEW ENDPOINT: Analyze issue photo for smart categorization
-  app.post("/api/analyze-issue", express.json({limit: '50mb'}), async (req, res) => {
+  app.post("/api/analyze-issue", requireAuth, async (req, res) => {
     try {
-      const { imageBase64, mimeType, lat, lng, descriptionText } = req.body;
+      const { imageBase64, mimeType, lat, lng } = req.body ?? {};
+      const descriptionText = clip(req.body?.descriptionText, 2000);
+
+      if (imageBase64 !== undefined) {
+        if (typeof imageBase64 !== 'string' || imageBase64.length > MAX_ANALYSIS_BASE64_CHARS) {
+          return res.status(413).json({ error: 'Fotografia është shumë e madhe për analizë.' });
+        }
+        if (mimeType !== undefined && !ALLOWED_ANALYSIS_MIME.has(String(mimeType))) {
+          return res.status(415).json({ error: 'Formati i fotografisë nuk mbështetet për analizë.' });
+        }
+      }
       
       const categoriesList = [
         "Komuna - Drejtoria e Infrastrukturës",
@@ -2580,7 +2652,7 @@ Lista e Drejtorive (Zgjidh fiks njërën nga këto - copy paste ashtu siç ësht
 ${categoriesList.join('\n')}
 
 Teksti shtesë nga qytetari: ${descriptionText || 'Nuk ka'}
-Koordinatat: ${lat || 'Nuk ka'}, ${lng || 'Nuk ka'}`;
+Koordinatat: ${Number.isFinite(Number(lat)) ? Number(lat) : 'Nuk ka'}, ${Number.isFinite(Number(lng)) ? Number(lng) : 'Nuk ka'}`;
 
       const contentsParts = [];
       if (imageBase64) {
@@ -2612,17 +2684,20 @@ Koordinatat: ${lat || 'Nuk ka'}, ${lng || 'Nuk ka'}`;
 
       const text = response.text;
       const result = text ? JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim()) : null;
-      res.json(result);
+      // Canned fallback text is not an analysis; say so, so the form does not
+      // pre-fill a title and category from it.
+      res.json((response as any).degraded ? { degraded: true } : result);
     } catch (e: any) {
       console.error(e);
-      res.status(500).json({ error: e.message || 'Gabim gjatë analizës së AI' });
+      sendServerError(res, 'Gabim gjatë analizës së AI', e);
     }
   });
 
   // Auto-Moderator për Fjalor të Urrejtjes
-  app.post("/api/moderate-comment", express.json(), async (req, res) => {
+  app.post("/api/moderate-comment", requireAuth, async (req, res) => {
     try {
-      const { text } = req.body;
+      const text = clip(req.body?.text, 5000);
+      if (!text.trim()) return res.status(400).json({ error: 'Teksti mungon.' });
       const prompt = `Je një Auto-Moderator Super-Inteligjent, tepër i rreptë dhe etik për komente shqip në një forum të hapur "Debati Publik" ose platformë shtetërore.
 Analizo me vëmendje këtë koment: "${text}"
 A përmban fjalor urrejtjeje, bullizëm, kërcënime, fjalë të ndyra, racizëm, seksizëm apo ofendime të rënda?
@@ -2648,16 +2723,33 @@ Jep gjithashtu një arsye tejet të shkurtër (reason).`;
       
       const respText = response.text;
       const result = respText ? JSON.parse(respText.replace(/```json/g, '').replace(/```/g, '').trim()) : { isApproved: true, reason: 'Fallback' };
-      res.json(result);
+      res.json((response as any).degraded ? { degraded: true } : result);
     } catch (e: any) {
       console.error(e);
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Shërbimi i AI nuk është i disponueshëm. Provoni përsëri.', e);
     }
   });
 
-  app.post("/api/detect-duplicate", async (req, res) => {
+  app.post("/api/detect-duplicate", requireAuth, async (req, res) => {
     try {
-      const { newReport, existingReports } = req.body;
+      const rawNew = req.body?.newReport;
+      const newReport = {
+        title: clip(rawNew?.title, 200),
+        description: clip(rawNew?.description, 2000),
+      };
+      const existingReports = (Array.isArray(req.body?.existingReports) ? req.body.existingReports : [])
+        .slice(0, 20)
+        .map((r: any) => ({
+          id: clip(r?.id, 128),
+          title: clip(r?.title, 200),
+          description: clip(r?.description, 600),
+        }));
+      if (!newReport.title && !newReport.description) {
+        return res.status(400).json({ error: 'Raporti i ri mungon.' });
+      }
+      if (existingReports.length === 0) {
+        return res.json({ is_duplicate: false, reason: 'Nuk ka raporte për krahasim.' });
+      }
       const prompt = `Je një AI Analist Detektiv i Avancuar për zbulimin e duplikateve në një sistem raportimi qytetar. Ne kemi një raport të ri të dorëzuar nga qytetari dhe një listë me raporte ekzistuese në të njëjtin lokacion gjeografik (50 metra rreze).
 Raporti i ri: "${newReport.title}" - "${newReport.description}"
 Raportet ekzistuese: 
@@ -2685,16 +2777,22 @@ Nëse jo, kthe is_duplicate: false.`;
       });
       const text = response.text;
       const result = text ? JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim()) : { is_duplicate: false, reason: 'Fallback' };
-      res.json(result);
+      res.json((response as any).degraded ? { is_duplicate: false, reason: 'AI nuk është i disponueshëm.', degraded: true } : result);
     } catch (e: any) {
       console.error(e);
-      res.status(500).json({ error: e.message || 'Gabim' });
+      sendServerError(res, 'Gabim', e);
     }
   });
 
   // 7. AI Personalized Reporting Tips (/api/dashboard/reporting-tips)
-  app.post("/api/dashboard/reporting-tips", async (req, res) => {
+  app.post("/api/dashboard/reporting-tips", requireAuth, async (req, res) => {
     try {
+      // The prompt is static (the request body is not used), so one answer serves
+      // everyone. Without this, every dashboard load by every visitor was a
+      // separate paid model call that returned interchangeable text.
+      const cachedTips = cache.get<{ tips: string[] }>('ai:reporting-tips');
+      if (cachedTips) return res.json(cachedTips);
+
       const prompt = `Je një asistent super inteligjent që këshillon qytetarët e Kosovës se si të bëjnë raporte/ankesa sa më kualitative në një platformë smart-city.
 Gjenero 3 këshilla të ndryshme, super unike, të avancuara dhe praktike.
 Këshillat duhet të jenë inkurajuese, tejet të qarta dhe të shkurtra (max 1-2 fjali secila).
@@ -2713,9 +2811,12 @@ Mos përdor këshilla gjenerike. Bëhu specifik (psh, "Kur raportoni rrjedhje uj
       });
       const text = response.text;
       const result = text ? JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim()) : { tips: [] };
-      res.json(result);
+      if (!(response as any).degraded && Array.isArray(result?.tips) && result.tips.length > 0) {
+        cache.set('ai:reporting-tips', result, 6 * 60 * 60 * 1000);
+      }
+      res.json((response as any).degraded ? { tips: [], degraded: true } : result);
     } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Shërbimi i AI nuk është i disponueshëm. Provoni përsëri.', e);
     }
   });
 
@@ -2745,7 +2846,7 @@ Kushti kryesor: Përdor formatim të pasur (bullet points, theksime) për ta bë
       });
       res.json({ summary: response.text });
     } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Shërbimi i AI nuk është i disponueshëm. Provoni përsëri.', e);
     }
   });
 
@@ -2794,7 +2895,7 @@ Përgjigju shkurt, fuqishëm dhe me respekt super profesional. (Nëse ka pyetje 
       });
       res.json({ text: response.text });
     } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Shërbimi i AI nuk është i disponueshëm. Provoni përsëri.', e);
     }
   });
 
@@ -2837,14 +2938,20 @@ Kthe VETËM JSON me këto fusha:
       const result = text ? JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim()) : null;
       res.json(result || { score: 50, grade: "Mesatar", analysis: "Nuk ka mjaftueshëm të dhëna për një analizë të thellë. Sistemit i duhen më shumë raporte të zgjidhura vs të pazgjidhura.", hotspots: "Mungesë të dhënash", recommendations: "Inkurajoni qytetarët të raportojnë." });
     } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Shërbimi i AI nuk është i disponueshëm. Provoni përsëri.', e);
     }
   });
 
   // 11. AI Daily News
-  app.post("/api/dashboard/ai-news", async (req, res) => {
+  app.post("/api/dashboard/ai-news", requireAuth, async (req, res) => {
     try {
-      const { issues } = req.body;
+      const issues = Array.isArray(req.body?.issues) ? req.body.issues.slice(0, 10) : undefined;
+      // Identical inputs get an identical answer for a short while rather than a
+      // fresh paid model call per page view.
+      const newsKey = `ai:news:${JSON.stringify((issues ?? []).map((i: any) => [clip(i?.title, 140), clip(i?.category, 60)]))}`;
+      const cachedNews = cache.get<{ alerts: string[] }>(newsKey);
+      if (cachedNews) return res.json(cachedNews);
+
       const prompt = `Je një "Gazetar AI Analitik" i Inteligjencës Qytetare që raporton lajmet më të fundit rreth problemeve lokale në Kosovë, drejtpërdrejt nga platforma.
 Duke u bazuar në këtë listë të raporteve të fundit:
 ${JSON.stringify(issues ? issues.slice(0, 10).map((i: any) => ({ title: i.title, category: i.category })) : [])}
@@ -2866,10 +2973,17 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
       });
       const text = response.text;
       const result = text ? JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim()) : { alerts: [] };
-      res.json(result);
+      if (!(response as any).degraded && Array.isArray(result?.alerts) && result.alerts.length > 0) cache.set(newsKey, result, 15 * 60 * 1000);
+      res.json((response as any).degraded ? { alerts: [], degraded: true } : result);
     } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      sendServerError(res, 'Shërbimi i AI nuk është i disponueshëm. Provoni përsëri.', e);
     }
+  });
+
+  // Anything under /api that no route claimed is a JSON 404. Without this the
+  // SPA fallback below answered unknown API GETs with index.html and a 200.
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'Rruga nuk u gjet.' });
   });
 
   /**
@@ -2935,6 +3049,24 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  // --- GLOBAL ERROR HANDLER ---
+  // Registered last, after every route, so it actually sees their errors (it used
+  // to sit in the middle of the file and the AI routes below it bypassed it).
+  // Errors raised by body-parser carry a 4xx status; reporting them as 500 hid
+  // malformed JSON and oversized bodies from clients and from monitoring.
+  app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) return next(err);
+    const status = Number(err?.status ?? err?.statusCode);
+    if (status >= 400 && status < 500) {
+      const error =
+        status === 413 ? 'Kërkesa është shumë e madhe.'
+        : err?.type === 'entity.parse.failed' ? 'JSON i pavlefshëm.'
+        : 'Kërkesa nuk është e vlefshme.';
+      return res.status(status).json({ error });
+    }
+    return sendServerError(res, 'Gabim i brendshëm i serverit.', err);
+  });
 
   const isPrototypeSandbox = process.env.NODE_ENV !== 'production' &&
     process.env.VITE_PROTOTYPE_FIREBASE_EMULATORS === 'true' &&

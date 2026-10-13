@@ -1,6 +1,6 @@
 """
-Install the Argos Translate models needed to translate Albanian into all 14
-added languages.
+Install the Argos Translate models needed to translate Albanian into every
+added language.
 
 Argos publishes models as directed pairs. Albanian only has sq<->en, so every
 target is reached through English: sq -> en -> <target>. That is a pivot
@@ -17,13 +17,14 @@ import argostranslate.package as pkg
 import argostranslate.translate as translate
 
 # Targets we need, in the internal codes the app uses.
-TARGETS = ['ar', 'fr', 'it', 'es', 'pt', 'de', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl']
+TARGETS = ['ar', 'fr', 'it', 'pt', 'de', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg']
 
 # Swiss German has no Argos model; standard German is the closest available and
 # is what a Swiss reader can read, so gsw is served by the de pivot.
 PIVOT_FOR = {'gsw': 'de'}
 
-# Argos names Norwegian "nb"; Armenian is "hy". Both match our codes already.
+# Argos names Norwegian "no", which is our "nb"; everything else in TARGETS
+# matches its internal code.
 REQUIRED = ['sq->en'] + [f"en->{PIVOT_FOR.get(t, t)}" for t in TARGETS]
 
 

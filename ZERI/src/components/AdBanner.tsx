@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useStore } from '../lib/store';
 import { cn } from '../lib/utils';
@@ -8,8 +8,37 @@ import {
   ExternalLink, Phone, MessageCircle, Mail, Sparkles, 
   Building2, MapPin, Eye, Zap, CheckCircle2, X, Send, Award
 } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import DOMPurify from 'dompurify';
+
+/**
+ * Sanitise HTML ad creative before it is injected.
+ *
+ * This used to call `window.DOMPurify` when present and an identity function
+ * otherwise. Nothing ever put DOMPurify on `window`, so the "sanitiser" was a
+ * no-op and any ad document with `mediaType: 'html'` rendered as raw HTML on
+ * every visitor's page. The import is explicit now, the policy is https-only,
+ * and iframes are forced into a sandbox without `allow-same-origin`, so a
+ * hostile creative cannot reach the host page's storage or auth session.
+ */
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'IFRAME') {
+    node.setAttribute('sandbox', 'allow-scripts allow-popups');
+    node.setAttribute('referrerpolicy', 'no-referrer');
+  }
+  if (node.tagName === 'A') {
+    node.setAttribute('rel', 'noopener noreferrer sponsored');
+  }
+});
+
+function sanitizeAdHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['iframe', 'img', 'div', 'span', 'a'],
+    ALLOWED_ATTR: ['src', 'href', 'class', 'width', 'height', 'frameborder', 'allowfullscreen', 'target'],
+    ALLOWED_URI_REGEXP: /^https:/i,
+  });
+}
 import toast from 'react-hot-toast';
 
 interface AdBannerProps {
@@ -58,8 +87,10 @@ export default function AdBanner({ position, className, municipality }: AdBanner
   const incrementAdView = useStore(state => state.incrementAdView);
   const incrementAdClick = useStore(state => state.incrementAdClick);
   const location = useLocation();
+  const dialogTitleId = useId();
 
   const [activeAd, setActiveAd] = useState<any>(null);
+  const [mediaFailed, setMediaFailed] = useState(false);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inquiryForm, setInquiryForm] = useState({
@@ -111,6 +142,28 @@ export default function AdBanner({ position, className, municipality }: AdBanner
     location.pathname
   ]);
 
+  // A new creative gets a fresh chance to load; only the failed one is hidden.
+  useEffect(() => {
+    setMediaFailed(false);
+  }, [activeAd?.id, activeAd?.mediaUrl]);
+
+  // The inquiry dialog behaves like every other modal on the site: Escape closes
+  // it, and the page behind it stops scrolling so a phone user is not dragging
+  // the page under the form.
+  useEffect(() => {
+    if (!showInquiryModal) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowInquiryModal(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showInquiryModal]);
+
   const handleClick = () => {
     if (!activeAd) return;
 
@@ -124,29 +177,41 @@ export default function AdBanner({ position, className, municipality }: AdBanner
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquiryForm.name || !inquiryForm.phone) {
-      toast.error('Ju lutemi plotësoni emrin dhe numrin e telefonit');
+      toast.error(dt('Ju lutemi plotësoni emrin dhe numrin e telefonit'));
+      return;
+    }
+
+    // Same contract as AdRequestModal: the create rule needs the signed-in uid.
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      toast.error(dt('Kyçuni për të dërguar kërkesën, ose na telefononi direkt.'));
       return;
     }
 
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'adRequests'), {
-        name: inquiryForm.name,
-        businessName: inquiryForm.businessName || '',
-        phone: inquiryForm.phone,
-        userEmail: inquiryForm.email || '',
+        userId: uid,
+        name: inquiryForm.name.trim(),
+        businessName: inquiryForm.businessName.trim(),
+        phone: inquiryForm.phone.trim(),
+        contactPhone: inquiryForm.phone.trim(),
+        contactEmail: inquiryForm.email.trim(),
+        userEmail: inquiryForm.email.trim(),
+        targetMunicipality: municipality || 'Të gjitha Komunat',
         postId: `Pozicioni: ${position} | Komuna: ${municipality || 'Nacionale'}`,
-        notes: inquiryForm.notes || '',
+        adNotes: inquiryForm.notes.trim(),
+        notes: inquiryForm.notes.trim(),
         status: 'pending',
         createdAt: serverTimestamp()
       });
 
-      toast.success('Kërkesa u dërgua me sukses! Do t\'ju kontaktojmë së shpejti.');
+      toast.success(dt('Kërkesa u dërgua me sukses! Do t\'ju kontaktojmë së shpejti.'));
       setShowInquiryModal(false);
       setInquiryForm({ name: '', businessName: '', phone: '', email: '', notes: '' });
     } catch (err) {
       console.error('Gabim gjatë dërgimit të kërkesës:', err);
-      toast.error('Ndodhi një gabim. Ju lutemi provoni përsëri ose na telefononi direkt.');
+      toast.error(dt('Ndodhi një gabim. Ju lutemi provoni përsëri ose na telefononi direkt.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -172,49 +237,106 @@ export default function AdBanner({ position, className, municipality }: AdBanner
   //
   else if (pos === 'banner') heightClass = 'h-[120px] min-h-0';
 
+  // Strips (`top`, `banner`) are too short for a stacked title + call to action;
+  // they lay the two out side by side instead of letting the title overflow.
+  const isStrip = pos === 'top' || pos === 'banner';
+
   const baseStyle = cn(
-    "bg-slate-50 dark:bg-slate-800 relative group overflow-hidden flex flex-col justify-center cursor-pointer transition-all duration-300",
+    // `isolate` keeps the -z-10 surface behind the creative but above the page.
+    "bg-slate-50 dark:bg-slate-800 relative isolate group overflow-hidden flex flex-col justify-center cursor-pointer transition-all duration-300",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
     pos === 'floating'
-       ? "border border-slate-200/60"
-       : "border border-slate-200/60 dark:border-white/10 rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 rounded-xl",
+       ? "border border-slate-200/60 dark:border-white/10"
+       : "border border-slate-200/60 dark:border-white/10 rounded-xl hover:-translate-y-0.5 hover:shadow-md",
     widthClass,
     heightClass,
     className
   );
 
   if (activeAd) {
+    const adTargetUrl = typeof activeAd.targetUrl === 'string' ? activeAd.targetUrl.trim() : '';
+    const isClickable = activeAd.mediaType !== 'html' && Boolean(adTargetUrl);
+    const showMedia = !mediaFailed;
+
     return (
       <div
         onClick={handleClick}
-        className={baseStyle}
+        onKeyDown={(event) => {
+          if (isClickable && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            handleClick();
+          }
+        }}
+        role={isClickable ? 'link' : undefined}
+        tabIndex={isClickable ? 0 : undefined}
+        aria-label={isClickable ? `${dt('Reklamë')}: ${activeAd.title ?? ''}` : undefined}
+        className={cn(baseStyle, !isClickable && 'cursor-default')}
       >
-        <div className="absolute top-0 right-0 flex items-center gap-1 z-10 bg-slate-900/90 backdrop-blur-sm px-2.5 py-0.5 rounded-bl-lg">
+        <div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-lg bg-slate-900/90 px-2.5 py-0.5 backdrop-blur-sm rtl:left-0 rtl:right-auto rtl:rounded-bl-none rtl:rounded-br-lg">
           <span className="text-[10px] font-bold tracking-wider text-white uppercase">{dt(`Sponzorizuar`)}</span>
         </div>
 
         <div className="absolute inset-0 -z-10 bg-(--color-sponsor-surface)" />
 
-        {activeAd.mediaType === 'image' && (
-          <img src={activeAd.mediaUrl} alt={activeAd.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        {showMedia && (activeAd.mediaType === 'image' || activeAd.mediaType === 'gif') && (
+          <img
+            src={activeAd.mediaUrl}
+            alt={activeAd.title ?? ''}
+            loading="lazy"
+            decoding="async"
+            onError={() => setMediaFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
         )}
 
-        {activeAd.mediaType === 'video' && (
-          <video src={activeAd.mediaUrl} muted playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover" />
+        {showMedia && activeAd.mediaType === 'video' && (
+          <video
+            src={activeAd.mediaUrl}
+            muted
+            playsInline
+            autoPlay
+            loop
+            preload="metadata"
+            aria-hidden="true"
+            onError={() => setMediaFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         )}
 
         {activeAd.mediaType === 'html' && (
-          <div className="absolute inset-0 w-full h-full overflow-hidden" dangerouslySetInnerHTML={{ __html: ((window as any).DOMPurify ? (window as any).DOMPurify.sanitize : (x: string) => x)(activeAd.mediaUrl, { ALLOWED_TAGS: ['iframe', 'img', 'div', 'span', 'a'], ALLOWED_ATTR: ['src', 'href', 'class', 'style', 'width', 'height', 'frameborder', 'allowfullscreen', 'sandbox'] }) }} />
+          <div className="absolute inset-0 w-full h-full overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeAdHtml(activeAd.mediaUrl) }} />
         )}
 
         {/* Overlay content only if it's not HTML to ensure text readability */}
         {activeAd.mediaType !== 'html' && (
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent flex flex-col justify-end p-4 sm:p-5 opacity-90 group-hover:opacity-100 transition-opacity">
-              <h4 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-wide leading-tight mb-1.5 drop-shadow-sm">
+           <div
+             className={cn(
+               "absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/10 opacity-95 group-hover:opacity-100 transition-opacity",
+               isStrip
+                 ? "flex flex-row items-end justify-between gap-3 px-3 pb-2.5 pt-6 sm:px-5"
+                 : "flex flex-col justify-end p-4 sm:p-5"
+             )}
+           >
+              <h4
+                className={cn(
+                  "min-w-0 font-bold text-white leading-tight drop-shadow-sm",
+                  isStrip
+                    ? "line-clamp-2 text-xs sm:text-sm md:text-base"
+                    : "mb-1.5 line-clamp-3 text-sm sm:text-base md:text-lg tracking-wide"
+                )}
+              >
                 {activeAd.title}
               </h4>
-              <p className="text-xs text-rose-300 font-bold tracking-wide flex items-center gap-1.5 transition-colors">
-                {dt(`Shiko Ofertën`)} <ExternalLink className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </p>
+              {isClickable && (
+                <p
+                  className={cn(
+                    "flex shrink-0 items-center gap-1.5 text-xs font-bold tracking-wide text-rose-200",
+                    isStrip && "rounded-full bg-white/15 px-2.5 py-1 backdrop-blur-sm"
+                  )}
+                >
+                  {dt(`Shiko Ofertën`)} <ExternalLink className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
+                </p>
+              )}
            </div>
         )}
       </div>
@@ -247,7 +369,20 @@ export default function AdBanner({ position, className, municipality }: AdBanner
     <>
       <div 
         onClick={() => setShowInquiryModal(true)}
+        onKeyDown={(event) => {
+          // Only the card itself; Enter on the phone/WhatsApp links inside must still follow them.
+          if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            setShowInquiryModal(true);
+          }
+        }}
+        // A group, not a button: the call and WhatsApp links inside are real
+        // interactive elements and must not be nested in a button role.
+        role="group"
+        tabIndex={0}
+        aria-label={dt('Kërkesë për Reklamim')}
         className={cn(
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
           "relative overflow-hidden group border border-slate-200/80 dark:border-white/5 bg-slate-50/40 dark:bg-slate-900/20 backdrop-blur-xl rounded-xl transition-all duration-300 cursor-pointer flex flex-col justify-center",
           "hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-lg hover:shadow-slate-200/20 dark:hover:shadow-black/20 hover:border-blue-200/80 dark:hover:border-blue-900/40",
           isCompact ? "p-3 sm:p-4" : "p-4",
@@ -266,22 +401,22 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-brand-primary)"></span>
                 </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   {dt('Reklamoni Këtu')}
                 </span>
               </div>
               {municipality && municipality !== 'Të gjitha Komunat' && (
-                <span className="text-[9px] font-bold text-slate-400 flex items-center gap-0.5">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
                   <MapPin className="w-2.5 h-2.5" /> {municipality}
                 </span>
               )}
             </div>
             
             <div className="mt-0.5">
-              <h4 className="text-[11px] font-black text-slate-800 dark:text-slate-200 leading-tight">
+              <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 leading-tight">
                 {dt('Lidheni Biznesin Tuaj Këtu')}
               </h4>
-              <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-2">
                 {dt('Arritni qytetarët lokalë me një prezencë premium.')}
               </p>
             </div>
@@ -290,19 +425,19 @@ export default function AdBanner({ position, className, municipality }: AdBanner
               <a
                 href={`tel:${cleanPhone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 py-1.5 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
+                className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
               >
-                <Phone className="w-2.5 h-2.5" />
+                <Phone className="w-3 h-3" aria-hidden="true" />
                 <span>{dt('Kliko e thirr')}</span>
               </a>
               <a
-                href={`https://wa.me/${cleanWhatsApp.replace('+', '')}?text=${encodeURIComponent('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.')}`}
+                href={`https://wa.me/${cleanWhatsApp.replace('+', '')}?text=${encodeURIComponent(dt('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.'))}`}
                 onClick={(e) => e.stopPropagation()}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 py-1.5 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
+                className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
               >
-                <MessageCircle className="w-2.5 h-2.5" />
+                <MessageCircle className="w-3 h-3" aria-hidden="true" />
                 <span>{dt('WhatsApp')}</span>
               </a>
             </div>
@@ -320,12 +455,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-brand-primary)"></span>
                     </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
                       {dt('Hapësira Reklamimi e Lirë')}
                     </span>
                   </div>
                   {municipality && municipality !== 'Të gjitha Komunat' && (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-slate-400 bg-white/50 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5 px-1.5 py-0.5 rounded shadow-sm">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5 px-1.5 py-0.5 rounded shadow-sm">
                       <MapPin className="w-2.5 h-2.5" /> {municipality}
                     </span>
                   )}
@@ -333,7 +468,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight mt-0.5">
                   {dt('Promovoni Biznesin Tuaj Këtu – Bëhuni Pjesë e Komunës')}
                 </h4>
-                <p className="mt-1 max-w-2xl text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{adSlogan}</p>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600 dark:text-slate-300">{adSlogan}</p>
               </div>
             </div>
 
@@ -341,20 +476,20 @@ export default function AdBanner({ position, className, municipality }: AdBanner
               <a
                 href={`tel:${cleanPhone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 sm:flex-none px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
+                className="flex-1 sm:flex-none min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
               >
-                <Phone className="w-3 h-3" />
+                <Phone className="w-3.5 h-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">{contactPhone}</span>
                 <span className="inline sm:hidden">{dt('Kliko e thirr')}</span>
               </a>
               <a
-                href={`https://wa.me/${cleanWhatsApp.replace('+', '')}?text=${encodeURIComponent('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.')}`}
+                href={`https://wa.me/${cleanWhatsApp.replace('+', '')}?text=${encodeURIComponent(dt('Përshëndetje! Jam i interesuar për reklamim në platformën Qytetari.'))}`}
                 onClick={(e) => e.stopPropagation()}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 sm:flex-none px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
+                className="flex-1 sm:flex-none min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
               >
-                <MessageCircle className="w-3 h-3" />
+                <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{dt('WhatsApp')}</span>
               </a>
             </div>
@@ -364,30 +499,42 @@ export default function AdBanner({ position, className, municipality }: AdBanner
 
       {/* Direct Ad Inquiry Modal */}
       {showInquiryModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative">
+        <div
+          className="fixed inset-0 z-[99999] flex items-end justify-center overflow-y-auto bg-slate-900/60 p-0 backdrop-blur-md animate-in fade-in duration-200 sm:items-center sm:p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowInquiryModal(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={dialogTitleId}
+            className="relative max-h-[100dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[92dvh] sm:rounded-2xl sm:p-6 md:p-8 dark:border-white/10 dark:bg-slate-900"
+          >
             <button
+              type="button"
               onClick={() => setShowInquiryModal(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors bg-slate-50 dark:bg-slate-800"
+              aria-label={dt('Mbyll')}
+              className="absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:text-slate-800 rtl:left-3 rtl:right-auto dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="mb-6 flex items-center gap-3 pe-10">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-900/60 text-blue-600 flex items-center justify-center shadow-sm">
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                <h3 id={dialogTitleId} className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
                   {dt('Kërkesë për Reklamim')}
                 </h3>
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-0.5">
                   {dt('Pozicioni:')} <strong className="text-slate-700 dark:text-slate-200 capitalize">{position}</strong> {municipality && municipality !== 'Të gjitha Komunat' ? `• ${municipality}` : ''}
                 </p>
               </div>
             </div>
             <form onSubmit={handleInquirySubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                   {dt('Emri & Mbiemri *')}
                 </label>
                 <input
@@ -396,11 +543,11 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                   value={inquiryForm.name}
                   onChange={e => setInquiryForm({ ...inquiryForm, name: e.target.value })}
                   placeholder={dt('psh. Agron Krasniqi')}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
+                  className="w-full min-h-11 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-base sm:text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                   {dt('Emri i Biznesit / Kompanisë')}
                 </label>
                 <input
@@ -408,12 +555,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                   value={inquiryForm.businessName}
                   onChange={e => setInquiryForm({ ...inquiryForm, businessName: e.target.value })}
                   placeholder={dt('psh. Auto Servis Prishtina')}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
+                  className="w-full min-h-11 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-base sm:text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                     {dt('Numri i Telefonit *')}
                   </label>
                   <input
@@ -422,11 +569,11 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                     value={inquiryForm.phone}
                     onChange={e => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
                     placeholder={dt('+383 4X XXX XXX')}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
+                    className="w-full min-h-11 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-base sm:text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                     {dt('Email Adresa')}
                   </label>
                   <input
@@ -434,12 +581,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                     value={inquiryForm.email}
                     onChange={e => setInquiryForm({ ...inquiryForm, email: e.target.value })}
                     placeholder={dt('info@kompania.com')}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
+                    className="w-full min-h-11 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-base sm:text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                   {dt('Shënime ose format i preferuar')}
                 </label>
                 <textarea
@@ -447,23 +594,23 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                   value={inquiryForm.notes}
                   onChange={e => setInquiryForm({ ...inquiryForm, notes: e.target.value })}
                   placeholder={dt('psh. Dëshiroj reklamë në Ballinë dhe Hartë për 1 muaj')}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors custom-scrollbar"
+                  className="w-full min-h-11 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-base sm:text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white font-medium transition-colors custom-scrollbar"
                 />
               </div>
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-white/10 mt-2">
+              <div className="pt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3 border-t border-slate-100 dark:border-white/10 mt-2">
                 <button
                   type="button"
                   onClick={() => setShowInquiryModal(false)}
-                  className="px-5 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="min-h-11 px-5 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   {dt('Anulo')}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-black tracking-wide flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-95"
+                  className="min-h-11 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-black tracking-wide flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-95"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-4 h-4 rtl:-scale-x-100" aria-hidden="true" />
                   <span>{isSubmitting ? dt('Po dërgohet...') : dt('Dërgo Kërkesën')}</span>
                 </button>
               </div>

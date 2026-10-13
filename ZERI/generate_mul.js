@@ -1,7 +1,7 @@
 /**
- * Translate the five languages Argos cannot serve, using the multilingual model.
+ * Translate the four languages Argos cannot serve, using the multilingual model.
  *
- * These five (bs, sr, hr, mk, hy) are the largest remaining gap and the model
+ * These four (bs, sr, hr, mk) are the largest remaining gap and the model
  * that handles them is much slower per string than Argos — roughly 8x — so this
  * runs as its own long-lived process with frequent checkpoints rather than
  * sharing the Argos run. Either can be interrupted and resumed without losing
@@ -26,7 +26,7 @@ const fixMojibake = (t) => {
 };
 
 const WRONG = [/\bkaza[cjksz][a-z]*stan\b/gi, /\bkaza[cjksz]h?st[ae]n\b/gi, /\bqazaqstan\b/gi];
-const CYRILLIC_NAME = { mk: 'Косово', sr: 'Косово', hr: 'Kosovo', bs: 'Kosovo', hy: 'Կոսովո' };
+const CYRILLIC_NAME = { mk: 'Косово', sr: 'Косово', hr: 'Kosovo', bs: 'Kosovo' };
 
 /**
  * Is the source shouting? ALL-CAPS Albanian is a label, not a sentence.

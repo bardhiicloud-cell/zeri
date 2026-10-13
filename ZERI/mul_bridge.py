@@ -1,9 +1,9 @@
 """
 Multilingual bridge for the languages Argos does not publish.
 
-Argos covers 12 of our targets but has no model at all for Bosnian, Serbian,
-Croatian, Macedonian or Armenian. Helsinki-NLP's `opus-mt-en-mul` covers exactly
-those five.
+Argos covers most of our targets but has no model at all for Bosnian, Serbian,
+Croatian or Macedonian. Helsinki-NLP's `opus-mt-en-mul` covers exactly those
+four.
 
 CRITICAL: this model is English-source only. Feeding it Albanian makes it return
 the Albanian almost unchanged ("ndiqni zgjidhjet" -> "dhendiqni zgjidhjet"),
@@ -42,7 +42,6 @@ TARGET_TAG = {
     'sr': 'srp_Cyrl',
     'hr': 'hrv',
     'mk': 'mkd',
-    'hy': 'hye',
 }
 
 MODEL = 'Helsinki-NLP/opus-mt-en-mul'

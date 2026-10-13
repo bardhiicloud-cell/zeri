@@ -14,29 +14,55 @@
  *
  * These are the guarantees the user asked for, and they can be checked exactly.
  */
-import { SUPPORTED_LANGUAGES, LANGUAGE_OPTIONS, RTL_LANGUAGES, HTML_LANG_TAGS } from '../src/lib/languageConstants.js';
+import {
+  SUPPORTED_LANGUAGES, LANGUAGE_OPTIONS, RTL_LANGUAGES, HTML_LANG_TAGS,
+  REGIONAL_ENGLISH,
+} from '../src/lib/languageConstants.js';
 import { dt } from '../src/lib/dt.js';
-import { SEO_LOCALES, parseLocalePath, buildLocalizedPath } from '../src/lib/seo.js';
+import { SEO_LOCALES, parseLocalePath, buildLocalizedPath, translationLanguageFor } from '../src/lib/seo.js';
 import { dynamicTranslations } from '../src/lib/dynamicTranslations.js';
 
 const results = [];
 const fail = (name, detail) => results.push({ ok: false, name, detail });
 const pass = (name, detail) => results.push({ ok: true, name, detail });
 
-// --- 1. all 20 languages are wired ---
+// --- 1. the current language set is wired ---
+// Spanish, Romanian and Armenian were removed and replaced by Japanese, Korean
+// and Polish, plus Bulgarian, Canada and Australia.
 const EXPECTED = [
-  'sq', 'en', 'de', 'bs', 'ar', 'tr', 'sr', 'fr', 'it', 'es',
-  'pt', 'gsw', 'mk', 'sl', 'hr', 'ro', 'sv', 'nb', 'hy', 'nl',
+  'sq', 'en', 'de', 'bs', 'ar', 'tr', 'sr', 'fr', 'it', 'pt',
+  'gsw', 'mk', 'sl', 'hr', 'sv', 'nb', 'nl',
+  'ja', 'ko', 'pl', 'bg', 'ca', 'au',
 ];
-if (SUPPORTED_LANGUAGES.length === 20) {
-  pass('20 languages supported', SUPPORTED_LANGUAGES.join(','));
+if (SUPPORTED_LANGUAGES.length === EXPECTED.length) {
+  pass(`${EXPECTED.length} languages supported`, SUPPORTED_LANGUAGES.join(','));
 } else {
-  fail('20 languages supported', `got ${SUPPORTED_LANGUAGES.length}: ${SUPPORTED_LANGUAGES.join(',')}`);
+  fail(`${EXPECTED.length} languages supported`, `got ${SUPPORTED_LANGUAGES.length}: ${SUPPORTED_LANGUAGES.join(',')}`);
 }
 
+// The three removed languages must be gone from every lookup table, or a stale
+// /es/ link would still resolve and render Spanish on a site that no longer
+// offers it.
+const REMOVED = ['es', 'ro', 'hy'];
+const stillSupported = REMOVED.filter((l) => SUPPORTED_LANGUAGES.includes(l));
+if (stillSupported.length === 0) pass('removed languages are gone (es, ro, hy)', 'not in SUPPORTED_LANGUAGES');
+else fail('removed languages are gone (es, ro, hy)', `still present: ${stillSupported.join(',')}`);
+
+const stillInSwitcher = REMOVED.filter((l) => LANGUAGE_OPTIONS.some((o) => o.code === l));
+if (stillInSwitcher.length === 0) pass('removed languages are gone from the switcher', 'not in LANGUAGE_OPTIONS');
+else fail('removed languages are gone from the switcher', `still present: ${stillInSwitcher.join(',')}`);
+
+const stillInSeo = REMOVED.filter((l) => SEO_LOCALES[l]);
+if (stillInSeo.length === 0) pass('removed languages have no URL prefix', 'not in SEO_LOCALES');
+else fail('removed languages have no URL prefix', `still present: ${stillInSeo.join(',')}`);
+
 const missingMeta = EXPECTED.filter((l) => !LANGUAGE_OPTIONS.some((o) => o.code === l));
-if (missingMeta.length === 0) pass('switcher lists all 20', `${LANGUAGE_OPTIONS.length} entries`);
-else fail('switcher lists all 20', `missing: ${missingMeta.join(',')}`);
+if (missingMeta.length === 0) pass('switcher lists every language', `${LANGUAGE_OPTIONS.length} entries`);
+else fail('switcher lists every language', `missing: ${missingMeta.join(',')}`);
+
+const missingOpt = EXPECTED.filter((l) => !LANGUAGE_OPTIONS.some((o) => o.code === l));
+if (missingOpt.length === 0) pass('every supported language has a switcher entry', 'none missing');
+else fail('every supported language has a switcher entry', missingOpt.join(','));
 
 const missingSeo = EXPECTED.filter((l) => !SEO_LOCALES[l]);
 if (missingSeo.length === 0) pass('SEO locale per language', 'all present');
@@ -59,6 +85,33 @@ if (RTL_LANGUAGES.length === 1 && RTL_LANGUAGES[0] === 'ar') {
 const sample = 'Duke ngarkuar platformën...';
 const byLang = {};
 for (const lang of EXPECTED) byLang[lang] = dt(sample, lang);
+
+/*
+ * Regional English must render the English string, not fall back to Albanian.
+ * A regression here is silent: the page loads, the URL says /au/, and the text
+ * is Albanian — which reads as "the site is broken" to an Australian visitor.
+ */
+const enText = dt(sample, 'en');
+for (const region of REGIONAL_ENGLISH) {
+  if (byLang[region] === enText && enText !== sample) {
+    pass(`${region} renders through the English table`, byLang[region]);
+  } else {
+    fail(`${region} renders through the English table`, `expected "${enText}", got "${byLang[region]}"`);
+  }
+}
+
+// The three new translations must be present in their own scripts.
+for (const [lang, re, label] of [
+  ['ja', /[\u3040-\u30FF\u4E00-\u9FFF]/, 'Japanese script'],
+  ['ko', /[\uAC00-\uD7AF]/, 'Korean script'],
+  ['bg', /[\u0400-\u04FF]/, 'Cyrillic script'],
+]) {
+  if (re.test(byLang[lang])) pass(`${lang} renders in ${label}`, byLang[lang]);
+  else fail(`${lang} renders in ${label}`, byLang[lang]);
+}
+// Polish is Latin but must not be the Albanian source text.
+if (byLang.pl && byLang.pl !== sample) pass('pl renders a Polish string', byLang.pl);
+else fail('pl renders a Polish string', byLang.pl);
 
 // For the six original languages we can assert a real translation exists.
 const origSix = ['en', 'de', 'bs', 'tr', 'sr'];

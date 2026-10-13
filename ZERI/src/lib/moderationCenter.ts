@@ -327,6 +327,7 @@ export const ROLE_MATRIX: Record<string, readonly string[]> = {
   approver: ['dashboard', 'reports', 'workfacts', 'health', 'donations', 'notifications', 'forum', 'polls', 'categories', 'support'],
   adsadmin: ['dashboard', 'ads', 'notifications'],
   newsadmin: ['dashboard', 'notifications', 'news', 'forum', 'polls'],
+  debatwp: ['dashboard', 'debate', 'forum'],
   /**
    * Field roles. The three panel grants are per-account, not per-role: an agent
    * only gets them when an administrator ticks the box on their staff form, so
@@ -351,6 +352,7 @@ export const ROLE_MATRIX_LABELS: Record<string, string> = {
   approver: 'Zyrtar Aprovimi',
   adsadmin: 'Menaxher Reklamash',
   newsadmin: 'Redaktor Lajmesh',
+  debatwp: 'Admin i Debatit Publik',
   agent: 'Agjent Terreni',
   responder: 'Përgjegjës',
   dispatcher: 'Dispatcher',

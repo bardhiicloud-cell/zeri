@@ -21,6 +21,7 @@ import {
 } from '../lib/mapTiles';
 import { configureDefaultLeafletIcons } from './map/mapMarkerIcons';
 
+import { dt } from '@/src/lib/dt';
 configureDefaultLeafletIcons();
 
 const ZOOM_STEP = 0.5;
@@ -190,7 +191,7 @@ function ReportMarker({
           </div>
 
           <div className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
-            <span>Shiko raportin</span>
+            <span>{dt('Shiko raportin')}</span>
             <ArrowRight className="w-3 h-3" />
           </div>
         </div>
@@ -300,10 +301,10 @@ export function KosovoDashboardMap({
         <div>
           <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
             <MapPin className="w-5 h-5 text-blue-600" />
-            <span>Harta e Raportimeve</span>
+            <span>{dt('Harta e Raportimeve')}</span>
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Shikoni problemet e raportuara në të gjithë Kosovën
+            {dt('Shikoni problemet e raportuara në të gjithë Kosovën')}
           </p>
         </div>
 
@@ -319,7 +320,7 @@ export function KosovoDashboardMap({
             onClick={handleGoToMap}
             className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
-            <span>Harta e plotë</span>
+            <span>{dt('Harta e plotë')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -334,14 +335,14 @@ export function KosovoDashboardMap({
           <div className="space-y-3">
             {/* Kategoria */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Kategoria</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Kategoria')}</label>
               <div className="relative">
                 <select 
                   value={selectedCategory} 
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
                 >
-                  <option value="all">Të gjitha kategoritë</option>
+                  <option value="all">{dt('Të gjitha kategoritë')}</option>
                   {categoryOptions.map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
@@ -356,17 +357,17 @@ export function KosovoDashboardMap({
 
             {/* Statusi */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Statusi</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Statusi')}</label>
               <div className="relative">
                 <select 
                   value={selectedStatus} 
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
                 >
-                  <option value="all">Të gjitha statuset</option>
-                  <option value="Të raportuar">Të raportuar</option>
-                  <option value="Në trajtim">Në trajtim</option>
-                  <option value="Të zgjidhur">Të zgjidhur</option>
+                  <option value="all">{dt('Të gjitha statuset')}</option>
+                  <option value="Të raportuar">{dt('Të raportuar')}</option>
+                  <option value="Në trajtim">{dt('Në trajtim')}</option>
+                  <option value="Të zgjidhur">{dt('Të zgjidhur')}</option>
                   <option value="Urgjent">Urgjent</option>
                 </select>
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -379,14 +380,14 @@ export function KosovoDashboardMap({
 
             {/* Komuna */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Komuna</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Komuna')}</label>
               <div className="relative">
                 <select 
                   value={selectedMunicipality} 
                   onChange={(e) => onMunicipalityChange && onMunicipalityChange(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
                 >
-                  <option value="">Të gjitha komunat</option>
+                  <option value="">{dt('Të gjitha komunat')}</option>
                   {KOSOVO_MUNICIPALITIES.map(m => (
                     <option key={m} value={m}>{m}</option>
                   ))}
@@ -401,18 +402,18 @@ export function KosovoDashboardMap({
 
             {/* Urgjenca */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Urgjenca</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Urgjenca')}</label>
               <div className="relative">
                 <select 
                   value={selectedUrgency} 
                   onChange={(e) => setSelectedUrgency(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
                 >
-                  <option value="all">Të gjitha nivelet</option>
-                  <option value="Kritike">Kritike</option>
-                  <option value="E lartë">E lartë</option>
-                  <option value="Mesatare">Mesatare</option>
-                  <option value="E ulët">E ulët</option>
+                  <option value="all">{dt('Të gjitha nivelet')}</option>
+                  <option value="Kritike">{dt('Kritike')}</option>
+                  <option value="E lartë">{dt('E lartë')}</option>
+                  <option value="Mesatare">{dt('Mesatare')}</option>
+                  <option value="E ulët">{dt('E ulët')}</option>
                 </select>
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -437,15 +438,15 @@ export function KosovoDashboardMap({
           <div className="space-y-2 pt-2 text-xs text-slate-600 dark:text-slate-300">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] shrink-0" />
-              <span>Të raportuar</span>
+              <span>{dt('Të raportuar')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0" />
-              <span>Në trajtim</span>
+              <span>{dt('Në trajtim')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0" />
-              <span>Të zgjidhur</span>
+              <span>{dt('Të zgjidhur')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shrink-0" />
@@ -464,7 +465,7 @@ export function KosovoDashboardMap({
               type="button" 
               onClick={() => setCurrentZoom(z => Math.min(z + ZOOM_STEP, MAP_MAX_ZOOM))}
               className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-              title="Zmadho"
+              title={dt('Zmadho')}
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -473,7 +474,7 @@ export function KosovoDashboardMap({
               type="button" 
               onClick={() => setCurrentZoom(z => Math.max(z - ZOOM_STEP, MAP_MIN_ZOOM))}
               className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-              title="Zvogëlo"
+              title={dt('Zvogëlo')}
             >
               <Minus className="w-3.5 h-3.5" />
             </button>

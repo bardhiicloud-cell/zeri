@@ -3,6 +3,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, authAdmin } from './firebaseAdmin';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import type { AdminSection } from '../src/lib/adminPermissions';
+import { mayUseSection } from './policy';
 
 /**
  * Authentication and security middleware.
@@ -63,11 +65,76 @@ export const requireAuth: RequestHandler = async (
   }
 };
 
+/**
+ * Section permissions granted to the caller, read from the verified token.
+ *
+ * `buildRoleClaims` flattens every permission into a `perm_<name>` boolean claim
+ * that only the Admin SDK can write. The `permissions` array on the profile
+ * document is client-writable and must never be used to decide authority.
+ */
+export function permissionsFromClaims(claims: Record<string, unknown>): string[] {
+  return Object.keys(claims)
+    .filter((key) => key.startsWith('perm_') && claims[key] === true)
+    .map((key) => key.slice('perm_'.length));
+}
+
+/**
+ * The acting account, resolved from the verified token and nothing else.
+ *
+ * `municipality` lives under `req.user.claims`; reading it off `req.user`
+ * directly always yielded `undefined`, which silently disabled every
+ * municipality jurisdiction check that relied on it.
+ */
+export function actingUser(req: { user?: AuthedUser }) {
+  const user = req.user;
+  const claims = user?.claims ?? {};
+  return {
+    uid: String(user?.uid ?? ''),
+    email: String(user?.email ?? ''),
+    role: String(user?.role || 'citizen'),
+    municipality: String(claims.municipality ?? ''),
+    permissions: permissionsFromClaims(claims),
+  };
+}
+
 /** Roles that may reach the admin surface. Mirrors the Firestore rules. */
 export const ADMIN_ROLES = new Set([
-  'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin',
-  'agent', 'responder', 'dispatcher', 'moderator',
+  'admin', 'superadmin', 'approver', 'adsadmin', 'newsadmin', 'debatwp',
+  'agent', 'responder', 'dispatcher', 'moderator', 'monitor',
 ]);
+
+/**
+ * Whether a role stored on the user *document* may stand in for a missing token
+ * claim. OFF by default.
+ *
+ * The profile `role` field is not a safe source of authority: an account holding
+ * the `admin` role could write it onto any other user's document and, because that
+ * account carried no claim, the server would then treat it as staff. Authority
+ * comes from the verified ID token only. Accounts that predate custom claims must
+ * be migrated with `npm run claims:sync`; set ALLOW_PROFILE_ROLE_FALLBACK=true
+ * only for the short window while that runs, then remove it.
+ */
+export const PROFILE_ROLE_FALLBACK = process.env.ALLOW_PROFILE_ROLE_FALLBACK === 'true';
+
+/**
+ * The caller's role, from verified token claims (and, only if explicitly enabled,
+ * the profile document). Returns '' when the token carries no role - the caller
+ * is then treated as having none, which every guard denies.
+ */
+export async function resolveActorRole(user: AuthedUser | undefined): Promise<string> {
+  if (!user) return '';
+  const claimRole = String(user.claims.role ?? '');
+  if (claimRole) return claimRole;
+  if (user.claims.admin === true) return 'admin';
+  if (!PROFILE_ROLE_FALLBACK) return '';
+  try {
+    const snap = await db().collection('users').doc(user.uid).get();
+    return String(snap.data()?.role ?? '');
+  } catch (error) {
+    console.error('[AUTH] Role lookup failed:', (error as Error)?.message);
+    return '';
+  }
+}
 
 export const requireAdmin: RequestHandler = async (
   req: Request,
@@ -85,17 +152,31 @@ export const requireAdmin: RequestHandler = async (
     return next();
   }
 
-  // Fall back to the profile document for accounts that predate custom claims.
-  try {
-    const snap = await db().collection('users').doc(req.user.uid).get();
-    const role = snap.exists ? String(snap.data()?.role ?? '') : '';
-    if (ADMIN_ROLES.has(role)) return next();
-  } catch (error) {
-    console.error('[AUTH] Role lookup failed:', (error as Error)?.message);
-  }
+  // The profile document is deliberately not consulted (see PROFILE_ROLE_FALLBACK).
+  if (PROFILE_ROLE_FALLBACK && ADMIN_ROLES.has(await resolveActorRole(req.user))) return next();
 
   return res.status(403).json({ error: 'Forbidden: Requires admin role' });
 };
+
+/**
+ * Gate a route on an admin section, using the same role -> section table the UI
+ * uses (see server/policy.ts). `requireAdmin` only answers "is this any kind of
+ * staff?", which let an ads or news editor call endpoints that list every user's
+ * profile or review municipal work claims. Use this where a route belongs to a
+ * specific section; it must run after `requireAuth`.
+ */
+export function requireSection(section: AdminSection): RequestHandler {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const role = await resolveActorRole(req.user);
+
+    const permissions = permissionsFromClaims(req.user.claims);
+    if (ADMIN_ROLES.has(role) && mayUseSection({ role, permissions }, section)) return next();
+
+    return res.status(403).json({ error: 'Forbidden: your role does not include this section' });
+  };
+}
 
 /**
  * Append-only audit trail.

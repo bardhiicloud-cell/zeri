@@ -20,6 +20,7 @@ import toast from 'react-hot-toast';
 import DashboardOriginalBackup from './DashboardOriginalBackup';
 import { MunicipalityShield } from '../components/MunicipalityShield';
 import { getMunicipalityHeroImage } from '../lib/municipalityHeroImages';
+import { getMunicipalityPhoto } from '../lib/municipalityPhotos';
 import { ALL_SCOPE, isSpecificScope, recordMatchesScope, scopeKey } from '../lib/municipalityScope';
 import AdBanner from '../components/AdBanner.tsx';
 import { QuickAccessGrid } from '../components/dashboard/QuickAccessGrid';
@@ -97,7 +98,9 @@ export default function Dashboard() {
   const setUserMunicipality = useStore((state) => state.setUserMunicipality);
   const activeMunicipality = isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : '';
   const heroMunicipality = activeMunicipality || 'Prishtinë';
-  const heroImage = getMunicipalityHeroImage(heroMunicipality);
+  const fallbackHero = getMunicipalityHeroImage(heroMunicipality);
+  const heroImageDay = getMunicipalityPhoto(heroMunicipality, 'day') ?? fallbackHero;
+  const heroImageNight = getMunicipalityPhoto(heroMunicipality, 'night') ?? fallbackHero;
   const handleMunicipalityChange = (municipality: string) => {
     // The store setter persists; the page no longer writes localStorage itself.
     setUserMunicipality(municipality || ALL_SCOPE);
@@ -182,14 +185,14 @@ export default function Dashboard() {
     { name: 'Vushtrri', code: 'VU' }
   ].filter(m => !muniSearchQuery || m.name.toLowerCase().includes(muniSearchQuery.toLowerCase()));
 
+  // One lookup through dt() for every supported language, instead of a table
+  // that only knew six of them and showed Albanian to the other fourteen.
   const headerLabels = {
-    sq: { report: 'Raporto', track: 'Gjej raportimin tim', search: 'Kërko ndihmë, komunë ose raportim...', action: 'Kërko' },
-    en: { report: 'Report', track: 'Track ID', search: 'Search reports, municipalities or services...', action: 'Search' },
-    bs: { report: 'Prijavi', track: 'Track ID', search: 'Pretraži prijave, opštine ili usluge...', action: 'Traži' },
-    sr: { report: 'Prijavi', track: 'Track ID', search: 'Pretraži prijave, opštine ili usluge...', action: 'Pretraži' },
-    tr: { report: 'Bildir', track: 'Track ID', search: 'Rapor, belediye veya hizmet ara...', action: 'Ara' },
-    de: { report: 'Melden', track: 'Track ID', search: 'Berichte, Gemeinden oder Dienste suchen...', action: 'Suchen' }
-  }[language] || { report: 'Raporto', track: 'Track ID', search: 'Kërko raportime, komuna ose shërbime...', action: 'Kërko' };
+    report: dt('Raporto', language),
+    track: dt('Gjej raportimin tim', language),
+    search: dt('Kërko ndihmë, komunë ose raportim...', language),
+    action: dt('Kërko', language),
+  };
 
   return (
     <div className="w-full min-h-screen bg-(--color-page) dark:bg-[#111B24] text-slate-900 dark:text-white flex flex-col font-sans transition-colors duration-200">
@@ -232,10 +235,14 @@ export default function Dashboard() {
 
           {/* Municipality panorama with a deep navy overlay for readable content. */}
           <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
-            style={{ backgroundImage: `url(${heroImage})` }}
+            className="dark:hidden absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
+            style={{ backgroundImage: `url(${heroImageDay})` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071328]/90 via-[#0b1d3a]/75 to-[#071328]/60" />
+          <div
+            className="hidden dark:block absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
+            style={{ backgroundImage: `url(${heroImageNight})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#071328]/80 via-[#0b1d3a]/55 to-[#071328]/30 dark:from-[#071328]/75 dark:via-[#0b1d3a]/40 dark:to-[#071328]/10" />
 
           {/* Subtle Ambient Glow */}
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -243,12 +250,12 @@ export default function Dashboard() {
           {/* Top Badge inside Hero */}
           <div className="relative z-10 mb-1">
             <div className="luxury-pill inline-flex items-center gap-1.5 px-3 py-1 text-blue-200 text-[10px] sm:text-xs font-black rounded-full uppercase tracking-[0.16em]">
-              <span>Shërbime për qytetarët</span>
+              <span>{dt('Shërbime për qytetarët')}</span>
             </div>
           </div>
 
           {/* Hero Middle Content: Left Text & Right 3 Badges */}
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+          <div className="relative z-10 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 sm:gap-8">
 
             {/* Left Content */}
             <div className="max-w-2xl">
@@ -257,7 +264,7 @@ export default function Dashboard() {
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-200/90 leading-snug mb-3 max-w-xl font-normal">
-                Raportoni probleme, merrni pjesë në vendimmarrje dhe ndihmoni në përmirësimin e shërbimeve në komunën tuaj.
+                {dt('Raportoni probleme, merrni pjesë në vendimmarrje dhe ndihmoni në përmirësimin e shërbimeve në komunën tuaj.')}
               </p>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -267,7 +274,7 @@ export default function Dashboard() {
                   className="luxury-cta inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-3.5 py-2 text-xs font-extrabold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98]"
                 >
                   <PenSquare className="w-3.5 h-3.5" />
-                  <span>Raporto një problem</span>
+                  <span>{dt('Raporto një problem')}</span>
                 </button>
 
                 <button
@@ -278,33 +285,33 @@ export default function Dashboard() {
                   className="luxury-pill inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-white/20 px-3.5 py-2 text-xs font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>Shiko raportimet</span>
+                  <span>{dt('Shiko raportimet')}</span>
                 </button>
               </div>
             </div>
 
             {/* Right Side: 3 Stacked Horizontal Items (Exact from Screenshot) */}
-            <div className="flex flex-col gap-2 w-full sm:w-auto shrink-0 lg:absolute lg:right-4 lg:top-4">
+            <div className="flex flex-col gap-2 w-full sm:w-auto shrink-0 xl:absolute xl:right-4 xl:top-4 rtl:xl:left-4 rtl:xl:right-auto">
 
               <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition-all min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
                   <Users className="w-3 h-3" />
                 </div>
-                <span className="text-[11px] font-bold">Qytetarët raportojnë</span>
+                <span className="text-[11px] font-bold">{dt('Qytetarët raportojnë')}</span>
               </div>
 
               <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition-all min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
                   <Building2 className="w-3 h-3" />
                 </div>
-                <span className="text-[11px] font-bold">Institucionet veprojnë</span>
+                <span className="text-[11px] font-bold">{dt('Institucionet veprojnë')}</span>
               </div>
 
               <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition-all min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0">
                   <Heart className="w-3 h-3" />
                 </div>
-                <span className="text-[11px] font-bold">Komuniteti përmirësohet</span>
+                <span className="text-[11px] font-bold">{dt('Komuniteti përmirësohet')}</span>
               </div>
 
             </div>
@@ -336,7 +343,7 @@ export default function Dashboard() {
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="mt-2 sm:mt-4 text-lg sm:text-2xl font-black leading-none text-slate-900 dark:text-white">{metric.value}</div>
-                <div className="mt-1 text-[9px] sm:text-[11px] font-bold uppercase leading-tight tracking-[0.1em] sm:tracking-[0.15em] text-slate-500 dark:text-slate-400">{metric.label}</div>
+                <div className="mt-1 text-[9px] sm:text-[11px] font-bold uppercase leading-tight tracking-[0.1em] sm:tracking-[0.15em] text-slate-500 dark:text-slate-400">{dt(metric.label)}</div>
               </div>
             );
           })}
@@ -349,7 +356,7 @@ export default function Dashboard() {
             : "border-emerald-100 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
         )}>
           <span className={cn("h-2 w-2 shrink-0 rounded-full", isPreviewData ? "bg-amber-500" : "bg-emerald-500")} />
-          {isPreviewData ? "Po shfaqen të dhëna paraprake; raportimet reale nuk janë ngarkuar ende." : "Përditësimet shfaqen pas raportimit dhe ndryshimit të statusit."}
+          {isPreviewData ? dt("Po shfaqen të dhëna paraprake; raportimet reale nuk janë ngarkuar ende.") : dt("Përditësimet shfaqen pas raportimit dhe ndryshimit të statusit.")}
         </div>
 
         {/* 4. SPLIT SECTION: RAPORTIMET NË HARTË (LEFT) & RAPORTIMET MË TË FUNDIT (RIGHT) */}
@@ -384,14 +391,14 @@ export default function Dashboard() {
 
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-black text-slate-900 dark:text-white title-serif tracking-tight">
-                  Raportimet më të fundit
+                  {dt('Raportimet më të fundit')}
                 </h3>
 
                 <Link
                   to="/detailed-registry"
                   className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 group transition-colors"
                 >
-                  <span>Shiko të gjitha</span>
+                  <span>{dt('Shiko të gjitha')}</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
@@ -402,10 +409,10 @@ export default function Dashboard() {
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       <th className="py-2.5 pr-2">#</th>
-                      <th className="py-2.5 px-2">Kategoria</th>
-                      <th className="py-2.5 px-2">Komuna</th>
-                      <th className="py-2.5 px-2">Data</th>
-                      <th className="py-2.5 pl-2 text-right">Statusi</th>
+                      <th className="py-2.5 px-2">{dt('Kategoria')}</th>
+                      <th className="py-2.5 px-2">{dt('Komuna')}</th>
+                      <th className="py-2.5 px-2">{dt('Data')}</th>
+                      <th className="py-2.5 pl-2 text-right">{dt('Statusi')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
@@ -501,10 +508,10 @@ export default function Dashboard() {
           <div className="luxury-card lg:col-span-5 flex flex-col justify-between rounded-[26px] border border-slate-200/80 p-5 transition-transform duration-300 hover:-translate-y-1 dark:border-white/10">
             <div>
               <h3 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                Pjesëmarrja qytetare
+                {dt('Pjesëmarrja qytetare')}
               </h3>
               <p className="mt-1 mb-4 text-xs text-slate-500 dark:text-slate-400">
-                Merr pjesë, jep mendimin dhe kontribuo në vendimmarrje.
+                {dt('Merr pjesë, jep mendimin dhe kontribuo në vendimmarrje.')}
               </p>
 
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -522,11 +529,11 @@ export default function Dashboard() {
                       Sondazhe publike
                     </h4>
                     <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      Shpreh mendimin tënd për çështje të rëndësishme.
+                      {dt('Shpreh mendimin tënd për çështje të rëndësishme.')}
                     </p>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 transition-all group-hover:gap-1.5">
-                    <span>Shiko</span>
+                    <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
                 </Link>
@@ -544,11 +551,11 @@ export default function Dashboard() {
                       Konsultime publike
                     </h4>
                     <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      Merr pjesë në konsultime për projektet lokale.
+                      {dt('Merr pjesë në konsultime për projektet lokale.')}
                     </p>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 transition-all group-hover:gap-1.5">
-                    <span>Shiko</span>
+                    <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
                 </Link>
@@ -566,11 +573,11 @@ export default function Dashboard() {
                       Debate publike
                     </h4>
                     <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      Diskuto, propozo dhe kontribuo në tema me interes.
+                      {dt('Diskuto, propozo dhe kontribuo në tema me interes.')}
                     </p>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 transition-all group-hover:gap-1.5">
-                    <span>Shiko</span>
+                    <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
                 </Link>
@@ -585,14 +592,14 @@ export default function Dashboard() {
                       <Heart className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-rose-600 dark:text-white">
-                      Raste sociale & ndihmë
+                      {dt('Raste sociale & ndihmë')}
                     </h4>
                     <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      Ndihmo në rastet ku nevojitet mbështetje.
+                      {dt('Ndihmo në rastet ku nevojitet mbështetje.')}
                     </p>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 transition-all group-hover:gap-1.5">
-                    <span>Shiko</span>
+                    <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
                 </Link>
@@ -605,10 +612,10 @@ export default function Dashboard() {
           <div id="komunat-section" className="luxury-card lg:col-span-3 flex flex-col justify-between rounded-[26px] border border-slate-200/80 p-5 transition-transform duration-300 hover:-translate-y-1 dark:border-white/10">
             <div>
               <h3 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                Komunat e Kosovës
+                {dt('Komunat e Kosovës')}
               </h3>
               <p className="mt-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
-                Gjej komunën tënde dhe informohu për shërbimet lokale.
+                {dt('Gjej komunën tënde dhe informohu për shërbimet lokale.')}
               </p>
 
               {/* Search Municipalities */}
@@ -616,7 +623,7 @@ export default function Dashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="Kërko komunën..."
+                  placeholder={dt('Kërko komunën...')}
                   value={muniSearchQuery}
                   onChange={(e) => setMuniSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -649,7 +656,7 @@ export default function Dashboard() {
 
             <div className="pt-3 border-t border-slate-100 dark:border-white/5 mt-3">
               <Link to="/komunat" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
-                <span>Të gjitha 38 komunat</span>
+                <span>{dt('Të gjitha 38 komunat')}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -659,10 +666,10 @@ export default function Dashboard() {
           <div id="sherbimet-section" className="luxury-card lg:col-span-4 flex flex-col justify-between rounded-[26px] border border-slate-200/80 p-5 transition-transform duration-300 hover:-translate-y-1 dark:border-white/10">
             <div>
               <h3 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                Shërbimet dhe kontaktet e institucioneve
+                {dt('Shërbimet dhe kontaktet e institucioneve')}
               </h3>
               <p className="mt-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
-                Numra, email dhe kontakte të rëndësishme për qytetarët.
+                {dt('Numra, email dhe kontakte të rëndësishme për qytetarët.')}
               </p>
 
               {/* 8 Contact Buttons Grid (4x2: 4 columns x 2 rows) */}
@@ -729,7 +736,7 @@ export default function Dashboard() {
                     <Building2 className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">Shërb. Publ.</div>
+                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">{dt('Shërb. Publ.')}</div>
                     <div className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-[9px] truncate">038 200 640</div>
                   </div>
                 </a>
@@ -751,7 +758,7 @@ export default function Dashboard() {
                     <Heart className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">Ndihma Soc.</div>
+                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">{dt('Ndihma Soc.')}</div>
                     <div className="font-mono font-black text-rose-600 dark:text-rose-400 text-[9px] truncate">038 234 567</div>
                   </div>
                 </a>
@@ -761,11 +768,11 @@ export default function Dashboard() {
 
             <div className="pt-3 border-t border-slate-100 dark:border-white/5 mt-3 flex items-center justify-between">
               <Link to="/sherbimet" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
-                <span>Shërbimet komunale</span>
+                <span>{dt('Shërbimet komunale')}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
               <Link to="/kontakt" className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1">
-                <span>Të gjitha kontaktet</span>
+                <span>{dt('Të gjitha kontaktet')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -782,10 +789,10 @@ export default function Dashboard() {
 
             <div>
               <h3 className="text-lg sm:text-xl font-black text-white title-serif tracking-tight">
-                Transparencë, më shumë të dhëna, vendimmarrje më e mirë.
+                {dt('Transparencë, më shumë të dhëna, vendimmarrje më e mirë.')}
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl font-normal leading-relaxed">
-                Të dhënat e raportimeve janë të hapura për publikun dhe mund të përdoren për analizë dhe planifikim.
+                {dt('Të dhënat e raportimeve janë të hapura për publikun dhe mund të përdoren për analizë dhe planifikim.')}
               </p>
             </div>
           </div>
@@ -794,7 +801,7 @@ export default function Dashboard() {
             to="/statistikat"
             className="px-6 py-3 bg-[#1e3a8a] hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shrink-0"
           >
-            <span>Të dhënat e hapura</span>
+            <span>{dt('Të dhënat e hapura')}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -808,33 +815,33 @@ export default function Dashboard() {
           <div className="flex items-center gap-3 justify-center md:justify-start">
             <div className="w-10 h-10 shrink-0 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg font-black shadow-lg shadow-blue-950/30">Z</div>
             <div className="flex flex-col">
-              <span className="text-sm font-black text-white leading-tight">Zëri i Qytetarëve</span>
-              <span className="text-[10px] text-slate-400">Platforma Qytetare & Komunale</span>
+              <span className="text-sm font-black text-white leading-tight">{dt('Zëri i Qytetarëve')}</span>
+              <span className="text-[10px] text-slate-400">{dt('Platforma Qytetare & Komunale')}</span>
             </div>
           </div>
 
           {/* Center Links */}
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium text-slate-400" aria-label="Lidhjet e footer-it">
             <Link to="/rreth-projektit" className="hover:text-white transition-colors">
-              Rreth Projektit
+              {dt('Rreth Projektit')}
             </Link>
             <Link to="/komunat" className="hover:text-white transition-colors">
-              38 Komunat
+              {dt('38 Komunat')}
             </Link>
             <Link to="/sherbimet" className="hover:text-white transition-colors">
-              Shërbimet
+              {dt('Shërbimet')}
             </Link>
             <Link to="/projektet" className="hover:text-white transition-colors">
-              Projektet
+              {dt('Projektet')}
             </Link>
             <Link to="/kushtet-e-perdorimit" className="hover:text-white transition-colors">
-              Kushtet e përdorimit
+              {dt('Kushtet e përdorimit')}
             </Link>
           </nav>
 
           {/* Right: Copyright */}
           <div className="text-[11px] text-slate-500 font-medium text-center md:text-right leading-relaxed">
-            © 2026 Zëri i Qytetarëve. Të gjitha të drejtat janë të rezervuara.
+            {dt('© 2026 Zëri i Qytetarëve. Të gjitha të drejtat janë të rezervuara.')}
           </div>
 
         </div>

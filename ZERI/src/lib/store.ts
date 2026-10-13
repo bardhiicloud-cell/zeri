@@ -4,9 +4,9 @@ import { Report, User, Poll, IssueStatus, ChatSession, ChatMessage, LiveMessage,
 // Referenced through the bundler rather than as a literal path, so Vite copies
 // the file into dist/assets with a content hash. A '/src/...' string resolves in
 // the dev server and 404s in production.
-import festaAdImage from '../assets/images/festa_qytetit_ad_1789826607925.jpg';
 import { MUNICIPALITY_STORAGE_KEY, hasPersistedScope, normalizeScope, readPersistedScope } from './municipalityScope';
 import { applyTransition } from './adminApi';
+import { canAccessAdmin } from './adminPermissions';
 import { stageOf, type Transition } from './approvalPipeline';
 
 export const DEMO_CITIZEN_USER: User = {
@@ -581,6 +581,12 @@ export interface AdCampaign {
   clicks: number;
   status: 'active' | 'completed' | 'paused';
   budget: string;
+  /** Shown on the public Partners page as a sponsor card. */
+  isPartner?: boolean;
+  /** Short professional description of the partner, shown on its card. */
+  partnerDescription?: string;
+  /** Advertiser request this campaign was published from, if any. */
+  requestId?: string;
 }
 
 export interface DonationCause {
@@ -594,6 +600,12 @@ export interface DonationCause {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
+
+/** Outcome of a poll vote, as decided by the server. */
+export type VotePollResult =
+  | { status: 'voted' }
+  | { status: 'already_voted'; votedOptionId?: string }
+  | { status: 'expired' | 'unauthorized' | 'error'; message?: string };
 
 interface AppState {
   isBotOpen: boolean;
@@ -651,9 +663,10 @@ interface AppState {
   updateReportStatus: (id: string, status: IssueStatus, comment?: string, resolvedImage?: string) => Promise<void>;
   assignReport: (id: string, assignedTo: string) => Promise<void>;
   deleteReport: (id: string) => void;
-  banUser: (userId: string) => void;
+  banUser: (userId: string, reason?: string) => Promise<void>;
+  moderateUser: (userId: string, action: 'ban' | 'unban' | 'verify' | 'unverify', reason?: string) => Promise<void>;
   banIP: (ip: string) => void;
-  votePoll: (pollId: string, optionId: string) => void;
+  votePoll: (pollId: string, optionId: string) => Promise<VotePollResult>;
   createPoll: (poll: Omit<Poll, 'id' | 'totalVotes' | 'createdBy'>) => void;
   deletePoll: (id: string) => void;
   addNotification: (notification: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'>) => void;
@@ -662,14 +675,13 @@ interface AppState {
 
   updatePoll: (id: string, poll: Partial<Poll>) => void;
   updateUser: (id: string, user: Partial<User>) => void;
-  adminCreateUser: (user: Omit<User, 'id'>) => void;
   updateReport: (id: string, report: Partial<Report>) => void;
 
   addCategory: (category: Omit<Category, 'id'>) => void;
   deleteCategory: (id: string) => void;
 
   // Ads
-  createAd: (ad: Omit<AdCampaign, 'id' | 'views' | 'clicks'>) => void;
+  createAd: (ad: Omit<AdCampaign, 'id' | 'views' | 'clicks'>) => Promise<string | null>;
   updateAd: (id: string, updates: Partial<AdCampaign>) => Promise<void>;
   deleteAd: (id: string) => void;
   updateAdStatus: (id: string, status: AdCampaign['status']) => void;
@@ -875,219 +887,8 @@ export const useStore = create<AppState>()(
         adSlogan: 'Maksimalizoni shikueshmërinë e biznesit tuaj me promovim të synuar në komunën tuaj',
         adWhatsApp: '+38344123456'
       },
-      ads: [
-        {
-          id: 'AD-BALLINA-TOP',
-          title: 'Komuna Digjitale - Shkarko certifikatat shpejt dhe lehtë në e-Kosova',
-          section: 'ballina',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 650,
-          clicks: 42,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-BALLINA-SIDEBAR',
-          title: 'Festa e Qytetit – Bashkohu në festime këtë fundjavë në Prishtinë!',
-          section: 'ballina',
-          target: 'Nacionale',
-          position: 'sidebar',
-          // Imported so Vite fingerprints and copies the file. A literal
-          // '/src/assets/...' string works in the dev server and 404s in a
-          // production build, where the bundle lives under /assets/.
-          mediaUrl: festaAdImage,
-          mediaType: 'image',
-          views: 310,
-          clicks: 22,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-RAPORTO-TOP',
-          title: 'Siguria në Rrugë - Raporto çdo parregullsi në infrastrukturë sekondare',
-          section: 'raporto',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 412,
-          clicks: 18,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-RAPORTO-SIDEBAR',
-          title: 'Sigurimi i Jetës dhe Pronës - Oferta e re nga Siguria Sh.a.',
-          section: 'raporto',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 230,
-          clicks: 15,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-HARTA-TOP',
-          title: 'Zbuloni Kosovën - Vizitoni pikat turistike dhe trashëgiminë kulturore',
-          section: 'harta',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 520,
-          clicks: 39,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-HARTA-SIDEBAR',
-          title: 'Taxi Lokale 24/7 - Gjej lokacionin dhe udhëto më shpejt',
-          section: 'harta',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 198,
-          clicks: 29,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-SONDAZHET-TOP',
-          title: 'Voto dhe Vendos - Zëri yt formëson vendimet e asamblesë komunale',
-          section: 'sondazhet',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 380,
-          clicks: 12,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-SONDAZHET-SIDEBAR',
-          title: 'Sondazhi për Gjelbërim - Ndihmo me idetë e tua për parqe të reja',
-          section: 'sondazhet',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 290,
-          clicks: 31,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-AI-TOP',
-          title: 'Akademia e Teknologjisë - Mëso programim dhe Inteligjencë Artificiale',
-          section: 'asistenti-ai',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 450,
-          clicks: 44,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-AI-SIDEBAR',
-          title: 'AI Smart Kosova - Zgjidhjet inteligjente për ndërmarrje',
-          section: 'asistenti-ai',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 215,
-          clicks: 19,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-BISEDO-TOP',
-          title: 'Komuniko me Shpejtësi - Pakot më të reja të Internetit nga IPKO',
-          section: 'bisedo',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1562408590-e32931084e23?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 670,
-          clicks: 58,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-BISEDO-SIDEBAR',
-          title: 'Debato dhe Shpërndaj - Platforma e re e diskutimit komunitar',
-          section: 'bisedo',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 330,
-          clicks: 25,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-NUMRAT-TOP',
-          title: 'Kujdesi Shëndetësor Parësor - Mbro shëndetin tënd, kontrollohu rregullisht',
-          section: 'numrat',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 480,
-          clicks: 14,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-NUMRAT-SIDEBAR',
-          title: 'Numrat e Urgjencës - Ruaj në telefonin tënd listën e plotë të ndihmës së shpejtë',
-          section: 'numrat',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 290,
-          clicks: 17,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-DONACIONE-TOP',
-          title: 'Kryqi i Kuq Kosovë - Dhuro gjak, shpëto një jetë në rrezik',
-          section: 'donacione',
-          target: 'Nacionale',
-          position: 'top',
-          mediaUrl: 'https://images.unsplash.com/photo-1615461066841-6116ecdccd04?auto=format&fit=crop&q=80&w=1200',
-          mediaType: 'image',
-          views: 590,
-          clicks: 48,
-          status: 'active',
-          budget: 'Nacionale'
-        },
-        {
-          id: 'AD-DONACIONE-SIDEBAR',
-          title: 'Fondacioni Humanitar - Bëhu bamirës dhe ndihmo familjet në nevojë ekstrem',
-          section: 'donacione',
-          target: 'Nacionale',
-          position: 'sidebar',
-          mediaUrl: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800',
-          mediaType: 'image',
-          views: 310,
-          clicks: 34,
-          status: 'active',
-          budget: 'Nacionale'
-        }
-      ],
+      // No built-in demo campaigns: only ads from Firestore are ever shown, with their real counters.
+      ads: [] as AdCampaign[],
       auditLogs: [],
       donationUrls: {
         charity: 'https://example.com/donate-charity',
@@ -1387,7 +1188,10 @@ export const useStore = create<AppState>()(
           }
         }
 
-        if (!s.currentUser && typeof window !== 'undefined') {
+        // Development convenience only: restoring a user object from localStorage in
+        // a production build would let anyone type a role into storage and see the
+        // admin UI (the server and rules still refused them, but the UI shouldn't open).
+        if (import.meta.env.DEV && !s.currentUser && typeof window !== 'undefined') {
           const saved = localStorage.getItem('zq-demo-user');
           if (saved) {
             try {
@@ -1458,18 +1262,34 @@ export const useStore = create<AppState>()(
       },
       
       upvoteReport: async (id) => {
-        set(state => ({
-          reports: state.reports.map(r => r.id === id ? { ...r, upvotes: (r.upvotes || 0) + 1 } : r)
-        }));
+        /**
+         * The server owns the counter. The previous version bumped the number
+         * locally and then tried to write it to Firestore, where the rules refuse
+         * anyone but the author - so the +1 shown to the citizen was never saved.
+         * The count shown now is the one the server returns.
+         */
         try {
-          const { db } = await import('./firebase');
-          const { doc, updateDoc, increment } = await import('firebase/firestore');
-          await updateDoc(doc(db, 'reports', id), { upvotes: increment(1) });
+          const { authHeaders } = await import('./apiAuth');
+          const response = await fetch(`/api/v1/reports/${encodeURIComponent(id)}/upvote`, {
+            method: 'POST',
+            headers: await authHeaders(),
+          });
+          if (response.ok) {
+            const body = await response.json().catch(() => null) as { upvotes?: number } | null;
+            if (typeof body?.upvotes === 'number') {
+              const upvotes = body.upvotes;
+              set(state => ({
+                reports: state.reports.map(r => r.id === id ? { ...r, upvotes } : r),
+              }));
+            }
+          } else if (response.status !== 409) {
+            console.warn('Upvote was not saved', response.status);
+          }
         } catch (e) {
-          console.warn("Firestore upvote sync", e);
+          console.warn('Upvote was not saved', e);
         }
       },
-      
+
       addPoints: (points) => {
         const currentUser = get().currentUser;
         if (currentUser) {
@@ -1635,50 +1455,66 @@ export const useStore = create<AppState>()(
         set(s => ({ reports: s.reports.filter(r => r.id !== id) }));
       },
 
-      banUser: async (userId) => {
-        try {
-          const { db } = await import('./firebase');
-          const { doc, updateDoc } = await import('firebase/firestore');
-          await updateDoc(doc(db, 'users', userId), { isBanned: true });
-        } catch(e) { console.error(e); }
+      banUser: async (userId, reason) => {
+        // Server-side: the ban also disables the sign-in and ends the person's
+        // sessions. A browser write only set a flag, and swallowed its own errors.
+        await get().moderateUser(userId, 'ban', reason);
+      },
+
+      moderateUser: async (userId, action, reason) => {
+        const { authHeaders } = await import('./apiAuth');
+        const response = await fetch(`/api/v1/admin/users/${encodeURIComponent(userId)}/moderate`, {
+          method: 'POST',
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ action, reason }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body?.error || 'Veprimi nuk u krye.');
+        }
+        // Reflect it locally so the list updates without waiting for the listener.
+        set(s => ({
+          users: s.users.map(u => u.id === userId
+            ? { ...u, ...(action === 'ban' ? { isBanned: true } : action === 'unban' ? { isBanned: false } : { isVerified: action === 'verify' }) }
+            : u),
+        }));
       },
 
       votePoll: async (pollId, optionId) => {
+        /**
+         * The server owns poll counters: it records one vote per account in a
+         * document the browser cannot write, and returns the new totals. The old
+         * code updated `options` straight from the client, which both let anyone
+         * set any result and trusted `localStorage` to stop double voting.
+         */
         try {
-          const { db } = await import('./firebase');
-          const { doc, getDoc, updateDoc } = await import('firebase/firestore');
-          const pollRef = doc(db, 'polls', pollId);
-          const { runTransaction } = await import('firebase/firestore');
-          await runTransaction(db, async (transaction) => {
-            const sfDoc = await transaction.get(pollRef);
-            if (!sfDoc.exists()) {
-              throw "Sondazhi nuk ekziston!";
-            }
-            const data = sfDoc.data();
-            const updatedOptions = data.options.map((opt: any) => 
-              opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
-            );
-            transaction.update(pollRef, { 
-              totalVotes: (data.totalVotes || 0) + 1, 
-              options: updatedOptions 
-            });
+          const { authHeaders } = await import('./apiAuth');
+          const response = await fetch(`/api/v1/polls/${encodeURIComponent(pollId)}/vote`, {
+            method: 'POST',
+            headers: await authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ optionId }),
           });
-        } catch (e) {
-          console.error("Firebase votePoll sync error", e);
-        }
+          const body = await response.json().catch(() => null) as
+            | { options?: Poll['options']; totalVotes?: number; votedOptionId?: string; error?: string }
+            | null;
 
-        set(s => ({
-          polls: s.polls.map(p => {
-            if (p.id === pollId) {
-              return {
-                ...p,
-                totalVotes: p.totalVotes + 1,
-                options: p.options.map(opt => opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt)
-              };
-            }
-            return p;
-          })
-        }));
+          if (response.status === 409) {
+            return { status: 'already_voted', votedOptionId: body?.votedOptionId };
+          }
+          if (response.status === 410) return { status: 'expired' };
+          if (response.status === 401) return { status: 'unauthorized' };
+          if (!response.ok || !body?.options) return { status: 'error', message: body?.error };
+
+          set(s => ({
+            polls: s.polls.map(p =>
+              p.id === pollId ? { ...p, options: body.options!, totalVotes: body.totalVotes ?? p.totalVotes } : p
+            ),
+          }));
+          return { status: 'voted' };
+        } catch (e) {
+          console.error('Poll vote failed', e);
+          return { status: 'error' };
+        }
       },
 
       createPoll: async (pollParams) => {
@@ -1714,33 +1550,27 @@ export const useStore = create<AppState>()(
       },
       
       updateUser: async (id, updatedUser) => {
-        try {
+        // Privileged fields are never written from the browser: the Firestore
+        // rules refuse them and the server owns them (role, ban, verification,
+        // points, permissions, municipality, email). They are dropped here too so
+        // a caller cannot even try. Errors are rethrown so the screen can say the
+        // save failed instead of announcing a success that did not happen.
+        const PRIVILEGED = ['role', 'isBanned', 'isVerified', 'points', 'permissions', 'municipality', 'municipalityPlan', 'badges', 'email', 'password', 'internalNote'];
+        const safeUpdates = Object.fromEntries(
+          Object.entries(updatedUser as Record<string, unknown>).filter(([key]) => !PRIVILEGED.includes(key))
+        );
+        if (Object.keys(safeUpdates).length > 0) {
           const { db } = await import('./firebase');
           const { doc, updateDoc } = await import('firebase/firestore');
-          // Security: strip password before writing to Firestore
-          const { password: _pw, ...safeUpdates } = updatedUser as any;
           await updateDoc(doc(db, 'users', id), safeUpdates);
-        } catch (e) {
-          console.error("Error syncing updateUser to Firestore:", e);
         }
         set(s => {
-          const newUsers = s.users.map(u => u.id === id ? { ...u, ...updatedUser } : u);
+          const newUsers = s.users.map(u => u.id === id ? { ...u, ...safeUpdates } : u);
           return {
             users: newUsers,
             currentUser: s.currentUser?.id === id ? newUsers.find(u => u.id === id) || s.currentUser : s.currentUser
           };
         });
-      },
-
-      adminCreateUser: async (user) => {
-        try {
-          const { db } = await import('./firebase');
-          const { doc, setDoc } = await import('firebase/firestore');
-          const id = user.email.split('@')[0] + Math.random().toString(36).substr(2, 5);
-          // Security: strip password before writing to Firestore
-          const { password: _pw, ...safeUser } = user as any;
-          await setDoc(doc(db, 'users', id), { ...safeUser, id, points: 0, badges: [] });
-        } catch(e) { console.error(e); }
       },
 
       updateReport: async (id, updatedReport) => {
@@ -1790,7 +1620,11 @@ export const useStore = create<AppState>()(
           const { doc, setDoc } = await import('firebase/firestore');
           const id = `AD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
           await setDoc(doc(db, 'ads', id), { ...ad, id, views: 0, clicks: 0 });
-        } catch(e) { console.error(e); }
+          return id;
+        } catch(e) {
+          console.error('Gabim gjatë publikimit të reklamës:', e);
+          return null;
+        }
       },
       updateAd: async (id, updates) => {
         set(s => ({
@@ -1969,23 +1803,22 @@ export const useStore = create<AppState>()(
           createdAt: new Date().toISOString()
         };
 
-        // Firebase Sync Context
-        try {
-          const { db } = await import('./firebase');
-          const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-          addDoc(collection(db, 'auditLogs'), {
-             ...newLog,
-             createdAt: serverTimestamp()
-          }).catch(err => {
-             // Silently bypass permission issues to keep guest/offline sessions clean and error-free
-             if (err && (err.code === 'permission-denied' || String(err).includes('permissions') || String(err).includes('permission'))) {
-               console.log("Audit log saved locally (guest/offline limit)");
-             } else {
-               console.warn("Firebase log sync bypass", err);
-             }
-          });
-        } catch (e) {
-            console.error("Firebase module missing or err", e);
+        // Staff actions are recorded by the server, which stamps the real identity
+        // from the verified token. Other visitors keep a local-only log, exactly as
+        // before (the Firestore rule never let them write one).
+        if (user && canAccessAdmin(user)) {
+          void (async () => {
+            try {
+              const { authHeaders } = await import('./apiAuth');
+              await fetch('/api/v1/audit', {
+                method: 'POST',
+                headers: await authHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ action, status, details, municipality: newLog.municipality }),
+              });
+            } catch (e) {
+              console.warn('Audit log sync bypass', e);
+            }
+          })();
         }
 
         set(state => {

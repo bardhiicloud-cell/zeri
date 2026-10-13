@@ -5,10 +5,17 @@ import {
   TrendingUp, X, Search, CheckSquare, Square, ChevronLeft, ChevronRight, 
   Pause, Play, Trash2, Edit3, Check, Phone, Mail, MessageCircle, 
   Building2, Sparkles, DollarSign, Sliders, ExternalLink, Save, ArrowRight,
-  Code, CheckCircle2, AlertCircle
+  Code, CheckCircle2, AlertCircle, Ruler, Handshake, Upload
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import {
+  AD_POSITION_SPECS, AD_MAX_BYTES, AD_ACCEPT, checkAdFile, formatMb,
+  type AdFileCheck, type AdMediaKind,
+} from '../../lib/adSpecs';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { collection, query, orderBy, onSnapshot, updateDoc, doc, deleteDoc, limit } from 'firebase/firestore';
+import DecisionBar from './DecisionBar';
+import { takeDecision } from '../../lib/decisionsApi';
 import { db, uploadFileToStorage } from '../../lib/firebase';
 import { useStore, AdCampaign } from '../../lib/store';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
@@ -36,6 +43,46 @@ const AD_POSITION_HELP: Record<string, string> = {
 };
 
 const getAdPositionLabel = (position: string) => dt(AD_POSITION_LABELS[position] || position);
+
+const EMPTY_FORM = {
+  title: '',
+  section: 'ballina',
+  target: 'Nacionale',
+  position: 'top' as string,
+  mediaType: 'image' as 'image' | 'video' | 'html' | 'gif',
+  mediaUrl: '',
+  targetUrl: '',
+  budget: '€100.00 / €500.00',
+  intervalMinutes: 10,
+  isPartner: false,
+  partnerDescription: '',
+};
+
+/** Recommended sizes for one placement, shown beside every upload field. */
+function AdSpecGuide({ position, mediaType }: { position: string; mediaType: string }) {
+  const spec = AD_POSITION_SPECS[position];
+  const kind: AdMediaKind = mediaType === 'gif' ? 'gif' : mediaType === 'video' ? 'video' : 'image';
+  if (!spec) return null;
+  return (
+    <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100">
+      <div className="flex items-center gap-1.5 font-black uppercase tracking-wider text-[10px] text-blue-700 dark:text-blue-300">
+        <Ruler className="h-3.5 w-3.5" aria-hidden="true" />
+        {dt('Specifikimet e kreativit')}
+      </div>
+      <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Ideale')}</dt><dd className="font-mono font-bold">{spec.ideal.w} × {spec.ideal.h} px</dd></div>
+        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Minimumi')}</dt><dd className="font-mono font-bold">{spec.min.w} × {spec.min.h} px</dd></div>
+        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Madhësia maks.')}</dt><dd className="font-mono font-bold">{formatMb(AD_MAX_BYTES[kind])}</dd></div>
+        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Formati')}</dt><dd className="font-bold">{kind === 'video' ? 'MP4 / WebM' : kind === 'gif' ? 'GIF' : 'JPG / PNG / WebP'}</dd></div>
+      </dl>
+      <p className="mt-2 leading-relaxed text-blue-900/80 dark:text-blue-200/80">
+        {dt(spec.where)}. {kind === 'video'
+          ? dt('Videoja luhet pa zë dhe priten skajet, prandaj mbani logon dhe tekstin në qendër. Maksimumi 30 sekonda.')
+          : dt('Mbani logon dhe tekstin në qendër: në telefon skajet anësore priten automatikisht.')}
+      </p>
+    </div>
+  );
+}
 
 export default function AdminAds() {
   const [activeTab, setActiveTab] = useState<'active' | 'create' | 'settings' | 'requests'>('active');
@@ -125,44 +172,100 @@ export default function AdminAds() {
   };
 
   // Create Form State
-  const [formData, setFormData] = useState({
-    title: '',
-    section: 'ballina',
-    target: 'Nacionale',
-    position: 'top' as any,
-    mediaType: 'image' as 'image' | 'video' | 'html' | 'gif' | 'js' | 'sponsor',
-    mediaUrl: '',
-    targetUrl: '',
-    budget: '€100.00 / €500.00',
-    intervalMinutes: 10
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [fileCheck, setFileCheck] = useState<AdFileCheck | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<{ id: string; businessName: string } | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    createAd({
-      title: formData.title,
+    if (formData.mediaType !== 'html' && !formData.mediaUrl) {
+      toast.error(dt('Ngarkoni një foto, GIF ose video përpara publikimit.'));
+      return;
+    }
+    if (fileCheck && !fileCheck.ok) {
+      toast.error(dt('Skedari nuk plotëson specifikimet e pozicionit. Ngarkoni një skedar tjetër.'));
+      return;
+    }
+
+    // Firestore rejects `undefined` fields, so optional keys are only added when set.
+    const payload: Omit<AdCampaign, 'id' | 'views' | 'clicks'> = {
+      title: formData.title.trim(),
       section: formData.section,
       target: formData.target,
       position: formData.position,
       mediaType: formData.mediaType,
-      mediaUrl: formData.mediaUrl || 'https://images.unsplash.com/photo-1555529771-835f59bfc50c?auto=format&fit=crop&q=80',
-      targetUrl: formData.targetUrl || '#',
+      mediaUrl: formData.mediaUrl,
+      targetUrl: formData.targetUrl.trim() || '#',
       budget: formData.budget,
-      intervalMinutes: formData.position === 'discussion' ? formData.intervalMinutes : undefined,
-      status: 'active'
-    });
-    setFormData({
-      title: '',
-      section: 'ballina',
-      target: 'Nacionale',
-      position: 'top',
-      mediaType: 'image',
-      mediaUrl: '',
-      targetUrl: '',
-      budget: '€100.00 / €500.00',
-      intervalMinutes: 10
-    });
+      status: 'active',
+      isPartner: formData.isPartner,
+      ...(formData.isPartner && formData.partnerDescription.trim()
+        ? { partnerDescription: formData.partnerDescription.trim() }
+        : {}),
+      ...(formData.position === 'discussion' ? { intervalMinutes: formData.intervalMinutes } : {}),
+      ...(pendingRequest ? { requestId: pendingRequest.id } : {}),
+    };
+
+    setSaving(true);
+    const newId = await createAd(payload);
+    setSaving(false);
+    if (!newId) {
+      toast.error(dt('Reklama nuk u publikua. Kontrolloni lidhjen dhe të drejtat e llogarisë.'));
+      return;
+    }
+
+    if (pendingRequest) {
+      // Closing the loop: the advertiser's request now points at the live campaign,
+      // recorded as an approval decision with its author.
+      try {
+        await takeDecision('adRequest', pendingRequest.id, 'approve', { campaignId: newId });
+      } catch (error) {
+        toast.error(`${dt('Reklama u publikua, por kërkesa nuk u shënua e aprovuar:')} ${(error as Error).message}`);
+      }
+    }
+
+    toast.success(dt('Reklama u publikua me sukses.'));
+    setPendingRequest(null);
+    setFileCheck(null);
+    setFormData(EMPTY_FORM);
     setActiveTab('active');
+  };
+
+  /** Opens the create form pre-filled from an advertiser's request. */
+  const startPublishFromRequest = (req: any) => {
+    setPendingRequest({ id: req.id, businessName: req.businessName || req.name || 'Biznes' });
+    setFormData({
+      ...EMPTY_FORM,
+      title: req.businessName || req.name || '',
+      target: req.targetMunicipality && req.targetMunicipality !== 'Të gjitha Komunat' ? req.targetMunicipality : 'Nacionale',
+      targetUrl: req.destinationUrl || '',
+      partnerDescription: req.adNotes || '',
+      isPartner: true,
+    });
+    setFileCheck(null);
+    setActiveTab('create');
+  };
+
+  /** Checks the chosen file against the placement before anything is uploaded. */
+  const handleFileChosen = async (file: File) => {
+    const kind: AdMediaKind = formData.mediaType === 'gif' ? 'gif' : formData.mediaType === 'video' ? 'video' : 'image';
+    const check = await checkAdFile(file, formData.position, kind);
+    setFileCheck(check);
+    if (!check.ok) {
+      toast.error(check.errors[0]);
+      return;
+    }
+    const tId = toast.loading(dt('Po ngarkohet skedari...'));
+    try {
+      const url = await uploadFileToStorage(file, 'reports', { scope: 'ads' });
+      toast.dismiss(tId);
+      toast.success(dt('U ngarkua me sukses.'));
+      setFormData(prev => ({ ...prev, mediaUrl: url }));
+    } catch (err: any) {
+      toast.dismiss(tId);
+      toast.error(err?.message || dt('Gabim gjatë ngarkimit të skedarit.'));
+    }
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -178,9 +281,12 @@ export default function AdminAds() {
       mediaUrl: editingAd.mediaUrl,
       targetUrl: editingAd.targetUrl || '#',
       budget: editingAd.budget,
-      status: editingAd.status
+      status: editingAd.status,
+      isPartner: Boolean(editingAd.isPartner),
+      partnerDescription: (editingAd.partnerDescription || '').trim(),
     });
 
+    toast.success(dt('Ndryshimet u ruajtën.'));
     setEditingAd(null);
   };
 
@@ -557,7 +663,7 @@ export default function AdminAds() {
                           <td className="px-4 py-3 align-middle">
                             <div className="flex items-center gap-3">
                               <div className="w-16 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/60 dark:border-white/10 relative">
-                                {ad.mediaType === 'image' && (
+                                {(ad.mediaType === 'image' || ad.mediaType === 'gif') && (
                                   <img src={ad.mediaUrl} alt={ad.title} className="w-full h-full object-cover" />
                                 )}
                                 {ad.mediaType === 'video' && (
@@ -570,6 +676,11 @@ export default function AdminAds() {
                               <div className="min-w-0">
                                 <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate max-w-xs leading-tight">
                                   {ad.title}
+                                  {ad.isPartner && (
+                                    <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 align-middle text-[9px] font-black uppercase text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                      <Handshake className="h-2.5 w-2.5" aria-hidden="true" />{dt('Partner')}
+                                    </span>
+                                  )}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[10px] text-slate-400 font-mono">ID: {ad.id}</span>
@@ -740,6 +851,16 @@ export default function AdminAds() {
             </p>
           </div>
 
+          {pendingRequest && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+              <p>
+                <strong>{dt('Po aprovoni kërkesën e')} {pendingRequest.businessName}.</strong>{' '}
+                {dt('Ngarkoni kreativin sipas dimensioneve më poshtë. Pas publikimit kërkesa shënohet si e aprovuar.')}
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleCreateSubmit} className="space-y-6">
             {/* Step 1: Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -834,7 +955,7 @@ export default function AdminAds() {
                 </label>
                 <select 
                   value={formData.position} 
-                  onChange={e => setFormData({ ...formData, position: e.target.value as any })} 
+                  onChange={e => { setFormData({ ...formData, position: e.target.value as any }); setFileCheck(null); }} 
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium"
                 >
                   <option value="top">{getAdPositionLabel('top')}</option>
@@ -853,7 +974,7 @@ export default function AdminAds() {
                 </label>
                 <select
                   value={formData.mediaType}
-                  onChange={e => setFormData({ ...formData, mediaType: e.target.value as any })}
+                  onChange={e => { setFormData({ ...formData, mediaType: e.target.value as any, mediaUrl: '' }); setFileCheck(null); }}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium"
                 >
                   <option value="image">{dt(`Imazh (JPG / PNG / WebP)`)}</option>
@@ -871,65 +992,131 @@ export default function AdminAds() {
               </label>
 
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={formData.mediaUrl}
-                  onChange={e => setFormData({ ...formData, mediaUrl: e.target.value })}
-                  placeholder={formData.mediaType === 'html' ? dt(`<div>... kodi HTML këtu ...</div>`) : dt(`https://shembull.com/reklama.jpg`)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium font-mono text-xs"
-                />
+                {formData.mediaType !== 'html' && (
+                  <AdSpecGuide position={formData.position} mediaType={formData.mediaType} />
+                )}
 
                 {formData.mediaType !== 'html' && (
-                  <div className="relative border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl p-6 text-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                  <label className="relative block border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl p-6 text-center bg-slate-50 dark:bg-slate-800/50 hover:border-rose-300 hover:bg-rose-50/40 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                     <input
                       type="file"
-                      accept="image/*,video/*"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      onChange={async (e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          try {
-                            const toast = (await import('react-hot-toast')).default;
-                            const tId = toast.loading('Po ngarkohet skedari në re...');
-                            const url = await uploadFileToStorage(file, 'reports', { scope: 'ads' });
-                            toast.dismiss(tId);
-                            toast.success('U ngarkua me sukses!');
-                            setFormData({ ...formData, mediaUrl: url });
-                          } catch (err) {
-                            console.error(err);
-                            alert('Gabim gjatë ngarkimit të skedarit.');
-                          }
-                        }
+                      accept={AD_ACCEPT[formData.mediaType === 'gif' ? 'gif' : formData.mediaType === 'video' ? 'video' : 'image']}
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void handleFileChosen(file);
+                        e.target.value = '';
                       }}
                     />
                     <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto mb-2">
-                      <Plus className="w-5 h-5" />
+                      <Upload className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                      {dt(`Kliko për të ngarkuar Foton / Videon nga pajisja`)}
+                      {formData.mediaType === 'video' ? dt('Ngarko videon nga pajisja') : formData.mediaType === 'gif' ? dt('Ngarko GIF-in nga pajisja') : dt('Ngarko foton nga pajisja')}
                     </span>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">
-                      {dt(`Mbështet JPG, PNG, GIF, MP4 deri në 20MB`)}
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
+                      {dt('Dimensionet kontrollohen automatikisht para ngarkimit.')}
                     </span>
+                  </label>
+                )}
+
+                {fileCheck && (fileCheck.errors.length > 0 || fileCheck.warnings.length > 0 || fileCheck.width) && (
+                  <div
+                    className={cn(
+                      'rounded-xl border p-3 text-xs',
+                      fileCheck.ok
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200'
+                        : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200'
+                    )}
+                    role="status"
+                  >
+                    {fileCheck.width && (
+                      <p className="font-bold">
+                        {fileCheck.ok ? <CheckCircle2 className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" /> : <AlertCircle className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />}
+                        {dt('Skedari')}: {fileCheck.width} × {fileCheck.height} px{fileCheck.durationSeconds ? ` · ${fileCheck.durationSeconds}s` : ''}
+                      </p>
+                    )}
+                    {[...fileCheck.errors, ...fileCheck.warnings].map((msg) => (
+                      <p key={msg} className="mt-1">{dt(msg)}</p>
+                    ))}
                   </div>
                 )}
+
+                {formData.mediaUrl && formData.mediaType !== 'html' && (
+                  <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+                    <div className="bg-slate-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      {dt('Parapamja')}
+                    </div>
+                    {formData.mediaType === 'video' ? (
+                      <video src={formData.mediaUrl} muted playsInline controls className="max-h-56 w-full bg-black object-contain" />
+                    ) : (
+                      <img src={formData.mediaUrl} alt="" className="max-h-56 w-full bg-slate-50 object-contain dark:bg-slate-900" />
+                    )}
+                  </div>
+                )}
+
+                <details className="text-xs text-slate-500 dark:text-slate-400">
+                  <summary className="cursor-pointer font-bold">{formData.mediaType === 'html' ? dt('Kodi HTML i banerit') : dt('Ose vendos një URL ekzistuese')}</summary>
+                  <input
+                    type="text"
+                    value={formData.mediaUrl}
+                    onChange={e => setFormData({ ...formData, mediaUrl: e.target.value })}
+                    placeholder={formData.mediaType === 'html' ? dt(`<div>... kodi HTML këtu ...</div>`) : 'https://'}
+                    className="mt-2 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl outline-none focus:border-rose-500 text-slate-900 dark:text-white font-mono text-xs"
+                  />
+                </details>
               </div>
+            </div>
+
+            {/* Partner listing */}
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={formData.isPartner}
+                  onChange={e => setFormData({ ...formData, isPartner: e.target.checked })}
+                  className="mt-0.5 h-4 w-4 accent-amber-600"
+                />
+                <span>
+                  <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                    <Handshake className="h-4 w-4" aria-hidden="true" />
+                    {dt('8. Shfaqe si partner në faqen "Partnerët"')}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-amber-800/80 dark:text-amber-300/80">
+                    {dt('Partneri merr një kartë me logo, përshkrim dhe link në faqen publike të partnerëve.')}
+                  </span>
+                </span>
+              </label>
+              {formData.isPartner && (
+                <div className="mt-3">
+                  <textarea
+                    rows={3}
+                    maxLength={280}
+                    value={formData.partnerDescription}
+                    onChange={e => setFormData({ ...formData, partnerDescription: e.target.value })}
+                    placeholder={dt('Përshkrim i shkurtër profesional i partnerit: çfarë ofron dhe si u shërben qytetarëve.')}
+                    className="w-full rounded-xl border border-amber-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-500 dark:border-amber-900/50 dark:bg-slate-900 dark:text-white"
+                  />
+                  <p className="mt-1 text-right text-[10px] text-amber-800/70 dark:text-amber-300/70">{formData.partnerDescription.length}/280</p>
+                </div>
+              )}
             </div>
 
             {/* Submit & Cancel */}
             <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setActiveTab('active')}
+                onClick={() => { setActiveTab('active'); setPendingRequest(null); setFileCheck(null); setFormData(EMPTY_FORM); }}
                 className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 {dt(`Anulo`)}
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black tracking-wide uppercase shadow-sm transition-all active:scale-95"
+                disabled={saving}
+                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-black tracking-wide uppercase shadow-sm transition-all active:scale-95"
               >
-                {dt(`Publiko Reklamën`)}
+                {saving ? dt('Po publikohet...') : pendingRequest ? dt('Aprovo dhe publiko') : dt(`Publiko Reklamën`)}
               </button>
             </div>
           </form>
@@ -1232,15 +1419,6 @@ export default function AdminAds() {
                       : status === 'rejected'
                         ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
                         : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300';
-                  const setRequestStatus = async (nextStatus: string) => {
-                    await updateDoc(doc(db, 'adRequests', req.id), {
-                      status: nextStatus,
-                      updatedAt: new Date().toISOString(),
-                      ...(nextStatus === 'payment_confirmed' ? { paymentConfirmedAt: new Date().toISOString() } : {}),
-                      ...(nextStatus === 'approved' ? { approvedAt: new Date().toISOString() } : {}),
-                    });
-                  };
-
                   return (
                     <div key={req.id} className="p-4 border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="min-w-0">
@@ -1257,10 +1435,9 @@ export default function AdminAds() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
-                        {status === 'pending' && <button type="button" onClick={() => setRequestStatus('payment_confirmed')} className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800">Konfirmo pagesën</button>}
-                        {status === 'payment_confirmed' && <button type="button" onClick={() => setRequestStatus('approved')} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800">Aprovo reklamën</button>}
-                        {status === 'approved' && <button type="button" onClick={() => setRequestStatus('completed')} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-700">Mbyll fushatën</button>}
-                        {!['rejected', 'completed'].includes(status) && <button type="button" onClick={() => setRequestStatus('rejected')} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-950/30">Refuzo</button>}
+                        {(status === 'pending' || status === 'payment_confirmed') && <button type="button" onClick={() => startPublishFromRequest(req)} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800">{dt('Aprovo dhe ngarko kreativin')}</button>}
+                        {/* Approval happens by building the campaign (above); the rest are plain decisions. */}
+                        <DecisionBar kind="adRequest" id={req.id} doc={req} hideActions={['approve']} />
                         <button
                           type="button"
                           onClick={async () => {
@@ -1280,12 +1457,12 @@ export default function AdminAds() {
 
       {/* EDIT MODAL FOR QUICK CHANGES */}
       {editingAd && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-white/10 space-y-5"
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-white/10 space-y-5 my-8"
           >
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
               <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
@@ -1348,6 +1525,33 @@ export default function AdminAds() {
                   </select>
                   <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{dt(AD_POSITION_HELP[editingAd.position] || 'Ky pozicion i vjetër do të shfaqet në hapësirën anësore të faqes.')}</p>
                 </div>
+              </div>
+
+              {editingAd.mediaType !== 'html' && (
+                <AdSpecGuide position={editingAd.position} mediaType={editingAd.mediaType} />
+              )}
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-200">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editingAd.isPartner)}
+                    onChange={e => setEditingAd({ ...editingAd, isPartner: e.target.checked })}
+                    className="h-4 w-4 accent-amber-600"
+                  />
+                  <Handshake className="h-4 w-4" aria-hidden="true" />
+                  {dt('Shfaqe si partner në faqen "Partnerët"')}
+                </label>
+                {editingAd.isPartner && (
+                  <textarea
+                    rows={3}
+                    maxLength={280}
+                    value={editingAd.partnerDescription || ''}
+                    onChange={e => setEditingAd({ ...editingAd, partnerDescription: e.target.value })}
+                    placeholder={dt('Përshkrim i shkurtër profesional i partnerit')}
+                    className="mt-2 w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-amber-900/50 dark:bg-slate-900 dark:text-white"
+                  />
+                )}
               </div>
 
               <div>

@@ -80,7 +80,11 @@ export function useGlobalSearch() {
    * which is nice — and also to "Print", which is not.
    */
   const results = useMemo<SearchResult[]>(() => {
-    const needle = debounced.toLowerCase();
+    // Accent- and language-insensitive: "sherbime" finds "Shërbimet", and a
+    // German visitor typing "karte" finds the map through its translated label.
+    const fold = (value: string) =>
+      value.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ç/gi, 'c').toLowerCase();
+    const needle = fold(debounced);
     if (!needle) {
       return ALL_SIDEBAR_LINKS.slice(0, 6).map((link) => ({
         label: link.label,
@@ -91,11 +95,12 @@ export function useGlobalSearch() {
     }
 
     const score = (label: string, hint: string) => {
-      const lower = label.toLowerCase();
-      if (lower === needle) return 0;
-      if (lower.startsWith(needle)) return 1;
-      if (lower.includes(needle)) return 2;
-      if (hint.toLowerCase().includes(needle)) return 3;
+      const names = [fold(label), fold(dt(label))];
+      if (names.includes(needle)) return 0;
+      if (names.some((n) => n.startsWith(needle))) return 1;
+      if (names.some((n) => n.includes(needle))) return 2;
+      const hints = [fold(hint), fold(dt(hint))];
+      if (hints.some((h) => h.includes(needle))) return 3;
       return -1;
     };
 
@@ -103,6 +108,8 @@ export function useGlobalSearch() {
       .map((link) => ({ link, rank: score(link.label, link.hint ?? '') }))
       .filter((entry) => entry.rank >= 0)
       .sort((a, b) => a.rank - b.rank)
+      // The same page is listed in the sidebar and the top bar; show it once.
+      .filter((entry, index, all) => all.findIndex((other) => other.link.href === entry.link.href) === index)
       .map(({ link }) => ({
         label: link.label,
         hint: link.hint ?? '',
@@ -276,9 +283,9 @@ export function SearchPalette({
                           <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                         </div>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-xs font-black">{result.label}</span>
+                          <span className="block truncate text-xs font-black">{dt(result.label)}</span>
                           {result.hint && (
-                            <span className="block truncate text-[10px] opacity-70">{result.hint}</span>
+                            <span className="block truncate text-[10px] opacity-70">{dt(result.hint)}</span>
                           )}
                         </span>
                         {index === highlighted && (

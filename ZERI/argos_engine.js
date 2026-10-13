@@ -21,11 +21,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Languages Argos can actually serve (verified against its package index). */
 export const ARGOS_LANGUAGES = new Set([
-  'ar', 'fr', 'it', 'es', 'pt', 'de', 'gsw', 'sl', 'ro', 'sv', 'nb', 'nl',
+  'ar', 'fr', 'it', 'pt', 'de', 'gsw', 'sl', 'sv', 'nb', 'nl', 'ja', 'ko', 'pl', 'bg',
 ]);
 
 /** Targets Argos has no model for; the caller must use a hosted provider. */
-export const ARGOS_MISSING = ['mk', 'hr', 'hy'];
+export const ARGOS_MISSING = ['mk', 'hr'];
 
 const BATCH_SIZE = 40;
 

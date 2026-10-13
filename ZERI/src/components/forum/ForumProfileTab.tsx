@@ -2,9 +2,13 @@ import { dt } from '@/src/lib/dt';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, Timestamp, limit } from 'firebase/firestore';
-import { Grid, Heart, Bookmark, Play, Plus, ShieldCheck, Sparkles, Users, UserMinus, UserPlus, Search as SearchIcon } from 'lucide-react';
+import { BarChart3, Film, Trash2, Grid, Heart, Bookmark, Play, Plus, Settings, ShieldCheck, Sparkles, Users, UserMinus, UserPlus, Search as SearchIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../lib/store';
+import { ProfileReelsGrid } from './ProfileReelsGrid';
+import { ForumSettingsPanel } from './ForumSettingsPanel';
+import { isBusiness, prefsOf } from '../../lib/forumPrefs';
+import type { Reel } from '../../lib/reels';
 
 export default function ForumProfileTab({
   currentUser,
@@ -19,7 +23,20 @@ export default function ForumProfileTab({
   suggestions = [],
   onToggleFollow,
   onCreateStory,
+  onOpenReel,
+  onCreateReel,
+  onOpenInsights,
+  deletedCount = 0,
+  onOpenTrash,
 }: {
+  /** Number of the author's soft-deleted posts (restorable for 30 days). */
+  deletedCount?: number;
+  onOpenTrash?: () => void;
+  /** Opens account insights (sponsored vs organic). */
+  onOpenInsights?: () => void;
+  /** Opens the Reels player on one of this profile's reels. */
+  onOpenReel?: (reel: Reel) => void;
+  onCreateReel?: () => void;
   currentUser: any;
   setActiveTab: (tab: 'feed' | 'profile') => void;
   posts: any[];
@@ -33,16 +50,21 @@ export default function ForumProfileTab({
   onToggleFollow?: (targetId: string, name?: string) => void | Promise<void>;
   onCreateStory: () => void;
 }) {
-  const [reels, setReels] = useState<any[]>([]);
-  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'liked' | 'saved' | 'followers' | 'following'>('posts');
+  const [stories, setStories] = useState<any[]>([]);
+  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'reels' | 'liked' | 'saved' | 'followers' | 'following' | 'settings'>('posts');
   const [socialSearch, setSocialSearch] = useState('');
   const navigate = useNavigate();
+  useEffect(() => {
+    const openSettings = () => setActiveProfileTab('settings');
+    window.addEventListener('zeri:open-forum-settings', openSettings);
+    return () => window.removeEventListener('zeri:open-forum-settings', openSettings);
+  }, []);
   const systemSettings = useStore(state => state.systemSettings);
   const showReels = systemSettings?.showReels ?? true;
 
   useEffect(() => {
     if (!currentUser) return;
-    const fetchUserReels = async () => {
+    const fetchUserStories = async () => {
       try {
         const q = query(collection(db, 'forumStories'), where('authorId', '==', currentUser.id), limit(50));
         const snap = await getDocs(q);
@@ -50,15 +72,16 @@ export default function ForumProfileTab({
         const data = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .filter((story: any) => !story.isHidden && story.expiresAt?.toMillis?.() > now.toMillis());
-        setReels(data);
+        setStories(data);
       } catch (error) {
         console.error('Nuk u ngarkuan story-t e profilit:', error);
-        setReels([]);
+        setStories([]);
       }
     };
-    void fetchUserReels();
+    void fetchUserStories();
   }, [currentUser?.id]);
 
+  const business = isBusiness(currentUser);
   const ownPosts = posts.filter(post => post.authorId === currentUser?.id);
   /*
    * A profile's post list honours post visibility: a followers-only post from
@@ -76,8 +99,8 @@ export default function ForumProfileTab({
   const likedPosts = posts.filter(post => post.likes?.includes(currentUser?.id));
   const savedPosts = posts.filter(post => savedPostIds.includes(post.id));
   const totalLikes = ownPosts.reduce((total, post) => total + (post.likes?.length || 0), 0) +
-    reels.reduce((total, reel) => total + (reel.likes?.length || 0), 0);
-  const activePosts = activeProfileTab === 'posts' ? ownPosts : activeProfileTab === 'liked' ? likedPosts : savedPosts;
+    stories.reduce((total, story) => total + (story.likes?.length || 0), 0);
+  const activePosts = activeProfileTab === 'posts' ? ownPosts : activeProfileTab === 'liked' ? likedPosts : activeProfileTab === 'saved' ? savedPosts : [];
 
   if (!currentUser) {
     return (
@@ -108,7 +131,7 @@ export default function ForumProfileTab({
               <div className="min-w-0 pb-1">
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                   <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-                  Profil qytetar
+                  {business ? `Biznes · ${prefsOf(currentUser).business.category}` : 'Profil qytetar'}
                 </span>
                 <h2 className="mt-1 truncate text-xl font-black sm:text-2xl">{currentUser.name}</h2>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -135,13 +158,26 @@ export default function ForumProfileTab({
           </div>
 
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            Qytetar aktiv i Kosovës. Ndaj ide, ndjek çështjet lokale dhe marr pjesë në vendimmarrje.
+            {currentUser.bio?.trim() || 'Qytetar aktiv i Kosovës. Ndaj ide, ndjek çështjet lokale dhe marr pjesë në vendimmarrje.'}
           </p>
+
+          {onOpenTrash && deletedCount > 0 && (
+            <button type="button" onClick={onOpenTrash}
+              className="mt-4 ml-2 inline-flex min-h-10 items-center gap-2 rounded-full border border-rose-300 px-4 text-xs font-black text-rose-600 transition hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30">
+              <Trash2 className="h-4 w-4" aria-hidden="true" /> {dt('Postimet e fshira')} ({deletedCount})
+            </button>
+          )}
+          {onOpenInsights && (
+            <button type="button" onClick={onOpenInsights}
+              className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-300 px-4 text-xs font-black text-slate-700 transition hover:border-blue-400 hover:text-blue-700 dark:border-zinc-700 dark:text-slate-200">
+              <BarChart3 className="h-4 w-4" aria-hidden="true" /> {business ? dt('Statistikat e biznesit') : dt('Statistikat e llogarisë')}
+            </button>
+          )}
 
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {[
               { value: ownPosts.length, label: 'Postime' },
-              { value: reels.length, label: 'Story aktive' },
+              { value: stories.length, label: 'Story aktive' },
               { value: followersCount, label: 'Followers' },
               { value: followingCount, label: 'Duke ndjekur' },
               { value: totalLikes, label: 'Pëlqime' },
@@ -159,10 +195,12 @@ export default function ForumProfileTab({
       <div role="tablist" aria-label="Përmbajtja e profilit" className="sticky top-0 z-10 mx-auto mt-4 flex w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
         {([
           { id: 'posts', label: 'Publikimet', Icon: Grid },
+          ...(showReels ? [{ id: 'reels', label: 'Reels', Icon: Film }] as const : []),
           { id: 'liked', label: 'Pëlqyera', Icon: Heart },
           { id: 'saved', label: 'Të ruajtura', Icon: Bookmark },
           { id: 'followers', label: `Followers (${followersList.length})`, Icon: Users },
           { id: 'following', label: `Duke ndjekur (${followingList.length})`, Icon: SearchIcon },
+          { id: 'settings', label: 'Cilësimet', Icon: Settings },
         ] as const).map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -279,17 +317,26 @@ export default function ForumProfileTab({
         })()}
       </div>
 
-      <div className="mx-auto mt-3 grid min-h-52 w-full max-w-3xl grid-cols-2 content-start gap-2 sm:grid-cols-3">
-        {activeProfileTab === 'posts' && showReels && reels.map(reel => (
-          <div key={reel.id} className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-slate-200 dark:bg-zinc-900">
-            {reel.isPhoto ? (
-              <img src={reel.mediaUrl} className="w-full h-full object-cover" alt="" />
+      {activeProfileTab === 'settings' && (
+        <div className="mx-auto mt-3 w-full max-w-3xl">
+          <ForumSettingsPanel />
+        </div>
+      )}
+
+      <div className={`mx-auto mt-3 grid min-h-52 w-full max-w-3xl grid-cols-2 content-start gap-2 sm:grid-cols-3 ${activeProfileTab === 'settings' ? 'hidden' : ''}`}>
+        {activeProfileTab === 'reels' && showReels && (
+          <ProfileReelsGrid authorId={currentUser.id} isOwner onOpen={(reel) => onOpenReel?.(reel)} onCreate={onCreateReel} />
+        )}
+        {activeProfileTab === 'posts' && showReels && stories.map(story => (
+          <div key={story.id} className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-slate-200 dark:bg-zinc-900">
+            {story.isPhoto ? (
+              <img src={story.mediaUrl} className="w-full h-full object-cover" alt="" />
             ) : (
-              <video src={reel.mediaUrl} className="w-full h-full object-cover" />
+              <video src={story.mediaUrl} className="w-full h-full object-cover" />
             )}
             <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-bold text-white">
               <Play className="w-3 h-3" />
-              {reel.views || 0}
+              {story.views || 0}
             </div>
           </div>
         ))}
@@ -299,16 +346,16 @@ export default function ForumProfileTab({
             <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-bold text-white"><Heart className="h-3 w-3" />{post.likes?.length || 0}</span>
           </button>
         ))}
-        {activeProfileTab === 'posts' && !showReels && reels.length > 0 && (
-          <div className="col-span-full py-4 text-center text-xs text-slate-500">Debat Story-t janë çaktivizuar nga administratori.</div>
+        {activeProfileTab === 'posts' && !showReels && stories.length > 0 && (
+          <div className="col-span-full py-4 text-center text-xs text-slate-500">{dt('Debat Story-t janë çaktivizuar nga administratori.')}</div>
         )}
-        {activePosts.length === 0 && !(activeProfileTab === 'posts' && showReels && reels.length > 0) && (
+        {activeProfileTab !== 'reels' && activePosts.length === 0 && !(activeProfileTab === 'posts' && showReels && stories.length > 0) && (
           <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 py-16 text-slate-500 dark:border-zinc-700">
             <Sparkles className="h-6 w-6 text-blue-500" aria-hidden="true" />
             <p className="text-sm font-bold">{activeProfileTab === 'posts' ? 'Nuk keni publikuar ende.' : activeProfileTab === 'liked' ? 'Nuk keni pëlqyer ende postime.' : activeProfileTab === 'saved' ? 'Nuk keni ruajtur ende postime.' : 'Nuk keni ruajtur ende postime.'}</p>
             {activeProfileTab === 'posts'
               ? <button type="button" onClick={onCreateStory} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Publiko Debat Story</button>
-              : <button type="button" onClick={() => setActiveProfileTab('posts')} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Kthehu te publikimet</button>}
+              : <button type="button" onClick={() => setActiveProfileTab('posts')} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">{dt('Kthehu te publikimet')}</button>}
           </div>
         )}
       </div>

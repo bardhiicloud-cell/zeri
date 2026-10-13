@@ -7,6 +7,7 @@ import { Phone, Search, Building, ShieldAlert, HeartPulse, Shield, TreePine, Gra
 import { cn } from '../lib/utils';
 import { useLanguage } from '../lib/LanguageContext';
 import { motion } from 'framer-motion';
+import { PageHero } from '../components/layout/PageHero';
 
 interface Contact {
   name: string;
@@ -68,19 +69,17 @@ export default function ContactNumbersPage() {
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 md:py-16"
     >
-      {/* Top Banner */}
-      
-
-      <div className="mb-8 md:mb-16 pb-4 md:pb-8 border-b border-slate-200/60 dark:border-white/10">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-rose-600 text-white text-[10px] md:text-xs font-bold tracking-widest mb-4 rounded uppercase">
-          <span className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full animate-pulse" /> {t('contact_central_directory')}
-        </div>
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight uppercase title-serif mb-4 leading-snug">
-          {t('contact_front_lines')}
-          <span className="text-rose-600">.</span>
-        </h1>
-        <p className="text-xs md:text-lg text-slate-700 dark:text-slate-200 dark:text-slate-300 font-bold max-w-3xl tracking-wide border-l-4 border-slate-900 pl-4 italic">{t('contact_direct_channels')}</p>
-      </div>
+      <PageHero
+        className="mb-8 md:mb-12"
+        eyebrow={t('contact_central_directory')}
+        icon={Phone}
+        title={t('contact_front_lines')}
+        subtitle={t('contact_direct_channels')}
+        stats={[
+          { value: '112', label: dt('Emergjenca Qendrore · 24/7') },
+          { value: '38', label: dt('komuna me kontakt të drejtpërdrejtë') },
+        ]}
+      />
 
       {/* Emergency Numbers Grid - Highly Prominent, Accessible & High Contrast */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">

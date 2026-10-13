@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import {
   connectAuthEmulator,
   getAuth,
@@ -39,7 +40,39 @@ const firebaseConfig = usePrototypeEmulators
       appId: import.meta.env.VITE_FIREBASE_APP_ID || appletConfig.appId,
     };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const isFirstInit = !getApps().length;
+const app = isFirstInit ? initializeApp(firebaseConfig) : getApp();
+
+/**
+ * App Check, required once it is enforced for Authentication.
+ *
+ * With enforcement on, the Identity Toolkit API answers every request that has
+ * no App Check token with `401 Firebase App Check token is invalid`. That
+ * blocks Google sign-in, email sign-in and the anonymous guest session alike,
+ * and the popup surfaces it as a vague `auth/internal-error`. It has to be
+ * initialised straight after `initializeApp` and before the first Auth call.
+ *
+ * Opt-in: nothing happens until a site key is configured, so an environment
+ * without enforcement behaves exactly as before. Skipped for the emulators,
+ * which do not check tokens.
+ */
+const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY;
+if (isFirstInit && appCheckSiteKey && !usePrototypeEmulators) {
+  if (import.meta.env.DEV) {
+    // localhost cannot pass reCAPTCHA. The debug token is generated once, logged
+    // to the console, and must be registered under Firebase Console → App Check
+    // → the web app → Manage debug tokens. Never shipped in a production build.
+    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN || true;
+  }
+  initializeAppCheck(app, {
+    provider: import.meta.env.VITE_FIREBASE_APPCHECK_PROVIDER === 'enterprise'
+      ? new ReCaptchaEnterpriseProvider(appCheckSiteKey)
+      : new ReCaptchaV3Provider(appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
 const configuredDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || appletConfig.firestoreDatabaseId;
 const firestoreDatabaseId = usePrototypeEmulators ? import.meta.env.VITE_FIREBASE_DATABASE_ID : configuredDatabaseId;
 const firestoreConfig = firestoreDatabaseId && firestoreDatabaseId !== '(default)'
@@ -165,6 +198,7 @@ export async function getUserRole(): Promise<string | null> {
   if (claims?.claims?.approver) return 'approver';
   if (claims?.claims?.adsadmin) return 'adsadmin';
   if (claims?.claims?.newsadmin) return 'newsadmin';
+  if (claims?.claims?.debatwp) return 'debatwp';
   if (claims?.claims?.agent) return 'agent';
   return 'citizen';
 }

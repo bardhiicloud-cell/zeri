@@ -1062,11 +1062,11 @@ export default function StatisticsPage() {
                     <p className="font-bold text-emerald-600">{stat.resolved.toLocaleString('sq-AL')}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">Në shqyrtim</p>
+                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt('Në shqyrtim')}</p>
                     <p className="font-bold text-amber-600">{stat.pending.toLocaleString('sq-AL')}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">Urgjente</p>
+                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt('Urgjente')}</p>
                     <p className="font-bold text-rose-600">{stat.urgent.toLocaleString('sq-AL')}</p>
                   </div>
                   <div className="col-span-2">
@@ -1098,8 +1098,8 @@ export default function StatisticsPage() {
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Komuna`)}</th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Raportime`)}</th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Të Zgjidhura`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">Në shqyrtim</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">Urgjente</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt('Në shqyrtim')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt('Urgjente')}</th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Shkalla e Efikasitetit`)}</th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Koha Mesatare`)}</th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Sektori Dominues`)}</th>

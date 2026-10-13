@@ -19,7 +19,7 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
-import { buildLocalizedPath, parseLocalePath } from './seo';
+import { buildLocalizedPath, isUnlocalizedPath, parseLocalePath } from './seo';
 import type { SupportedLanguageCode } from './languageConstants';
 
 /**
@@ -59,6 +59,14 @@ export function LanguageUrlSync() {
       setLanguage(nextLanguage as SupportedLanguageCode);
     }
 
+    // Sign-in and the staff consoles have a single address. They render in the
+    // active language, but must never gain (or keep) a language prefix: /en/admin
+    // is a 404.
+    if (isUnlocalizedPath(pagePath)) {
+      if (hadPrefix) navigate(pagePath + location.search + location.hash, { replace: true });
+      return;
+    }
+
     // Rewrite the URL to carry the language, keeping the page the visitor is on.
     const expected = buildLocalizedPath(pagePath, nextLanguage);
     if (expected.replace(/\/$/, '') !== location.pathname.replace(/\/$/, '')) {
@@ -91,6 +99,8 @@ export function useLanguageSwitch() {
     const target = buildLocalizedPath(pagePath, next);
 
     setLanguage(next);
+    // The staff consoles and sign-in stay at their one address.
+    if (isUnlocalizedPath(pagePath)) return;
     // replace: switching language should not fill the back button with history
     // entries the user has to press through to leave the page.
     navigate(target + location.search + location.hash, { replace: true });

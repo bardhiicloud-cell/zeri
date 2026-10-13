@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { dt } from '@/src/lib/dt';
 import {
   Newspaper, Search, Calendar, MapPin, Share2,
-  ArrowRight, Link2, ArrowLeft, Clock3, Mail, Copy, Info, TrendingUp, Video, Play,
+  ArrowRight, Link2, ArrowLeft, Clock3, Mail, Copy, Info,
   Sun, Moon,
 } from 'lucide-react';
 import { useThemePreference } from '../lib/themePreference';
@@ -20,6 +20,30 @@ import { useStore, type AdCampaign } from '../lib/store';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { NEWS_CATEGORIES } from '../lib/newsCategories';
 import { DEMO_NEWS } from '../lib/demoNews';
+import { HTML_LANG_TAGS, readStoredLanguage } from '../lib/languageConstants';
+
+const ALBANIAN_MONTHS = ['janar', 'shkurt', 'mars', 'prill', 'maj', 'qershor', 'korrik', 'gusht', 'shtator', 'tetor', 'nëntor', 'dhjetor'];
+
+/**
+ * Article dates are stored as Albanian text ("05 tetor 2026"). For every other
+ * language the date is re-rendered with the reader's locale, so an English page
+ * does not show Albanian month names. Anything unrecognised is returned as is.
+ */
+function formatNewsDate(value: string): string {
+  const lang = readStoredLanguage();
+  if (!value || lang === 'sq') return value;
+  const match = /^(\d{1,2})\s+(\p{L}+)\s+(\d{4})$/u.exec(value.trim());
+  if (!match) return value;
+  const month = ALBANIAN_MONTHS.indexOf(match[2].toLowerCase());
+  if (month < 0) return value;
+  try {
+    return new Date(Number(match[3]), month, Number(match[1])).toLocaleDateString(HTML_LANG_TAGS[lang], {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+  } catch {
+    return value;
+  }
+}
 
 interface NewsArticle {
   id: string;
@@ -130,7 +154,6 @@ export default function LajmePage() {
   );
   const editorialArticles = allNews.filter(item => item.category !== 'Njoftim Zyrtar');
   const officialNotices = allNews.filter(item => item.category === 'Njoftim Zyrtar');
-  const videoArticles = allNews.filter(item => Boolean(item.videoUrl)).slice(0, 3);
 
   const filteredNews = useMemo(() => {
     return allNews.filter(item => {
@@ -186,7 +209,8 @@ export default function LajmePage() {
       const isNewsCampaign = section === 'lajme' || section === 'news' || section === 'all' || section === 'global';
       const municipalityMatches = ad.target === 'Nacionale'
         || (selectedMunicipality !== undefined && scopeKey(ad.target) === selectedMunicipality);
-      return ad.status === 'active' && isNewsCampaign && municipalityMatches;
+      // HTML creatives have no image to show in a card, so they stay in banner slots.
+      return ad.status === 'active' && ad.mediaType !== 'html' && Boolean(ad.mediaUrl) && isNewsCampaign && municipalityMatches;
     }).slice(0, 4);
   }, [ads, mineMunicipality]);
   const demoPromotions = import.meta.env.DEV ? [
@@ -268,29 +292,6 @@ export default function LajmePage() {
     }
   };
 
-  /**
-   * Most-read ordering for the right rail.
-   *
-   * The read counter is not available for every item, so this sorts by votes and
-   * view count where present and falls back to recency. The intent is "what is
-   * the community actually looking at", which votes approximate well enough for
-   * a rail that is a convenience rather than a ranking feature.
-   */
-  const mostReadArticles = useMemo(
-    () => [...allNews]
-      .sort((a, b) => {
-        // Votes/views are optional on the article type, so they are read through
-        // a lookup that tolerates their absence rather than casting the object.
-        const metric = (n: typeof allNews[number], key: string) => {
-          const value = (n as unknown as Record<string, unknown>)[key];
-          return typeof value === 'number' ? value : 0;
-        };
-        const score = (n: typeof allNews[number]) => metric(n, 'votes') * 3 + metric(n, 'views');
-        return score(b) - score(a);
-      })
-      .slice(0, 5),
-    [allNews]
-  );
 
   useEffect(() => {
     setArchivePage(1);
@@ -318,6 +319,51 @@ export default function LajmePage() {
   const articleUrl = activeArticle
     ? `${window.location.origin}/lajme?njoftim=${encodeURIComponent(activeArticle.id)}`
     : '';
+
+  const readerRef = useRef<HTMLDivElement | null>(null);
+  const [readProgress, setReadProgress] = useState(0);
+  const relatedArticles = useMemo(() => {
+    if (!activeArticle) return [];
+    const others = allNews.filter(item => item.id !== activeArticle.id);
+    const sameCategory = others.filter(item => item.category === activeArticle.category);
+    return [...sameCategory, ...others.filter(item => item.category !== activeArticle.category)].slice(0, 4);
+  }, [activeArticle, allNews]);
+
+  const sidebarArticles = useMemo(() => {
+    if (!activeArticle) return [];
+    const seen = new Set<string>([activeArticle.id]);
+    return [...relatedArticles, ...trendingArticles].filter(item => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    }).slice(0, 5);
+  }, [activeArticle, relatedArticles, trendingArticles]);
+
+  // Reader: reading-progress bar, Esc to close, and each newly opened article
+  // starts at the top instead of inheriting the previous scroll offset.
+  useEffect(() => {
+    const node = readerRef.current;
+    if (!activeArticle || !node) {
+      setReadProgress(0);
+      return;
+    }
+    node.scrollTo({ top: 0 });
+    setReadProgress(0);
+    const onScroll = () => {
+      const max = node.scrollHeight - node.clientHeight;
+      setReadProgress(max > 0 ? Math.min(100, Math.round((node.scrollTop / max) * 100)) : 0);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeArticle();
+    };
+    node.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('keydown', onKey);
+    return () => {
+      node.removeEventListener('scroll', onScroll);
+      window.removeEventListener('keydown', onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeArticle?.id]);
 
   const copyArticleLink = async () => {
     if (!articleUrl) return;
@@ -348,7 +394,7 @@ export default function LajmePage() {
           <div className="relative flex min-h-12 flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-2 dark:border-white/10">
             <Link to="/" className="inline-flex items-center gap-2 text-sm font-black tracking-tight text-slate-950 dark:text-white sm:mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-700 text-white"><Newspaper className="h-4 w-4" aria-hidden="true" /></span>
-              Zëri i Qytetarëve <span className="font-medium text-blue-700 dark:text-blue-300">/ {dt('Lajme')}</span>
+              {dt('Zëri i Qytetarëve')} <span className="font-medium text-blue-700 dark:text-blue-300">/ {dt('Lajme')}</span>
             </Link>
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
@@ -360,7 +406,7 @@ export default function LajmePage() {
 
           <div className="flex flex-col gap-4 py-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700 dark:text-blue-300">Informim publik · Komuniteti · Transparencë</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700 dark:text-blue-300">{dt('Informim publik · Komuniteti · Transparencë')}</p>
               <h1 className="mt-2 font-serif text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">{dt('Lajmet kryesore')}</h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{dt('Përditësime të rëndësishme për qytetarët, të renditura sipas temës dhe komunës.')}</p>
             </div>
@@ -380,7 +426,7 @@ export default function LajmePage() {
               {/* Category rail: every filter is a pill, one click each. */}
               <nav
                 aria-label={dt('Kategoritë e publikimeve')}
-                className="-mx-1 flex flex-1 items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="-mx-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-1 pb-1 pe-8 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-2.5rem),transparent)]"
               >
                 {categoryRail.map((item) => (
                   <button
@@ -467,6 +513,31 @@ export default function LajmePage() {
           </details>
         </header>
 
+        {/* Newspaper strip: dateline, breaking ticker and a leaderboard slot. */}
+        <div className="-mt-2 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-900 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:border-white dark:text-slate-400">
+            <span>{new Date().toLocaleDateString('sq-AL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span className="hidden sm:inline">{dt('Republika e Kosovës · 38 komuna')}</span>
+            <span>{allNews.length} {dt('publikime')}</span>
+          </div>
+          {allNews.length > 0 && (
+            <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
+              <span className="flex shrink-0 items-center gap-2 bg-rose-600 px-3.5 text-[10px] font-black uppercase tracking-widest text-white">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
+                {dt('Të fundit')}
+              </span>
+              <div className="flex min-w-0 flex-1 items-center gap-6 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {allNews.slice(0, 8).map(item => (
+                  <button key={'ticker-' + item.id} type="button" onClick={() => openArticle(item)} className="shrink-0 whitespace-nowrap text-xs font-bold text-slate-700 transition hover:text-blue-700 dark:text-slate-200 dark:hover:text-blue-300">
+                    <span className="mr-2 text-rose-600">●</span>{item.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <AdBanner position="feed" className="max-w-none" />
+        </div>
+
         <AnnouncementBanner />
         {import.meta.env.DEV && (
           // Prototype notice, deliberately quiet.
@@ -482,28 +553,31 @@ export default function LajmePage() {
           </div>
         )}
 
-        <section className="grid gap-x-7 gap-y-8 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_280px]" aria-label="Lajmet kryesore dhe lajmet e fundit">
+        <section className="grid gap-x-7 gap-y-8 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_280px]" aria-label={dt('Lajmet kryesore dhe lajmet e fundit')}>
           <aside className="hidden xl:order-1 xl:block">
             <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2 dark:border-white/10">
-              <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">Të veçuara</h2>
+              <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">{dt('Të veçuara')}</h2>
               <span aria-hidden="true" className="text-xl font-black text-slate-300">/</span>
             </div>
             <div className="divide-y divide-slate-200 dark:divide-white/10">
               {latestArticles.map(news => (
                 <button key={news.id} type="button" onClick={() => openArticle(news)} className="group block w-full py-3 text-left">
                   {news.imageUrl && <img src={news.imageUrl} alt="" loading="lazy" className="mb-3 aspect-[16/9] w-full rounded-lg object-cover" />}
-                  <span className="block text-[10px] font-bold text-emerald-700 dark:text-emerald-400">{news.category}</span>
+                  <span className="block text-[10px] font-bold text-emerald-700 dark:text-emerald-400">{dt(news.category)}</span>
                   <span className="mt-1 block text-sm font-extrabold leading-snug text-slate-950 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{news.title}</span>
-                  <span className="mt-1.5 block text-[10px] text-slate-400">{news.municipality} · {news.date}</span>
+                  <span className="mt-1.5 block text-[10px] text-slate-400">{news.municipality} · {formatNewsDate(news.date)}</span>
                 </button>
               ))}
-              {!latestArticles.length && !leadArticle && !newsLoadError && <p className="py-6 text-xs leading-relaxed text-slate-500">Lajmet e reja të redaksisë do të shfaqen këtu.</p>}
+              {!latestArticles.length && !leadArticle && !newsLoadError && <p className="py-6 text-xs leading-relaxed text-slate-500">{dt('Lajmet e reja të redaksisë do të shfaqen këtu.')}</p>}
+            </div>
+            <div className="mt-5">
+              <AdBanner position="sidebar" />
             </div>
           </aside>
 
           <div className="order-1 min-w-0 xl:order-2">
             <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2 dark:border-white/10">
-              <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">Lajmet e fundit</h2>
+              <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">{dt('Lajmet e fundit')}</h2>
               <span aria-hidden="true" className="text-xl font-black text-slate-300">/</span>
             </div>
             {leadArticle ? (
@@ -514,12 +588,12 @@ export default function LajmePage() {
                   ) : (
                     <div className="h-full w-full bg-gradient-to-br from-slate-300 via-blue-100 to-blue-300 dark:from-slate-800 dark:via-blue-950 dark:to-slate-700" />
                   )}
-                  <span className="absolute left-3 top-3 rounded bg-rose-600 px-2 py-1 text-[10px] font-black uppercase text-white">{leadArticle.category}</span>
+                  <span className="absolute left-3 top-3 rounded bg-rose-600 px-2 py-1 text-[10px] font-black uppercase text-white">{dt(leadArticle.category)}</span>
                   {leadArticle.isDemo && <span className="absolute right-3 top-3 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-900">Demo</span>}
                 </div>
                 <h3 className="mt-4 font-serif text-2xl font-black leading-tight text-slate-950 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300 sm:text-3xl">{leadArticle.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{leadArticle.summary}</p>
-                <p className="mt-3 text-xs font-bold text-rose-600 dark:text-rose-400">{leadArticle.municipality} · {leadArticle.date}</p>
+                <p className="mt-3 text-xs font-bold text-rose-600 dark:text-rose-400">{leadArticle.municipality} · {formatNewsDate(leadArticle.date)}</p>
                 {feedArticles[0] && (
                   <span className="mt-4 flex items-center gap-2 border-y border-slate-200 py-3 text-xs font-extrabold text-slate-800 transition-colors hover:text-blue-700 dark:border-white/10 dark:text-slate-200 dark:hover:text-blue-300">
                     <span className="text-rose-600">›</span>{feedArticles[0].title}
@@ -530,10 +604,10 @@ export default function LajmePage() {
               <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white px-6 py-10 text-center dark:border-white/10 dark:bg-slate-900">
                 <Newspaper className="h-9 w-9 text-slate-300 dark:text-slate-600" aria-hidden="true" />
                 <h3 className="mt-3 font-serif text-lg font-black text-slate-800 dark:text-slate-100">
-                  {newsLoadError ? 'Lajmet nuk u ngarkuan' : 'Lajmet e reja së shpejti'}
+                  {newsLoadError ? dt('Lajmet nuk u ngarkuan') : dt('Lajmet e reja së shpejti')}
                 </h3>
                 <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  {newsLoadError ? 'Nuk mundëm të marrim publikimet nga serveri. Ju lutemi provoni përsëri më vonë.' : 'Publikimet e redaksisë do të shfaqen këtu sapo të jenë gati.'}
+                  {newsLoadError ? dt('Nuk mundëm të marrim publikimet nga serveri. Ju lutemi provoni përsëri më vonë.') : dt('Publikimet e redaksisë do të shfaqen këtu sapo të jenë gati.')}
                 </p>
               </div>
             )}
@@ -541,7 +615,7 @@ export default function LajmePage() {
 
           <aside className="hidden lg:col-start-2 lg:row-start-1 lg:order-2 lg:block xl:col-start-3 xl:order-3">
             <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2 dark:border-white/10">
-              <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">Në fokus</h2>
+              <h2 className="font-serif text-lg font-black text-slate-950 dark:text-white">{dt('Në fokus')}</h2>
               <span aria-hidden="true" className="text-xl font-black text-slate-300">/</span>
             </div>
             <div className="divide-y divide-slate-200 dark:divide-white/10">
@@ -549,13 +623,16 @@ export default function LajmePage() {
                 <button key={news.id} type="button" onClick={() => openArticle(news)} className="group flex w-full gap-3 py-3 text-left">
                   {news.imageUrl && <img src={news.imageUrl} alt="" className="h-[76px] w-[112px] shrink-0 rounded-lg object-cover" />}
                   <span className="min-w-0">
-                    <span className="block text-[10px] font-bold text-rose-600 dark:text-rose-400">{news.category}</span>
+                    <span className="block text-[10px] font-bold text-rose-600 dark:text-rose-400">{dt(news.category)}</span>
                     <span className="mt-1 line-clamp-3 block text-xs font-extrabold leading-snug text-slate-950 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{news.title}</span>
                     <span className="mt-1.5 block text-[10px] text-slate-400">{news.municipality}</span>
                   </span>
                 </button>
               ))}
-              {!trendingArticles.length && !newsLoadError && <p className="py-6 text-xs leading-relaxed text-slate-500">Më shumë lajme së shpejti.</p>}
+              {!trendingArticles.length && !newsLoadError && <p className="py-6 text-xs leading-relaxed text-slate-500">{dt('Më shumë lajme së shpejti.')}</p>}
+            </div>
+            <div className="mt-5">
+              <AdBanner position="sidebar" />
             </div>
           </aside>
         </section>
@@ -569,6 +646,29 @@ export default function LajmePage() {
           second instance below the featured stories keeps it one scroll away on
           narrow screens while the rail keeps owning it on wide ones.
         */}
+        {allNews.length > 3 && (
+          <section aria-labelledby="headline-index" className="border-y-2 border-slate-900 py-6 dark:border-white">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <h2 id="headline-index" className="font-serif text-2xl font-black text-slate-950 dark:text-white">{dt('Titujt e ditës')}</h2>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{dt('Në një shikim')}</span>
+            </div>
+            <ol className="grid gap-x-8 gap-y-0 sm:grid-cols-2 lg:grid-cols-3">
+              {allNews.slice(0, 9).map((item, index) => (
+                <li key={'hl-' + item.id} className="border-b border-slate-200 dark:border-white/10">
+                  <button type="button" onClick={() => openArticle(item)} className="group flex w-full items-start gap-3 py-3.5 text-left">
+                    <span className="font-serif text-3xl font-black leading-none text-slate-200 transition-colors group-hover:text-rose-500 dark:text-slate-700">{String(index + 1).padStart(2, '0')}</span>
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">{dt(item.category)}</span>
+                      <span className="mt-0.5 line-clamp-2 block text-sm font-extrabold leading-snug text-slate-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{item.title}</span>
+                      <span className="mt-1 block text-[10px] text-slate-400">{item.municipality} · {formatNewsDate(item.date)}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
         <div className="xl:hidden">
           <LiveNoticesFeed />
         </div>
@@ -590,7 +690,7 @@ export default function LajmePage() {
                 const isLivePromotion = 'mediaUrl' in promotion;
                 const imageUrl = isLivePromotion ? promotion.mediaUrl : promotion.imageUrl;
                 const description = isLivePromotion
-                  ? dt('Promovim nga partner i platformës.')
+                  ? ((promotion as any).partnerDescription || dt('Promovim nga partner i platformës.'))
                   : promotion.description;
 
                 return (
@@ -606,12 +706,25 @@ export default function LajmePage() {
                     )}
                   >
                     <div className="relative aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                      <img
-                        src={imageUrl}
-                        alt=""
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                      />
+                      {isLivePromotion && (promotion as any).mediaType === 'video' ? (
+                        <video
+                          src={imageUrl}
+                          muted
+                          playsInline
+                          autoPlay
+                          loop
+                          preload="metadata"
+                          aria-hidden="true"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={imageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                        />
+                      )}
                       <span className="absolute left-3 top-3 rounded-md bg-slate-950/85 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur">
                         {dt('Reklamë')}
                       </span>
@@ -720,7 +833,7 @@ export default function LajmePage() {
                   </div>
 
                   <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900">
-                    {news.category}
+                    {dt(news.category)}
                   </span>
                 </div>
 
@@ -765,7 +878,7 @@ export default function LajmePage() {
               <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500">
                 <div className="flex items-center gap-2 text-[11px]">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{news.date}</span>
+                  <span>{formatNewsDate(news.date)}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -831,68 +944,9 @@ export default function LajmePage() {
             squeezing the cards, which is why it is its own grid child rather than
             a floated column.
           */}
-          <aside className="hidden xl:block" aria-label={dt('Njoftime dhe lajme të shpejta')}>
-            <div className="sticky top-4 space-y-4">
-              <LiveNoticesFeed />
-
-              {videoArticles.length > 0 && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900">
-                  <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 dark:border-white/10">
-                    <Video className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" aria-hidden="true" />
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">{dt('Video')}</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {videoArticles.map((item) => (
-                      <button
-                        key={'rail-video-' + item.id}
-                        type="button"
-                        onClick={() => openArticle(item)}
-                        className="group block w-full text-left"
-                      >
-                        <span className="relative block overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
-                          {item.imageUrl ? (
-                            <img src={item.imageUrl} alt="" loading="lazy" className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-                          ) : (
-                            <span className="flex aspect-video items-center justify-center"><Video className="h-6 w-6 text-slate-300" /></span>
-                          )}
-                          <span className="absolute inset-0 grid place-items-center">
-                            <span className="grid h-9 w-9 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition group-hover:bg-blue-700">
-                              <Play className="h-4 w-4 fill-current" aria-hidden="true" />
-                            </span>
-                          </span>
-                        </span>
-                        <span className="mt-1.5 block line-clamp-2 text-xs font-bold leading-snug text-slate-800 group-hover:text-blue-700 dark:text-slate-200 dark:group-hover:text-blue-300">
-                          {item.title}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900">
-                <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 dark:border-white/10">
-                  <TrendingUp className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" aria-hidden="true" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">{dt('Më të lexuarat')}</h3>
-                </div>
-                <ol className="space-y-2.5">
-                  {mostReadArticles.map((item, index) => (
-                    <li key={'rail-top-' + item.id}>
-                      <button type="button" onClick={() => openArticle(item)} className="group flex w-full items-start gap-2.5 text-left">
-                        <span className="mt-0.5 font-mono text-lg font-black leading-none text-slate-200 dark:text-slate-700">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block line-clamp-2 text-xs font-bold leading-snug text-slate-800 group-hover:text-blue-700 dark:text-slate-200 dark:group-hover:text-blue-300">
-                            {item.title}
-                          </span>
-                          <span className="mt-0.5 block text-[10px] text-slate-400">{dt(item.category)}</span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              </div>
+          <aside className="hidden xl:block" aria-label={dt('Njoftime')}>
+            <div className="sticky top-4">
+              <LiveNoticesFeed className="h-[calc(100vh-2rem)]" />
             </div>
           </aside>
         </div>
@@ -949,140 +1003,173 @@ export default function LajmePage() {
         </section>
 
         {activeArticle && (
-          <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-50 dark:bg-slate-950">
-            <article className="min-h-full">
-              <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-slate-950/95">
-                <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-                  <button type="button" onClick={closeArticle} className="font-serif font-black text-slate-900 dark:text-white">Zëri i Qytetarëve <span className="text-blue-700 dark:text-blue-300">/ Lajme</span></button>
-                  <button
-                    type="button"
-                    onClick={closeArticle}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-100 px-3.5 text-xs font-black text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                  ><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Kthehu te lajmet</button>
-                </div>
-              </header>
-              <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
-                <AdBanner position="article" className="max-w-none" municipality={activeArticle.municipality} />
+          <div ref={readerRef} role="dialog" aria-modal="true" aria-label={activeArticle.title} className="fixed inset-0 z-[100] overflow-y-auto bg-slate-50 dark:bg-slate-950">
+            <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-slate-950/95">
+              <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[3px] bg-transparent">
+                <div className="h-full bg-gradient-to-r from-blue-600 via-violet-500 to-rose-500" style={{ width: `${readProgress}%` }} />
               </div>
-              <div className="mx-auto grid max-w-6xl gap-7 px-4 py-7 sm:px-6 sm:py-9 lg:grid-cols-[64px_minmax(0,680px)_300px] lg:items-start">
-                <aside aria-label="Shpërndaje lajmin" className="order-1 flex items-center gap-2 border-b border-slate-200 pb-4 dark:border-white/10 lg:sticky lg:top-24 lg:border-0 lg:pb-0 lg:flex-col lg:items-start">
-                  <span className="mr-1 text-[10px] font-black uppercase tracking-wider text-slate-500 lg:mb-1 lg:mr-0">Shpërndaje</span>
-                  <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Shpërndaje në Facebook"
-                    className="grid h-10 w-10 place-items-center rounded-full bg-[#1877f2] text-xs font-black text-white transition hover:scale-105"
-                  >f</a>
-                  <a
-                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(articleUrl)}&text=${encodeURIComponent(activeArticle.title)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Shpërndaje në X"
-                    className="grid h-10 w-10 place-items-center rounded-full bg-slate-900 text-sm font-black text-white transition hover:scale-105 dark:bg-slate-700"
-                  >𝕏</a>
-                  <a
-                    href={`mailto:?subject=${encodeURIComponent(activeArticle.title)}&body=${encodeURIComponent(articleUrl)}`}
-                    aria-label="Dërgo lajmin me email"
-                    className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"
-                  ><Mail className="h-4 w-4" aria-hidden="true" /></a>
-                  <button
-                    type="button"
-                    onClick={copyArticleLink}
-                    aria-label="Kopjo lidhjen e lajmit"
-                    className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"
-                  ><Copy className="h-4 w-4" aria-hidden="true" /></button>
-                  <button
-                    type="button"
-                    onClick={() => handleShare(activeArticle)}
-                    aria-label="Më shumë mënyra shpërndarjeje"
-                    className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"
-                  ><Share2 className="h-4 w-4" aria-hidden="true" /></button>
+              <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+                <button type="button" onClick={closeArticle} className="font-serif font-black text-slate-900 dark:text-white">{dt('Zëri i Qytetarëve')} <span className="text-blue-700 dark:text-blue-300">/ Lajme</span></button>
+                <div className="flex items-center gap-2">
+                  <span className="hidden text-[11px] font-bold tabular-nums text-slate-400 sm:inline">{readProgress}%</span>
+                  <button type="button" onClick={() => handleShare(activeArticle)} aria-label={dt('Më shumë mënyra shpërndarjeje')} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"><Share2 className="h-4 w-4" aria-hidden="true" /></button>
+                  <button type="button" onClick={closeArticle} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-900 px-3.5 text-xs font-black text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te lajmet')}
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div className="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+              <AdBanner position="article" className="max-w-none" municipality={activeArticle.municipality} />
+
+              {/* Cinematic feature header */}
+              <section className="relative isolate overflow-hidden rounded-[28px] bg-slate-900 text-white shadow-2xl">
+                {activeArticle.imageUrl ? (
+                  <img src={activeArticle.imageUrl} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+                ) : (
+                  <div aria-hidden="true" className="absolute inset-0 -z-20 bg-gradient-to-br from-[#061226] via-[#0b2b57] to-[#14408a]" />
+                )}
+                <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/10" />
+                <div className="flex min-h-[340px] flex-col justify-end p-6 sm:min-h-[460px] sm:p-10 lg:p-14">
+                  <div className="mb-4 flex flex-wrap items-center gap-2.5 text-xs font-bold">
+                    <span className="rounded bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide">{dt(activeArticle.category)}</span>
+                    {activeArticle.isDemo && <span className="rounded-full border border-amber-300/60 bg-amber-300/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">{dt('Shembull demo · jo lajm real')}</span>}
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 py-1 pl-1.5 pr-3 backdrop-blur"><MunicipalityShield name={activeArticle.municipality} size="sm" />{activeArticle.municipality}</span>
+                  </div>
+                  <h1 className="max-w-4xl font-serif text-3xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{activeArticle.title}</h1>
+                  <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-200">
+                    <span className="inline-flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-[11px] font-black">ZQ</span>{activeArticle.author || 'Redaksia e Zërit të Qytetarëve'}</span>
+                    <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" aria-hidden="true" />{formatNewsDate(activeArticle.date)}</span>
+                    <span className="inline-flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" aria-hidden="true" />{activeArticle.readTime || '3 min lexim'}</span>
+                  </div>
+                </div>
+              </section>
+
+              <div className="grid gap-8 lg:grid-cols-[56px_minmax(0,1fr)_320px] lg:items-start xl:gap-10">
+                <aside aria-label={dt('Shpërndaje lajmin')} className="order-1 flex items-center gap-2 border-b border-slate-200 pb-4 dark:border-white/10 lg:sticky lg:top-24 lg:flex-col lg:items-start lg:border-0 lg:pb-0">
+                  <span className="mr-1 text-[10px] font-black uppercase tracking-wider text-slate-500 lg:mb-1 lg:mr-0">{dt('Shpërndaje')}</span>
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`} target="_blank" rel="noreferrer" aria-label={dt('Shpërndaje në Facebook')} className="grid h-10 w-10 place-items-center rounded-full bg-[#1877f2] text-xs font-black text-white transition hover:scale-105">f</a>
+                  <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(articleUrl)}&text=${encodeURIComponent(activeArticle.title)}`} target="_blank" rel="noreferrer" aria-label={dt('Shpërndaje në X')} className="grid h-10 w-10 place-items-center rounded-full bg-slate-900 text-sm font-black text-white transition hover:scale-105 dark:bg-slate-700">𝕏</a>
+                  <a href={`mailto:?subject=${encodeURIComponent(activeArticle.title)}&body=${encodeURIComponent(articleUrl)}`} aria-label={dt('Dërgo lajmin me email')} className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"><Mail className="h-4 w-4" aria-hidden="true" /></a>
+                  <button type="button" onClick={copyArticleLink} aria-label="Kopjo lidhjen e lajmit" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"><Copy className="h-4 w-4" aria-hidden="true" /></button>
                 </aside>
 
-                <div className="order-2 min-w-0 lg:order-2">
-                  <article>
-                    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-                      <span className="rounded bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">{activeArticle.category}</span>
-                      {activeArticle.isDemo && <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">Shembull demo · jo lajm real</span>}
-                      <span className="inline-flex items-center gap-1.5"><MunicipalityShield name={activeArticle.municipality} size="sm" />{activeArticle.municipality}</span>
-                    </div>
-                    <h1 className="font-serif text-3xl font-black leading-[1.12] tracking-tight text-slate-950 dark:text-white sm:text-4xl">{activeArticle.title}</h1>
-                    <p className="mt-4 text-lg leading-relaxed text-slate-600 dark:text-slate-300">{activeArticle.summary}</p>
-                    <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-slate-200 pb-4 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{activeArticle.author || 'Redaksia e Zërit të Qytetarëve'}</span>
-                      <span>{activeArticle.date}</span>
-                      <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" aria-hidden="true" />{activeArticle.readTime || '3 min lexim'}</span>
-                    </div>
-                    {activeArticle.imageUrl && (
-                      <figure className="mt-6">
-                        <img src={activeArticle.imageUrl} alt="" className="max-h-[560px] min-h-52 w-full rounded-lg bg-slate-200 object-cover dark:bg-slate-800 sm:min-h-80" />
-                        <figcaption className="mt-2 text-[10px] text-slate-400">{activeArticle.municipality} · {activeArticle.date}</figcaption>
-                      </figure>
-                    )}
-                    <div className="prose prose-slate mt-7 max-w-none whitespace-pre-line text-base leading-8 text-slate-700 dark:prose-invert dark:text-slate-300 sm:text-[17px]">
-                      {activeArticle.content}
-                    </div>
-                    {(() => {
-                      const inlineUrl = (activeArticle as any).inlineImageUrl as string | undefined;
-                      const videoUrl = (activeArticle as any).videoUrl as string | undefined;
-                      return (
-                        <>
-                          {inlineUrl && (
-                            <figure className="mt-8">
-                              <img src={inlineUrl} alt="" loading="lazy" className="w-full rounded-xl bg-slate-200 object-cover dark:bg-slate-800" />
-                            </figure>
-                          )}
-                          {videoUrl && (
-                            <div className="mt-8 overflow-hidden rounded-xl bg-slate-900">
-                              {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
-                                <iframe
-                                  src={videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                                  title="Video e lajmit"
-                                  className="aspect-video w-full"
-                                  allowFullScreen
-                                />
-                              ) : (
-                                <video src={videoUrl} controls className="aspect-video w-full" />
-                              )}
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                    {!!activeArticle.relatedReportIds?.length && (
-                      <div className="mt-8 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
-                        Ky njoftim lidhet me {activeArticle.relatedReportIds.length} raportime qytetare.
-                      </div>
-                    )}
-                    <div className="mt-9 border-t border-slate-200 pt-5 dark:border-white/10">
-                      <button type="button" onClick={closeArticle} className="inline-flex items-center gap-2 text-xs font-black text-blue-700 transition hover:text-blue-900 dark:text-blue-300">
-                        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Kthehu te të gjitha lajmet
-                      </button>
-                    </div>
-                  </article>
-                </div>
+                <article className="order-2 min-w-0">
+                  <p className="border-l-4 border-blue-600 pl-5 font-serif text-xl font-semibold leading-relaxed text-slate-700 dark:border-blue-400 dark:text-slate-200 sm:text-2xl sm:leading-relaxed">{activeArticle.summary}</p>
 
-                <aside className="hidden space-y-6 lg:order-3 lg:block">
-                  <section>
-                    <h2 className="mb-3 border-b border-slate-200 pb-2 font-serif text-lg font-black text-rose-600 dark:border-white/10 dark:text-rose-400">Lajmet kryesore</h2>
-                    <div className="divide-y divide-slate-200 dark:divide-white/10">
-                      {trendingArticles.slice(0, 5).map(news => (
+                  <div className="prose prose-slate mt-9 max-w-none whitespace-pre-line text-base leading-8 text-slate-700 first-letter:float-left first-letter:mr-3 first-letter:mt-1 first-letter:font-serif first-letter:text-6xl first-letter:font-black first-letter:leading-[0.85] first-letter:text-blue-700 dark:prose-invert dark:text-slate-300 dark:first-letter:text-blue-300 sm:text-[18px] sm:leading-9">
+                    {activeArticle.content}
+                  </div>
+
+                  {(() => {
+                    const inlineUrl = (activeArticle as any).inlineImageUrl as string | undefined;
+                    const videoUrl = (activeArticle as any).videoUrl as string | undefined;
+                    return (
+                      <>
+                        {inlineUrl && (
+                          <figure className="mt-8"><img src={inlineUrl} alt="" loading="lazy" className="w-full rounded-2xl bg-slate-200 object-cover dark:bg-slate-800" /></figure>
+                        )}
+                        {videoUrl && (
+                          <div className="mt-8 overflow-hidden rounded-2xl bg-slate-900">
+                            {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
+                              <iframe src={videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title="Video e lajmit" className="aspect-video w-full" allowFullScreen />
+                            ) : (
+                              <video src={videoUrl} controls className="aspect-video w-full" />
+                            )}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+
+                  {/* Key facts */}
+                  <aside aria-label={dt('Në një shikim')} className="mt-9 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 text-sm dark:border-white/10 dark:bg-white/10 sm:grid-cols-4">
+                    {[
+                      { label: dt('Kategoria'), value: dt(activeArticle.category) },
+                      { label: dt('Komuna'), value: activeArticle.municipality },
+                      { label: dt('Publikuar'), value: formatNewsDate(activeArticle.date) },
+                      { label: dt('Leximi'), value: activeArticle.readTime || '3 min' },
+                    ].map(fact => (
+                      <div key={fact.label} className="bg-white p-4 dark:bg-slate-900">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{fact.label}</div>
+                        <div className="mt-1 font-extrabold text-slate-900 dark:text-white">{fact.value}</div>
+                      </div>
+                    ))}
+                  </aside>
+
+                  {!!activeArticle.relatedReportIds?.length && (
+                    <div className="mt-6 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
+                      <Link2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      Ky njoftim lidhet me {activeArticle.relatedReportIds.length} raportime qytetare.
+                    </div>
+                  )}
+
+                  <div className="mt-8"><AdBanner position="feed" className="max-w-none" municipality={activeArticle.municipality} /></div>
+
+                  {/* Call to action */}
+                  <section className="relative mt-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0b2b57] to-[#14408a] p-6 text-white sm:p-8">
+                    <div aria-hidden="true" className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-300/20 blur-2xl" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">{dt('Zëri juaj ka rëndësi')}</p>
+                    <h2 className="mt-2 font-serif text-2xl font-black leading-tight sm:text-3xl">{dt('Keni një problem në komunën tuaj?')}</h2>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100">{dt('Raportojeni në 30 sekonda dhe ndiqeni me Track-ID derisa të zgjidhet.')}</p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <Link to="/raporto" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-xs font-black text-[#0b2b57] transition hover:bg-blue-50">{dt('Raporto një problem')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                      <Link to="/harta" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold backdrop-blur transition hover:bg-white/20">{dt('Shiko hartën')}</Link>
+                    </div>
+                  </section>
+
+                  <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-white/10">
+                    <button type="button" onClick={closeArticle} className="inline-flex items-center gap-2 text-xs font-black text-blue-700 transition hover:text-blue-900 dark:text-blue-300">
+                      <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te të gjitha lajmet')}
+                    </button>
+                    <button type="button" onClick={copyArticleLink} className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:text-slate-300">
+                      <Copy className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Kopjo lidhjen')}
+                    </button>
+                  </div>
+                </article>
+
+                <aside className="order-3 space-y-6 lg:sticky lg:top-24">
+                  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-white/10 dark:bg-slate-900">
+                    <h2 className="mb-1 flex items-center justify-between border-b border-slate-200 pb-3 font-serif text-lg font-black text-slate-950 dark:border-white/10 dark:text-white">{dt('Lajmet kryesore')}<span className="h-2 w-2 rounded-full bg-rose-600" aria-hidden="true" /></h2>
+                    <div className="divide-y divide-slate-100 dark:divide-white/10">
+                      {sidebarArticles.map((news, index) => (
                         <button key={news.id} type="button" onClick={() => openArticle(news)} className="group flex w-full gap-3 py-3 text-left">
-                          {news.imageUrl && <img src={news.imageUrl} alt="" className="h-[70px] w-[105px] shrink-0 rounded-md object-cover" />}
+                          <span className="font-serif text-2xl font-black leading-none text-slate-200 dark:text-slate-700">{index + 1}</span>
                           <span className="min-w-0">
-                            <span className="block line-clamp-3 text-xs font-extrabold leading-snug text-slate-950 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{news.title}</span>
-                            <span className="mt-1.5 block text-[10px] text-rose-600 dark:text-rose-400">{news.category}</span>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">{dt(news.category)}</span>
+                            <span className="mt-0.5 line-clamp-3 block text-xs font-extrabold leading-snug text-slate-950 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{news.title}</span>
                           </span>
                         </button>
                       ))}
                     </div>
                   </section>
                   <AdBanner position="sidebar" municipality={activeArticle.municipality} />
+                  <AdBanner position="sidebar" municipality={activeArticle.municipality} />
                 </aside>
               </div>
-            </article>
+
+              {relatedArticles.length > 0 && (
+                <section aria-labelledby="related-heading" className="border-t-2 border-slate-900 pt-6 dark:border-white">
+                  <h2 id="related-heading" className="mb-5 font-serif text-2xl font-black text-slate-950 dark:text-white">{dt('Lexo gjithashtu')}</h2>
+                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    {relatedArticles.map(related => (
+                      <button key={related.id} type="button" onClick={() => openArticle(related)} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-xs transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg dark:border-white/10 dark:bg-slate-900">
+                        {related.imageUrl && <img src={related.imageUrl} alt="" loading="lazy" className="aspect-[16/10] w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
+                        <span className="block p-4">
+                          <span className="block text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">{dt(related.category)}</span>
+                          <span className="mt-1.5 line-clamp-3 block text-sm font-extrabold leading-snug text-slate-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{related.title}</span>
+                          <span className="mt-2 block text-[11px] text-slate-400">{related.municipality} · {formatNewsDate(related.date)}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <AdBanner position="feed" className="max-w-none" municipality={activeArticle.municipality} />
             </div>
+          </div>
         )}
 
       </div>
