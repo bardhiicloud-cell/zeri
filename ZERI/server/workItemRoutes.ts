@@ -36,6 +36,8 @@ export const PAGE_DEFAULT = 50;
 export const PAGE_MAX = 100;
 export const OVERVIEW_ITEM_CAP = 5000;
 export const OVERVIEW_WORKER_CAP = 2000;
+/** The organisation summary reads thousands of documents; managers poll it, so it is shared for this long. */
+export const OVERVIEW_CACHE_MS = 20_000;
 
 export type ListView = 'mine' | 'unassigned' | 'attention' | 'overdue' | 'open' | 'worker' | 'done';
 const VIEWS: readonly ListView[] = ['mine', 'unassigned', 'attention', 'overdue', 'open', 'worker', 'done'];
@@ -174,6 +176,7 @@ const clean = (value: unknown, max = 128) => (typeof value === 'string' ? value.
 export function registerWorkItemRoutes(app: Express, deps: WorkRouteDeps): void {
   const now = deps.now ?? Date.now;
   const base = '/api/v1/work';
+  let overviewCache: { at: number; body: unknown } | null = null;
 
   /** The acting account with the display name the history records. */
   const who = async (req: Request): Promise<Named> => {
@@ -295,6 +298,8 @@ export function registerWorkItemRoutes(app: Express, deps: WorkRouteDeps): void 
   app.get(`${base}/overview`, deps.requireAuth, async (req, res) => {
     const actor = await who(req);
     if (!guard(res, isOversight(actor), 'Pamja e organizatës është për menaxherët.')) return;
+    // The summary is the same for every manager and monitor, so one read serves them all. `fresh=1` skips it.
+    if (overviewCache && Date.now() - overviewCache.at < OVERVIEW_CACHE_MS && req.query.fresh !== '1') return res.json(overviewCache.body);
     try {
       const db = deps.db();
       const [items, profiles, sla] = await Promise.all([
@@ -305,11 +310,13 @@ export function registerWorkItemRoutes(app: Express, deps: WorkRouteDeps): void 
       ]);
       const orgItems: OrgItem[] = items.docs.map(doc => ({ id: doc.id, ...(doc.data() as Omit<OrgItem, 'id'>) }));
       const orgWorkers: OrgWorker[] = profiles.docs.map(doc => { const p = doc.data() as ProfileDoc; return { uid: p.uid, name: p.name, role: p.role, municipality: p.municipality, department: p.department, capacity: p.capacity, load: p.load, availability: p.availability, disabled: p.disabled }; });
-      return res.json({
+      const body = {
         generatedAtMs: now(),
         summary: summarizeOrganization(orgItems, orgWorkers, now(), sla),
         truncated: { items: items.size >= OVERVIEW_ITEM_CAP, workers: profiles.size >= OVERVIEW_WORKER_CAP },
-      });
+      };
+      overviewCache = { at: Date.now(), body };
+      return res.json(body);
     } catch (error) { return serverError(res, 'overview', error); }
   });
 

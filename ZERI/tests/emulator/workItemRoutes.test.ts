@@ -189,7 +189,7 @@ describe('what each role sees', () => {
     await profileFor('ana');
     const id = await makeItem();
     expect((await call('monitor', 'GET', '/api/v1/work/items?view=unassigned')).body.items).toHaveLength(1);
-    expect((await call('monitor', 'GET', '/api/v1/work/overview')).status).toBe(200);
+    expect((await call('monitor', 'GET', '/api/v1/work/overview?fresh=1')).status).toBe(200);
     const attempt = await call('monitor', 'POST', `/api/v1/work/items/${id}/transition`, { action: 'assign', assigneeUid: 'ana' });
     expect(attempt).toMatchObject({ status: 403, body: { code: 'READ_ONLY' } });
     expect((await call('monitor', 'POST', '/api/v1/work/items', { kind: 'internal_task', title: 'Detyrë e re' })).status).toBe(403);
@@ -299,7 +299,7 @@ describe('the manager\'s command center, with hundreds of seeded workers', () =>
       const id = await makeItem({ title: `Detyra ${i}`, municipality: ['Prishtinë', 'Pejë'][i % 2] });
       if (i % 3 === 0) await db.collection(WORK).doc(id).update({ dueAtMs: clock - 3_600_000 });
     }
-    const overview = await call('owner', 'GET', '/api/v1/work/overview');
+    const overview = await call('owner', 'GET', '/api/v1/work/overview?fresh=1');
     expect(overview.status).toBe(200);
     const { summary, truncated } = overview.body;
     expect(truncated).toEqual({ items: false, workers: false });
@@ -308,8 +308,19 @@ describe('the manager\'s command center, with hundreds of seeded workers', () =>
     expect(summary.items).toMatchObject({ open: 120, unassigned: 120, overdue: 40 });
     expect(summary.overloadedWorkers.length).toBeGreaterThan(0);
     expect(summary.bottlenecks.length).toBeGreaterThan(0);
-    expect((await call('monitor', 'GET', '/api/v1/work/overview')).status).toBe(200);
+    expect((await call('monitor', 'GET', '/api/v1/work/overview?fresh=1')).status).toBe(200);
     expect((await call('ana', 'GET', '/api/v1/work/overview')).status).toBe(403);
+  });
+
+  it('serves the organisation summary from a short shared cache, and recomputes on request', async () => {
+    await makeItem({ title: 'E para' });
+    const first = await call('owner', 'GET', '/api/v1/work/overview?fresh=1');
+    await makeItem({ title: 'E dyta' });
+    const cached = await call('monitor', 'GET', '/api/v1/work/overview');
+    expect(cached.body.summary.items.open).toBe(first.body.summary.items.open); // same answer, no new read
+    const fresh = await call('owner', 'GET', '/api/v1/work/overview?fresh=1');
+    expect(fresh.body.summary.items.open).toBe(first.body.summary.items.open + 1);
+    expect((await call('ana', 'GET', '/api/v1/work/overview')).status).toBe(403); // the cache never bypasses the role check
   });
 
   it('pages the worker directory, searches by name and filters by workload state', async () => {

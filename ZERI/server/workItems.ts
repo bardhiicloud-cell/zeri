@@ -468,7 +468,23 @@ const MAX_ATTEMPTS = 5;
  * live profile, so two requests racing for the last free place cannot both win: the loser
  * gets `STALE_CHOICE` and chooses again from fresh data.
  */
+const assigning = new Map<string, Promise<AutoAssignResult>>();
+
+/**
+ * Simultaneous requests to assign the same item, in one server process, share one attempt: the
+ * others wait for it and then report the item as no longer open to assignment, instead of each
+ * opening a transaction on the same document and losing it after several retries. Across
+ * processes the transaction still decides, so this only makes the common case fast.
+ */
 export async function autoAssign(db: Firestore, itemId: string, nowMs: number): Promise<AutoAssignResult> {
+  const running = assigning.get(itemId);
+  if (running) { await running.catch(() => undefined); return { outcome: 'not_applicable' }; }
+  const attempt = autoAssignOnce(db, itemId, nowMs);
+  assigning.set(itemId, attempt);
+  try { return await attempt; } finally { assigning.delete(itemId); }
+}
+
+async function autoAssignOnce(db: Firestore, itemId: string, nowMs: number): Promise<AutoAssignResult> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const snap = await db.collection(WORK).doc(itemId).get();
     if (!snap.exists) return { outcome: 'not_found' };

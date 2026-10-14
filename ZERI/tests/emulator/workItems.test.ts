@@ -139,6 +139,19 @@ describe('automatic assignment', () => {
     expect(held).toBe(36);
   }, 180_000);
 
+  it('twelve simultaneous requests for one item: one assigns, the rest return quickly without a retry storm', async () => {
+    await worker('ana'); await worker('blerim');
+    const id = await make();
+    const started = Date.now();
+    const results = await Promise.all(Array.from({ length: 12 }, () => autoAssign(db, id, NOW)));
+    expect(results.filter(result => result.outcome === 'assigned')).toHaveLength(1);
+    expect(results.filter(result => result.outcome === 'not_applicable')).toHaveLength(11);
+    expect(Date.now() - started).toBeLessThan(2500);
+    expect((await events(id)).filter(event => event.action === 'assign')).toHaveLength(1);
+    const total = (await profile('ana')).load + (await profile('blerim')).load;
+    expect(total).toBe(1);
+  });
+
   it('does nothing to an item that already has an owner', async () => {
     await worker('ana');
     const id = await make();
