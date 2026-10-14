@@ -65,17 +65,17 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     id: 'reports', group: 'daily', icon: FileText,
-    nav: 'Raportet', label: 'Inspektimi i Raporteve', hint: 'Radha e raporteve të qytetarëve',
+    nav: 'Raportet', label: 'Raportet sipas fazës', hint: 'Në pritje, U aprovua, I caktuar, Në proces, U zgjidh, U mbyll, Të refuzuara',
     keywords: ['raporte', 'dosje', 'ankesa', 'ankesë', 'complaints', 'reports', 'aprovim', 'approve'],
   },
   {
     id: 'work', group: 'daily', icon: ClipboardCheck,
-    nav: 'Detyrat', label: 'Detyrat dhe Ngarkesa', hint: 'Puna ime, radha e pacaktuar, ekipi dhe afatet',
+    nav: 'Detyrat', label: 'Detyrat', hint: 'Detyrat e mia nga raportet, ato që kërkojnë caktim dhe afatet',
     keywords: ['detyra', 'task', 'tasks', 'ngarkesa', 'workload', 'ekipi', 'afate', 'sla', 'caktim', 'radha', 'queue', 'kapaciteti'],
   },
   {
     id: 'workflow', group: 'daily', icon: ListChecks,
-    nav: 'Rrjedha e aprovimit', label: 'Rrjedha e Aprovimit', hint: 'Raportuar, aprovuar, në pritje, përgjigje, përfunduar',
+    nav: 'Aprovime të tjera', label: 'Donacione, Shëndetësi, Lajme', hint: 'Aprovimi i kërkesave që nuk janë raportime',
     keywords: ['aprovim', 'faza', 'stages', 'workflow', 'masiv', 'bulk', 'zgjidh të gjitha', 'përfunduar', 'në pritje', 'përgjigje', 'tabela'],
   },
   {

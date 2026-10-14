@@ -19,6 +19,7 @@
     "i18n:check": "node check_translations.js",
     "i18n:verify": "node qa/verify-i18n.mjs",
     "test": "vitest run tests/server tests/lib",
+    "test:workflow": "firebase emulators:exec --config firebase.workflow-test.json --only firestore,auth --project demo-zeri-workflow \"vitest run --no-file-parallelism tests/emulator/reportWorkflow.routes.test.ts tests/emulator/staffAccounts.test.ts\"",
     "test:rules": "firebase emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-zeri-rules \"vitest run --no-file-parallelism tests/rules tests/emulator\"",
     "claims:sync": "tsx scripts/sync-claims.ts",
     "mail:test": "tsx scripts/test-mail.ts",

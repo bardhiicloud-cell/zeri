@@ -448,16 +448,12 @@ export default function ReviewMode({
                 const mine = holder.assignedToUid && holder.assignedToUid === me?.id;
                 return (
                   <div className="mt-5 rounded-xl border border-slate-200 p-3 dark:border-white/10">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Kush e ka përsipër')}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Shqyrtuesi i caktuar')}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      {holder.assignedTo ? (mine ? `${holder.assignedTo} (${dt('ju')})` : holder.assignedTo) : dt('Askush, në radhën e përbashkët')}
+                      {holder.assignedTo ? (mine ? `${holder.assignedTo} (${dt('ju')})` : holder.assignedTo) : dt('Pa shqyrtues — pret caktimin nga sistemi ose menaxheri')}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {canApprove && !mine && (!holder.assignedToUid || canAssign) && (
-                        <button type="button" disabled={busy} onClick={() => void changeHolder(() => claimReport(current.id), { assignedToUid: me?.id ?? '', assignedTo: me?.name ?? '' }, dt('E morët përsipër.'))} className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 disabled:opacity-40 dark:bg-white dark:text-slate-900">
-                          {dt('Merr përsipër')}
-                        </button>
-                      )}
+                      {/* No self-claim: the system or a manager assigns the reviewer (Detyrat). */}
                       {holder.assignedToUid && (mine || canAssign) && (
                         <button type="button" disabled={busy} onClick={() => (mine ? void changeHolder(() => releaseReport(current.id, { expectedHolderUid: holder.assignedToUid }), { assignedToUid: '', assignedTo: '' }, dt('U kthye në radhën e përbashkët.')) : setAsk({ kind: 'handover', text: '' }))} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:text-slate-200">
                           {dt('Lësho')}

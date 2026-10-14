@@ -19,6 +19,9 @@ import { permissionsFromClaims } from './auth';
  * `supportChats/{id}/events` (who, what, when, why) for the audit trail and the manager.
  * Agents never write the chat document from the browser any more; they go through here.
  */
+/** How many conversations one agent holds at once; the next request goes to someone free. */
+export const MAX_ACTIVE_CHATS = 3;
+
 export type ChatStatus = 'bot' | 'waiting_agent' | 'active_agent' | 'resolved';
 export type DeskAction = 'accept' | 'reply' | 'release' | 'transfer' | 'resolve' | 'department';
 
@@ -135,6 +138,14 @@ export function registerSupportDeskRoutes(app: Express, deps: SupportDeskDeps): 
         const data = snap.data() as Record<string, unknown> | undefined;
         const facts: ChatFacts | null = snap.exists ? { status: (data?.status as ChatStatus) ?? 'bot', assignedTo: (data?.assignedTo as string) || null } : null;
         const decision = decideDesk(actor, facts, action, { reason });
+        // Only someone free takes a new conversation: an agent already holding MAX_ACTIVE_CHATS
+        // finishes or hands one over first. Administrators are not limited.
+        if (decision.outcome === 'allow' && action === 'accept' && !isDeskAdmin(actor)) {
+          const held = await tx.get(chats().where('assignedTo', '==', actor.uid).where('status', '==', 'active_agent').limit(MAX_ACTIVE_CHATS + 1));
+          if (held.size >= MAX_ACTIVE_CHATS) {
+            return { outcome: 'deny' as const, status: 409 as const, code: 'BUSY', error: `Keni tashmë ${held.size} biseda aktive. Mbyllni ose kaloni një para se të pranoni tjetër.` };
+          }
+        }
         if (decision.outcome === 'deny') {
           const holder = action === 'accept' && facts?.assignedTo ? String(data?.assignedAgentName ?? '') : '';
           return { ...decision, error: holder ? `Këtë bisedë e pranoi ${holder}.` : decision.error };
@@ -195,6 +206,33 @@ export function registerSupportDeskRoutes(app: Express, deps: SupportDeskDeps): 
     }
   });
 
+  app.get('/api/v1/support/overview', deps.requireAuth, async (req: Request, res: Response) => {
+    const actor = deps.actingUser(req);
+    if (!isSupportAgent(actor)) return res.status(403).json({ error: 'Roli juaj nuk punon në qendrën e mbështetjes.' });
+    try {
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.json(await supportOverview(deps.db(), deps.authAdmin()));
+    } catch (error) {
+      console.error('[SUPPORT] overview failed:', (error as Error)?.message);
+      return res.status(500).json({ error: 'Pamja e qendrës nuk u ngarkua.' });
+    }
+  });
+
+  /** Clear the finished conversations. Deleting history is the superadmin's call, and it is audited. */
+  app.post('/api/v1/support/clear-resolved', deps.requireAuth, async (req: Request, res: Response) => {
+    const actor = deps.actingUser(req);
+    if (!isDeskAdmin(actor)) return res.status(403).json({ error: 'Vetëm superadmini i pastron bisedat e mbyllura.' });
+    try {
+      const days = Number(req.body?.olderThanDays ?? 0);
+      const removed = await clearResolvedChats(deps.db(), Number.isFinite(days) && days > 0 ? days * 86_400_000 : 0);
+      deps.audit('support.clear_resolved', req, { removed, olderThanDays: days || 0 });
+      return res.json({ ok: true, removed });
+    } catch (error) {
+      console.error('[SUPPORT] clear failed:', (error as Error)?.message);
+      return res.status(500).json({ error: 'Pastrimi dështoi; disa biseda mund të jenë fshirë.' });
+    }
+  });
+
   /** Who can take a transferred conversation: support agents only, names only. */
   app.get('/api/v1/support/agents', deps.requireAuth, async (req: Request, res: Response) => {
     const actor = deps.actingUser(req);
@@ -211,4 +249,135 @@ export function registerSupportDeskRoutes(app: Express, deps: SupportDeskDeps): 
       return res.status(500).json({ error: 'Lista nuk u ngarkua.' });
     }
   });
+}
+
+
+/**
+ * A citizen who asks for a person is announced to EVERY support agent at once (a notification each,
+ * on top of the on-screen alert); whoever is free accepts first and the conversation becomes theirs.
+ * Each waiting conversation is announced once (`agentsNotifiedAt`), so a restart or a second tick does
+ * not repeat it. Agents who are at their limit are told too, with their own status in the text.
+ */
+export async function notifyWaitingChats(db: Firestore, auth: Auth): Promise<{ announced: number }> {
+  const waiting = await db.collection('supportChats').where('status', '==', 'waiting_agent').limit(50).get();
+  const fresh = waiting.docs.filter(doc => !doc.get('agentsNotifiedAt'));
+  if (fresh.length === 0) return { announced: 0 };
+
+  const eligible = (await loadSupportAgents(db, auth)).map(a => ({ uid: a.uid, free: a.free }));
+
+  let announced = 0;
+  for (const chat of fresh) {
+    const batch = db.batch();
+    batch.update(chat.ref, { agentsNotifiedAt: new Date().toISOString(), agentsNotified: eligible.length });
+    for (const person of eligible) {
+      batch.set(db.collection('notifications').doc(), {
+        title: 'Një qytetar kërkon agjent',
+        message: person.free ? 'Hapni Qendrën e mbështetjes dhe shtypni "Prano": e para që e pranon e merr bisedën.' : 'Keni biseda aktive; nëse mbyllni një, mund ta pranoni këtë.',
+        channel: 'support', category: 'support', type: 'info', priority: 'high', urgent: true, audience: 'user', userId: person.uid,
+        state: 'published', link: `/admin#support?open=${encodeURIComponent(chat.id)}`, sender: 'Zëri i Qytetarëve', createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+    announced += 1;
+  }
+  return { announced };
+}
+
+export function startSupportNotifier(db: () => Firestore, auth: () => Auth, everyMs = 10_000): () => void {
+  let running = false;
+  const timer = setInterval(() => {
+    if (running) return;
+    running = true;
+    notifyWaitingChats(db(), auth()).catch(error => console.error('[SUPPORT] notifier failed:', (error as Error)?.message)).finally(() => { running = false; });
+  }, everyMs);
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
+
+export interface SupportAgent { uid: string; name: string; role: string; load: number; free: boolean }
+
+/**
+ * Everyone with access to support conversations, with how many they hold now. Authority is read
+ * from the verified claims (never the profile document); load is counted from the live chats.
+ */
+export async function loadSupportAgents(db: Firestore, auth: Auth): Promise<SupportAgent[]> {
+  const [users, active] = await Promise.all([
+    db.collection('users').where('role', 'in', ['agent', 'responder', 'dispatcher', 'approver', 'admin', 'superadmin']).limit(300).get(),
+    db.collection('supportChats').where('status', '==', 'active_agent').limit(1000).get(),
+  ]);
+  const load = new Map<string, number>();
+  for (const doc of active.docs) {
+    const uid = String(doc.get('assignedTo') ?? '');
+    if (uid) load.set(uid, (load.get(uid) ?? 0) + 1);
+  }
+  const names = new Map(users.docs.map(d => [d.id, String(d.get('name') ?? '')]));
+  const uids = users.docs.map(d => d.id);
+  const out: SupportAgent[] = [];
+  for (let i = 0; i < uids.length; i += 100) {
+    const result = await auth.getUsers(uids.slice(i, i + 100).map(uid => ({ uid })));
+    for (const user of result.users) {
+      const claims = (user.customClaims ?? {}) as Record<string, unknown>;
+      const role = String(claims.role ?? '');
+      if (user.disabled || !isSupportAgent({ uid: user.uid, role, permissions: permissionsFromClaims(claims) })) continue;
+      const held = load.get(user.uid) ?? 0;
+      out.push({ uid: user.uid, name: names.get(user.uid) || user.displayName || user.email || user.uid, role, load: held, free: held < MAX_ACTIVE_CHATS });
+    }
+  }
+  return out.sort((a, b) => Number(b.free) - Number(a.free) || a.load - b.load || a.name.localeCompare(b.name));
+}
+
+const MIN = 60_000;
+
+/** Numbers for the desk header: who is waiting how long, how fast the team answers, who is free. */
+export async function supportOverview(db: Firestore, auth: Auth) {
+  const [waiting, active, recent, agents] = await Promise.all([
+    db.collection('supportChats').where('status', '==', 'waiting_agent').limit(200).get(),
+    db.collection('supportChats').where('status', '==', 'active_agent').count().get(),
+    db.collection('supportChats').where('status', '==', 'resolved').limit(100).get(),
+    loadSupportAgents(db, auth),
+  ]);
+  const now = Date.now();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const ms = (v: unknown): number => {
+    if (typeof v === 'string') { const t = Date.parse(v); return Number.isFinite(t) ? t : 0; }
+    const x = v as { toMillis?: () => number } | null;
+    return typeof x?.toMillis === 'function' ? x.toMillis() : 0;
+  };
+  const oldest = Math.min(...waiting.docs.map(d => ms(d.get('updatedAt')) || ms(d.get('createdAt')) || now), now);
+  const waits: number[] = [];
+  let resolvedToday = 0;
+  for (const doc of recent.docs) {
+    const created = ms(doc.get('createdAt'));
+    const first = ms(doc.get('firstResponseAt'));
+    if (created && first && first >= created) waits.push(first - created);
+    if (ms(doc.get('resolvedAt')) >= startOfDay.getTime()) resolvedToday += 1;
+  }
+  return {
+    waiting: waiting.size,
+    active: active.data().count,
+    resolvedToday,
+    oldestWaitingMin: waiting.size ? Math.round((now - oldest) / MIN) : 0,
+    avgFirstResponseMin: waits.length ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length / MIN) : null,
+    maxActivePerAgent: MAX_ACTIVE_CHATS,
+    agents,
+  };
+}
+
+/** Delete finished conversations (and their event logs). Superadmin only; returns how many. */
+export async function clearResolvedChats(db: Firestore, olderThanMs = 0): Promise<number> {
+  let removed = 0;
+  for (let round = 0; round < 20; round += 1) {
+    const snap = await db.collection('supportChats').where('status', '==', 'resolved').limit(100).get();
+    const due = snap.docs.filter(d => {
+      if (!olderThanMs) return true;
+      const t = Date.parse(String(d.get('resolvedAt') ?? ''));
+      return Number.isFinite(t) && Date.now() - t >= olderThanMs;
+    });
+    if (due.length === 0) break;
+    for (const doc of due) { await db.recursiveDelete(doc.ref); removed += 1; }
+    if (snap.size < 100 || olderThanMs) break;
+  }
+  return removed;
 }

@@ -13,6 +13,7 @@ import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/f
 import { db } from '../lib/firebase';
 import AdBanner from '../components/AdBanner.tsx';
 import { AnnouncementBanner } from '../components/AnnouncementBanner';
+import { BroadcastStrip } from '../components/BroadcastLayer';
 import { LiveNoticesFeed } from '../components/news/LiveNoticesFeed';
 import { ShareSheet } from '../components/ShareSheet.tsx';
 import toast from 'react-hot-toast';
@@ -532,6 +533,7 @@ export default function LajmePage() {
           <AdBanner position="feed" className="max-w-none" />
         </div>
 
+        <BroadcastStrip placement="news" />
         <AnnouncementBanner />
         {import.meta.env.DEV && (
           // Prototype notice, deliberately quiet.
@@ -1105,6 +1107,7 @@ export default function LajmePage() {
                     <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100">{dt('Raportojeni dhe ndiqeni me Track-ID derisa të zgjidhet.')}</p>
                     <div className="mt-5 flex flex-wrap gap-3">
                       <Link to="/raporto" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-xs font-black text-[#0b2b57] transition hover:bg-blue-50">{dt('Raporto një problem')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                      <Link to="/lajmero" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold backdrop-blur transition hover:bg-white/20">{dt('Lajmëro: dërgo një lajm')}</Link>
                       <Link to="/harta" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold backdrop-blur transition hover:bg-white/20">{dt('Shiko hartën')}</Link>
                     </div>
                   </section>

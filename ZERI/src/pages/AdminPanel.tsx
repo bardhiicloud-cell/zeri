@@ -48,9 +48,11 @@ const AdminForum = lazy(() => import('../components/admin/AdminForum.tsx'));
 const AdminPolls = lazy(() => import('../components/admin/AdminPolls.tsx'));
 const AdminNews = lazy(() => import('../components/admin/AdminNews.tsx'));
 import { SupportRequestAlert } from '../components/admin/SupportRequestAlert';
-const WorkConsole = lazy(() => import('../components/admin/work/WorkConsole.tsx'));
+const ReportTasksPanel = lazy(() => import('../components/admin/workflow/ReportTasksPanel.tsx'));
+const ReportsSection = lazy(() => import('../components/admin/workflow/ReportsSection.tsx'));
 const WorkflowCenter = lazy(() => import('../components/admin/workflow/WorkflowCenter.tsx'));
 const AdminSupportChats = lazy(() => import('../components/admin/AdminSupportChats.tsx'));
+const SupportOverview = lazy(() => import('../components/admin/SupportOverview.tsx'));
 const AdminUpdates = lazy(() => import('../components/admin/AdminUpdates.tsx'));
 const AdminAgentMonitoring = lazy(() => import('../components/admin/AdminAgentMonitoring.tsx'));
 const MunicipalityProvisioning = lazy(() => import('../components/admin/MunicipalityProvisioning.tsx'));
@@ -446,7 +448,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
               {activeTab === 'inbox' && <AdminInbox onOpen={(section, params) => selectSection(section, params)} />}
               {activeTab === 'dashboard' && <AdminDashboard onTabChange={selectSection} />}
               {activeTab === 'updates' && <AdminUpdates onTabChange={(t: string) => selectSection(t as AdminSection)} />}
-              {activeTab === 'reports' && <AdminReports openReportId={linkParams.open} />}
+              {activeTab === 'reports' && <ReportsSection openReportId={linkParams.open} />}
               {activeTab === 'health' && <AdminHealthRegistry />}
               {activeTab === 'donations' && <AdminDonations />}
               {activeTab === 'users' && <AdminUsers />}
@@ -468,10 +470,10 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
               )}
               {activeTab === 'forum' && <AdminForum />}
               {activeTab === 'debate' && <DebateConsole />}
-              {activeTab === 'support' && <AdminSupportChats openChatId={linkParams.open} />}
+              {activeTab === 'support' && (<><SupportOverview /><AdminSupportChats openChatId={linkParams.open} /></>)}
               {activeTab === 'polls' && <AdminPolls />}
               {activeTab === 'news' && <AdminNews />}
-              {activeTab === 'work' && <WorkConsole />}
+              {activeTab === 'work' && <ReportTasksPanel />}
               {activeTab === 'workflow' && <WorkflowCenter />}
               {activeTab === 'security' && <AdminSecurity />}
               {activeTab === 'settings' && <AdminSettings />}

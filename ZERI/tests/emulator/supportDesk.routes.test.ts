@@ -5,7 +5,7 @@ import type { Server } from 'node:http';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import type { Auth } from 'firebase-admin/auth';
-import { decideDesk, registerSupportDeskRoutes } from '../../server/supportDesk';
+import { decideDesk, notifyWaitingChats, registerSupportDeskRoutes, MAX_ACTIVE_CHATS } from '../../server/supportDesk';
 
 /**
  * The support desk against the Firestore emulator: one agent wins a conversation, keeps it
@@ -36,6 +36,10 @@ beforeAll(async () => {
       if (!PEOPLE[uid]) throw Object.assign(new Error('nf'), { code: 'auth/user-not-found' });
       return { uid, customClaims: { role: PEOPLE[uid].role }, disabled: false, displayName: PEOPLE[uid].name };
     },
+    getUsers: async (ids: Array<{ uid: string }>) => ({
+      users: ids.filter(i => PEOPLE[i.uid]).map(({ uid }) => ({ uid, customClaims: { role: PEOPLE[uid].role }, disabled: false })),
+      notFound: [],
+    }),
   }) as unknown as Auth;
   registerSupportDeskRoutes(app, {
     requireAuth, db: () => db, authAdmin, audit: () => undefined,
@@ -91,6 +95,61 @@ describe('accepting', () => {
   });
 });
 
+describe('a request reaches every agent, and only a free one takes it', () => {
+  it('announces a waiting conversation to every support agent exactly once', async () => {
+    expect((await notifyWaitingChats(db, authAdmin2())).announced).toBe(1);
+    const notes = (await db.collection('notifications').get()).docs.map(d => d.get('userId')).sort();
+    expect(notes).toEqual(['ana', 'blerim', 'boss', 'cena']);
+    expect((await notifyWaitingChats(db, authAdmin2())).announced).toBe(0);
+    expect((await db.collection('notifications').get()).size).toBe(4);
+  });
+
+  it('an agent already holding the maximum cannot accept another; a free colleague can', async () => {
+    for (let i = 0; i < MAX_ACTIVE_CHATS; i += 1) {
+      await db.collection('supportChats').doc(`busy${i}`).set({ status: 'active_agent', assignedTo: 'ana', messages: [] });
+    }
+    const busy = await post('ana', 'c1/accept');
+    expect(busy.status).toBe(409);
+    expect(busy.json.code).toBe('BUSY');
+    expect((await chat()).status).toBe('waiting_agent');
+    expect((await post('blerim', 'c1/accept')).status).toBe(200);
+    expect((await chat()).assignedTo).toBe('blerim');
+  });
+});
+
+describe('the desk overview and clearing finished conversations', () => {
+  const get = async (uid: string, path: string) => {
+    const response = await fetch(`${base}/api/v1/support/${path}`, { headers: { 'x-test-uid': uid } });
+    return { status: response.status, json: await response.json() as any };
+  };
+
+  it('shows who is waiting, who has access and who is free', async () => {
+    for (let i = 0; i < MAX_ACTIVE_CHATS; i += 1) await db.collection('supportChats').doc(`busy${i}`).set({ status: 'active_agent', assignedTo: 'ana', messages: [] });
+    const res = await get('blerim', 'overview');
+    expect(res.status).toBe(200);
+    expect(res.json).toMatchObject({ waiting: 1, active: MAX_ACTIVE_CHATS, maxActivePerAgent: MAX_ACTIVE_CHATS });
+    const byName = Object.fromEntries(res.json.agents.map((a: any) => [a.name, a]));
+    expect(byName.Ana).toMatchObject({ load: MAX_ACTIVE_CHATS, free: false });
+    expect(byName.Blerim).toMatchObject({ load: 0, free: true });
+    expect(byName.Redaktori).toBeUndefined();
+    expect((await get('news', 'overview')).status).toBe(403);
+  });
+
+  it('only the superadmin clears finished conversations, and open ones stay', async () => {
+    await db.collection('supportChats').doc('done1').set({ status: 'resolved', resolvedAt: new Date().toISOString(), messages: [] });
+    await db.collection('supportChats').doc('done1').collection('events').doc('e').set({ action: 'resolve' });
+    await db.collection('supportChats').doc('done2').set({ status: 'resolved', resolvedAt: new Date().toISOString(), messages: [] });
+    const noOwner = await fetch(`${base}/api/v1/support/clear-resolved`, { method: 'POST', headers: { 'x-test-uid': 'ana', 'Content-Type': 'application/json' }, body: '{}' });
+    expect(noOwner.status).toBe(403);
+    const ok = await fetch(`${base}/api/v1/support/clear-resolved`, { method: 'POST', headers: { 'x-test-uid': 'boss', 'Content-Type': 'application/json' }, body: '{}' });
+    expect(ok.status).toBe(200);
+    expect((await ok.json() as any).removed).toBe(2);
+    expect((await db.collection('supportChats').doc('done1').get()).exists).toBe(false);
+    expect((await db.collection('supportChats').doc('done1').collection('events').get()).size).toBe(0);
+    expect((await chat()).status).toBe('waiting_agent');
+  });
+});
+
 describe('handing over', () => {
   it('an agent can return a conversation to the queue or transfer it to a colleague, who is notified', async () => {
     await post('ana', 'c1/accept');
@@ -126,3 +185,12 @@ describe('the pure rule', () => {
     expect(decideDesk(ana, null, 'reply')).toMatchObject({ outcome: 'deny', code: 'NOT_FOUND' });
   });
 });
+
+function authAdmin2() {
+  return {
+    getUsers: async (ids: Array<{ uid: string }>) => ({
+      users: ids.filter(i => PEOPLE[i.uid]).map(({ uid }) => ({ uid, customClaims: { role: PEOPLE[uid].role }, disabled: false })),
+      notFound: [],
+    }),
+  } as unknown as Auth;
+}

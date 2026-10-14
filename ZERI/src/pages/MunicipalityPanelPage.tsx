@@ -39,11 +39,15 @@ import {
   HeartPulse, Loader2, LogOut, MapPin, Scale, Search, Send, ShieldCheck,
 } from 'lucide-react';
 import DecisionBar from '../components/admin/DecisionBar';
+import ReportTasksPanel from '../components/admin/workflow/ReportTasksPanel';
+import ReportQueuesPanel, { ReportWorkflowDrawer } from '../components/admin/workflow/ReportQueuesPanel';
 
-type Tab = 'queue' | 'health' | 'requests' | 'works' | 'performance' | 'policy';
+type Tab = 'tasks' | 'stages' | 'queue' | 'health' | 'requests' | 'works' | 'performance' | 'policy';
 type Stage = 'all' | 'Approved' | 'working' | 'Resolved' | 'Overdue';
 
 const TABS: { id: Tab; label: string; icon: typeof ClipboardList }[] = [
+  { id: 'tasks', label: 'Detyrat e komunës', icon: ClipboardList },
+  { id: 'stages', label: 'Raportet sipas fazës', icon: FileCheck2 },
   { id: 'queue', label: 'Radha e punëve', icon: ClipboardList },
   { id: 'health', label: 'Shëndetësia', icon: HeartPulse },
   { id: 'requests', label: 'Kërkesat e mia', icon: Send },
@@ -103,7 +107,7 @@ export default function MunicipalityPanelPage() {
     navigate('/login');
   };
 
-  const [tab, setTab] = useState<Tab>('queue');
+  const [tab, setTab] = useState<Tab>('tasks');
   const [stage, setStage] = useState<Stage>('all');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -278,6 +282,9 @@ export default function MunicipalityPanelPage() {
       </nav>
 
       {!effective && <p className="rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500 dark:border-white/10">{dt('Zgjidhni një komunë për të parë punën e saj.')}</p>}
+
+      {effective && tab === 'tasks' && (isMunicipal ? <ReportTasksPanel embedded /> : <p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-white/10">{dt('Detyrat e komunës i sheh llogaria e komunës. Si inspektues, përdorni "Raportet sipas fazës".')}</p>)}
+      {effective && tab === 'stages' && <ReportQueuesPanel initialQueue="assigned" />}
 
       {effective && tab === 'queue' && (
         <section className="space-y-4">
@@ -482,13 +489,13 @@ export default function MunicipalityPanelPage() {
 /** One report, with everything the municipality may do about it. */
 function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Report; canWork: boolean; canRegisterWorks: boolean; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
-  const [plan, setPlan] = useState('');
   const [fact, setFact] = useState({ description: '', completedAt: '', performedBy: '', cost: '' });
   const [kind, setKind] = useState<RequestKind>('respond');
   const [note, setNote] = useState('');
+  const [flowOpen, setFlowOpen] = useState(false);
 
   // A new report starts with empty forms.
-  useEffect(() => { setPlan(''); setNote(''); setFact({ description: '', completedAt: '', performedBy: '', cost: '' }); }, [report.id]);
+  useEffect(() => { setNote(''); setFact({ description: '', completedAt: '', performedBy: '', cost: '' }); }, [report.id]);
 
   const run = async (work: () => Promise<unknown>, done: string, after?: () => void) => {
     setBusy(true);
@@ -540,15 +547,18 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
         )}
       </div>
 
-      {canWork && report.status === 'Approved' && (
-        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
-          <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Merre përsipër punën')}</h3>
-          <textarea value={plan} onChange={e => setPlan(e.target.value)} rows={3} maxLength={1200} placeholder={dt('Çfarë do të bëhet, nga kush dhe kur (e lexon qytetari)…')} className={input} />
-          <button type="button" disabled={busy || plan.trim().length < 10} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_accept', note: plan.trim() }), dt('E morët përsipër.'))} className={primary}>
-            {dt('Merr përsipër')}
-          </button>
-        </div>
-      )}
+      <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+        <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Rrjedha e raportit')}</h3>
+        <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+          {report.status === 'Approved'
+            ? dt('U aprovua dhe pret caktimin nga menaxheri. Kur komuna caktohet, raporti shfaqet te "Detyrat e komunës".')
+            : report.status === 'Assigned'
+              ? dt('I caktuar. Kur puna fillon realisht, përgjegjësi i caktuar shtyp "Aprovo fillimin e procesit".')
+              : dt('Fazat, caktimet, historiku dhe veprimet që ju lejohen.')}
+        </p>
+        <button type="button" onClick={() => setFlowOpen(true)} className={primary}>{dt('Hap rrjedhën dhe veprimet')}</button>
+      </div>
+      {flowOpen && <ReportWorkflowDrawer reportId={report.id} onClose={() => setFlowOpen(false)} onChanged={onChanged} />}
 
       {['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (report as { resolutionClaimed?: boolean }).resolutionClaimed === true && (
         <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-semibold text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
@@ -559,8 +569,8 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
       {canWork && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (report as { resolutionClaimed?: boolean }).resolutionClaimed !== true && !canRegisterWorks && (
         <>
           <PlanLock feature="workFacts" what="Regjistrimi i fakteve të punimeve" />
-          <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u raportuan të kryera; presin verifikimin e platformës.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
-            <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Punimet u kryen')}
+          <button type="button" disabled={busy} onClick={() => setFlowOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
+            <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Dërgo zgjidhjen për verifikim')}
           </button>
         </>
       )}
@@ -579,8 +589,8 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
             <button type="button" disabled={busy || fact.description.trim().length < 10} onClick={() => void run(() => addWorkFact({ reportId: report.id, ...fact }), dt('Faktet u regjistruan dhe presin verifikimin.'), () => setFact({ description: '', completedAt: '', performedBy: '', cost: '' }))} className={primary}>
               {dt('Regjistro faktet')}
             </button>
-            <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u raportuan të kryera; presin verifikimin e platformës.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
-              <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Punimet u kryen')}
+            <button type="button" disabled={busy} onClick={() => setFlowOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Dërgo zgjidhjen për verifikim')}
             </button>
           </div>
         </div>

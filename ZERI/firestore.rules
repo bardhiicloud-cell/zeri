@@ -228,7 +228,10 @@ service cloud.firestore {
                     request.resource.data.createdAt == request.time &&
                     // Pipeline state belongs to the server; a client-written timeline,
                     // assignment or counter would forge the public history of a report.
-                    !request.resource.data.keys().hasAny(['timeline', 'assignedTo', 'resolvedAt', 'resolvedImage', 'upvotes', 'commentsCount']) &&
+                    !request.resource.data.keys().hasAny(['timeline', 'assignedTo', 'resolvedAt', 'resolvedImage', 'upvotes', 'commentsCount',
+                      'assignedToUid', 'assigneeUids', 'assignedMunicipalities', 'workflow', 'priorityScore', 'priorityLevel',
+                      'resolutionClaimed', 'resolutionClaim', 'resolutionVerified', 'resolutionSummary', 'rejectionReason',
+                      'closedAt', 'closedBy', 'finalOutcome', 'awaitingInfo']) &&
                     (!('trackingId' in request.resource.data) ||
                       (request.resource.data.trackingId is string && request.resource.data.trackingId.size() <= 40));
 
@@ -252,7 +255,10 @@ service cloud.firestore {
           && request.resource.data.authorId == resource.data.authorId
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'status', 'timeline', 'assignedTo', 'resolvedAt', 'resolvedImage',
-            'upvotes', 'commentsCount', 'authorId', 'createdAt'
+            'upvotes', 'commentsCount', 'authorId', 'createdAt',
+            'assignedToUid', 'assigneeUids', 'assignedMunicipalities', 'workflow', 'priorityScore', 'priorityLevel',
+            'resolutionClaimed', 'resolutionClaim', 'resolutionVerified', 'resolutionSummary', 'rejectionReason',
+            'closedAt', 'closedBy', 'finalOutcome', 'awaitingInfo'
           ])
         )
         || isSuperAdmin()
@@ -1144,6 +1150,16 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.toUid == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAtMs']);
       allow create, delete: if false;
+    }
+
+    // Report tasks (server/reportWorkflow.ts): generated from reports, written only by
+    // the server. Read here mirrors the API: supervisors, the person holding the task,
+    // and a municipality for tasks given to it.
+    match /reportTasks/{taskId} {
+      allow read: if isWorkSupervisor()
+                  || (isAuthenticated() && resource.data.assigneeUid == request.auth.uid)
+                  || (isMunicipality() && resource.data.assigneeMunicipality == ownMunicipality());
+      allow write: if false;
     }
 
     match /workflowConfig/{configId} {

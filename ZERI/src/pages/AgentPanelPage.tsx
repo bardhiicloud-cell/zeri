@@ -25,6 +25,8 @@ import ReviewCard from '../components/review/ReviewCard';
 import { stageOf, STAGE_LABELS, STAGE_TONES, type Transition } from '../lib/approvalPipeline';
 import { BAD_WORDS } from '../lib/moderation';
 import TeamOverviewPanel from '../components/admin/TeamOverviewPanel';
+import ReportTasksPanel from '../components/admin/workflow/ReportTasksPanel';
+import ReportQueuesPanel from '../components/admin/workflow/ReportQueuesPanel';
 import { isSpecificScope, scopeKey, ALL_SCOPE } from '../lib/municipalityScope';
 import {
   Inbox, ClipboardList, Activity, ScrollText, Scale, Search, ArrowRight,
@@ -35,8 +37,8 @@ import {
 type Tab = 'inbox' | 'mine' | 'performance' | 'history' | 'policy';
 
 const TABS: { id: Tab; label: string; icon: typeof Inbox }[] = [
-  { id: 'inbox', label: 'Kutia hyrëse', icon: Inbox },
-  { id: 'mine', label: 'Punët e mia', icon: ClipboardList },
+  { id: 'inbox', label: 'Detyrat e mia', icon: Inbox },
+  { id: 'mine', label: 'Raportet sipas fazës', icon: ClipboardList },
   { id: 'performance', label: 'Performanca', icon: TrendingUp },
   { id: 'history', label: 'Historia ime', icon: ScrollText },
   { id: 'policy', label: 'Politika', icon: Scale },
@@ -389,7 +391,6 @@ export default function AgentPanelPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs font-bold">
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">{inbox.length} {dt('në pritje')}</span>
           <span className="rounded-full bg-indigo-100 px-3 py-1 text-indigo-700">{mine.length} {dt('të mia')}</span>
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">{myLogs.length} {dt('veprime')}</span>
         </div>
@@ -440,109 +441,16 @@ export default function AgentPanelPage() {
       ) : (
         <>
 
-      {/* ============ INBOX ============ */}
+      {/* ============ MY TASKS (assigned by the system or a manager, never claimed) ============ */}
       {tab === 'inbox' && currentUser?.role === 'dispatcher' && (
         <section className="mb-6" aria-label={dt('Ngarkesa e ekipit')}>
           <TeamOverviewPanel />
         </section>
       )}
+      {tab === 'inbox' && <ReportTasksPanel embedded />}
 
-      {tab === 'inbox' && (
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-[220px] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={dt('Kërko titull, përshkrim ose kod…')}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setOnlyUrgent((v) => !v)}
-              aria-pressed={onlyUrgent}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${onlyUrgent ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                }`}
-            >
-              <Flame className="h-3.5 w-3.5" /> {dt('Vetëm urgjente')}
-            </button>
-          </div>
-
-          {inbox.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-white/10 dark:bg-slate-900">
-              <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500" />
-              <p className="mt-2 text-sm text-slate-500">{dt('Kutia hyrëse është e pastër.')}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {inbox.slice(0, 100).map((r) => (
-                <WorkRow key={r.id} report={r}>
-                  <p className="font-black tabular-nums text-slate-700 dark:text-slate-200">
-                    {priorityScore(r)}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">{dt('prioritet')}</p>
-                  <button
-                    type="button"
-                    onClick={() => claim(r)}
-                    disabled={busyId === r.id}
-                    className="mt-2 inline-flex items-center gap-1 rounded-lg bg-blue-700 px-3 py-1.5 text-[11px] font-black text-white transition-colors hover:bg-blue-800 disabled:opacity-40"
-                  >
-                    {dt('Merr përsipër')} <ArrowRight className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReviewId(r.id)}
-                    className="mt-2 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-black text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    {dt('Shiko në detaje')}
-                  </button>
-                </WorkRow>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ============ MY WORK ============ */}
-      {tab === 'mine' && (
-        <section className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Të marrë përsipër" value={mine.length} tone="blue" />
-            <Stat label="Në punim" value={mine.filter((r) => r.status === 'In Progress').length} tone="indigo" />
-            <Stat label={dt('Të përfunduara')} value={mine.filter((r) => r.status === 'Resolved').length} tone="emerald" />
-            <Stat label="Ora mes. zgjidhje" value={avgResolution} />
-          </div>
-
-          {mine.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-white/10 dark:bg-slate-900">
-              <ClipboardList className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-2 text-sm text-slate-500">{dt('Nuk ke punë aktive. Merr një nga kutia hyrëse.')}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {mine.map((r) => (
-                <WorkRow key={r.id} report={r}>
-                  <p className="flex items-center justify-end gap-1 text-[11px] text-slate-500">
-                    <CircleDot className="h-3 w-3" /> {r.assignedTo}
-                  </p>
-                  {r.status !== 'Resolved' && (
-                    <button
-                      type="button"
-                      onClick={() => resolve(r)}
-                      disabled={busyId === r.id}
-                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-40"
-                    >
-                      <CheckCircle2 className="h-3 w-3" /> {dt('Përfundo')}
-                    </button>
-                  )}
-                </WorkRow>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+      {/* ============ REPORTS BY STAGE ============ */}
+      {tab === 'mine' && <ReportQueuesPanel />}
 
       {/* ============ PERFORMANCE ============ */}
       {tab === 'performance' && (
@@ -646,7 +554,7 @@ export default function AgentPanelPage() {
               <CheckCircle2 className="h-4 w-4" /> {dt('Agjenti mund të')}
             </h2>
             <ul className="mt-3 space-y-1.5 text-xs text-emerald-900/90 dark:text-emerald-100/80">
-              <li>· {dt('Marrë përsipër punë brenda komunës së vet')}</li>
+              <li>· {dt('Kryejë detyrat që i cakton sistemi ose menaxheri, brenda lejeve të veta')}</li>
               <li>· {dt('Aprovojë raportime të verifikuara')}</li>
               <li>· {dt('Përditësojë statusin dhe të shtojë shënim')}</li>
               <li>· {dt('Shtojë fakte për punimet e kryera')}</li>

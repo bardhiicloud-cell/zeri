@@ -32,11 +32,31 @@ function formatDate(iso: string | null | undefined, withTime = false): string {
 
 const DESCRIPTION_PREVIEW = 520;
 
+/** Donations (DN-), health cases (HC-) and news tips (LJ-) share the Track-ID: the public sees the stage only. */
+interface SectorStatus { kind: 'news' | 'donation' | 'health'; reference: string; stage: string; rejected: boolean; updatedAt: string | null; createdAt: string | null }
+const SECTOR_PREFIX = /^(LJ|DN|HC)-[A-Z0-9]{4,12}$/;
+const SECTOR_LABEL: Record<SectorStatus['kind'], string> = { news: 'Lajmi i dërguar', donation: 'Kërkesa për donacion', health: 'Rasti në regjistrin shëndetësor' };
+
+function SectorCard({ status }: { status: SectorStatus }) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900" aria-live="polite">
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">{dt(SECTOR_LABEL[status.kind])}</p>
+      <p className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-white">{status.reference}</p>
+      <p className={cn('mt-4 inline-block rounded-full px-4 py-1.5 text-sm font-black', status.rejected ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800')}>{dt(status.stage)}</p>
+      <p className="mt-3 text-xs text-slate-500">
+        {status.createdAt ? `${dt('Dërguar')}: ${formatDate(status.createdAt, true)}` : ''}{status.updatedAt ? ` · ${dt('Përditësuar')}: ${formatDate(status.updatedAt, true)}` : ''}
+      </p>
+      <p className="mt-3 text-xs text-slate-500">{dt('Për siguri shfaqet vetëm faza; teksti dhe të dhënat e dërguesit nuk shfaqen publikisht.')}</p>
+    </section>
+  );
+}
+
 type Phase =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'error'; error: TrackLookupError }
-  | { kind: 'found'; report: PublicTrackView };
+  | { kind: 'found'; report: PublicTrackView }
+  | { kind: 'sector'; status: SectorStatus };
 
 export default function TrackIdPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,6 +71,22 @@ export default function TrackIdPage() {
     const trackingId = normalizeTrackingId(value);
     if (!trackingId) {
       setFieldError(dt('Shkruani Track ID-në e raportimit.'));
+      return;
+    }
+    if (SECTOR_PREFIX.test(trackingId)) {
+      setFieldError(null);
+      setInput(trackingId);
+      setSearchParams({ id: trackingId }, { replace: true });
+      abortRef.current?.abort();
+      setPhase({ kind: 'loading' });
+      try {
+        const response = await fetch(`/api/v1/public/submission-status?ref=${encodeURIComponent(trackingId)}`);
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new TrackLookupError(response.status === 404 ? 'not_found' : 'server', String((body as { error?: string }).error ?? 'Kërkimi nuk u krye.'));
+        setPhase({ kind: 'sector', status: body as SectorStatus });
+      } catch (error) {
+        setPhase({ kind: 'error', error: error instanceof TrackLookupError ? error : new TrackLookupError('server', 'Kërkimi nuk u krye. Provoni përsëri.') });
+      }
       return;
     }
     if (!TRACKING_ID_PATTERN.test(trackingId)) {
@@ -174,6 +210,7 @@ export default function TrackIdPage() {
           {phase.kind === 'loading' && <LoadingState />}
           {phase.kind === 'error' && <ErrorState error={phase.error} onRetry={() => void search(input)} />}
           {phase.kind === 'found' && <ReportView report={phase.report} />}
+          {phase.kind === 'sector' && <SectorCard status={phase.status} />}
         </div>
       </div>
     </div>

@@ -22,6 +22,20 @@ export const supportDesk = {
   transfer: (chatId: string, uid: string, reason?: string) => act(chatId, 'transfer', { uid, ...(reason ? { reason } : {}) }),
   resolve: (chatId: string, reason?: string) => act(chatId, 'resolve', reason ? { reason } : {}),
   department: (chatId: string, department: string) => act(chatId, 'department', { department }),
+  async overview(): Promise<SupportOverview> {
+    const token = await requireAdminToken();
+    const response = await fetch('/api/v1/support/overview', { headers: { Authorization: `Bearer ${token}` } });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(describeApiFailure(response.status, result));
+    return result as SupportOverview;
+  },
+  async clearResolved(olderThanDays = 0): Promise<number> {
+    const token = await requireAdminToken();
+    const response = await fetch('/api/v1/support/clear-resolved', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ olderThanDays }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(describeApiFailure(response.status, result));
+    return Number((result as { removed?: number }).removed ?? 0);
+  },
   async agents(): Promise<Array<{ uid: string; name: string; role: string }>> {
     const token = await requireAdminToken();
     const response = await fetch('/api/v1/support/agents', { headers: { Authorization: `Bearer ${token}` } });
@@ -30,3 +44,8 @@ export const supportDesk = {
     return (result as { agents: Array<{ uid: string; name: string; role: string }> }).agents;
   },
 };
+
+export interface SupportOverview {
+  waiting: number; active: number; resolvedToday: number; oldestWaitingMin: number; avgFirstResponseMin: number | null; maxActivePerAgent: number;
+  agents: Array<{ uid: string; name: string; role: string; load: number; free: boolean }>;
+}

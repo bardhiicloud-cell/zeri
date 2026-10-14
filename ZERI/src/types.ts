@@ -35,6 +35,10 @@ export interface AppNotification {
   priority?: NotificationPriority;
   /** True when the bell should show a red urgency indicator. */
   urgent?: boolean;
+  /** Where a broadcast appears besides the bell: banner, popup, news strip (see lib/notificationPlacements.ts). */
+  placements?: Array<'bell' | 'banner' | 'popup' | 'news'>;
+  /** ISO time after which a broadcast stops appearing anywhere. */
+  expiresAt?: string | null;
   /** In-app route the notification deep-links to when clicked. */
   link?: string;
   /**

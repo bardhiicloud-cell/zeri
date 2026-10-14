@@ -53,6 +53,10 @@ import { registerMunicipalityDeskRoutes } from './server/municipalityDesk';
 import { registerInstitutionMailRoutes } from './server/institutionMail';
 import { registerReportClassificationRoutes } from './server/reportClassification';
 import { registerWorkItemRoutes, startWorkScheduler } from './server/workItemRoutes';
+import { registerReportWorkflowRoutes, startWorkflowSweeper, syncReportTasks, loadPriorityRules, loadPool, invalidatePool, releaseTasksOf } from './server/reportWorkflow';
+import { createStaffAccount, parseStaffInput } from './server/staffAccounts';
+import { startSupportNotifier } from './server/supportDesk';
+import { registerNewsTipRoutes } from './server/newsTips';
 import { registerTeamOverviewRoutes } from './server/teamOverview';
 import { registerTransparencyRoutes } from './server/transparency';
 import { registerReportCaseRoutes } from './server/reportCase';
@@ -87,7 +91,6 @@ import { buildReportDocument, generateTrackingId, parseReportInput } from './ser
 import { randomBytes } from 'node:crypto';
 import { validateDateOfBirth } from './src/lib/validation';
 import * as editorialFirewall from './server/editorialFirewall.js';
-import * as pipeline from './server/approvalPipeline.js';
 
 /**
  * Firebase Admin access is centralised in server/firebaseAdmin.ts.
@@ -1080,104 +1083,33 @@ app.post('/api/v1/admin/cache/invalidate', requireAuth, requireAdmin, (req, res)
 });
 
 app.post('/api/v1/admin/users', requireAuth, requireAdmin, async (req, res) => {
-  let createdUid: string | null = null;
-
+  if (adminUnavailable(res)) return;
+  const requestUser = req.user;
+  if (!requestUser) return res.status(401).json({ error: 'Unauthorized' });
+  // Validation, authority, creation, claims read-back and rollback: server/staffAccounts.ts.
+  const parsed = parseStaffInput(req.body);
+  if (parsed.ok === false) return res.status(parsed.status).json({ error: parsed.error });
   try {
-    const requestUser = req.user;
-    if (!requestUser) return res.status(401).json({ error: 'Unauthorized' });
-
     const actorRole = await resolveActorRole(requestUser);
-    if (!['admin', 'superadmin'].includes(actorRole)) {
-      return res.status(403).json({ error: 'Kërkohet roli administrator.' });
+    const result = await createStaffAccount({ db: db(), auth: authAdmin() }, { uid: requestUser.uid, role: actorRole }, parsed.value);
+    if (result.ok === false) {
+      audit('admin.staff.create.denied', req, { email: parsed.value.email, role: parsed.value.role, reason: result.error });
+      return res.status(result.status).json({ error: result.error });
     }
-
-    const email = String(req.body?.email ?? '').trim().toLowerCase();
-    const name = String(req.body?.name ?? '').trim();
-    const role = String(req.body?.role ?? 'agent');
-    const phone = String(req.body?.phone ?? '').trim();
-    const isBanned = req.body?.isBanned === true;
-    /**
-     * Optional initial password.
-     *
-     * When present the account is created ready to sign in, and no reset email
-     * is needed. When absent the older flow is preserved exactly: the account
-     * exists but the agent must set a password through the emailed link. The
-     * value is validated here rather than trusted, and it is never written to
-     * Firestore — only to Firebase Authentication.
-     */
-    const initialPassword = String(req.body?.password ?? '');
-    if (initialPassword) {
-      if (initialPassword.length < 8 || initialPassword.length > 128) {
-        return res.status(400).json({ error: 'Fjalëkalimi duhet të ketë 8–128 shenja.' });
-      }
-      if (!/[a-zA-Z]/.test(initialPassword) || !/\d/.test(initialPassword)) {
-        return res.status(400).json({ error: 'Fjalëkalimi duhet të përmbajë shkronja dhe numra.' });
-      }
-    }
-    const allowedRoles = new Set(['agent', 'approver', 'adsadmin', 'newsadmin', 'debatwp', 'responder', 'dispatcher', 'moderator', 'monitor']);
-    const allowedSections = new Set([
-      'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users', 'forum',
-      'polls', 'agents', 'municipalities', 'monitoring', 'monitorim', 'agentpanel', 'komunapanel', 'moderim',
-      'support', 'chat', 'ads', 'notifications', 'news', 'debate',
-      'categories', 'security', 'settings',
-    ]);
-    const permissions = Array.isArray(req.body?.permissions)
-      ? req.body.permissions.map(String)
-      : [];
-
-    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ error: 'Emri dhe një email i vlefshëm janë të detyrueshëm.' });
-    }
-    if (!allowedRoles.has(role)) {
-      return res.status(400).json({ error: 'Roli i zgjedhur nuk mund të caktohet nga ky formular.' });
-    }
-    if (permissions.some((permission) => !allowedSections.has(permission))) {
-      return res.status(400).json({ error: 'Lista e lejeve përmban një modul të panjohur.' });
-    }
-
-    const authUser = await authAdmin().createUser({
-      email,
-      displayName: name,
-      emailVerified: false,
-      disabled: isBanned,
-      // Present only when the operator typed one; otherwise Firebase creates the
-      // account without a password and the reset email handles first sign-in.
-      ...(initialPassword ? { password: initialPassword } : {}),
-    });
-    createdUid = authUser.uid;
-
-    await authAdmin().setCustomUserClaims(authUser.uid, buildRoleClaims(role, permissions));
-    await db().collection('users').doc(authUser.uid).set({
-      id: authUser.uid,
-      name,
-      email,
-      phone,
-      role,
-      permissions,
-      points: 0,
-      badges: ['Staff Agent'],
-      isVerified: false,
-      isBanned,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-
+    invalidatePool();
     audit('admin.staff.created', req, {
-      targetUid: authUser.uid,
-      email,
-      role,
-      permissions,
+      targetUid: result.uid,
+      email: result.email,
+      role: result.role,
+      permissions: parsed.value.permissions,
+      municipality: parsed.value.municipality,
+      department: parsed.value.department,
       // Record that a password was set, never the password itself.
-      passwordSet: Boolean(initialPassword),
+      passwordSet: result.passwordSet,
     });
-    return res.status(201).json({ uid: authUser.uid, email, role, isBanned, passwordSet: Boolean(initialPassword) });
+    const { ok: _ok, ...body } = result;
+    return res.status(201).json(body);
   } catch (error: any) {
-    if (createdUid) {
-      await db().collection('users').doc(createdUid).delete().catch(() => undefined);
-      await authAdmin().deleteUser(createdUid).catch(() => undefined);
-    }
-    if (error?.code === 'auth/email-already-exists') {
-      return res.status(409).json({ error: 'Ky email ka tashmë një llogari.' });
-    }
     console.error('[ADMIN] Staff account creation failed:', error?.message);
     return res.status(500).json({ error: 'Llogaria e stafit nuk u krijua.' });
   }
@@ -1229,6 +1161,9 @@ app.put('/api/v1/admin/users/:uid/role', requireAuth, requireAdmin, async (req, 
     await authAdmin().setCustomUserClaims(uid, buildRoleClaims(role, permissions));
     await authAdmin().revokeRefreshTokens(uid);
     await db().collection('users').doc(uid).update({ role, permissions, isBanned });
+    await db().collection('workerProfiles').doc(uid).update({ role, disabled: isBanned, updatedAtMs: Date.now() }).catch(() => undefined);
+    invalidatePool();
+    if (isBanned) await releaseTasksOf(db(), uid).catch((error: any) => console.error('[ADMIN] task release failed:', error?.message));
 
     audit('admin.staff.access.changed', req, {
       targetUid: uid,
@@ -2077,6 +2012,9 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
     const ref = await db().collection('reports').add(reportDoc);
 
     audit('report.create', req, { reportId: ref.id, trackId });
+    void Promise.all([loadPriorityRules(db()), loadPool(db(), authAdmin()).catch(() => null)])
+      .then(([rules, pool]) => syncReportTasks(db(), ref.id, { rules, pool, actorUid: 'system' }))
+      .catch((error: any) => console.error('[REPORTS] review task not created (the sweeper retries):', error?.message));
 
     return res.status(201).json({
       id: ref.id,
@@ -2089,267 +2027,11 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * Apply a pipeline transition to a report — the one writing path for a status.
- *
- * ─── Why this endpoint exists ───────────────────────────────────────────────
- *
- * The client has always been able to write `status` straight to Firestore. That
- * means the approval pipeline was a set of gates the UI respected voluntarily:
- * a modified client, or a curl with a valid token, could set any report to
- * `Resolved` and bypass every check an agent is supposed to pass.
- *
- * This endpoint is the enforcement point. It re-derives the pipeline stage from
- * the *stored* document (never from the request), applies the same rule table the
- * UI uses, checks the caller's role and jurisdiction, and only then writes. A
- * client cannot talk its way past a gate it does not own.
- *
- * The status is never read from the body. It is derived from the transition the
- * caller names, so a caller may ask to "pass to municipality" but cannot ask to
- * "be approved". That is what stops a renamed transition from becoming a
- * privilege escalation.
+/*
+ * Report status changes: POST /api/v1/workflow/reports/:id/action (and the old
+ * /api/v1/reports/:id/transition as an alias) live in server/reportWorkflow.ts —
+ * one transactional state machine for the six stages.
  */
-app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
-  if (adminUnavailable(res)) return;
-
-  const actor = actingUser(req);
-  const reportId = String(req.params.id || '').trim();
-  if (!reportId) return res.status(400).json({ error: 'Mungon id e raportit.' });
-
-  const transition = String(req.body?.transition || '') as pipeline.Transition;
-  if (!pipeline.ALL_TRANSITIONS.includes(transition)) {
-    return res.status(400).json({ error: 'Veprim i panjohur i rrjedhës.' });
-  }
-
-  const note = String(req.body?.note ?? '').trim().slice(0, 1200);
-  const resolvedImage =
-    req.body?.resolvedImage && String(req.body.resolvedImage).trim()
-      ? String(req.body.resolvedImage).trim().slice(0, 2048)
-      : null;
-
-  try {
-    const reportRef = db().collection('reports').doc(reportId);
-    const snapshot = await reportRef.get();
-    if (!snapshot.exists) return res.status(404).json({ error: 'Raporti nuk u gjet.' });
-
-    const report = snapshot.data() as any;
-
-    // Authority (role, jurisdiction, section permissions) comes from the verified
-    // token claims only. The profile document is client-writable, so it is read
-    // for a display name and nothing else.
-    let actorName = '';
-    try {
-      const profile = await db().collection('users').doc(actor.uid).get();
-      if (profile.exists) actorName = String((profile.data() as any)?.name ?? '');
-    } catch (error: any) {
-      console.error('[REPORTS] profile lookup failed:', error?.message);
-    }
-
-    const decision = pipeline.decideTransition(
-      {
-        uid: actor.uid,
-        role: actor.role,
-        municipality: actor.municipality,
-        permissions: actor.permissions,
-      },
-      report,
-      transition
-    );
-
-    if (!decision.allowed) {
-      // A refused transition is an event worth keeping: "who tried to push this
-      // report past a gate" is exactly the question an audit trail must answer.
-      audit('report.transition.denied', req, {
-        reportId,
-        transition,
-        code: decision.code,
-        reason: decision.reason,
-      });
-      return res.status(403).json({ error: decision.reason, code: decision.code });
-    }
-
-    const rule = pipeline.ruleFor(transition)!;
-
-    // A note is mandatory where the citizen will read one, and required for a
-    // rejection specifically.
-    if (rule.requiresNote && !note) {
-      return res.status(400).json({ error: transition === 'staff_return' ? 'Shkruani çka mungon ose çka nuk u konfirmua; e lexon komuna.' : 'Refuzimi kërkon arsye të shkruar.', code: 'NOTE_REQUIRED' });
-    }
-
-    const now = new Date().toISOString();
-    const previousStatus = String(report?.status ?? '');
-    const toStatus = decision.toStatus as string;
-
-    // A privacy-safe display label for the actor. The public Track ID timeline
-    // renders `updatedBy`, so this must never be an email address or uid.
-    const actorRole = pipeline.pipelineRoleOf(actor.role, actor.permissions) || 'staff';
-    const actorInstitution =
-      actorRole === 'municipality'
-        ? `Komuna e ${actor.municipality || '—'}`
-        : actorRole === 'agent'
-          ? 'Agjenti i platformës'
-          : 'Administrata';
-    const updatedByLabel = (actorName || '').trim() || actorInstitution;
-
-    const eventId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-    const timelineEvent = {
-      id: eventId,
-      status: toStatus,
-      date: now,
-      updatedBy: updatedByLabel,
-      actorRole,
-      actorInstitution,
-      previousStatus,
-      source: actorRole === 'municipality' ? 'municipality' : actorRole === 'agent' ? 'agent' : 'admin',
-      comment: note,
-      ...(decision.onBehalfOf ? { onBehalfOf: decision.onBehalfOf } : {}),
-    };
-
-    const updates: Record<string, unknown> = {
-      status: toStatus,
-      updatedAt: now,
-      timeline: FieldValue.arrayUnion(timelineEvent),
-    };
-
-    // The municipality claims; the platform verifies. Only verification sets the
-    // resolution time and the Resolved status (see stageOf in server/approvalPipeline.ts).
-    if (transition === 'municipality_done') {
-      updates.resolutionClaimed = true;
-      updates.resolutionClaim = { byUid: actor.uid, by: actorInstitution, at: now, note: note || '', ...(resolvedImage ? { image: resolvedImage } : {}) };
-    }
-    if (transition === 'staff_verify') {
-      updates.resolvedAt = now;
-      updates.resolutionClaimed = false;
-      updates.resolutionVerified = { byUid: actor.uid, at: now };
-    }
-    if (transition === 'staff_return') {
-      updates.resolutionClaimed = false;
-      updates.resolutionReturned = { byUid: actor.uid, at: now, note };
-    }
-    if (resolvedImage) updates.resolvedImage = resolvedImage;
-
-    // Claiming leaves the report in its current status but records who holds it -
-    // as a person (uid), not only as a label, so "Të miat" and each agent's load
-    // can be counted. An agent cannot take a report another agent already holds;
-    // the owner can (and the audit log says so).
-    if (transition === 'claim') {
-      const holder = String(report?.assignedToUid ?? '');
-      if (holder && holder !== actor.uid && actorRole !== 'staff') {
-        return res.status(409).json({
-          error: `Këtë raportim e ka marrë përsipër ${String(report?.assignedTo || 'një agjent tjetër')}.`,
-          code: 'ALREADY_CLAIMED',
-        });
-      }
-      updates.assignedTo = updatedByLabel.slice(0, 160);
-      updates.assignedToUid = actor.uid;
-      updates.assignedAt = now;
-      updates.assignedBy = actor.uid;
-    }
-
-    await reportRef.update(updates);
-
-    // ── Cross-report event feed ──────────────────────────────────────────
-    // One queryable document per change, so the news sidebar's "Njoftime Live"
-    // and any commune-filtered activity feed can read recent events across all
-    // reports without loading every report. Anonymous reports are never made
-    // public; the title is included but never the reporter's identity.
-    const reportMunicipality = String(report?.location?.municipality ?? '');
-    const isAnonymousReport = report?.isAnonymous === true;
-    const publicStatuses = ['Approved', 'Assigned', 'In Progress', 'Resolved', 'Rejected', 'Overdue', 'Closed'];
-    const isPublicEvent = !isAnonymousReport && publicStatuses.includes(toStatus);
-
-    try {
-      await db().collection('report_events').add({
-        reportId,
-        trackingId: String(report?.trackingId ?? '') || undefined,
-        trackId: String(report?.trackingId ?? '') || undefined,
-        status: toStatus,
-        previousStatus,
-        municipality: reportMunicipality || undefined,
-        category: String(report?.category ?? '') || undefined,
-        reportTitle: String(report?.title ?? '').slice(0, 140),
-        comment: note || undefined,
-        actorId: actor.uid,
-        actorName: updatedByLabel,
-        actorRole,
-        actorInstitution,
-        source: timelineEvent.source,
-        isPublic: isPublicEvent,
-        notifyReporter: true,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    } catch (error: any) {
-      console.error('[REPORTS] report_event write failed:', error?.message);
-    }
-
-    // ── Reporter notification ────────────────────────────────────────────
-    // Every status change notifies the person who reported it, with no
-    // identity requirement: an anonymous reporter (Firebase anonymous auth)
-    // carries a real uid, so notifications are written against that uid and
-    // the guest finds them on return. The old `authorId !== 'guest'` check
-    // silently dropped every guest notification, which broke the promise that
-    // a citizen with only a Track ID still hears about their case.
-    const authorId = String(report?.authorId ?? '');
-    if (authorId) {
-      const label = transition === 'municipality_done' ? 'Komuna raporton punimet të kryera; në verifikim' : REPORT_STATUS_LABELS[toStatus] || toStatus;
-      const trackId = String(report?.trackingId ?? '');
-      try {
-        await db().collection('notifications').add({
-          title: `Përditësim i raportimit ${trackId ? `#${trackId}` : ''}`.trim(),
-          message: `Raportimi juaj ${trackId ? `#${trackId}` : ''} kaloi në statusin "${label}".${note ? ` Shenim: ${note.slice(0, 200)}` : ''}`.trim(),
-          channel: 'report',
-          category: 'report',
-          type: toStatus === 'Rejected' ? 'alert' : toStatus === 'Resolved' || toStatus === 'Closed' ? 'success' : 'info',
-          priority: toStatus === 'Rejected' ? 'high' : 'normal',
-          urgent: false,
-          audience: 'user',
-          userId: authorId,
-          reportId,
-          trackId: trackId || undefined,
-          municipality: reportMunicipality || undefined,
-          state: 'published',
-          link: `/trackid${trackId ? `?id=${encodeURIComponent(trackId)}` : ''}`,
-          sender: actorInstitution,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-      } catch (error: any) {
-        console.error('[REPORTS] reporter notification write failed:', error?.message);
-      }
-    }
-
-    // A municipality touching its own report is an editorial event and belongs in
-    // the append-only editorial log as well as the platform audit trail.
-    if (pipeline.pipelineRoleOf(actor.role, actor.permissions) === 'municipality') {
-      await logEditorialEvent({
-        kind: transition === 'municipality_done' ? 'work_facts_added' : 'response_published',
-        subjectId: reportId,
-        subjectType: 'report',
-        actorMunicipality: actor.municipality,
-        actorUserId: actor.uid,
-        actorEmail: actor.email,
-        attemptedAction: transition,
-        denied: false,
-        note: note || undefined,
-      });
-    }
-
-    audit(`report.transition.${transition}`, req, {
-      reportId,
-      from: decision.fromStage,
-      to: decision.toStatus,
-      ...(decision.onBehalfOf ? { onBehalfOf: decision.onBehalfOf } : {}),
-    });
-
-    return res.json({
-      id: reportId,
-      status: decision.toStatus,
-      stage: pipeline.stageOf({ status: decision.toStatus, assignedTo: updates.assignedTo ?? report.assignedTo }),
-    });
-  } catch (error: any) {
-    console.error('[REPORTS] transition failed:', error?.message);
-    return res.status(500).json({ error: 'Statusi nuk u përditësua. Provoni përsëri.' });
-  }
-});
 
 /**
  * The reports a municipal account may see.
@@ -2425,6 +2107,14 @@ registerPublicSubmissionRoutes(app, {
     try { return (await authAdmin().verifyIdToken(m[1])).uid; } catch { return null; }
   },
 });
+registerNewsTipRoutes(app, {
+  requireAuth, db, actingUser, audit,
+  optionalUid: async (req) => {
+    const m = /^Bearer\s+(.+)$/i.exec(req.headers.authorization ?? '');
+    if (!m) return null;
+    try { return (await authAdmin().verifyIdToken(m[1])).uid; } catch { return null; }
+  },
+});
 const institutionMailer = createMailerFromEnv();
 registerInstitutionMailRoutes(app, {
   requireAuth, db, mailer: () => institutionMailer, actingUser, audit,
@@ -2432,6 +2122,7 @@ registerInstitutionMailRoutes(app, {
 });
 registerReportClassificationRoutes(app, { requireAuth, db, actingUser, audit });
 registerWorkItemRoutes(app, { requireAuth, db, authAdmin, actingUser, audit });
+registerReportWorkflowRoutes(app, { requireAuth, db, authAdmin, actingUser, audit, logEditorialEvent });
 registerForumSocialRoutes(app, { requireAuth, requireUsersSection: requireSection('users'), db, audit });
 registerForumAnalyticsRoutes(app, { requireAuth, db });
 registerDirectMessageRoutes(app, { requireAuth, db });
@@ -3136,6 +2827,8 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
   // Deadlines and escalation. Every run is idempotent (each escalation is one document keyed by its step), so overlapping workers
   // are safe, and it only touches work items, so it also runs in the sandbox (where the manager console would otherwise show a stale scheduler).
   startWorkScheduler(db);
+  startWorkflowSweeper(db, authAdmin);
+  startSupportNotifier(db, authAdmin);
 
   // Keep sockets from outliving a rolling deploy, so Cloud Run can drain the
   // worker instead of resetting in-flight requests.

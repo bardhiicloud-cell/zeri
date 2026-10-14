@@ -17,6 +17,7 @@ import { AppSidebar } from './AppSidebar.tsx';
 import { MobileNav } from './MobileNav.tsx';
 import { SearchPalette, useGlobalSearch } from './GlobalSearch';
 import { AnnouncementBanner } from '../AnnouncementBanner.tsx';
+import { BroadcastPopup, BroadcastStrip } from '../BroadcastLayer';
 import { canAccessAdmin } from '../../lib/adminPermissions';
 
 /**
@@ -190,9 +191,11 @@ export function AppLayout() {
             advertising slot and routed page. Renders nothing when there is no
             published announcement.
           */}
+          {!isForumPage && !isNewsPage && <BroadcastStrip placement="banner" />}
           {!isForumPage && !isNewsPage && <AnnouncementBanner />}
           {!isForumPage && !isNewsPage && <AdBanner position="top" />}
           <Outlet />
+          <BroadcastPopup />
           {!isForumPage && !isNewsPage && <AppFooter />}
         </div>
       </main>

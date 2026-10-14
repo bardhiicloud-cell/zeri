@@ -20,6 +20,7 @@ import CookieConsentBanner, { CookiePreferencesButton } from './components/Cooki
 const Dashboard = React.lazy(() => import('./pages/Dashboard.tsx'));
 const DetailedRegistryPage = React.lazy(() => import('./pages/DetailedRegistryPage.tsx'));
 const TrackIdPage = React.lazy(() => import('./pages/TrackIdPage'));
+const LajmeroPage = React.lazy(() => import('./pages/LajmeroPage'));
 const MyModerationPage = React.lazy(() => import('./pages/MyModerationPage'));
 const VerificationRequestPage = React.lazy(() => import('./pages/VerificationRequestPage'));
 const CitizenHelpCenterPage = React.lazy(() => import('./pages/CitizenHelpCenterPage.tsx'));
@@ -51,6 +52,7 @@ const TransparencyPage = React.lazy(() => import('./pages/TransparencyPage.tsx')
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
 import { useStore, DEMO_REPORTS } from './lib/store';
+import { isLive as isBroadcastLive } from './lib/notificationPlacements';
 import { realContactOrEmpty } from './lib/placeholderContacts';
 import { PUBLIC_LIMITS, STAFF_LIMITS } from './lib/loadLimits';
 import { canAccessAdmin } from './lib/adminPermissions';
@@ -137,6 +139,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/regjistri': 'Regjistri i Raporteve',
   '/registry': 'Regjistri i Raporteve',
   '/trackid': 'Gjej Raportin Tim',
+  '/lajmero': 'Lajmëro',
   '/moderimi-im': 'Moderimi i llogarisë sime',
   '/verifikimi': 'Kërko verifikimin',
   '/ndihma': 'Qendra e Ndihmës',
@@ -706,7 +709,10 @@ export default function App() {
     // Firestore rules can authorize each result set without exposing private notices.
     const qPublicNotifications = query(
       collection(db, 'notifications'),
-      where('audience', '==', 'all')
+      where('audience', '==', 'all'),
+      // The rules only let a visitor read published broadcasts; the query has to say so, or the
+      // whole read is refused for everyone but staff.
+      where('state', '==', 'published')
     );
     const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
       if (docSnap.exists()) {
@@ -755,7 +761,7 @@ export default function App() {
           ? data.createdAt.toDate().toISOString()
           : typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString();
         return { ...data, id: notificationDoc.id, createdAt };
-      });
+      }).filter(notification => isBroadcastLive(notification as { state?: string; expiresAt?: unknown }));
       syncNotifications();
     }, (error) => {
       console.error('Njoftimet publike nuk u ngarkuan:', error);
@@ -860,6 +866,7 @@ export default function App() {
               <Route path="/forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="/trackid" element={<TrackIdPage />} />
+              <Route path="/lajmero" element={<LajmeroPage />} />
               <Route path="/moderimi-im" element={<MyModerationPage />} />
               <Route path="/verifikimi" element={<VerificationRequestPage />} />
               <Route path="/ndihma" element={<CitizenHelpCenterPage />} />
@@ -909,6 +916,7 @@ export default function App() {
               <Route path="forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="trackid" element={<TrackIdPage />} />
+              <Route path="lajmero" element={<LajmeroPage />} />
               <Route path="moderimi-im" element={<MyModerationPage />} />
               <Route path="verifikimi" element={<VerificationRequestPage />} />
               <Route path="ndihma" element={<CitizenHelpCenterPage />} />

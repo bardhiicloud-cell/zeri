@@ -112,7 +112,7 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
   };
 
   const queueCounts = useMemo(() => ({
-    all: chats.length,
+    all: chats.filter((chat) => chat.status !== 'resolved').length,
     waiting_agent: chats.filter((chat) => chat.status === 'waiting_agent').length,
     active_agent: chats.filter((chat) => chat.status === 'active_agent').length,
     bot: chats.filter((chat) => chat.status === 'bot').length,
@@ -122,7 +122,8 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
   const visibleChats = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('sq');
     return chats
-      .filter((chat) => queue === 'all' || chat.status === queue)
+      // "Të gjitha" are the open ones; finished conversations live under their own filter (and are cleared by the owner).
+      .filter((chat) => (queue === 'all' ? chat.status !== 'resolved' : chat.status === queue))
       .filter((chat) => {
         if (!query) return true;
         return [chat.userName, chat.userEmail, chat.id, chat.agentTrackId, chat.department]
