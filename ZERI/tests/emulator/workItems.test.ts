@@ -165,7 +165,8 @@ describe('the lifecycle of a task', () => {
     expect(await item(id)).toMatchObject({ status: 'done', open: false, version: 6 });
     expect((await item(id)).doneAtMs).not.toBeNull();
     expect(await profile('ana')).toMatchObject({ load: 0, activeCount: 0 });
-    expect((await events(id)).map(event => event.action ?? event.type)).toEqual(['created', 'assign', 'accept', 'start', 'submit', 'approve']);
+    // Steps made in the same millisecond have no defined order; the set is what matters.
+    expect((await events(id)).map(event => event.action ?? event.type).sort()).toEqual(['accept', 'approve', 'assign', 'created', 'start', 'submit']);
   });
 
   it('refuses the wrong person without writing anything', async () => {

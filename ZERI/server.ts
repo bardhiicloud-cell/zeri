@@ -52,6 +52,7 @@ import { registerPhotoEditRoutes } from './server/reportPhotoEdit';
 import { registerMunicipalityDeskRoutes } from './server/municipalityDesk';
 import { registerInstitutionMailRoutes } from './server/institutionMail';
 import { registerReportClassificationRoutes } from './server/reportClassification';
+import { registerWorkItemRoutes, startWorkScheduler } from './server/workItemRoutes';
 import { registerTeamOverviewRoutes } from './server/teamOverview';
 import { registerTransparencyRoutes } from './server/transparency';
 import { registerReportCaseRoutes } from './server/reportCase';
@@ -2418,6 +2419,7 @@ registerInstitutionMailRoutes(app, {
   baseUrl: () => process.env.PUBLIC_APP_URL || process.env.APP_URL || '',
 });
 registerReportClassificationRoutes(app, { requireAuth, db, actingUser, audit });
+registerWorkItemRoutes(app, { requireAuth, db, authAdmin, actingUser, audit });
 registerForumSocialRoutes(app, { requireAuth, requireUsersSection: requireSection('users'), db, audit });
 registerForumAnalyticsRoutes(app, { requireAuth, db });
 registerDirectMessageRoutes(app, { requireAuth, db });
@@ -3115,6 +3117,8 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
   // post is published in one transaction. (scripts/publish-scheduled-posts.ts does the same from a scheduler.)
   if (!isPrototypeSandbox) {
     setInterval(() => { void publishDueScheduled(db()).catch((e) => console.warn('[SCHEDULE] run failed:', e?.message)); }, 60_000).unref();
+    // Deadlines and escalation: every run is idempotent (each escalation is one document keyed by its step), so overlapping workers are safe.
+    startWorkScheduler(db);
   }
 
   // Keep sockets from outliving a rolling deploy, so Cloud Run can drain the
