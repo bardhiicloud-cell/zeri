@@ -1,16 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { AlertTriangle, CheckCircle2, ChevronDown, FileDown, FileText, Loader2, Mail, Printer, Send, Tags } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, FileDown, X, FileText, Loader2, Mail, Printer, Send, Tags } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';
 import type { Report } from '../../../types';
 import { KOSOVO_MUNICIPALITIES } from '../../../lib/constants';
-import { REPORT_TOPICS } from '../../../lib/reportTopics';
 import type { Zone } from '../../../lib/responsibility';
 import { CSV_HEADERS, csvText, downloadText, printHtml, routeReports, routingCsvRows, routingHtml, type RoutedGroup } from '../../../lib/routingExport';
 import { classifyReports, type ClassifyChange } from '../../../lib/reportClassifyApi';
 import { contactRefFor, ensureContact } from '../../../lib/routingContacts';
 import { sendReportEmail } from '../../../lib/institutionMailApi';
+import SectorPicker from '../SectorPicker';
+import ContactsDirectory from '../ContactsDirectory';
 
 /**
  * What staff do with a set of selected reports besides moving them along the board:
@@ -51,6 +52,7 @@ export function ReportsBulkTools({ reports, onChanged }: ReportsBulkToolsProps) 
   const [note, setNote] = useState('');
   const [lines, setLines] = useState<SendLine[] | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [directory, setDirectory] = useState(false);
 
   const groups = useMemo(() => routeReports(reports), [reports]);
   const needsZone = groups.reduce((sum, group) => sum + group.needsZone, 0);
@@ -129,7 +131,7 @@ export function ReportsBulkTools({ reports, onChanged }: ReportsBulkToolsProps) 
   };
 
   return (
-    <section aria-label={dt('Rrugëzimi dhe dërgimi')} className="rounded-2xl border border-blue-200 bg-blue-50/60 dark:border-blue-900/50 dark:bg-blue-950/20">
+    <section aria-label={dt('Rrugëzimi dhe dërgimi')} className="rounded-2xl border border-blue-200 bg-white dark:border-blue-900/50 dark:bg-slate-900">
       <button
         type="button"
         onClick={() => setOpen(value => !value)}
@@ -149,13 +151,10 @@ export function ReportsBulkTools({ reports, onChanged }: ReportsBulkToolsProps) 
           <div>
             <h3 className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">1 · {dt('Cakto kategorinë, komunën dhe zonën')}</h3>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                {dt('Kategoria')}
-                <select value={topic} onChange={event => setTopic(event.target.value)} className={cn(field, 'mt-1')}>
-                  <option value="">{dt('Pa ndryshim')}</option>
-                  {REPORT_TOPICS.map(item => <option key={item.id} value={item.id}>{item.icon} {item.label}</option>)}
-                </select>
-              </label>
+              <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                {dt('Sektori / Ministria')}
+                <SectorPicker value={topic} onChange={setTopic} emptyLabel={dt('Pa ndryshim')} className="mt-1" />
+              </div>
               <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
                 {dt('Komuna')}
                 <select value={municipality} onChange={event => setMunicipality(event.target.value)} className={cn(field, 'mt-1')}>
@@ -185,7 +184,10 @@ export function ReportsBulkTools({ reports, onChanged }: ReportsBulkToolsProps) 
 
           {/* 2. Recipients */}
           <div>
-            <h3 className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">2 · {dt('Kush përgjigjet')}</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">2 · {dt('Kush përgjigjet')}</h3>
+              <button type="button" onClick={() => setDirectory(true)} className="min-h-9 rounded-lg px-2 text-xs font-bold text-blue-700 hover:underline dark:text-blue-300">{dt('Të gjitha kontaktet')}</button>
+            </div>
             {needsZone > 0 && (
               <p className="mt-2 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs font-semibold text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -242,6 +244,7 @@ export function ReportsBulkTools({ reports, onChanged }: ReportsBulkToolsProps) 
           )}
         </div>
       )}
+      {directory && <ContactsDirectory onClose={() => setDirectory(false)} />}
     </section>
   );
 }
@@ -256,7 +259,7 @@ function RecipientRow({ group }: { group: RoutedGroup }) {
         <div className="min-w-0">
           <p className="truncate text-sm font-black text-slate-900 dark:text-white">{recipient.name}</p>
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-            {recipient.level === 'central' ? dt('Qendror') : dt('Komunal')} · {recipient.office}
+            {recipient.level === 'central' ? dt('Qendror') : `${dt('Komunal')} · ${recipient.office}`}
           </p>
         </div>
         <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-800 dark:bg-white/10 dark:text-slate-100">{group.items.length}</span>
@@ -269,5 +272,52 @@ function RecipientRow({ group }: { group: RoutedGroup }) {
         {recipient.note && <span className="text-slate-500 dark:text-slate-400">· {recipient.note}</span>}
       </div>
     </li>
+  );
+}
+
+/**
+ * The panel as a side drawer, opened from a button that appears once something is
+ * selected. A drawer sits above the page instead of inside it, so the list does not jump
+ * when the first report is ticked and nothing shows through it.
+ */
+export function ReportsBulkDrawer({ reports, onChanged }: ReportsBulkToolsProps) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+  // Nothing selected: nothing to act on, and a drawer left open should close itself.
+  useEffect(() => { if (reports.length === 0) setOpen(false); }, [reports.length]);
+  if (reports.length === 0) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-4 right-4 z-40 inline-flex min-h-12 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-black text-white shadow-xl shadow-blue-600/30"
+      >
+        <Tags className="h-4 w-4" aria-hidden="true" />
+        {dt('Rrugëzim dhe dërgim')} · {reports.length}
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={dt('Rrugëzimi dhe dërgimi')}>
+          <button type="button" aria-label={dt('Mbyll')} onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/50" />
+          <div className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-white shadow-2xl dark:bg-slate-900">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
+              <p className="text-sm font-black text-slate-900 dark:text-white">{dt('Rrugëzimi dhe dërgimi')} · {reports.length} {dt('raporte')}</p>
+              <button type="button" onClick={() => setOpen(false)} aria-label={dt('Mbyll')} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
+                <X className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              <ReportsBulkTools reports={reports} onChanged={onChanged} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

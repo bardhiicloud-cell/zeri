@@ -67,7 +67,7 @@ export const TOPIC_ROUTES: Record<ReportTopicId, TopicRoute> = {
   'uje-kanalizim': { rule: 'zone', office: SHERBIME, central: 'mmphi' },
   'mbeturina': { rule: 'zone', office: SHERBIME, central: 'mmphi' },
   'mjedis': { rule: 'zone', office: MJEDIS, central: 'mmphi' },
-  'energji': { rule: 'central', office: SHERBIME, central: 'mek' },
+  'energji': { rule: 'central', office: SHERBIME, central: 'keds' },
   'telekomunikacion': { rule: 'central', office: SHERBIME, central: 'arkep' },
   'arsim': { rule: 'municipal', office: ARSIM, central: 'mashti' },
   'shkence-inovacion': { rule: 'central', office: ARSIM, central: 'mashti' },

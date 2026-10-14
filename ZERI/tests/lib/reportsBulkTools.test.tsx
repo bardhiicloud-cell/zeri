@@ -48,7 +48,9 @@ describe('ReportsBulkTools', () => {
     expect((apply as HTMLButtonElement).disabled).toBe(true);
 
     const [topic, , zone] = screen.getAllByRole('combobox');
-    fireEvent.change(topic, { target: { value: 'infrastrukture' } });
+    fireEvent.focus(topic);
+    fireEvent.change(topic, { target: { value: 'infrastruktur' } });
+    fireEvent.mouseDown(screen.getByText(/Infrastrukturë$/));
     fireEvent.change(zone, { target: { value: 'urban' } });
     fireEvent.click(apply);
 
@@ -67,7 +69,7 @@ describe('ReportsBulkTools', () => {
   });
 
   it('does not offer to send when no recipient has a verified address', () => {
-    render(<ReportsBulkTools reports={[report({ id: 'a', zone: 'urban', location: { municipality: 'Prizren', address: '' } })]} onChanged={() => {}} />);
+    render(<ReportsBulkTools reports={[report({ id: 'a', zone: 'urban', location: { municipality: 'Prizren', address: '', lat: 0, lng: 0 } })]} onChanged={() => {}} />);
     const send = screen.getByRole('button', { name: /Dërgo me email/ }) as HTMLButtonElement;
     expect(send.disabled).toBe(true);
     expect(screen.getByText(/Asnjë marrës nuk ka adresë të verifikuar/)).toBeTruthy();

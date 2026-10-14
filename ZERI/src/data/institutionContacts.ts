@@ -80,31 +80,43 @@ export interface CentralBody {
   contact: ContactPoint;
 }
 
-const noEmail = (site?: string): ContactPoint => ({ email: null, status: 'missing', site, note: 'Adresa e përgjithshme nuk u verifikua; shtojeni nga paneli.' });
+const noEmail = (site?: string, note = 'Adresa e përgjithshme nuk u verifikua; shtojeni nga paneli.'): ContactPoint => ({ email: null, status: 'missing', site, note });
+const general = (email: string, phone: string | undefined, site: string, note?: string): ContactPoint => ({ email, status: 'general', phone, site, note });
 
 /**
- * Central institutions. Names follow the ones the platform already uses
- * (lib/accountability.ts); ministries are renamed by government decision, so
- * check them before relying on a send. Only the address actually read from a
- * ministry's site is filled in.
+ * Central institutions and public bodies that answer citizens' problems. Names follow
+ * the ones printed on each institution's own site (ministries are renamed by government
+ * decision, so check them before relying on a send). Only an address or number actually
+ * read from the institution's site is filled in; everything else is left empty on purpose.
  */
 export const CENTRAL_BODIES: Record<string, CentralBody> = {
-  mmphi: { id: 'mmphi', name: 'Ministria e Mjedisit, Planifikimit Hapësinor dhe Infrastrukturës', contact: noEmail('https://mmphi.rks-gov.net') },
-  mapl: { id: 'mapl', name: 'Ministria e Administrimit të Pushtetit Lokal', contact: { email: 'info.mapl@rks-gov.net', status: 'general', phone: '038 200 64 209', site: 'https://mapl.rks-gov.net' } },
-  msh: { id: 'msh', name: 'Ministria e Shëndetësisë', contact: noEmail() },
-  mpb: { id: 'mpb', name: 'Ministria e Punëve të Brendshme', contact: noEmail() },
-  policia: { id: 'policia', name: 'Policia e Kosovës', contact: noEmail() },
-  ame: { id: 'ame', name: 'Agjencia e Menaxhimit të Emergjencave', contact: noEmail() },
-  mdrej: { id: 'mdrej', name: 'Ministria e Drejtësisë', contact: noEmail() },
-  mf: { id: 'mf', name: 'Ministria e Financave, Punës dhe Transfereve', contact: noEmail() },
-  atk: { id: 'atk', name: 'Administrata Tatimore e Kosovës / Dogana e Kosovës', contact: noEmail() },
-  mashti: { id: 'mashti', name: 'Ministria e Arsimit, Shkencës, Teknologjisë dhe Inovacionit', contact: noEmail() },
-  mbpzhr: { id: 'mbpzhr', name: 'Ministria e Bujqësisë, Pylltarisë dhe Zhvillimit Rural', contact: noEmail() },
-  mint: { id: 'mint', name: 'Ministria e Industrisë, Ndërmarrjes dhe Tregtisë', contact: noEmail('https://minti.rks-gov.net') },
-  mek: { id: 'mek', name: 'Ministria e Ekonomisë', contact: noEmail() },
-  mkrs: { id: 'mkrs', name: 'Ministria e Kulturës, Rinisë dhe Sportit', contact: noEmail() },
-  mpjd: { id: 'mpjd', name: 'Ministria e Punëve të Jashtme dhe Diasporës', contact: noEmail() },
-  zkm: { id: 'zkm', name: 'Zyra e Kryeministrit', contact: noEmail('https://kryeministri.rks-gov.net') },
-  kqz: { id: 'kqz', name: 'Komisioni Qendror i Zgjedhjeve', contact: noEmail('https://kqz-ks.org') },
-  arkep: { id: 'arkep', name: 'Autoriteti Rregullativ i Komunikimeve Elektronike dhe Postare', contact: noEmail() },
+  zkm: { id: 'zkm', name: 'Zyra e Kryeministrit', contact: general('zkp.zkm@rks-gov.net', '038 200 14 803', 'https://kryeministri.rks-gov.net') },
+  mmphi: { id: 'mmphi', name: 'Ministria e Mjedisit, Planifikimit Hapësinor dhe Infrastrukturës', contact: noEmail('https://mmphi.rks-gov.net', 'Faqja nuk shtyp email të përgjithshëm; vetëm adresa të punonjësve.') },
+  mapl: { id: 'mapl', name: 'Ministria e Administrimit të Pushtetit Lokal', contact: general('info.mapl@rks-gov.net', '038 200 64 209', 'https://mapl.rks-gov.net') },
+  msh: { id: 'msh', name: 'Ministria e Shëndetësisë', contact: general('msh.info@rks-gov.net', '038 200 24 131', 'https://msh.rks-gov.net', 'Linja falas e ankesave: 0800 1 7777, linjafalas@rks-gov.net.') },
+  mpb: { id: 'mpb', name: 'Ministria e Punëve të Brendshme', contact: noEmail('https://mpb.rks-gov.net', 'Faqja nuk shtyp email ose numër të përgjithshëm; shihni faqen "Numrat kontaktues".') },
+  policia: { id: 'policia', name: 'Policia e Kosovës', contact: { email: null, status: 'missing', phone: '192', site: 'https://www.kosovopolice.com', note: 'Urgjenca 192. Raportimi i krimit: 0800 19999 dhe 038 550 999. Email nuk shtypet haptazi.' } },
+  ame: { id: 'ame', name: 'Agjencia e Menaxhimit të Emergjencave', contact: general('ame@rks-gov.net', '112', 'https://ame.rks-gov.net', 'Numri i përbashkët i urgjencës 112 është falas.') },
+  mdrej: { id: 'mdrej', name: 'Ministria e Drejtësisë', contact: general('zkp.md@rks-gov.net', '038 200 67 035', 'https://md.rks-gov.net', 'Numri pa pagesë: 0800 10010.') },
+  mf: { id: 'mf', name: 'Ministria e Financave, Punës dhe Transfereve', contact: noEmail('https://mf.rks-gov.net', 'Faqja nuk shtyp kontakt të përgjithshëm.') },
+  atk: { id: 'atk', name: 'Administrata Tatimore e Kosovës', contact: noEmail('https://www.atk-ks.org', 'Faqja nuk u hap në mënyrë të sigurt nga ky sistem; kontrolloni kontaktin direkt.') },
+  dogana: { id: 'dogana', name: 'Dogana e Kosovës', contact: general('info@dogana-rks.org', '0800 50095', 'https://dogana.rks-gov.net', 'Linja falas 0800 50095.') },
+  mashti: { id: 'mashti', name: 'Ministria e Arsimit, Shkencës, Teknologjisë dhe Inovacionit', contact: general('info.mashti@rks-gov.net', '038 200 65 131', 'https://mash.rks-gov.net') },
+  mbpzhr: { id: 'mbpzhr', name: 'Ministria e Bujqësisë, Pylltarisë dhe Zhvillimit Rural', contact: general('mbpzhr@rks-gov.net', '038 200 38 868', 'https://mbpzhr.rks-gov.net') },
+  mint: { id: 'mint', name: 'Ministria e Industrisë, Ndërmarrësisë, Tregtisë dhe Inovacionit', contact: general('zkp.minti@rks-gov.net', '038 222 22 222', 'https://minti.rks-gov.net') },
+  mek: { id: 'mek', name: 'Ministria e Ekonomisë', contact: noEmail(undefined, 'Faqja zyrtare nuk u gjet; shtojeni kontaktin nga paneli.') },
+  keds: { id: 'keds', name: 'KEDS (shpërndarja e energjisë elektrike)', contact: { email: null, status: 'missing', phone: '0800 79100', site: 'https://www.keds-energy.com', note: 'Linja falas 0800 79100. Emailet nuk shtypen haptazi në faqe.' } },
+  ero: { id: 'ero', name: 'Zyra e Rregullatorit për Energji', contact: general('info@ero-ks.org', '038 247 615', 'https://ero-ks.org') },
+  mkrs: { id: 'mkrs', name: 'Ministria e Kulturës, Rinisë dhe Sportit', contact: noEmail(undefined, 'Faqja zyrtare nuk u gjet; shtojeni kontaktin nga paneli.') },
+  mpjd: { id: 'mpjd', name: 'Ministria e Punëve të Jashtme dhe Diasporës', contact: general('dkp.mpj@rks-gov.net', undefined, 'https://mfa-ks.net') },
+  kqz: { id: 'kqz', name: 'Komisioni Qendror i Zgjedhjeve', contact: { email: null, status: 'missing', phone: '0800 15555', site: 'https://kqz-ks.org', note: 'Linja falas 0800 15555; qendra: 038 223 782. Email nuk shtypet haptazi.' } },
+  arkep: { id: 'arkep', name: 'Autoriteti Rregullativ i Komunikimeve Elektronike dhe Postare', contact: noEmail(undefined, 'Faqja zyrtare nuk u gjet; shtojeni kontaktin nga paneli.') },
 };
+
+/** Emergency numbers; free and answered at any hour. */
+export const EMERGENCY_NUMBERS = [
+  { number: '112', label: 'Urgjenca e përbashkët' },
+  { number: '192', label: 'Policia' },
+  { number: '193', label: 'Zjarrfikësit dhe shpëtimi' },
+  { number: '194', label: 'Ambulanca' },
+] as const;
