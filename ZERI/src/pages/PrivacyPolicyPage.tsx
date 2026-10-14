@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { AuraHero, AuraOrbit } from '../components/aura/Aura';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Scale, MapPin, Clock, Trash2, Building2, Mail, Eye, Cookie, AlertTriangle } from 'lucide-react';
@@ -19,23 +20,12 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="page-shell w-full px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-4xl">
-        <header className="luxury-hero relative mb-8 overflow-hidden rounded-[26px] p-6 text-white sm:p-8">
-          <div className="relative z-10">
-            <div className="luxury-pill mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-200">
-              <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-              {dt('Ligji Nr. 06/L-082')}
-            </div>
-            <h1 className="title-serif text-3xl font-black tracking-[-0.05em] leading-tight sm:text-4xl">
-              {dt('Politika e Privatësisë')}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-200/90">
-              {dt('Si mbledhim, përdorim, ruajmë dhe mbrojmë të dhënat tuaja personale në Platformën Zëri Qytetarëve, në përputhje me Ligjin për Mbrojtjen e të Dhënave Personale në Kosovë.')}
-            </p>
-            <p className="mt-3 text-xs text-slate-300/80">
-              {dt('Versioni i fundit:')} 1.0 · {dt('Në fuqi nga:')} 01.01.2025
-            </p>
-          </div>
-        </header>
+        <div className="mb-8">
+          <AuraHero tone="blue" eyebrow={dt('Ligji Nr. 06/L-082')} icon={ShieldCheck} visual={<AuraOrbit core={ShieldCheck} />}
+            title={dt('Politika e Privatësisë')}
+            subtitle={dt('Si mbledhim, përdorim, ruajmë dhe mbrojmë të dhënat tuaja personale në Platformën Zëri Qytetarëve, në përputhje me Ligjin për Mbrojtjen e të Dhënave Personale.')}
+            aside={<p className="rounded-xl bg-white/10 px-3 py-2.5 text-[12px] leading-snug text-white/75">{dt('Versioni i fundit:')} 1.0 · {dt('Në fuqi nga:')} 01.01.2025</p>} />
+        </div>
 
         <nav aria-label={dt('Përmbajtja e politikës')} className="luxury-card mb-8 rounded-[20px] p-3">
           <ul className="grid gap-1 sm:grid-cols-2">

@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, PlusCircle, Menu, X, ShieldAlert, UserRound,
   LogOut, Search, ChevronRight, ChevronDown, Sun, Moon, MapPin, Building2,
-  Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles,
+  Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
@@ -50,6 +50,9 @@ const TABS = [
   { href: '/forum', label: 'Debati', icon: MessageSquare },
 ] as const;
 
+/** Replaces the debate tab in the dock while nobody is signed in. */
+const GUEST_TAB = { href: '/login', label: 'Hyr', icon: LogIn } as const;
+
 /** The quick-action rail inside the sheet: things a citizen does, not reads. */
 const QUICK_ACTIONS = [
   { href: '/raporto', label: 'Raporto', hint: 'Problem i ri', icon: PlusCircle, tone: 'from-blue-600 to-blue-800' },
@@ -82,6 +85,7 @@ export function MobileNav() {
   const { open: openSearch } = useGlobalSearch();
   const { isDark, toggleTheme } = useThemePreference();
 
+  const isGuest = !currentUser || currentUser.role === 'guest';
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isScopeExpanded, setIsScopeExpanded] = useState(false);
 
@@ -202,7 +206,15 @@ export function MobileNav() {
                 </Link>
               </li>
 
-              {TABS.slice(3).map((tab) => (
+              {/*
+                The fourth slot is "Hyr" for visitors who are not signed in.
+                The dock is the only navigation that is always on screen on a
+                phone, and the sign-in button used to live in the desktop top
+                bar alone, so a guest on mobile had no visible way in. Signed-in
+                citizens get the debate tab back; for guests it stays one tap
+                away in the sheet.
+              */}
+              {(isGuest ? [GUEST_TAB] : TABS.slice(3)).map((tab) => (
                 <li key={tab.href}>
                   <DockTab tab={tab} active={isActive(tab.href)} onClick={() => goTo(tab.href)} />
                 </li>
@@ -396,6 +408,37 @@ export function MobileNav() {
                 </section>
 
                 {/*
+                  Account entry for guests, placed above everything else in the
+                  sheet: signing in is what unlocks tracking one's own reports
+                  and notifications, so it must not sit below the module list.
+                */}
+                {isGuest && (
+                  <section aria-label={dt('Llogaria juaj')} className="mb-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-3.5 dark:border-blue-900/60 dark:from-blue-950/40 dark:to-slate-900">
+                    <p className="text-sm font-black text-slate-900 dark:text-white">{dt('Llogaria juaj')}</p>
+                    <p className="mt-0.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                      {dt('Ndiqni raportimet tuaja dhe merrni njoftime për përgjigjet.')}
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Link
+                        to="/login"
+                        onClick={close}
+                        className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 text-sm font-black text-white shadow-sm transition-transform active:scale-95"
+                      >
+                        <LogIn className="h-4 w-4" aria-hidden="true" />
+                        {dt('Hyr')}
+                      </Link>
+                      <Link
+                        to="/register"
+                        onClick={close}
+                        className="flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-800 transition-transform active:scale-95 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
+                      >
+                        {dt('Regjistrohu')}
+                      </Link>
+                    </div>
+                  </section>
+                )}
+
+                {/*
                   Quick actions: the four things a citizen does rather than
                   reads. Every one of them is at most two taps from anywhere in
                   the app on a phone.
@@ -523,6 +566,21 @@ export function MobileNav() {
                 )}
 
                 <div className="my-3 h-px bg-slate-100 dark:bg-white/5" />
+
+                <Link
+                  to="/partneret"
+                  onClick={close}
+                  className="mb-1 flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200/80 px-3 text-sm font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <Handshake className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{dt('Bëhu partner')}</span>
+                    <span className="block truncate text-[10px] font-medium text-slate-400">{dt('Për institucione, biznese dhe OJQ')}</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 opacity-30" aria-hidden="true" />
+                </Link>
 
                 {LEGAL_NAV.map((link) => (
                   <Link

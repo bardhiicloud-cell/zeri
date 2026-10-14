@@ -64,6 +64,7 @@ import { SeriousAnnouncementPopup } from './components/SeriousAnnouncementPopup'
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { canReadAllReports, startPublicReports } from './lib/publicReportsApi';
+import { registerGuest } from './lib/guestApi';
 import { doc, getDoc, collection, onSnapshot, query, orderBy, setDoc, getDocs, limit, where } from 'firebase/firestore';
 import { createGuestUser, getOrCreateGuestUser } from './lib/session';
 import { GA_CONFIG, hasAnalyticsConsent, onConsentChange } from './lib/consent';
@@ -452,8 +453,13 @@ export default function App() {
           try {
             const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
             let userData: any;
-            if (userDoc.exists()) {
+            if (userDoc.exists() && !(firebaseUser.isAnonymous && typeof userDoc.data().guestNumber !== 'number')) {
               userData = userDoc.data();
+              setCurrentUser(userData);
+            } else if (firebaseUser.isAnonymous) {
+              // A guest gets their number and profile from the server (Mysafir-0000001, …): the
+              // database rules refuse a guest writing their own profile from the browser.
+              userData = await registerGuest(firebaseUser);
               setCurrentUser(userData);
             } else {
               // Create profile for new users (including anonymous/guest)

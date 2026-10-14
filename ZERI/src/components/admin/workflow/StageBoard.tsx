@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, CheckCheck, ChevronDown, Loader2, Search, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCheck, ChevronDown, ChevronRight, Clock, Loader2, Search, UserRound, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';
 import {
   ALL_STAGES,
   FLOW_STAGES,
+  nextFlowStage,
+  stageActor,
   stageText,
   type BoardKind,
   type NoteMode,
@@ -20,7 +22,24 @@ export interface BoardItem {
   /** A short label on the right of the row (urgency, category). */
   tag?: string;
   stage: StageKey;
+  /** Whole days since the record was filed, when known. Shown as a fact, never as a deadline. */
+  ageDays?: number | null;
+  /** Who holds it now (a person or an office), when known. */
+  owner?: string;
+  /** Marked urgent by the record itself (e.g. "Kritike"). */
+  urgent?: boolean;
 }
+
+type SortKey = 'list' | 'oldest' | 'newest' | 'urgent';
+const SORTS: ReadonlyArray<{ value: SortKey; label: string }> = [
+  { value: 'list', label: 'Siç vijnë' },
+  { value: 'oldest', label: 'Më të vjetrat së pari' },
+  { value: 'newest', label: 'Më të rejat së pari' },
+  { value: 'urgent', label: 'Urgjentet së pari' },
+];
+
+const ageLabel = (days: number) => (days === 0 ? dt('sot') : days === 1 ? `1 ${dt('ditë')}` : `${days} ${dt('ditë')}`);
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('');
 
 export type MoveCheck = { ok: true; note: NoteMode } | { ok: false; reason: string };
 
@@ -80,6 +99,7 @@ interface Result {
 export function StageBoard({ kind, items, loading, error, check, move, onOpen, onMoved, moreAvailable, onLoadMore, loadingMore }: StageBoardProps) {
   const [stage, setStage] = useState<StageKey>('reported');
   const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortKey>('list');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [shown, setShown] = useState(PAGE);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -96,11 +116,32 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
 
   const inStage = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return items.filter(item =>
+    const found = items.filter(item =>
       item.stage === stage &&
-      (!needle || `${item.title} ${item.subtitle ?? ''} ${item.id} ${item.tag ?? ''}`.toLowerCase().includes(needle))
+      (!needle || `${item.title} ${item.subtitle ?? ''} ${item.id} ${item.tag ?? ''} ${item.owner ?? ''}`.toLowerCase().includes(needle))
     );
-  }, [items, stage, query]);
+    if (sort === 'list') return found;
+    const age = (item: BoardItem) => item.ageDays ?? -1;
+    return [...found].sort((a, b) =>
+      sort === 'oldest' ? age(b) - age(a)
+        : sort === 'newest' ? age(a) - age(b)
+          : Number(Boolean(b.urgent)) - Number(Boolean(a.urgent)) || age(b) - age(a)
+    );
+  }, [items, stage, query, sort]);
+
+  /** What the person looking at this stage needs to know to move the work on. */
+  const guide = useMemo(() => {
+    const here = items.filter(item => item.stage === stage);
+    const ages = here.map(item => item.ageDays).filter((d): d is number => typeof d === 'number');
+    return {
+      actor: stageActor(kind, stage),
+      next: nextFlowStage(stage),
+      oldest: ages.length ? Math.max(...ages) : null,
+      urgent: here.filter(item => item.urgent).length,
+      unheld: here.filter(item => item.owner !== undefined && !item.owner).length,
+      tracksOwner: here.some(item => item.owner !== undefined),
+    };
+  }, [items, stage, kind]);
 
   // A selection belongs to the column it was made in.
   useEffect(() => {

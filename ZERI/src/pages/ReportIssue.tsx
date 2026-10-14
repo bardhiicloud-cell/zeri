@@ -1,3 +1,4 @@
+import { AuraHero, AuraOrbit } from '../components/aura/Aura';
 import { dt } from '@/src/lib/dt';
 import React, { useState, useEffect, useRef, Component } from 'react';
 import toast from 'react-hot-toast';
@@ -905,13 +906,21 @@ export default function ReportIssue() {
       )}
 
       {step === 1 && (
+        <div className="au-page mb-5 bg-transparent">
+          <AuraHero tone="blue" eyebrow={dt('Raportim qytetar')} icon={Camera} visual={<AuraOrbit core={Camera} />}
+            title={dt('Raporto një problem')}
+            subtitle={dt('Përshkruani problemin, shënoni vendndodhjen dhe shtoni foto. Do të merrni një Track-ID për ta ndjekur raportin.')} />
+        </div>
+      )}
+
+      {step === 1 && (
         <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
           <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 md:px-4 py-1 text-xs md:text-xs font-bold tracking-wide border-b-4 border-l-4 border-slate-900 dark:border-slate-700 rounded-bl-xl rounded-tr-xl">{dt(`Nr: 01`)}
           </div>
 
           <div className="mb-8 md:mb-12">
-            <h1 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 leading-[1.1]">{dt(`Hap`)}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
-            </h1>
+            <h2 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 leading-[1.1]">{dt(`Hap`)}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
+            </h2>
             <p className="text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-sm md:max-w-md font-serif italic text-sm md:text-lg">{dt(`Paraqit një çështje që ndikon drejtpërdrejt në shoqëri ose proceset e lëvizjes.`)}</p>
           </div>
           

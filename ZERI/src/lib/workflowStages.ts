@@ -327,3 +327,67 @@ export function planReportMove(report: Report, to: StageKey, role: PipelineRole 
   }
   return { ok: true, transition, label: rule.label, note };
 }
+
+/* ------------------------------------------------------------------ */
+/* Who moves the work on, and what comes next                          */
+/* ------------------------------------------------------------------ */
+
+export interface StageActor {
+  /** Who has to act for a record in this stage to move on. */
+  who: string;
+  /** What they do, in one line. */
+  does: string;
+}
+
+/**
+ * The person or office that holds the work in each stage. Taken from the stage
+ * descriptions above and the pipeline rules (agent → municipality → staff for reports;
+ * the decision tables for the others). Display only: it grants nothing.
+ */
+const ACTORS: Record<BoardKind, Partial<Record<StageKey, StageActor>>> = {
+  report: {
+    reported: { who: 'Agjenti', does: 'Shqyrton raportin, kërkon informacion nëse mungon dhe e aprovon ose e refuzon.' },
+    approved: { who: 'Komuna', does: 'Merr përsipër raportin e kaluar nga agjenti.' },
+    waiting: { who: 'Komuna', does: 'Kryen punën në terren dhe jep përgjigje zyrtare.' },
+    responded: { who: 'Administrata', does: 'Verifikon përgjigjen e komunës dhe e mbyll rastin.' },
+  },
+  donation: {
+    reported: { who: 'Stafi i donacioneve', does: 'Kontrollon kërkesën dhe dokumentet, pastaj e aprovon ose e refuzon.' },
+    approved: { who: 'Stafi i donacioneve', does: 'Fushata është publike; ndjek mbledhjen e fondeve.' },
+    waiting: { who: 'Organizatori', does: 'Dërgon dokumentet, verifikimin ose fondet që mungojnë.' },
+    responded: { who: 'Stafi i donacioneve', does: 'Vlerëson përgjigjen e organizatorit dhe e mbyll fushatën.' },
+  },
+  health: {
+    reported: { who: 'Stafi shëndetësor', does: 'Verifikon rastin e ri.' },
+    approved: { who: 'Spitali / Komuna', does: 'Merr rastin e verifikuar.' },
+    waiting: { who: 'Spitali / Komuna', does: 'Trajton rastin dhe jep përgjigje.' },
+    responded: { who: 'Stafi shëndetësor', does: 'Kontrollon përgjigjen dhe e shënon të zgjidhur.' },
+  },
+  news: {
+    reported: { who: 'Redaktori', does: 'Lexon draftin dhe e aprovon, ose e kthen te autori.' },
+    approved: { who: 'Redaktori', does: 'Cakton kohën e publikimit.' },
+    waiting: { who: 'Redaktori', does: 'E publikon në kohën e caktuar.' },
+    responded: { who: 'Autori', does: 'Korrigjon tekstin dhe e dorëzon përsëri.' },
+  },
+};
+
+/** Who acts in this stage; null for the ends of the flow (finished, refused). */
+export function stageActor(kind: BoardKind, stage: StageKey): StageActor | null {
+  return ACTORS[kind][stage] ?? null;
+}
+
+/** The next stage in the flow, if any. */
+export function nextFlowStage(stage: StageKey): StageKey | null {
+  const index = FLOW_STAGES.indexOf(stage);
+  return index >= 0 && index < FLOW_STAGES.length - 1 ? FLOW_STAGES[index + 1] : null;
+}
+
+/** Whole days between a date (ISO, Firestore timestamp, {seconds}) and now; null when unknown. */
+export function daysSince(value: unknown, nowMs: number = Date.now()): number | null {
+  let ms = Number.NaN;
+  if (typeof value === 'string') ms = Date.parse(value);
+  else if (value && typeof (value as { toDate?: () => Date }).toDate === 'function') ms = (value as { toDate: () => Date }).toDate().getTime();
+  else if (value && typeof (value as { seconds?: number }).seconds === 'number') ms = (value as { seconds: number }).seconds * 1000;
+  if (!Number.isFinite(ms)) return null;
+  return Math.max(0, Math.floor((nowMs - ms) / 86_400_000));
+}

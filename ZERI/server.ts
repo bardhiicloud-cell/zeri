@@ -56,6 +56,7 @@ import { registerTransparencyRoutes } from './server/transparency';
 import { registerReportCaseRoutes } from './server/reportCase';
 import { registerTrackLookupRoutes } from './server/trackLookup';
 import { registerPublicReportRoutes } from './server/publicReports';
+import { registerGuestNumberRoutes } from './server/guestNumbers';
 import { registerContactRoutes } from './server/contactMessages';
 import { registerPublicSubmissionRoutes } from './server/publicSubmissions';
 import { createMailerFromEnv } from './server/mailer';
@@ -2400,6 +2401,7 @@ registerTransparencyRoutes(app, { db });
 registerReportCaseRoutes(app, { requireAuth, db, actingUser, audit });
 registerTrackLookupRoutes(app, { db });
 registerPublicReportRoutes(app, { db });
+registerGuestNumberRoutes(app, { requireAuth, db });
 registerContactRoutes(app, { db });
 registerPublicSubmissionRoutes(app, {
   db,

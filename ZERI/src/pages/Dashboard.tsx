@@ -8,7 +8,7 @@ import {
   ThumbsUp, MessageCircle, Phone, ArrowUpRight, Check, Eye,
   Building2, Users, FileText, Vote, Shield, ShieldCheck,
   ChevronRight, Calendar, ArrowUp, ExternalLink, X, Activity,
-  Zap, Droplets, Leaf, PenSquare, Newspaper, Info, HeartPulse
+  Zap, Droplets, Leaf, PenSquare, Newspaper, Info, HeartPulse, Handshake, UserPlus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -38,6 +38,8 @@ export default function Dashboard() {
   const userMunicipality = useStore((state) => state.userMunicipality);
 
   const hasMoreReports = useStore((state) => state.hasMoreReports);
+  const currentUser = useStore((state) => state.currentUser);
+  const isGuest = !currentUser || currentUser.role === 'guest';
 
   // View Mode: default is 'screenshot'
   const [viewMode, setViewMode] = useState<'screenshot' | 'backup'>(() => {
@@ -355,6 +357,55 @@ export default function Dashboard() {
                 : dt("Numrat tregojnë raportet publike të ngarkuara. Detajet e plota janë te Statistikat dhe Regjistri.")}
           </span>
         </div>
+
+        {/*
+          Partnership band. Sits right after the live numbers, so the offer to
+          institutions and businesses is made at the moment the page has shown
+          what the platform reaches. Guests also get a sign-up action here; for
+          signed-in citizens it would be noise.
+        */}
+        <section
+          aria-labelledby="partner-band-heading"
+          className="relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-slate-900"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl" />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-sm">
+                <Handshake className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
+                  {dt('Për institucione, biznese dhe OJQ')}
+                </p>
+                <h2 id="partner-band-heading" className="mt-1 text-lg font-black leading-tight text-slate-900 sm:text-xl dark:text-white">
+                  {dt('Bashkëpunoni me Zërin e Qytetarëve')}
+                </h2>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500 sm:text-sm dark:text-slate-400">
+                  {dt('Arrini qytetarët e 38 komunave me njoftime, fushata dhe projekte të përbashkëta.')}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:shrink-0">
+              <Link
+                to="/partneret"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+              >
+                <Handshake className="h-4 w-4" aria-hidden="true" />
+                {dt('Bëhu partner')}
+              </Link>
+              {isGuest && (
+                <Link
+                  to="/register"
+                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-800 transition-colors hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:text-slate-100 dark:hover:bg-slate-800"
+                >
+                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  {dt('Krijo llogari falas')}
+                </Link>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* 4. SPLIT SECTION: RAPORTIMET NË HARTË (LEFT) & RAPORTIMET MË TË FUNDIT (RIGHT) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
