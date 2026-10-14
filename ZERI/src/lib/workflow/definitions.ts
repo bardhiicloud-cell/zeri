@@ -63,6 +63,8 @@ export interface TransitionDef {
   rework?: boolean;
   /** This move reopens finished work: counts toward the reopen tally. */
   reopen?: boolean;
+  /** If nobody holds the item, the actor (when they are the kind of person it can be given to) takes it. */
+  claim?: boolean;
   /** Who is told. Resolved by the server into notification records. */
   notify?: ReadonlyArray<'assignee' | 'managers' | 'creator' | 'previous_assignee'>;
 }
@@ -118,7 +120,9 @@ export const REPORT_REFERRAL: WorkflowDef = {
   initial: 'pending_acceptance',
   assigneeRoles: ['agent', 'responder', 'approver', 'dispatcher', 'municipality'],
   states: {
-    pending_acceptance: { label: 'Pret pranimin' },
+    // Counted in the load from the moment it is given to someone, not from when they accept it:
+    // otherwise a person could be handed unlimited work before touching any of it.
+    pending_acceptance: { label: 'Pret pranimin', active: true },
     acknowledged: { label: 'Pranuar', active: true },
     investigating: { label: 'Në hetim', active: true },
     returned: { label: 'Kërkon sqarim', active: true, waiting: true },
@@ -128,7 +132,9 @@ export const REPORT_REFERRAL: WorkflowDef = {
     closed: { label: 'Mbyllur', terminal: true },
   },
   transitions: [
-    { action: 'acknowledge', label: 'Pranoj referimin', from: ['pending_acceptance'], to: 'acknowledged', roles: ['municipality', 'agent', 'manager'], notify: ['managers'] },
+    { action: 'assign', label: 'Cakto', from: ['pending_acceptance'], to: '=', roles: ['manager'], requires: ['assignee'], notify: ['assignee'] },
+    { action: 'reassign', label: 'Ricakto', from: ['pending_acceptance', 'acknowledged', 'investigating', 'returned', 'action_taken'], to: '=', roles: ['manager'], requires: ['assignee', 'reason'], notify: ['assignee', 'previous_assignee'] },
+    { action: 'acknowledge', label: 'Pranoj referimin', from: ['pending_acceptance'], to: 'acknowledged', roles: ['municipality', 'agent', 'manager'], claim: true, notify: ['managers'] },
     { action: 'investigate', label: 'Filloj hetimin', from: ['acknowledged'], to: 'investigating', roles: ['municipality', 'agent', 'manager'], assigneeOnly: true },
     { action: 'request_clarification', label: 'Kërko sqarim', from: ['acknowledged', 'investigating'], to: 'returned', roles: ['municipality', 'agent'], requires: ['note'], notify: ['managers', 'creator'] },
     { action: 'clarify', label: 'Jep sqarimin', from: ['returned'], to: 'acknowledged', roles: ['agent', 'manager'], requires: ['note'], notify: ['assignee'] },
@@ -147,7 +153,7 @@ export const MODERATION_CASE: WorkflowDef = {
   initial: 'flagged',
   assigneeRoles: ['debatwp', 'moderator'],
   states: {
-    flagged: { label: 'I shënuar (automatik, i pakonfirmuar)' },
+    flagged: { label: 'I shënuar (automatik, i pakonfirmuar)', active: true },
     under_review: { label: 'Në shqyrtim', active: true },
     violation_confirmed: { label: 'Shkelje e konfirmuar', active: true },
     no_violation: { label: 'Pa shkelje', active: true },
@@ -156,7 +162,9 @@ export const MODERATION_CASE: WorkflowDef = {
     resolved: { label: 'Zgjidhur', terminal: true },
   },
   transitions: [
-    { action: 'open_review', label: 'Hap shqyrtimin', from: ['flagged'], to: 'under_review', roles: ['moderator', 'manager'], requires: ['assignee'] },
+    { action: 'assign', label: 'Cakto', from: ['flagged'], to: '=', roles: ['manager'], requires: ['assignee'], notify: ['assignee'] },
+    { action: 'reassign', label: 'Ricakto', from: ['flagged', 'under_review', 'violation_confirmed', 'no_violation', 'restricted'], to: '=', roles: ['manager'], requires: ['assignee', 'reason'], notify: ['assignee', 'previous_assignee'] },
+    { action: 'open_review', label: 'Hap shqyrtimin', from: ['flagged'], to: 'under_review', roles: ['moderator'], claim: true },
     // The only roads to "violation_confirmed" and "restricted" are human decisions with a reason.
     { action: 'confirm_violation', label: 'Konfirmo shkeljen', from: ['under_review'], to: 'violation_confirmed', roles: ['moderator'], assigneeOnly: true, requires: ['reason'], notify: ['managers'] },
     { action: 'dismiss', label: 'Nuk ka shkelje', from: ['under_review'], to: 'no_violation', roles: ['moderator'], assigneeOnly: true, requires: ['reason'] },

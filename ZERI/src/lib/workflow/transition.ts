@@ -175,6 +175,9 @@ export function decideTransition(input: { actor: WorkActor; item: WorkItemFacts;
     assigneeUid = target;
   } else if (def.action === 'decline') {
     assigneeUid = null;
+  } else if (def.claim && !item.assigneeUid && workflow.assigneeRoles.includes(actor.role)) {
+    // Taking unowned work: the actor becomes its holder.
+    assigneeUid = actor.uid;
   }
 
   return {

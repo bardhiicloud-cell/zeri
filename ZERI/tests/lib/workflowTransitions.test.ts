@@ -84,8 +84,8 @@ describe('the three workflows are well formed', () => {
       expect(def.requires).toContain('reason');
       expect(def.roles).not.toContain('citizen');
     }
-    // Nothing the automatic flag does leads there: the only ways out of "flagged" are a human opening a review or an escalation.
-    expect(transitionsFrom('moderation_case', 'flagged').map(def => def.action).sort()).toEqual(['escalate', 'open_review']);
+    // Nothing the automatic flag does leads there: the only ways out of "flagged" are a person assigning it, opening a review, or escalating.
+    expect(transitionsFrom('moderation_case', 'flagged').map(def => def.action).sort()).toEqual(['assign', 'escalate', 'open_review', 'reassign']);
   });
 });
 
