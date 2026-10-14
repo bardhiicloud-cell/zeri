@@ -71,6 +71,8 @@ export interface WorkItemDoc {
   decidedBy: string | null;
   version: number;
   dedupeKey: string | null;
+  /** False when the creator asked to assign by hand: the automatic sweep leaves it alone. */
+  autoAssign?: boolean;
 }
 
 export interface ProfileDoc {
@@ -114,6 +116,7 @@ export interface CreateValue {
   link: WorkItemDoc['link'];
   dueAtMs: number | null;
   dedupeKey: string | null;
+  autoAssign: boolean;
 }
 
 const str = (value: unknown, max: number) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
@@ -148,7 +151,7 @@ export function validateCreate(raw: unknown): CreateValidation {
       department: str(body.department, 80), category: str(body.category, 80),
       requiredSkills: strings(body.requiredSkills, 10, 40), preferredSkills: strings(body.preferredSkills, 10, 40),
       weight, requiresReview: body.requiresReview === true, requiresEvidence: body.requiresEvidence === true,
-      subjectUid: str(body.subjectUid, 128) || null, link, dueAtMs, dedupeKey,
+      subjectUid: str(body.subjectUid, 128) || null, link, dueAtMs, dedupeKey, autoAssign: body.autoAssign !== false,
     },
   };
 }
@@ -202,7 +205,7 @@ export async function createWorkItem(db: Firestore, actor: Named, value: CreateV
     assignedAtMs: null, acceptedAtMs: null, doneAtMs: null,
     dueAtMs: value.dueAtMs ?? dueAtFor(value.priority, nowMs, sla), lastActivityAtMs: nowMs,
     escalationLevel: 0, unassignedAlerts: 0, stalledReportedFor: null, manualEscalations: 0,
-    needsAttention: false, reworkCount: 0, reopenCount: 0, decidedBy: null, version: 1, dedupeKey: value.dedupeKey,
+    needsAttention: false, reworkCount: 0, reopenCount: 0, decidedBy: null, version: 1, dedupeKey: value.dedupeKey, autoAssign: value.autoAssign,
   };
   const batch = db.batch();
   batch.create(ref, doc);
@@ -460,7 +463,8 @@ export type AutoAssignResult =
   | { outcome: 'unassigned'; rejectedBy: Partial<Record<RejectReason, number>> }
   | { outcome: 'not_applicable' | 'not_found' | 'contention' };
 
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 8;
+const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Choose a worker with the engine and give them the item. The choice is made outside the
@@ -523,11 +527,11 @@ async function autoAssignOnce(db: Firestore, itemId: string, nowMs: number): Pro
       // The transaction lost to others writing the same documents more times than Firestore retries
       // (ABORTED) or was told to back off: choose again from fresh data.
       const code = (error as { code?: number }).code;
-      if (code === 10 || code === 4 || code === 14) continue;
+      if (code === 10 || code === 4 || code === 14) { await pause(25 + Math.floor(Math.random() * 100)); continue; }
       throw error;
     }
     if (result.outcome === 'ok') return { outcome: 'assigned', uid: choice.uid, score: choice.score };
-    if (result.code === 'STALE_CHOICE' || result.code === 'STALE') continue;
+    if (result.code === 'STALE_CHOICE' || result.code === 'STALE') { await pause(Math.floor(Math.random() * 40)); continue; }
     if (result.code === 'WRONG_STATE') return { outcome: 'not_applicable' };
     throw new Error(`autoAssign: ${result.code} ${result.error}`);
   }
@@ -619,3 +623,22 @@ export async function runEscalations(db: Firestore, nowMs: number, options: { pa
 }
 
 export type { DocumentReference };
+
+/**
+ * Offer unassigned work to the assignment engine again. Capacity frees up as people finish,
+ * workers come back from leave, and a request that lost a race under load is left unassigned
+ * on purpose rather than forced; this is what picks those up. Items created for manual
+ * assignment (`autoAssign: false`) are left alone. Oldest first, bounded per run.
+ */
+export async function assignPending(db: Firestore, nowMs: number, limit = 100): Promise<{ tried: number; assigned: number }> {
+  const snap = await db.collection(WORK).where('assigneeUid', '==', null).where('open', '==', true).orderBy('createdAtMs').limit(limit).get();
+  let tried = 0;
+  let assigned = 0;
+  for (const doc of snap.docs) {
+    const item = doc.data() as WorkItemDoc;
+    if (item.autoAssign === false || item.status !== WORKFLOWS[item.kind].initial) continue;
+    tried += 1;
+    try { if ((await autoAssign(db, doc.id, nowMs)).outcome === 'assigned') assigned += 1; } catch { /* the next run tries again */ }
+  }
+  return { tried, assigned };
+}

@@ -8,7 +8,7 @@ import { measurePerformance } from '../src/lib/workflow/performance';
 import { summarizeOrganization, workloadState, type OrgItem, type OrgWorker } from '../src/lib/workflow/workload';
 import { DEFAULT_SLA } from '../src/lib/workflow/escalation';
 import {
-  CONFIG, NOTIFICATIONS, PROFILES, WORK, applyWorkTransition, autoAssign, createWorkItem, getSla, mayCreate, runEscalations,
+  CONFIG, NOTIFICATIONS, PROFILES, WORK, applyWorkTransition, assignPending, autoAssign, createWorkItem, getSla, mayCreate, runEscalations,
   toAssignable, toWorker, upsertProfile, validateCreate, validateProfilePatch, type Named, type ProfileDoc, type WorkItemDoc,
 } from './workItems';
 
@@ -246,7 +246,7 @@ export function registerWorkItemRoutes(app: Express, deps: WorkRouteDeps): void 
       const at = now();
       const created = await createWorkItem(deps.db(), actor, checked.value, at, await getSla(deps.db()));
       deps.audit('work.create', req, { id: created.id, kind: checked.value.kind, created: created.created });
-      const assigned = created.created && req.body?.autoAssign !== false ? await autoAssign(deps.db(), created.id, at) : null;
+      const assigned = created.created && checked.value.autoAssign ? await autoAssign(deps.db(), created.id, at) : null;
       return res.status(created.created ? 201 : 200).json({ id: created.id, created: created.created, assignment: assigned });
     } catch (error) { return serverError(res, 'create', error); }
   });
@@ -545,7 +545,9 @@ export function registerWorkItemRoutes(app: Express, deps: WorkRouteDeps): void 
 /** Runs the escalation check on a timer. Safe from any number of servers: see runEscalations. */
 export function startWorkScheduler(db: () => Firestore, intervalMs = 60_000): () => void {
   const timer = setInterval(() => {
-    void runEscalations(db(), Date.now()).catch(error => console.warn('[WORK] escalation run failed:', (error as Error)?.message));
+    void runEscalations(db(), Date.now())
+      .then(() => assignPending(db(), Date.now()))
+      .catch(error => console.warn('[WORK] scheduled run failed:', (error as Error)?.message));
   }, intervalMs);
   timer.unref();
   return () => clearInterval(timer);

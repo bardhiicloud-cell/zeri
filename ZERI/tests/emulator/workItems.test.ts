@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import {
-  CONFIG, NOTIFICATIONS, PROFILES, WORK, applyWorkTransition, autoAssign, createWorkItem, recomputeLoad, runEscalations, upsertProfile, validateCreate,
+  CONFIG, NOTIFICATIONS, PROFILES, WORK, applyWorkTransition, assignPending, autoAssign, createWorkItem, recomputeLoad, runEscalations, upsertProfile, validateCreate,
   type CreateValue, type Named, type ProfileDoc, type WorkItemDoc,
 } from '../../server/workItems';
 
@@ -80,8 +80,8 @@ describe('automatic assignment', () => {
     expect(await item(id)).toMatchObject({ status: 'assigned', assigneeUid: 'ana', version: 2 });
     expect(await profile('ana')).toMatchObject({ load: 1, activeCount: 1 });
     const log = await events(id);
-    expect(log.map(event => event.type)).toEqual(['created', 'transition']);
-    expect(log[1]).toMatchObject({ action: 'assign', auto: true, toAssignee: 'ana', actorUid: 'system' });
+    expect(log.map(event => event.type).sort()).toEqual(['created', 'transition']); // same millisecond: no defined order
+    expect(log.find(event => event.type === 'transition')).toMatchObject({ action: 'assign', auto: true, toAssignee: 'ana', actorUid: 'system' });
     expect((await notifications()).filter(note => note.toUid === 'ana')).toHaveLength(1);
   });
 
@@ -124,9 +124,13 @@ describe('automatic assignment', () => {
     for (let start = 0; start < ids.length; start += 20) {
       results.push(...await Promise.all(ids.slice(start, start + 20).map(id => autoAssign(db, id, NOW))));
     }
-    const assigned = results.filter(result => result.outcome === 'assigned').length;
-    expect(assigned).toBe(36);
-    expect(results.filter(result => result.outcome === 'unassigned')).toHaveLength(24);
+    // Under heavy load a request may lose its race more often than it retries and report `contention`: it is
+    // left unassigned, never forced. What must hold either way is below; then the sweep picks up the rest.
+    expect(results.every(result => ['assigned', 'unassigned', 'contention'].includes(result.outcome))).toBe(true);
+    for (let round = 0; round < 6; round += 1) {
+      if ((await db.collection(WORK).where('assigneeUid', '!=', null).get()).size === 36) break;
+      await assignPending(db, NOW, 100);
+    }
 
     for (let i = 0; i < 12; i += 1) {
       const uid = `w${String(i).padStart(2, '0')}`;
@@ -150,6 +154,20 @@ describe('automatic assignment', () => {
     expect((await events(id)).filter(event => event.action === 'assign')).toHaveLength(1);
     const total = (await profile('ana')).load + (await profile('blerim')).load;
     expect(total).toBe(1);
+  });
+
+  it('the sweep offers waiting work again when a place frees up, oldest first, and leaves manual items alone', async () => {
+    await worker('solo', { capacity: 1 });
+    const first = await make({ title: 'E para' });
+    const second = await make({ title: 'E dyta' });
+    const manual = (await createWorkItem(db, manager, value({ title: 'Caktim me dorë', autoAssign: false } as any), NOW)).id;
+    expect((await autoAssign(db, first, NOW)).outcome).toBe('assigned');
+    expect(await assignPending(db, NOW + 1)).toMatchObject({ assigned: 0 }); // still full
+    for (const request of [{ action: 'accept' }, { action: 'start' }, { action: 'complete', note: 'U krye.' }]) await act(first, agent('solo'), request);
+    expect(await assignPending(db, NOW + 2)).toMatchObject({ tried: 1, assigned: 1 });
+    expect((await item(second)).assigneeUid).toBe('solo');
+    expect((await item(manual)).assigneeUid).toBeNull();
+    expect((await item(manual)).autoAssign).toBe(false);
   });
 
   it('does nothing to an item that already has an owner', async () => {
@@ -222,7 +240,7 @@ describe('the lifecycle of a task', () => {
     const notes = await notifications();
     expect(notes.some(note => note.toUid === 'blerim' && note.action === 'reassign')).toBe(true);
     expect(notes.some(note => note.toUid === 'ana' && note.action === 'reassign')).toBe(true);
-    expect((await events(id)).at(-1)).toMatchObject({ action: 'reassign', fromAssignee: 'ana', toAssignee: 'blerim', reason: 'Ana është e mbingarkuar.' });
+    expect((await events(id)).find(event => event.action === 'reassign')).toMatchObject({ action: 'reassign', fromAssignee: 'ana', toAssignee: 'blerim', reason: 'Ana është e mbingarkuar.' });
   });
 
   it('a dispatcher may assign; an agent may not assign work to anyone', async () => {
@@ -245,7 +263,7 @@ describe('the lifecycle of a task', () => {
     expect(await act(id, manager, { action: 'assign', assigneeUid: 'nobody', reason: 'Urgjente.' })).toMatchObject({ outcome: 'fail', code: 'NO_PROFILE' });
 
     expect((await act(id, manager, { action: 'assign', assigneeUid: 'full', reason: 'Urgjente, ka përvojën.' })).outcome).toBe('ok');
-    expect((await events(id)).at(-1)).toMatchObject({ softOverride: 'capacity', reason: 'Urgjente, ka përvojën.' });
+    expect((await events(id)).find(event => event.softOverride === 'capacity')).toMatchObject({ softOverride: 'capacity', reason: 'Urgjente, ka përvojën.' });
     expect(await profile('full')).toMatchObject({ load: 2 });
   });
 
