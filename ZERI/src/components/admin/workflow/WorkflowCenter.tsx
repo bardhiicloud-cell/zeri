@@ -111,7 +111,8 @@ export default function WorkflowCenter() {
 const STATUS_FOR: Record<string, 'Approved' | 'In Progress' | 'Resolved' | 'Rejected'> = {
   pass_to_municipality: 'Approved',
   municipality_accept: 'In Progress',
-  municipality_done: 'Resolved',
+  // The municipality's "done" is a claim; Resolved is written only by staff verification.
+  municipality_done: 'In Progress',
   reject: 'Rejected',
 };
 

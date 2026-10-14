@@ -6,15 +6,17 @@ import { debateStats, formatEur } from '../../lib/debateApi';
 import { DebatePayments } from './DebatePayments';
 import { DebatePosts } from './DebatePosts';
 import { DebateModeration } from './DebateModeration';
+import { DebateAdCreator, DebateVerificationRequests } from './DebateAdCreatorAndRequests';
 import { DebateAds, DebateTicks } from './DebateAdsAndTicks';
 import { ErrorNote, Panel, Stat, btn, useLoad } from './ui';
 
-type Tab = 'overview' | 'moderation' | 'payments' | 'ticks' | 'ads' | 'posts';
+type Tab = 'overview' | 'moderation' | 'payments' | 'requests' | 'ticks' | 'ads' | 'posts';
 
 const TABS: ReadonlyArray<{ id: Tab; label: string; icon: typeof Landmark }> = [
   { id: 'overview', label: 'Përmbledhje', icon: LayoutDashboard },
   { id: 'moderation', label: 'Moderimi', icon: ShieldAlert },
   { id: 'payments', label: 'Pagesat', icon: Landmark },
+  { id: 'requests', label: 'Kërkesat për tick', icon: BadgeCheck },
   { id: 'ticks', label: 'Verifikimet', icon: BadgeCheck },
   { id: 'ads', label: 'Reklamat', icon: Megaphone },
   { id: 'posts', label: 'Postimet', icon: MessageSquare },
@@ -86,7 +88,8 @@ export function DebateConsole() {
       {tab === 'moderation' && <DebateModeration onChanged={refreshStats} />}
       {tab === 'payments' && <DebatePayments onChanged={refreshStats} />}
       {tab === 'ticks' && <DebateTicks />}
-      {tab === 'ads' && <DebateAds />}
+      {tab === 'requests' && <DebateVerificationRequests />}
+      {tab === 'ads' && <div className="space-y-4"><DebateAdCreator onCreated={refreshStats} /><DebateAds /></div>}
       {tab === 'posts' && <DebatePosts key={postFilter} initialFilter={postFilter} onChanged={refreshStats} />}
     </div>
   );

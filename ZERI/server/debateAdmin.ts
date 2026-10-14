@@ -340,6 +340,119 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
     }
   });
 
+  /* ------------------------------------------------- sponsored posts */
+
+  /**
+   * The debate admin publishes an ad straight into the public debate: a post marked
+   * `isAd` (the feed shows it with the "Sponsorizuar" bar and its link), running for a set
+   * number of days. Same fields the forum composer writes, so the feed needs no change.
+   */
+  app.post('/api/v1/debate/ads', ...guard, async (req: Request, res: Response) => {
+    const content = clip(req.body?.content, 2000);
+    const sponsor = clip(req.body?.sponsorName, 120);
+    const imageUrl = req.body?.imageUrl ? String(req.body.imageUrl) : '';
+    const link = req.body?.adLink ? String(req.body.adLink) : '';
+    const days = Number(req.body?.days);
+    if (content.length < 3) return res.status(400).json({ error: 'Shkruani tekstin e reklamës.' });
+    if (sponsor.length < 2) return res.status(400).json({ error: 'Shkruani emrin e sponsorit.' });
+    if (imageUrl && !isHttpsUrl(imageUrl)) return res.status(400).json({ error: 'Imazhi duhet të jetë një link https://.' });
+    if (link && !isHttpsUrl(link)) return res.status(400).json({ error: 'Linku duhet të fillojë me https://.' });
+    if (!Number.isInteger(days) || days < 1 || days > 90) return res.status(400).json({ error: 'Kohëzgjatja duhet të jetë 1–90 ditë.' });
+    try {
+      const ref = await deps.db().collection('forumPosts').add({
+        isHidden: false, authorId: req.user?.uid ?? 'platform', authorName: sponsor, authorRole: 'sponsor', authorBadge: 'Sponsorizuar',
+        content, hashtags: [], category: 'Reklamë', imageUrl: imageUrl || null, imageUrls: imageUrl ? [imageUrl] : [],
+        visibility: 'public', isAd: true, adLink: link || null, promotedUntil: Timestamp.fromMillis(Date.now() + days * 86_400_000),
+        promotedBy: req.user?.uid ?? null, likes: [], comments: [], reactions: {}, reportCount: 0, viewCount: 0, createdAt: FieldValue.serverTimestamp(),
+      });
+      deps.audit('debate.ad.create', req, { id: ref.id, days });
+      return res.status(201).json({ ok: true, id: ref.id });
+    } catch (error: any) {
+      console.error('[DEBATE] ad create failed:', error?.message);
+      return res.status(500).json({ error: 'Reklama nuk u publikua.' });
+    }
+  });
+
+  /* ------------------------------------------- verification requests */
+
+  /** A citizen asks for the tick. One open request per account; the debate admin decides. */
+  app.post('/api/v1/forum/verification-requests', deps.requireAuth, async (req: Request, res: Response) => {
+    const uid = req.user?.uid;
+    if (!uid || !req.user?.email) return res.status(403).json({ error: 'Kyçuni me llogari për të kërkuar verifikim.' });
+    const reason = clip(req.body?.reason, 600);
+    const link = req.body?.link ? String(req.body.link) : '';
+    if (reason.length < 10) return res.status(400).json({ error: 'Shpjegoni pse kërkoni verifikim (të paktën 10 shenja).' });
+    if (link && !isHttpsUrl(link)) return res.status(400).json({ error: 'Linku duhet të fillojë me https://.' });
+    try {
+      const ref = deps.db().collection('verificationRequests').doc(uid);
+      const outcome = await deps.db().runTransaction(async (tx) => {
+        const [current, user] = await Promise.all([tx.get(ref), tx.get(deps.db().collection('users').doc(uid))]);
+        if (user.data()?.isVerified === true) return 'verified' as const;
+        if (current.exists && current.data()?.status === 'pending') return 'pending' as const;
+        tx.set(ref, { uid, name: clip(user.data()?.name, 120), reason, link: link || null, status: 'pending', createdAt: FieldValue.serverTimestamp(), decidedAt: null, decidedBy: null, note: '' });
+        return 'created' as const;
+      });
+      if (outcome === 'verified') return res.status(409).json({ error: 'Llogaria juaj është tashmë e verifikuar.' });
+      if (outcome === 'pending') return res.status(409).json({ error: 'Keni një kërkesë në pritje.' });
+      return res.status(201).json({ ok: true });
+    } catch (error: any) {
+      console.error('[DEBATE] verification request failed:', error?.message);
+      return res.status(500).json({ error: 'Kërkesa nuk u dërgua.' });
+    }
+  });
+
+  app.get('/api/v1/forum/verification-requests/mine', deps.requireAuth, async (req: Request, res: Response) => {
+    try {
+      const snap = await deps.db().collection('verificationRequests').doc(req.user?.uid ?? '-').get();
+      const d = snap.data();
+      return res.json({ request: snap.exists ? { status: d?.status, note: d?.note ?? '', createdAtMs: millis(d?.createdAt) } : null });
+    } catch { return res.status(500).json({ error: 'Nuk u ngarkua.' }); }
+  });
+
+  app.get('/api/v1/debate/verification-requests', ...guard, async (req: Request, res: Response) => {
+    const status = ['pending', 'approved', 'rejected'].includes(String(req.query.status)) ? String(req.query.status) : 'pending';
+    try {
+      const snap = await deps.db().collection('verificationRequests').where('status', '==', status).limit(200).get();
+      const items = snap.docs.map((doc) => ({ uid: doc.id, name: clip(doc.data().name, 120), reason: clip(doc.data().reason, 600), link: doc.data().link ?? null, status: doc.data().status, note: doc.data().note ?? '', createdAtMs: millis(doc.data().createdAt) }))
+        .sort((a, b) => a.createdAtMs - b.createdAtMs);
+      return res.json({ items });
+    } catch (error: any) {
+      console.error('[DEBATE] verification queue failed:', error?.message);
+      return res.status(500).json({ error: 'Kërkesat nuk u ngarkuan.' });
+    }
+  });
+
+  /** Approve (tick for 30 days, renewable from the ticks list) or reject with a reason the person reads. */
+  app.post('/api/v1/debate/verification-requests/:uid', ...guard, async (req: Request, res: Response) => {
+    const uid = String(req.params.uid ?? '');
+    const decision = req.body?.decision;
+    const note = clip(req.body?.note, 300);
+    if (!uid || uid.includes('/')) return res.status(400).json({ error: 'Kërkesa nuk është e vlefshme.' });
+    if (decision !== 'approve' && decision !== 'reject') return res.status(400).json({ error: 'Vendimi nuk njihet.' });
+    if (decision === 'reject' && note.length < 5) return res.status(400).json({ error: 'Shkruani arsyen e refuzimit (e lexon personi).' });
+    try {
+      const done = await deps.db().runTransaction(async (tx) => {
+        const ref = deps.db().collection('verificationRequests').doc(uid);
+        const snap = await tx.get(ref);
+        if (!snap.exists || snap.data()?.status !== 'pending') return false;
+        tx.update(ref, { status: decision === 'approve' ? 'approved' : 'rejected', note, decidedBy: req.user?.uid ?? null, decidedAt: FieldValue.serverTimestamp() });
+        if (decision === 'approve') tx.update(deps.db().collection('users').doc(uid), { isVerified: true, verifiedUntil: Timestamp.fromMillis(Date.now() + 30 * 86_400_000), verifiedBy: req.user?.uid ?? null });
+        tx.set(deps.db().collection('notifications').doc(), {
+          title: decision === 'approve' ? 'Llogaria juaj u verifikua' : 'Kërkesa për verifikim u refuzua', message: note || 'Tick-u shfaqet tani te profili juaj.',
+          channel: 'forum', category: 'forum', type: decision === 'approve' ? 'success' : 'info', priority: 'normal', urgent: false,
+          audience: 'user', userId: uid, state: 'published', link: '/verifikimi', sender: 'Debati Publik', createdAt: FieldValue.serverTimestamp(),
+        });
+        return true;
+      });
+      if (!done) return res.status(409).json({ error: 'Kërkesa nuk është më në pritje.' });
+      deps.audit(`debate.verification.${decision}`, req, { uid });
+      return res.json({ ok: true });
+    } catch (error: any) {
+      console.error('[DEBATE] verification decision failed:', error?.message);
+      return res.status(500).json({ error: 'Vendimi nuk u ruajt.' });
+    }
+  });
+
   /* ------------------------------------------------------------- ticks */
 
   app.get('/api/v1/debate/verified', ...guard, async (_req, res: Response) => {
