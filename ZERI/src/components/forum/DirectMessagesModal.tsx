@@ -285,6 +285,7 @@ export function DirectMessagesModal({
     return v === 'inbox' || v === 'outgoing_request';
   });
   const requestConvs = conversations.filter(c => viewOfConversation(c, me) === 'incoming_request');
+  const inboxUnread = inboxConvs.reduce((sum, c) => sum + (Number(c.unreadCount?.[me]) || 0), 0);
   const shownConvs = listTab === 'requests' ? requestConvs : inboxConvs;
 
   return (
@@ -294,36 +295,91 @@ export function DirectMessagesModal({
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="bg-slate-900 border border-slate-800 w-full sm:max-w-5xl md:max-w-6xl h-[100dvh] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:pt-0 sm:pb-0 sm:h-[85vh] md:h-[88vh] sm:rounded-2xl rounded-none flex flex-col overflow-hidden shadow-2xl"
+          className="bg-gradient-to-br from-slate-900 via-slate-950 to-black border border-white/10 w-full sm:max-w-5xl lg:max-w-7xl h-[100dvh] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:pt-0 sm:pb-0 sm:h-[85vh] md:h-[88vh] sm:rounded-3xl rounded-none flex flex-col overflow-hidden shadow-2xl"
         >
-          {/* Top Header */}
-          <div className="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600/20 rounded-xl text-blue-400 border border-blue-500/30">
-                <MessageSquare className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  Mesazhet Private
-                  <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    {dt('Private')}
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400">{dt('Komunikoni drejtpërdrejt me qytetarët dhe profilat zyrtarë')}</p>
-              </div>
-            </div>
+          {/* Compact header — below lg only; on desktop the nav column owns the title and close. */}
+          <div className="lg:hidden p-3 border-b border-white/10 flex items-center justify-between">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-blue-400" aria-hidden="true" />
+              {dt('Mesazhet Private')}
+            </h3>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-colors"
+              aria-label={dt('Mbyll')}
+              className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Main Body Grid */}
+          {/* Main Body Grid: nav | conversations | chat */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Left Sidebar: Conversations List */}
-            <div className={`w-full md:w-72 lg:w-80 border-r border-slate-800 bg-slate-950/50 flex-col shrink-0 ${activeConvId ? 'hidden md:flex' : 'flex'}`}>
+            {/* Column 1 (desktop): who I am + the two inbox views + privacy. */}
+            <aside aria-label={dt('Mesazhet Private')} className="hidden lg:flex w-60 shrink-0 flex-col border-r border-white/10 bg-black/20 p-3">
+              <div className="flex items-center justify-between gap-2 pb-4">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white ring-2 ring-white/10">
+                    {currentUser?.name?.[0]?.toUpperCase() || 'Q'}
+                    {currentUser?.avatar && (
+                      <img src={currentUser.avatar} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <span className="truncate text-sm font-bold text-white">{currentUser?.name || dt('Mesazhet Private')}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={dt('Mbyll')}
+                  className="shrink-0 rounded-xl bg-white/5 p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <nav className="flex flex-col gap-1">
+                {([
+                  { id: 'inbox', label: dt('Bisedat'), icon: MessageSquare, count: inboxUnread },
+                  { id: 'requests', label: dt('Kërkesat'), icon: User, count: requestConvs.length },
+                ] as const).map(({ id, label, icon: Icon, count }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setListTab(id)}
+                    aria-current={listTab === id ? 'page' : undefined}
+                    className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold transition-colors ${
+                      listTab === id ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="flex-1 text-left">{label}</span>
+                    {count > 0 && <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black text-white">{count}</span>}
+                  </button>
+                ))}
+              </nav>
+              <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-3">
+                <div className="mb-2 flex items-center gap-2 text-[11px] font-bold text-slate-300">
+                  <ShieldCheck className="h-3.5 w-3.5 text-blue-400" aria-hidden="true" />
+                  {dt('Kush mund të më shkruajë')}
+                </div>
+                <div role="radiogroup" aria-label={dt('Kush mund të më shkruajë')} className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1">
+                  {([
+                    { id: 'everyone', label: dt('Të gjithë') },
+                    { id: 'following', label: dt('Ndjekjet') },
+                  ] as const).map((o) => (
+                    <button key={o.id} type="button" role="radio" aria-checked={privacy === o.id}
+                      disabled={busyAction === 'privacy'} onClick={() => changePrivacy(o.id)}
+                      className={`rounded-lg py-1.5 text-xs font-bold transition-colors ${privacy === o.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] leading-snug text-slate-500">
+                  {privacy === 'everyone' ? dt('Të panjohurit shkojnë te Kërkesat.') : dt('Vetëm njerëzit që ndiqni.')}
+                </p>
+              </div>
+            </aside>
+
+            {/* Column 2: conversations list */}
+            <div className={`w-full md:w-72 lg:w-80 border-r border-white/10 bg-black/10 flex-col shrink-0 ${activeConvId ? 'hidden md:flex' : 'flex'}`}>
               {/* Mobile: back to list from an open thread */}
               {activeConvId && (
                 <button
@@ -333,7 +389,7 @@ export function DirectMessagesModal({
                   <ArrowLeft className="w-4 h-4" /> Të gjitha bisedat
                 </button>
               )}
-              <div role="tablist" aria-label={dt('Llojet e bisedave')} className="grid grid-cols-2 border-b border-slate-800 text-xs font-bold">
+              <div role="tablist" aria-label={dt('Llojet e bisedave')} className="lg:hidden grid grid-cols-2 border-b border-white/10 text-xs font-bold">
                 {([
                   { id: 'inbox', label: dt('Bisedat'), count: 0 },
                   { id: 'requests', label: dt('Kërkesat'), count: requestConvs.length },
@@ -354,10 +410,33 @@ export function DirectMessagesModal({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Kërko bisedat..."
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
+
+              {/* Recent people — one tap to jump into a thread. */}
+              {listTab === 'inbox' && inboxConvs.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto border-b border-white/10 px-3 py-3 no-scrollbar" aria-label={dt('Bisedat e fundit')}>
+                  {inboxConvs.slice(0, 8).map((conv) => {
+                    const pid = conv.participants.find(p => p !== currentUser?.id);
+                    const person = pid ? conv.participantData?.[pid] : null;
+                    return (
+                      <button key={conv.id} type="button" onClick={() => setActiveConvId(conv.id)}
+                        className="flex w-12 shrink-0 flex-col items-center gap-1" title={person?.name}>
+                        {person?.avatar ? (
+                          <img src={person.avatar} alt="" className={`h-11 w-11 rounded-full object-cover border-2 ${conv.id === activeConvId ? 'border-blue-500' : 'border-white/10'}`} />
+                        ) : (
+                          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-slate-300 border-2 ${conv.id === activeConvId ? 'border-blue-500' : 'border-white/10'}`}>
+                            {person?.name?.[0]?.toUpperCase() || 'Q'}
+                          </span>
+                        )}
+                        <span className="w-full truncate text-center text-[10px] text-slate-400">{person?.name?.split(' ')[0] || 'Përdorues'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {loadingConv ? (
@@ -366,9 +445,11 @@ export function DirectMessagesModal({
                     <span className="text-xs">Po ngarkohen bisedat...</span>
                   </div>
                 ) : shownConvs.length === 0 ? (
-                  <div className="text-center py-12 px-4 text-slate-500">
-                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-xs font-medium text-slate-400">{listTab === 'requests' ? dt('Nuk keni kërkesa mesazhesh') : dt('Nuk keni biseda active')}</p>
+                  <div className="text-center py-16 px-6 text-slate-500">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-blue-400">
+                      <MessageSquare className="w-7 h-7" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-200">{listTab === 'requests' ? dt('Nuk keni kërkesa mesazhesh') : dt('Nuk keni biseda active')}</p>
                     <p className="text-[11px] mt-1 text-slate-500">
                       {listTab === 'requests'
                         ? dt('Mesazhet nga njerëz që nuk i ndiqni shfaqen këtu derisa t’i pranoni.')
@@ -436,7 +517,7 @@ export function DirectMessagesModal({
                 )}
               </div>
 
-              <label className="block border-t border-slate-800 p-3 text-[11px] text-slate-400">
+              <label className="lg:hidden block border-t border-white/10 p-3 text-[11px] text-slate-400">
                 <span className="mb-1 block font-bold text-slate-300">{dt('Kush mund të më shkruajë')}</span>
                 <select value={privacy} onChange={(e) => changePrivacy(e.target.value as DmPrivacy)} disabled={busyAction === 'privacy'}
                   className="w-full rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs text-white focus:border-blue-500 focus:outline-none">
@@ -447,7 +528,7 @@ export function DirectMessagesModal({
             </div>
 
             {/* Right Chat Panel */}
-            <div className={`flex-1 flex flex-col bg-slate-900 ${!activeConvId ? 'hidden md:flex' : 'flex'}`}>
+            <div className={`flex-1 flex flex-col bg-transparent ${!activeConvId ? 'hidden md:flex' : 'flex'}`}>
               {activeConvId && otherUserData ? (
                 <>
                   {/* Chat Top Bar */}
@@ -483,18 +564,18 @@ export function DirectMessagesModal({
                           aria-label={(activeConv.mutedBy ?? []).includes(me) ? dt('Hiq heshtimin') : dt('Hesht njoftimet')}
                           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:bg-slate-800">
                           {(activeConv.mutedBy ?? []).includes(me) ? <BellOff className="w-3.5 h-3.5" aria-hidden="true" /> : <Bell className="w-3.5 h-3.5" aria-hidden="true" />}
-                          {(activeConv.mutedBy ?? []).includes(me) ? dt('Heshtur') : dt('Hesht')}
+                          <span className="hidden xl:inline">{(activeConv.mutedBy ?? []).includes(me) ? dt('Heshtur') : dt('Hesht')}</span>
                         </button>
                         <button type="button" onClick={() => deleteConversation(activeConv.id)} disabled={busyAction === 'hide'} aria-label={dt('Fshi bisedën')}
                           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:bg-slate-800">
-                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> {dt('Fshi')}
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> <span className="hidden xl:inline">{dt('Fshi')}</span>
                         </button>
                       </>
                     )}
                     {otherUserKey && (
                       <button type="button" onClick={() => setReportUserId(otherUserKey)} aria-label={dt('Raporto përdoruesin')}
                         className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:bg-slate-800">
-                        <Flag className="w-3.5 h-3.5" aria-hidden="true" /> {dt('Raporto')}
+                        <Flag className="w-3.5 h-3.5" aria-hidden="true" /> <span className="hidden xl:inline">{dt('Raporto')}</span>
                       </button>
                     )}
                     {otherUserKey && (
@@ -502,7 +583,7 @@ export function DirectMessagesModal({
                         disabled={busyAction === 'block'}
                         aria-label={blockedByMe ? dt('Zhblloko') : dt('Blloko')}
                         className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${blockedByMe ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'text-rose-400 hover:bg-rose-500/10'}`}>
-                        <Ban className="w-3.5 h-3.5" aria-hidden="true" /> {blockedByMe ? dt('Zhblloko') : dt('Blloko')}
+                        <Ban className="w-3.5 h-3.5" aria-hidden="true" /> <span className="hidden xl:inline">{blockedByMe ? dt('Zhblloko') : dt('Blloko')}</span>
                       </button>
                     )}
                   </div>
@@ -581,7 +662,7 @@ export function DirectMessagesModal({
 
                   {/* Send Message Input */}
                   {composer.canSend ? (
-                  <form onSubmit={handleSendMessage} className="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2">
+                  <form onSubmit={handleSendMessage} className="p-3 bg-black/20 border-t border-white/10 flex items-center gap-2">
                     <label className="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-xl cursor-pointer transition-colors">
                       <ImageIcon className="w-4 h-4" />
                       <input
@@ -603,7 +684,7 @@ export function DirectMessagesModal({
                       value={newMessageText}
                       onChange={(e) => setNewMessageText(e.target.value)}
                       placeholder={`Shkruaj një mesazh për ${otherUserData.name}...`}
-                      className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     />
 
                     <button
@@ -627,12 +708,13 @@ export function DirectMessagesModal({
                   )}
                 </>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                  <div className="p-4 bg-slate-800/40 rounded-full border border-slate-800 mb-3 text-blue-400">
-                    <MessageSquare className="w-8 h-8" />
+                <div className="relative flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500 overflow-hidden">
+                  <div className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/20 blur-[90px]" aria-hidden="true" />
+                  <div className="relative p-6 bg-white/5 rounded-3xl border border-white/10 mb-5 text-blue-400 shadow-2xl backdrop-blur">
+                    <MessageSquare className="w-12 h-12" />
                   </div>
-                  <h4 className="text-sm font-semibold text-white mb-1">{dt('Zgjidhni një bisedë')}</h4>
-                  <p className="text-xs text-slate-400 max-w-xs">
+                  <h4 className="relative text-xl font-black text-white mb-2">{dt('Zgjidhni një bisedë')}</h4>
+                  <p className="relative text-sm text-slate-400 max-w-sm">
                     Klikoni mbi një bisedë në të majtë ose hapni profilin e një qytetari në forum për t'i dërguar mesazh privat.
                   </p>
                 </div>

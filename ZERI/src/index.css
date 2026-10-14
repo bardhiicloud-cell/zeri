@@ -828,3 +828,18 @@ html[dir="rtl"] .lucide-arrow-left {
     display: none !important;
   }
 }
+
+/*
+ * Day-mode legibility guard.
+ *
+ * `text-slate-400` measures ~2.6:1 on white, so small labels, footers and the
+ * "Collapse menu" / "Follow us" captions read as washed out. In the light theme
+ * they are lifted to slate-500/600 (>= 4.5:1). Surfaces that are dark in BOTH
+ * themes (hero banners, navy panels) are excluded so their light text stays light.
+ */
+html:not(.dark) :where(.text-slate-400, .text-gray-400):not(.luxury-hero *, [class*="bg-slate-9"] *, [class*="bg-[#0"] *, [class*="from-slate-9"] *, [class*="bg-gradient"] *) {
+  color: #64748b;
+}
+html:not(.dark) :where(.text-slate-500, .text-gray-500):not(.luxury-hero *, [class*="bg-slate-9"] *, [class*="bg-[#0"] *, [class*="from-slate-9"] *, [class*="bg-gradient"] *) {
+  color: #526075;
+}

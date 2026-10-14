@@ -80,11 +80,11 @@ export const MUNICIPALITY_PHOTO_CREDITS: Record<string, { day: MunicipalityPhoto
   },
   'mitrovice': {
     day: { title: 'Kosovska Mitrovica 09.jpg', author: 'Geograf208', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Kosovska_Mitrovica_09.jpg' },
-    night: { title: 'Kosovska Mitrovica 09.jpg', author: 'Geograf208', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Kosovska_Mitrovica_09.jpg', graded: true },
+    night: { title: 'Mitrovica City.jpg', author: 'Bleron Çaka', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Mitrovica_City.jpg' },
   },
   'mitrovica-veriut': {
     day: { title: 'Mitrovica nga lart.JPG', author: 'AgronBeqiri', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Mitrovica_nga_lart.JPG' },
-    night: { title: 'Mitrovica nga lart.JPG', author: 'AgronBeqiri', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Mitrovica_nga_lart.JPG', graded: true },
+    night: { title: 'Ura e Ibrit Ibar Bridge Mitrovica.jpeg', author: 'GentiBehramaj', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Ura_e_Ibrit_Ibar_Bridge_Mitrovica_13_00_07_024000.jpeg' },
   },
   'novoberde': {
     day: { title: 'Novo Brdo Fortress (OSCAL19 trip).jpg', author: 'albinfo', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Novo_Brdo_Fortress_%28OSCAL19_trip%29.jpg' },
@@ -99,8 +99,8 @@ export const MUNICIPALITY_PHOTO_CREDITS: Record<string, { day: MunicipalityPhoto
     night: { title: 'Church of Holy Trinity in Parteš.jpg', author: 'Kafziel at English Wikipedia', license: 'CC BY 2.5', source: 'https://commons.wikimedia.org/wiki/File:Church_of_Holy_Trinity_in_Parte%C5%A1.jpg', graded: true },
   },
   'peje': {
-    day: { title: 'Monastery (Patriarchate of Peja).jpg', author: 'Tom.whitehead337', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Monastery_(Patriarchate_of_Peja).jpg' },
-    night: { title: 'Monastery (Patriarchate of Peja).jpg', author: 'Tom.whitehead337', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Monastery_(Patriarchate_of_Peja).jpg', graded: true },
+    day: { title: 'A view of city of Peja III.jpg', author: 'Shkurte ramushi', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:A_view_of_city_of_Peja_III.jpg' },
+    night: { title: 'Peja in the evening.jpg', author: 'Uniacademic', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Peja_in_the_evening.jpg' },
   },
   'podujeve': {
     day: { title: 'Qyteti i Podujeves 6.JPG', author: 'Aid Muliqi', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Qyteti_i_Podujeves_6.JPG' },
@@ -108,7 +108,7 @@ export const MUNICIPALITY_PHOTO_CREDITS: Record<string, { day: MunicipalityPhoto
   },
   'prishtine': {
     day: { title: 'Panorama of Prishtina.JPG', author: 'Ardianlumi', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Panorama_of_Prishtina.JPG' },
-    night: { title: 'Panorama of Prishtina.JPG', author: 'Ardianlumi', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Panorama_of_Prishtina.JPG', graded: true },
+    night: { title: 'Prishtina at the evening.jpg', author: 'Bujar I Gashi', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Prishtina_at_the_evening.jpg' },
   },
   'prizren': {
     day: { title: 'Prizren Cityscape.jpg', author: 'Tom.whitehead337', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Prizren_Cityscape.jpg' },

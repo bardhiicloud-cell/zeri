@@ -168,10 +168,10 @@ export const SECTION_GUIDES: Record<string, SectionGuide> = {
   news: {
     purpose: 'Redaksia e lajmeve: nga drafti deri te publikimi, me histori të plotë.',
     steps: [
-      'Shtyp "Krijo lajm"; shkruaj titullin, përmbledhjen dhe tekstin.',
-      'Zgjidh vendin: Ballina, Arkivi ose kolona anësore, dhe shiko parapamjen.',
+      'Shtyp "Lajm i ri"; shkruaj titullin dhe tekstin (përmbledhja nxirret vetë nëse e lini bosh).',
+      'Zgjidh kategorinë dhe vendin (Kryesor, Normal, Anësor); parapamja djathtas tregon saktë ku del.',
       'Lidh raportimet që lajmi u përgjigjet (statusi llogaritet vetë).',
-      '"Ruaj si draft" nuk e publikon. "Publiko" është vendim i ruajtur me autor.',
+      '"Publiko tani" e dërgon live; "Publiko dhe shkruaj tjetrin" të hap menjëherë formularin e ri; "Ruaj vetëm si draft" nuk e publikon.',
       'Për ta tërhequr nga publiku: "Tërhiq nga publikimi" me arsye.',
     ],
     rules: [

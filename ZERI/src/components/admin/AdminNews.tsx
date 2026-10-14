@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, setDoc, writeBatch, query, limit, orderBy } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc, writeBatch, query, limit, orderBy } from 'firebase/firestore';
 import DecisionBar from './DecisionBar';
 import { DECISION_KINDS } from '../../lib/decisionRules';
 import { takeDecision } from '../../lib/decisionsApi';
-import { CheckCircle2, Link2, Newspaper, Plus, Search, Trash2, X, Filter, Pencil } from 'lucide-react';
+import { Link2, Newspaper, Plus, Search, Trash2, X, Filter, Pencil, Send, Save, Wand2, Image as ImageIcon, Eye } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { useStore } from '../../lib/store';
@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { NEWS_CATEGORIES } from '../../lib/newsCategories';
 import { DEMO_NEWS } from '../../lib/demoNews';
 import NewsPlacementPreview from './NewsPlacementPreview';
+import { layoutNews } from '../../lib/newsPlacement';
 
 interface AdminNewsItem {
   id: string;
@@ -44,6 +45,24 @@ type NewsPosition = 'featured' | 'feed' | 'sidebar';
 
 /** "Gjithë Kosova" — a country-wide notice, not tied to one municipality. */
 const ALL_KOSOVA = 'Gjithë Kosova';
+
+const POSITION_OPTIONS: { id: NewsPosition; title: string; where: string; ratio: string }[] = [
+  { id: 'featured', title: 'Kryesor', where: 'Lajmi i madh në ballinë e /lajme', ratio: 'Foto 16:9' },
+  { id: 'feed', title: 'Normal', where: 'Rrjedha sipas datës + arkivi', ratio: 'Foto 4:3' },
+  { id: 'sidebar', title: 'Anësor', where: 'Kolona djathtas «Lajmet kryesore»', ratio: 'Foto 4:3' },
+];
+
+const DRAFT_KEY = 'zeri-admin-news-draft';
+
+/** First sentences of the body, trimmed to a card-sized lead. */
+const autoSummary = (content: string) => {
+  const flat = content.replace(/\s+/g, ' ').trim();
+  if (flat.length <= 180) return flat;
+  const cut = flat.slice(0, 180);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 120))}…`;
+};
+
+const readTimeOf = (content: string) => `${Math.max(1, Math.ceil(content.trim().split(/\s+/).filter(Boolean).length / 200))} min lexim`;
 
 const emptyForm = {
   title: '', municipality: ALL_KOSOVA, category: NEWS_CATEGORIES[0] as string, summary: '', content: '', imageUrl: '',
@@ -75,6 +94,7 @@ export default function AdminNews() {
   const [reportFilter, setReportFilter] = useState<ReportStateFilter>('open');
   const [reportQuery, setReportQuery] = useState('');
   const [listQuery, setListQuery] = useState('');
+  const [saving, setSaving] = useState(false);
   const [listFilter, setListFilter] = useState<'all' | 'published' | 'draft' | 'rejected' | 'linked'>('all');
 
   const fieldClass = 'w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500';
@@ -128,6 +148,21 @@ export default function AdminNews() {
       .sort((a, b) => (b.relatedReportIds?.length ?? 0) - (a.relatedReportIds?.length ?? 0));
   }, [items, listQuery, listFilter]);
 
+  /** Where every live article sits on /lajme right now, computed by the page's own layout function. */
+  const livePlacement = useMemo(() => {
+    const live = items
+      .filter(item => item.published === true && !item.isDemo)
+      .sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0));
+    const layout = layoutNews(live);
+    const map = new Map<string, string[]>();
+    const add = (id: string, label: string) => map.set(id, [...(map.get(id) ?? []), label]);
+    if (layout.lead) add(layout.lead.id, 'Kryesor');
+    layout.latest.forEach((a, i) => add(a.id, `Majtas #${i + 1}`));
+    layout.rail.forEach((a, i) => add(a.id, `Djathtas #${i + 1}`));
+    layout.ticker.forEach((a, i) => add(a.id, `Të fundit #${i + 1}`));
+    return map;
+  }, [items]);
+
   useEffect(() => onSnapshot(
     query(collection(db, 'newsArticles'), orderBy('createdAt', 'desc'), limit(STAFF_LIMITS.newsArticles)),
     snapshot => {
@@ -136,20 +171,28 @@ export default function AdminNews() {
     () => setItems([]),
   ), []);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!form.title.trim() || !form.summary.trim() || !form.content.trim()) return;
+  type SaveIntent = 'publish' | 'publishNext' | 'draft';
+
+  const save = async (intent: SaveIntent) => {
+    if (!form.title.trim() || !form.content.trim()) {
+      toast.error(dt('Shkruani të paktën titullin dhe tekstin e lajmit.'));
+      return;
+    }
+    setSaving(true);
     try {
       const now = new Date().toISOString();
       const id = editingId ?? `news-${Date.now()}`;
       const existingItem = items.find(item => item.id === editingId);
+      const { published: _ignored, ...fields } = form;
       const articleData = {
-        ...form,
+        ...fields,
+        title: form.title.trim(),
+        summary: form.summary.trim() || autoSummary(form.content),
         isDemo: false,
         isTicker: form.category === 'Njoftim Zyrtar' && form.isTicker,
         id,
         author: existingItem?.author || 'Administrata e Zërit të Qytetarëve',
-        readTime: existingItem?.readTime || '3 min lexim',
+        readTime: readTimeOf(form.content),
         date: existingItem?.date || new Date().toLocaleDateString('sq-AL', { day: '2-digit', month: 'long', year: 'numeric' }),
         createdAt: existingItem?.createdAt || now,
         // Saving writes the text only. Going public, or coming down, is a decision
@@ -160,26 +203,64 @@ export default function AdminNews() {
         updatedAt: now,
       };
       await setDoc(doc(db, 'newsArticles', id), articleData, { merge: Boolean(editingId) });
-      const wantsPublish = !editingId && form.published;
+      const wantsPublish = intent !== 'draft' && !editingId;
+      let published = existingItem?.published === true;
       if (wantsPublish) {
         try {
           await takeDecision('news', id, 'publish');
+          published = true;
         } catch (error) {
           toast.error(`${dt('Lajmi u ruajt si draft, por nuk u publikua:')} ${(error as Error).message}`);
-          setForm(emptyForm);
-          setEditingId(null);
-          setIsCreating(false);
-          return;
         }
       }
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* storage unavailable */ }
       setForm(emptyForm);
       setEditingId(null);
-      setIsCreating(false);
-      toast.success(editingId ? dt('Lajmi u përditësua me sukses.') : wantsPublish ? dt('Lajmi u publikua me sukses.') : dt('Lajmi u ruajt si draft.'));
+      setIsCreating(intent === 'publishNext');
+      if (intent === 'publishNext') window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.success(
+        editingId ? dt('Lajmi u përditësua me sukses.')
+          : published ? dt('Lajmi u publikua — është live në /lajme.')
+            : dt('Lajmi u ruajt si draft.'),
+      );
     } catch (error) {
       console.error('Gabim gjatë ruajtjes së lajmit:', error);
       toast.error(dt('Lajmi nuk u ruajt. Provoni përsëri.'));
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    void save('publish');
+  };
+
+  /** Rank an article straight from the list: one click, no editor. */
+  const setPosition = async (item: AdminNewsItem, position: NewsPosition) => {
+    if (item.position === position) return;
+    try {
+      await updateDoc(doc(db, 'newsArticles', item.id), { position, updatedAt: new Date().toISOString() });
+      toast.success(dt('Pozicioni u ndryshua.'));
+    } catch {
+      toast.error(dt('Pozicioni nuk u ndryshua.'));
+    }
+  };
+
+  // Keep an unsent new article in this browser so a refresh never loses it.
+  useEffect(() => {
+    if (!isCreating || editingId) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    } catch { /* storage unavailable */ }
+  }, [form, isCreating, editingId]);
+
+  const openNew = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) setForm({ ...emptyForm, ...JSON.parse(saved) });
+    } catch { /* ignore corrupt draft */ }
+    setIsCreating(true);
   };
 
   const handleEdit = (item: AdminNewsItem) => {
@@ -267,232 +348,269 @@ export default function AdminNews() {
               <Newspaper className="h-4 w-4" /> {dt('Shto 12 shembuj demo si skica')}
             </button>
           )}
-          <button onClick={() => isCreating ? closeEditor() : setIsCreating(true)} className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold">
-            {isCreating ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}{isCreating ? 'Mbyll redaktorin' : 'Krijo lajm'}
+          <button onClick={() => isCreating ? closeEditor() : openNew()} className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold">
+            {isCreating ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}{isCreating ? 'Mbyll redaktorin' : 'Lajm i ri'}
           </button>
         </div>
       </div>
 
       {isCreating && (
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 sm:p-7 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Titulli i lajmit" className={fieldClass} />
-            <select value={form.municipality} onChange={e => setForm({ ...form, municipality: e.target.value, relatedReportIds: [] })} className={fieldClass}>
-              <option value={ALL_KOSOVA}>{dt('Gjithë Kosova (niveli kombëtar)')}</option>
-              {KOSOVO_MUNICIPALITIES.map(municipality => <option key={municipality}>{municipality}</option>)}
-            </select>
-            <select
-              value={form.category}
-              onChange={e => setForm({ ...form, category: e.target.value, isTicker: e.target.value === 'Njoftim Zyrtar' && form.isTicker })}
-              className={fieldClass}
-            >
-              {NEWS_CATEGORIES.map(category => <option key={category} value={category}>{dt(category)}</option>)}
-              {!NEWS_CATEGORIES.some(category => category === form.category) && (
-                <option value={form.category}>{form.category} · {dt('kategori ekzistuese')}</option>
-              )}
-            </select>
-            <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="URL e fotografisë kryesore (opsionale)" className={fieldClass} />
-            <input value={form.inlineImageUrl} onChange={e => setForm({ ...form, inlineImageUrl: e.target.value })} placeholder="URL e fotos BRENDA lajmit (opsionale)" className={fieldClass} />
-            <input value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} placeholder="URL e videos (YouTube ose mp4, opsionale)" className={fieldClass} />
-            <select value={form.position} onChange={e => setForm({ ...form, position: e.target.value as typeof form.position })} className={fieldClass}>
-              <option value="featured">Ballina — lajm kryesor (zë vendin e madh)</option>
-              <option value="feed">Rrjedhë — sipas datës (majtas, titujt, arkivi)</option>
-              <option value="sidebar">Kolona anësore — përparësi djathtas</option>
-            </select>
-          </div>
-          <label className={cn(
-            'flex items-start gap-3 rounded-xl border p-4',
-            form.category === 'Njoftim Zyrtar'
-              ? 'border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/20'
-              : 'border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-800/50 opacity-60'
-          )}>
-            <input
-              type="checkbox"
-              checked={form.isTicker}
-              disabled={form.category !== 'Njoftim Zyrtar'}
-              onChange={event => setForm({ ...form, isTicker: event.target.checked })}
-              className="mt-0.5 h-4 w-4 accent-blue-700"
-            />
-            <span>
-              <span className="block text-sm font-bold text-slate-900 dark:text-white">{dt('Shfaq edhe si njoftim kryesor')}</span>
-              <span className="mt-1 block text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                {dt('Njoftimi shfaqet si shirit i dallueshëm nën navigimin kryesor në faqet publike dhe te Lajmet. Mund të hiqet në çdo kohë duke çaktivizuar këtë zgjedhje ose duke tërhequr publikimin.')}
-              </span>
-              {form.category !== 'Njoftim Zyrtar' && (
-                <span className="mt-1 block text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                  {dt('Zgjidhni kategorinë Njoftim Zyrtar për ta shfaqur në shiritin e njoftimeve.')}
-                </span>
-              )}
-            </span>
-          </label>
-          <div className="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/20 sm:flex-row sm:items-center">
-            {form.imageUrl && <img src={form.imageUrl} alt="Parapamja e fotos së lajmit" className={cn('w-full shrink-0 rounded-lg object-cover sm:w-40', form.position === 'featured' ? 'aspect-video' : 'aspect-[4/3]')} />}
-            <div className="text-xs leading-relaxed text-blue-900 dark:text-blue-200">
-              <p className="font-black">{form.position === 'featured' ? 'Ballina · imazh panoramik 16:9' : form.position === 'sidebar' ? 'Kolona anësore · imazh vertikal i shkurtër 4:3' : 'Arkivi i lajmeve · imazh landscape 4:3'}</p>
-              <p className="mt-1">Ky pozicion përcakton vendin e lajmit në faqen publike. Përdorni imazh të qartë dhe të paktën 1200 px gjerësi për ballinën.</p>
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={event => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+              event.preventDefault();
+              void save(editingId ? 'draft' : 'publishNext');
+            }
+          }}
+          className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(24rem,0.85fr)]"
+        >
+          {/* LEFT — write it */}
+          <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900 sm:p-7">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">{editingId ? dt('Redakto lajmin') : dt('Lajm i ri')}</h3>
+              <span className="text-[11px] font-semibold text-slate-400">{dt('Ctrl + Enter = publiko dhe hap tjetrin')}</span>
             </div>
-          </div>
-          <NewsPlacementPreview
-            items={items}
-            editingId={editingId}
-            draft={{ title: form.title, category: form.category, position: form.position, imageUrl: form.imageUrl }}
-            willBePublic={editingId ? items.find(item => item.id === editingId)?.published === true : form.published}
-          />
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
-            <fieldset className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
-              <legend className="px-1 text-sm font-bold text-slate-900 dark:text-white">
-                {dt('Raportime të lidhura —')} {form.municipality}
-              </legend>
-              <p className="mb-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {dt('Lidhni raportimet që ky njoftim i përgjigjet. Statusi i përgjigjes llogaritet vetë në faqen publike.')}
-              </p>
 
-              <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                {REPORT_STATE_FILTERS.map((option) => (
+            <input
+              required
+              autoFocus
+              value={form.title}
+              onChange={e => setForm({ ...form, title: e.target.value })}
+              placeholder={dt('Titulli i lajmit')}
+              className={cn(fieldClass, 'text-lg font-black')}
+            />
+
+            {/* 1 — category */}
+            <div>
+              <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">1 · {dt('Kategoria')}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {NEWS_CATEGORIES.map(category => (
+                  <button
+                    key={category}
+                    type="button"
+                    aria-pressed={form.category === category}
+                    onClick={() => setForm({ ...form, category, isTicker: category === 'Njoftim Zyrtar' && form.isTicker })}
+                    className={cn(
+                      'rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+                      form.category === category
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300',
+                    )}
+                  >
+                    {dt(category)}
+                  </button>
+                ))}
+                {!NEWS_CATEGORIES.some(category => category === form.category) && (
+                  <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">{form.category} · {dt('kategori ekzistuese')}</span>
+                )}
+              </div>
+              {form.category === 'Njoftim Zyrtar' && (
+                <label className="mt-3 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-950/20">
+                  <input type="checkbox" checked={form.isTicker} onChange={event => setForm({ ...form, isTicker: event.target.checked })} className="mt-0.5 h-4 w-4 accent-blue-700" />
+                  <span className="text-xs leading-relaxed text-blue-900 dark:text-blue-200">
+                    <strong>{dt('Shfaq edhe si shirit njoftimi')}</strong> — {dt('shirit i dallueshëm nën navigimin kryesor në faqet publike.')}
+                  </span>
+                </label>
+              )}
+            </div>
+
+            {/* 2 — where */}
+            <div>
+              <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">2 · {dt('Ku del në faqe')}</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {POSITION_OPTIONS.map(option => (
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => setReportFilter(option.id)}
-                    aria-pressed={reportFilter === option.id}
+                    aria-pressed={form.position === option.id}
+                    onClick={() => setForm({ ...form, position: option.id })}
                     className={cn(
-                      'rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors',
-                      reportFilter === option.id
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300'
+                      'rounded-xl border p-3 text-left transition-colors',
+                      form.position === option.id
+                        ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200 dark:bg-blue-950/30 dark:ring-blue-800'
+                        : 'border-slate-200 hover:border-blue-300 dark:border-white/10',
                     )}
                   >
-                    {dt(option.label)}
+                    <span className="block text-sm font-black text-slate-900 dark:text-white">{dt(option.title)}</span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-slate-500 dark:text-slate-400">{dt(option.where)}</span>
+                    <span className="mt-1.5 block text-[10px] font-bold text-blue-700 dark:text-blue-300">{dt(option.ratio)}</span>
                   </button>
                 ))}
               </div>
+            </div>
 
-              <div className="relative mb-3">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                <input
-                  value={reportQuery}
-                  onChange={(event) => setReportQuery(event.target.value)}
-                  placeholder={dt('Kërko sipas titullit, numrit ose adresës...')}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
-                />
-              </div>
-
-              <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
-                {linkableReports.map(report => {
-                  const selected = form.relatedReportIds.includes(report.id);
-                  return (
-                    <label
-                      key={report.id}
-                      className={cn(
-                        'flex cursor-pointer items-start gap-3 rounded-lg px-2.5 py-2 transition-colors',
-                        selected ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => setForm(current => ({
-                          ...current,
-                          relatedReportIds: selected
-                            ? current.relatedReportIds.filter(id => id !== report.id)
-                            : [...current.relatedReportIds, report.id],
-                        }))}
-                        className="mt-0.5 h-4 w-4 accent-blue-700"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-bold text-slate-800 dark:text-slate-100">{report.title}</span>
-                        <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                          {report.trackingId && (
-                            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono font-bold dark:bg-slate-800">
-                              {report.trackingId}
-                            </span>
-                          )}
-                          <span>{report.status}</span>
-                          {report.urgency === 'Kritike' && (
-                            <span className="rounded-full bg-rose-100 px-1.5 py-0.5 font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-                              {dt('Kritike')}
-                            </span>
-                          )}
-                          <span className="truncate">{report.location?.address || dt('Pa adresë')}</span>
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-                {linkableReports.length === 0 && (
-                  <p className="rounded-lg bg-slate-50 px-3 py-4 text-center text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    {reportFilter === 'all'
-                      ? dt('Nuk ka raportime për këtë komunë.')
-                      : dt('Asnjë raportim nuk përputhet me këtë filtër.')}
-                  </p>
-                )}
-              </div>
-            </fieldset>
-            <div className="flex flex-col gap-4">
-              {!editingId && (
-                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200">
-                  <input type="checkbox" checked={form.published} onChange={e => setForm({ ...form, published: e.target.checked })} className="h-4 w-4 accent-blue-700" />
-                  {dt('Publikoje menjëherë')}
-                </label>
-              )}
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-relaxed text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
-                <strong>{form.relatedReportIds.length} raportime</strong> do të lidhen me këtë njoftim për gjurmim të përgjigjes komunale.
+            {/* 3 — content */}
+            <div className="space-y-3">
+              <p className="text-xs font-black uppercase tracking-wider text-slate-500">3 · {dt('Teksti')}</p>
+              <textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder={dt('Përmbajtja e plotë e lajmit')} className={`${fieldClass} min-h-48`} />
+              <div className="relative">
+                <textarea value={form.summary} onChange={e => setForm({ ...form, summary: e.target.value })} placeholder={dt('Përmbledhja e shkurtër (bosh = nxirret vetë nga teksti)')} className={`${fieldClass} min-h-20 pr-28`} />
+                <button
+                  type="button"
+                  onClick={() => setForm(current => ({ ...current, summary: autoSummary(current.content) }))}
+                  disabled={!form.content.trim()}
+                  className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-200"
+                >
+                  <Wand2 className="h-3 w-3" /> {dt('Gjenero')}
+                </button>
               </div>
             </div>
-          </div>
-          <textarea required value={form.summary} onChange={e => setForm({ ...form, summary: e.target.value })} placeholder="Përmbledhja e shkurtër" className={`${fieldClass} min-h-24`} />
-          <textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Përmbajtja e plotë e lajmit" className={`${fieldClass} min-h-40`} />
 
-          {/* Live preview — exactly how the article renders publicly. */}
-          <details open className="group rounded-2xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-800/40">
-            <summary className="cursor-pointer select-none px-4 py-3 text-sm font-black text-slate-900 dark:text-white">
-              {dt('Preview — si duket lajmi për publikun')}
-            </summary>
-            <article className="mx-4 mb-4 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
-              {form.imageUrl && (
-                <img src={form.imageUrl} alt="" className="aspect-video w-full object-cover" />
-              )}
-              <div className="space-y-3 p-5">
+            {/* 4 — media + municipality */}
+            <details open={Boolean(form.imageUrl || form.inlineImageUrl || form.videoUrl)} className="rounded-xl border border-slate-200 dark:border-white/10">
+              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100">
+                <ImageIcon className="mr-1.5 inline h-4 w-4" /> 4 · {dt('Foto, video dhe komuna')}
+              </summary>
+              <div className="grid gap-3 p-4 pt-0 md:grid-cols-2">
+                <select value={form.municipality} onChange={e => setForm({ ...form, municipality: e.target.value, relatedReportIds: [] })} className={fieldClass}>
+                  <option value={ALL_KOSOVA}>{dt('Gjithë Kosova (niveli kombëtar)')}</option>
+                  {KOSOVO_MUNICIPALITIES.map(municipality => <option key={municipality}>{municipality}</option>)}
+                </select>
+                <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="URL e fotografisë kryesore" className={fieldClass} />
+                <input value={form.inlineImageUrl} onChange={e => setForm({ ...form, inlineImageUrl: e.target.value })} placeholder="URL e fotos BRENDA lajmit" className={fieldClass} />
+                <input value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} placeholder="URL e videos (YouTube ose mp4)" className={fieldClass} />
+              </div>
+            </details>
+
+            {/* 5 — linked reports (optional) */}
+            <details open={form.relatedReportIds.length > 0} className="rounded-xl border border-slate-200 dark:border-white/10">
+              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100">
+                <Link2 className="mr-1.5 inline h-4 w-4" /> 5 · {dt('Raportime të lidhura')} ({form.relatedReportIds.length}) <span className="font-normal text-slate-400">— {dt('opsionale')}</span>
+              </summary>
+              <div className="p-4 pt-0">
+                <p className="mb-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  {dt('Lidhni raportimet që ky njoftim i përgjigjet.')} {form.municipality}
+                </p>
+                <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                  {REPORT_STATE_FILTERS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setReportFilter(option.id)}
+                      aria-pressed={reportFilter === option.id}
+                      className={cn(
+                        'rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors',
+                        reportFilter === option.id
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300',
+                      )}
+                    >
+                      {dt(option.label)}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative mb-3">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                  <input
+                    value={reportQuery}
+                    onChange={(event) => setReportQuery(event.target.value)}
+                    placeholder={dt('Kërko sipas titullit, numrit ose adresës...')}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
+                  />
+                </div>
+                <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                  {linkableReports.map(report => {
+                    const selected = form.relatedReportIds.includes(report.id);
+                    return (
+                      <label
+                        key={report.id}
+                        className={cn(
+                          'flex cursor-pointer items-start gap-3 rounded-lg px-2.5 py-2 transition-colors',
+                          selected ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800',
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => setForm(current => ({
+                            ...current,
+                            relatedReportIds: selected
+                              ? current.relatedReportIds.filter(id => id !== report.id)
+                              : [...current.relatedReportIds, report.id],
+                          }))}
+                          className="mt-0.5 h-4 w-4 accent-blue-700"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-bold text-slate-800 dark:text-slate-100">{report.title}</span>
+                          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                            {report.trackingId && <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono font-bold dark:bg-slate-800">{report.trackingId}</span>}
+                            <span>{report.status}</span>
+                            {report.urgency === 'Kritike' && <span className="rounded-full bg-rose-100 px-1.5 py-0.5 font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">{dt('Kritike')}</span>}
+                            <span className="truncate">{report.location?.address || dt('Pa adresë')}</span>
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {linkableReports.length === 0 && (
+                    <p className="rounded-lg bg-slate-50 px-3 py-4 text-center text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      {reportFilter === 'all' ? dt('Nuk ka raportime për këtë komunë.') : dt('Asnjë raportim nuk përputhet me këtë filtër.')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </details>
+          </div>
+
+          {/* RIGHT — see it, then send it */}
+          <div className="space-y-4 xl:sticky xl:top-4">
+            <NewsPlacementPreview
+              items={items}
+              editingId={editingId}
+              draft={{ title: form.title, category: form.category, position: form.position, imageUrl: form.imageUrl }}
+              willBePublic={editingId ? items.find(item => item.id === editingId)?.published === true : true}
+            />
+
+            <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
+              <div className="flex items-center gap-1.5 border-b border-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:border-white/10">
+                <Eye className="h-3.5 w-3.5" /> {dt('Si duket për publikun')}
+              </div>
+              {form.imageUrl && <img src={form.imageUrl} alt="" className="aspect-video w-full object-cover" />}
+              <div className="max-h-[28rem] space-y-3 overflow-y-auto p-5">
                 <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{form.category}</span>
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{dt(form.category)}</span>
                   <span className="text-slate-400">{form.municipality === ALL_KOSOVA ? dt('Gjithë Kosova') : form.municipality}</span>
                   <span className="text-slate-300">·</span>
-                  <span className="text-slate-400">{new Date().toLocaleDateString('sq-AL', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-                  {form.position === 'featured' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{dt('Lajm kryesor')}</span>}
+                  <span className="text-slate-400">{readTimeOf(form.content)}</span>
                   {form.isTicker && form.category === 'Njoftim Zyrtar' && <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">{dt('Shirit njoftimesh')}</span>}
                 </div>
                 <h3 className="text-xl font-black leading-snug text-slate-900 dark:text-white">{form.title || dt('Titulli i lajmit do të shfaqet këtu')}</h3>
-                <p className="text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300">{form.summary || dt('Përmbledhja e shkurtër e lajmit…')}</p>
+                <p className="text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300">{form.summary || autoSummary(form.content) || dt('Përmbledhja e shkurtër e lajmit…')}</p>
                 <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-200">{form.content}</div>
-                {form.inlineImageUrl && (
-                  <figure>
-                    <img src={form.inlineImageUrl} alt="" className="w-full rounded-lg object-cover" />
-                    <figcaption className="mt-1 text-[10px] text-slate-400">{dt('Foto brenda lajmit — shfaqet pas paraqitjes')}</figcaption>
-                  </figure>
-                )}
+                {form.inlineImageUrl && <img src={form.inlineImageUrl} alt="" className="w-full rounded-lg object-cover" />}
                 {form.videoUrl && (
                   <div className="overflow-hidden rounded-lg">
                     {form.videoUrl.includes('youtube.com') || form.videoUrl.includes('youtu.be') ? (
-                      <iframe
-                        src={form.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                        title="Video e lajmit"
-                        className="aspect-video w-full"
-                        allowFullScreen
-                      />
+                      <iframe src={form.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title="Video e lajmit" className="aspect-video w-full" allowFullScreen />
                     ) : (
                       <video src={form.videoUrl} controls className="w-full" />
                     )}
                   </div>
                 )}
-                {!!form.relatedReportIds.length && (
-                  <p className="rounded-lg bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
-                    {form.relatedReportIds.length} {dt('raportime të lidhura me këtë lajm')}
-                  </p>
-                )}
               </div>
             </article>
-          </details>
-          <div className="flex justify-end">
-            <button type="submit" className="px-5 py-3 rounded-xl bg-slate-950 text-white font-bold text-sm dark:bg-blue-700">{editingId ? dt('Ruaj tekstin') : form.published ? dt('Ruaj dhe publiko') : dt('Ruaj si draft')}</button>
+
+            <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+              {editingId ? (
+                <button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white hover:bg-blue-700 disabled:opacity-60">
+                  <Save className="h-4 w-4" /> {dt('Ruaj ndryshimet')}
+                </button>
+              ) : (
+                <>
+                  <button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white hover:bg-blue-700 disabled:opacity-60">
+                    <Send className="h-4 w-4" /> {dt('Publiko tani')}
+                  </button>
+                  <button type="button" disabled={saving} onClick={() => void save('publishNext')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-700">
+                    <Plus className="h-4 w-4" /> {dt('Publiko dhe shkruaj tjetrin')}
+                  </button>
+                  <button type="button" disabled={saving} onClick={() => void save('draft')} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">
+                    {dt('Ruaj vetëm si draft')}
+                  </button>
+                </>
+              )}
+              <p className="text-center text-[11px] text-slate-400">{dt('Skica ruhet automatikisht në këtë shfletues derisa ta dërgoni.')}</p>
+            </div>
           </div>
         </form>
       )}
@@ -611,6 +729,31 @@ export default function AdminNews() {
                     );
                   })()}
                 </div>
+                {!!livePlacement.get(item.id)?.length && (
+                  <p className="mt-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                    {dt('Live në')}: {livePlacement.get(item.id)!.join(' · ')}
+                  </p>
+                )}
+                {!item.isDemo && (
+                  <div className="mt-2.5 inline-flex overflow-hidden rounded-lg border border-slate-200 text-[11px] font-bold dark:border-white/10" role="group" aria-label={dt('Pozicioni')}>
+                    {POSITION_OPTIONS.map(option => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => void setPosition(item, option.id)}
+                        aria-pressed={(item.position ?? 'feed') === option.id}
+                        className={cn(
+                          'px-2.5 py-1 transition-colors',
+                          (item.position ?? 'feed') === option.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-slate-600 hover:bg-blue-50 dark:bg-slate-800 dark:text-slate-300',
+                        )}
+                      >
+                        {dt(option.title)}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {item.isDemo ? (
                   <p className="mt-3 text-[11px] text-amber-700 dark:text-amber-300">{dt('Redaktojeni dhe ruajeni shembullin para publikimit.')}</p>
                 ) : (

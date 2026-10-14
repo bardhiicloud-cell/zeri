@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, PlusCircle, Menu, X, ShieldAlert, UserRound,
   LogOut, Search, ChevronRight, ChevronDown, Sun, Moon, MapPin, Building2,
-  Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake,
+  Plus, Film, Megaphone, Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
@@ -61,6 +61,14 @@ const QUICK_ACTIONS = [
   { href: '/donacion', label: 'Ndihmo', hint: 'Donacione', icon: Wallet, tone: 'from-emerald-600 to-teal-700' },
 ] as const;
 
+/** What the centre "+" offers. Debate, reels and ads are handled by the forum page. */
+const CREATE_ACTIONS = [
+  { id: 'report', label: 'Raporto një problem', hint: 'Dërgo foto dhe vendndodhje te komuna', icon: PlusCircle, tone: 'from-blue-500 to-blue-800' },
+  { id: 'post', label: 'Publiko në Debatin Publik', hint: 'Tekst, foto ose sondazh për komunitetin', icon: MessageSquare, tone: 'from-indigo-500 to-violet-700' },
+  { id: 'reel', label: 'Publiko Reel', hint: 'Video vertikale deri në 90 sekonda', icon: Film, tone: 'from-rose-500 to-pink-700' },
+  { id: 'ad', label: 'Krijo Reklamë', hint: 'Promovo biznesin ose shërbimin tënd', icon: Megaphone, tone: 'from-amber-500 to-orange-600' },
+] as const;
+
 /** Municipalities surfaced as one-tap chips before the full 38-name picker. */
 const SCOPE_SHORTCUTS = ['Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 'Mitrovicë', 'Gjakovë'] as const;
 
@@ -88,6 +96,7 @@ export function MobileNav() {
   const isGuest = !currentUser || currentUser.role === 'guest';
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isScopeExpanded, setIsScopeExpanded] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -115,7 +124,36 @@ export function MobileNav() {
   const close = () => {
     setIsSheetOpen(false);
     setIsScopeExpanded(false);
+    setIsCreateOpen(false);
   };
+
+  const startCreate = (id: (typeof CREATE_ACTIONS)[number]['id']) => {
+    setIsCreateOpen(false);
+    if (id === 'report') {
+      navigate('/raporto');
+      return;
+    }
+    // Already in the forum: tell it directly. Otherwise it reads `?create=` on mount.
+    if (location.pathname.startsWith('/forum')) {
+      window.dispatchEvent(new CustomEvent('zeri:forum-create', { detail: id }));
+    } else {
+      navigate(`/forum?create=${id}`);
+    }
+  };
+
+  // Leaving the page by any route closes the menu.
+  useEffect(() => {
+    setIsCreateOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsCreateOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isCreateOpen]);
   const goTo = (href: string) => {
     close();
     navigate(href);
@@ -150,7 +188,7 @@ export function MobileNav() {
       */}
       <nav
         aria-label={dt('Navigimi kryesor')}
-        className="fixed inset-x-0 bottom-0 z-40 md:hidden"
+        className={cn('fixed inset-x-0 bottom-0 md:hidden', isCreateOpen ? 'z-[46]' : 'z-40')}
       >
         {/* Gradient scrim: keeps the dock legible over any page content. */}
         <div
@@ -180,10 +218,12 @@ export function MobileNav() {
 
               {/* Raised primary action, centred between the other tabs. */}
               <li className="flex justify-center">
-                <Link
-                  to={TABS[2].href}
-                  onClick={() => goTo(TABS[2].href)}
-                  aria-label={dt('Raporto një problem')}
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen((open) => !open)}
+                  aria-label={dt('Krijo')}
+                  aria-haspopup="menu"
+                  aria-expanded={isCreateOpen}
                   className={cn(
                     'relative -mt-7 flex h-[58px] w-[58px] items-center justify-center rounded-[20px]',
                     'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800 text-white',
@@ -193,17 +233,25 @@ export function MobileNav() {
                   )}
                 >
                   {/*
-                    Slow halo pulse — the only animation in the dock, so it
-                    reads as "this is the primary action" and nothing else.
+                    Slow halo pulse — reads as "this is the primary action".
                     `motion-safe` keeps it off for citizens who have asked the
-                    operating system for reduced motion.
+                    operating system for reduced motion; it stops while open.
                   */}
-                  <span
+                  {!isCreateOpen && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-[20px] bg-blue-400/40 motion-safe:animate-ping motion-safe:[animation-duration:3.2s]"
+                    />
+                  )}
+                  <motion.span
                     aria-hidden="true"
-                    className="absolute inset-0 rounded-[20px] bg-blue-400/40 motion-safe:animate-ping motion-safe:[animation-duration:3.2s]"
-                  />
-                  <PlusCircle className="relative h-7 w-7" aria-hidden="true" />
-                </Link>
+                    animate={{ rotate: isCreateOpen ? 135 : 0 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+                    className="relative flex"
+                  >
+                    <Plus className="h-7 w-7" strokeWidth={2.4} />
+                  </motion.span>
+                </button>
               </li>
 
               {/*
@@ -242,6 +290,53 @@ export function MobileNav() {
           </div>
         </div>
       </nav>
+
+      {/* Create menu: rises from the centre button, one staggered card per action. */}
+      <AnimatePresence>
+        {isCreateOpen && (
+          <div className="fixed inset-0 z-[45] md:hidden">
+            <motion.button
+              type="button"
+              aria-label={dt('Mbyll')}
+              onClick={() => setIsCreateOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
+            />
+            <div className="absolute inset-x-0 bottom-0 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+5.5rem)]">
+              <ul role="menu" aria-label={dt('Krijo')} className="mx-auto flex max-w-md flex-col gap-2.5">
+                {CREATE_ACTIONS.map((action, index) => (
+                  <motion.li
+                    key={action.id}
+                    role="none"
+                    initial={{ opacity: 0, y: 36, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 420, damping: 30, delay: (CREATE_ACTIONS.length - 1 - index) * 0.045 } }}
+                    exit={{ opacity: 0, y: 24, scale: 0.96, transition: { duration: 0.14, delay: index * 0.02 } }}
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => startCreate(action.id)}
+                      className="group flex w-full items-center gap-3.5 rounded-2xl border border-white/60 bg-white/92 p-3 text-left shadow-[0_16px_40px_-18px_rgba(15,23,42,0.55)] backdrop-blur-xl transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-slate-900/90"
+                    >
+                      <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br text-white shadow-sm', action.tone)}>
+                        <action.icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-black text-slate-900 dark:text-white">{dt(action.label)}</span>
+                        <span className="block truncate text-xs font-medium text-slate-500 dark:text-slate-400">{dt(action.hint)}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-active:translate-x-0.5 dark:text-slate-600" aria-hidden="true" />
+                    </button>
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Sheet */}
       <AnimatePresence>
