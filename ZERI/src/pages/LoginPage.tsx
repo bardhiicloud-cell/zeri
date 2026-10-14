@@ -302,10 +302,10 @@ export default function LoginPage() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight text-center">
-            {view === 'login' ? 'Mirësevini' : view === 'reset-success' ? 'Verifikoni Emailin' : 'Rikthe Qasjen'}
+            {dt(view === 'login' ? 'Mirësevini' : view === 'reset-success' ? 'Verifikoni Emailin' : 'Rikthe Qasjen')}
           </h2>
           <p className="text-slate-400 font-medium mb-10 text-center text-sm">
-            {view === 'login' ? 'Identifikohuni përmes portalit të sigurtë' : view === 'reset-success' ? '' : 'Rivendosja e fjalëkalimit me protokoll të sigurtë'}
+            {dt(view === 'login' ? 'Identifikohuni përmes portalit të sigurtë' : view === 'reset-success' ? '' : 'Rivendosja e fjalëkalimit me protokoll të sigurtë')}
           </p>
 
           {error && (
@@ -379,7 +379,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full flex items-center justify-between px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 transition-all rounded-xl text-sm tracking-wide disabled:opacity-50 mt-8 group"
               >
-                <span>{loading ? 'Duke Verifikuar...' : view === 'login' ? 'Kyçu në Sistem' : 'Rikthe Fjalëkalimin'}</span>
+                <span>{dt(loading ? 'Duke Verifikuar...' : view === 'login' ? 'Kyçu në Sistem' : 'Rikthe Fjalëkalimin')}</span>
                 {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
               </button>
 

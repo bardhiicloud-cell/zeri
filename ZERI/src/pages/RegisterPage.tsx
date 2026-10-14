@@ -208,11 +208,11 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 pt-20 sm:p-12 sm:pt-24 lg:pt-12 relative overflow-y-auto">
         <div className="w-full max-w-md relative z-10 flex flex-col items-center">
 
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight text-center">
-             {isVerifyingOtp ? "Verifikimi i Email-it" : "Krijo Llogarinë"}
+             {isVerifyingOtp ? dt('Verifikimi i Email-it') : dt('Krijo Llogarinë')}
           </h2>
           <p className="text-slate-400 font-medium mb-10 text-center text-sm">
              {isVerifyingOtp

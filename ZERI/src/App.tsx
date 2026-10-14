@@ -157,6 +157,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/kushtet-e-perdorimit': 'Kushtet e Përdorimit',
   '/terms': 'Kushtet e Përdorimit',
   '/privatesia': 'Politika e Privatësisë',
+  '/politika-e-priveritetit': 'Politika e Privatësisë',
+  '/politika-e-cookies': 'Politika e Privatësisë',
   '/donacion': 'Ndihma & Donacione',
   '/partneret': 'Partnerët & Reklama',
   '/login': 'Hyrja',

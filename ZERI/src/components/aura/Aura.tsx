@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, Building, FileText, LifeBuoy, ListChecks, MapPin, Phone, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
@@ -155,21 +155,39 @@ const DEFAULT_ORBIT: Array<{ to: string; label: string; icon: LucideIcon }> = [
 export function AuraOrbit({ core: Core, icons, links }: { core: LucideIcon; icons?: LucideIcon[]; links?: Array<{ to: string; label: string }> }) {
   const items = icons && links ? icons.map((icon, i) => ({ icon, ...links[i] })).filter(x => x.to) : DEFAULT_ORBIT;
   const sats = items.slice(0, 8);
+  const { pathname } = useLocation();
+  // The language prefix (/en/harta) is not part of the route being compared.
+  const here = pathname.replace(/^\/[a-z]{2,3}(?=\/|$)/, '') || '/';
+  const [label, setLabel] = useState<string | null>(null);
+  const idle = dt('Lidhje të shpejta');
+  /*
+    The caption under the ring names the satellite being hovered, focused or held
+    down with a finger. A tooltip would be clipped by the hero's overflow and does
+    not exist on touch; a caption inside the orbit's own width does neither.
+  */
   return (
-    <nav className="au-orbit" aria-label={dt('Lidhje të shpejta')}>
-      <span aria-hidden="true" className="au-orbit-ring inset-[6%]" />
-      <span aria-hidden="true" className="au-orbit-ring inset-[26%]" />
-      <span aria-hidden="true" className="au-orbit-core"><Core className="h-5 w-5" /></span>
-      {sats.map((it, i) => {
-        const ang = (i / sats.length) * Math.PI * 2 - Math.PI / 2;
-        const r = i % 2 ? 34 : 46;
-        return (
-          <Link key={it.to} to={it.to} aria-label={dt(it.label)} title={dt(it.label)} className="au-orbit-sat"
-            style={{ left: `${50 + Math.cos(ang) * r}%`, top: `${50 + Math.sin(ang) * r}%`, animationDelay: `${i * 0.6}s` }}>
-            <it.icon className="h-4 w-4" />
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="au-orbit-wrap">
+      <nav className="au-orbit" aria-label={idle} onMouseLeave={() => setLabel(null)}>
+        <span aria-hidden="true" className="au-orbit-ring inset-[6%]" />
+        <span aria-hidden="true" className="au-orbit-ring inset-[26%]" />
+        <span aria-hidden="true" className="au-orbit-core"><Core className="h-5 w-5" /></span>
+        {sats.map((it, i) => {
+          const ang = (i / sats.length) * Math.PI * 2 - Math.PI / 2;
+          const r = i % 2 ? 34 : 46;
+          const text = dt(it.label);
+          const current = it.to === here;
+          return (
+            <Link key={it.to} to={it.to} aria-label={text} aria-current={current ? 'page' : undefined} title={text}
+              data-current={current ? 'true' : undefined} className="au-orbit-sat"
+              onMouseEnter={() => setLabel(text)} onFocus={() => setLabel(text)} onBlur={() => setLabel(null)}
+              onTouchStart={() => setLabel(text)} onTouchEnd={() => setLabel(null)} onTouchCancel={() => setLabel(null)}
+              style={{ left: `${50 + Math.cos(ang) * r}%`, top: `${50 + Math.sin(ang) * r}%`, animationDelay: `${i * 0.6}s` }}>
+              <it.icon className="h-4 w-4" />
+            </Link>
+          );
+        })}
+      </nav>
+      <p className="au-orbit-caption" aria-hidden="true" data-active={label ? 'true' : undefined}>{label ?? idle}</p>
+    </div>
   );
 }

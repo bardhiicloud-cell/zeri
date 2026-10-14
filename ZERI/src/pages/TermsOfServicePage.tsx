@@ -150,7 +150,7 @@ export default function TermsOfServicePage() {
       <div className="mx-auto w-full max-w-4xl">
         <Link
           to="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400"
+          className="mb-8 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {dt('Kthehu në Ballinë')}

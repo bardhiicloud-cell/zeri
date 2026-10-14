@@ -444,7 +444,7 @@ export default function Dashboard() {
 
                 <Link
                   to="/detailed-registry"
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 group transition-colors"
+                  className="min-h-10 md:min-h-0 text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 group transition-colors"
                 >
                   <span>{dt('Shiko të gjitha')}</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -704,7 +704,7 @@ export default function Dashboard() {
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-white/5 mt-3">
-              <Link to="/komunat" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+              <Link to="/komunat" className="min-h-10 md:min-h-0 text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
                 <span>{dt('Të gjitha 38 komunat')}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -816,11 +816,11 @@ export default function Dashboard() {
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-white/5 mt-3 flex items-center justify-between">
-              <Link to="/sherbimet" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+              <Link to="/sherbimet" className="min-h-10 md:min-h-0 text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
                 <span>{dt('Shërbimet komunale')}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
-              <Link to="/kontakt" className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1">
+              <Link to="/kontakt" className="min-h-10 md:min-h-0 text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1">
                 <span>{dt('Të gjitha kontaktet')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
