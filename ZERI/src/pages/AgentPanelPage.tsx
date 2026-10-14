@@ -191,11 +191,18 @@ export default function AgentPanelPage() {
     return reports.filter((r) => (r.location?.municipality ?? '') === ownMunicipality);
   }, [reports, ownMunicipality]);
 
-  /** Kutia hyrëse: punë të paprekura, të renditura sipas prioritetit real. */
+  /**
+   * Kutia hyrëse: punë që askush nuk i ka marrë ende, të renditura sipas prioritetit real.
+   *
+   * Vetëm raportimet në shqyrtim (Draft, Pending Review) merren përsipër nga agjenti: pasi
+   * aprovohen janë të komunës. Para kësaj, kutia tregonte edhe raportime të aprovuara, dhe
+   * "Merr përsipër" mbi to refuzohej nga serveri, sikur të duhej caktim nga dikush tjetër.
+   * Tani agjenti që e shtyp e merr menjëherë (serveri e regjistron me llogarinë e tij).
+   */
   const inbox = useMemo(() => {
     const open = inScope.filter((r) =>
-      ['Approved', 'Pending Review', 'Assigned'].includes(r.status) &&
-      (!r.assignedTo || r.assignedTo.trim() === '')
+      ['Draft', 'Pending Review'].includes(r.status) &&
+      !(r.assignedToUid || (r.assignedTo ?? '').trim())
     );
     const needle = query.trim().toLowerCase();
     return open
@@ -213,12 +220,14 @@ export default function AgentPanelPage() {
 
   /** Punët që ky agjent i ka marrë përsipër; një administrator sheh të gjitha. */
   const mine = useMemo(() => {
+    const uid = currentUser?.id ?? '';
     const name = currentUser?.name ?? '';
+    // By account, not by display name: two agents with one name are two people.
     const assigned = isOverseer
-      ? inScope.filter((r) => (r.assignedTo ?? '').trim() !== '')
-      : inScope.filter((r) => (r.assignedTo ?? '') === name);
+      ? inScope.filter((r) => Boolean(r.assignedToUid) || (r.assignedTo ?? '').trim() !== '')
+      : inScope.filter((r) => (r.assignedToUid ? r.assignedToUid === uid : (r.assignedTo ?? '') === name));
     return assigned.sort((a, b) => priorityScore(b) - priorityScore(a));
-  }, [inScope, currentUser?.name, isOverseer]);
+  }, [inScope, currentUser?.id, currentUser?.name, isOverseer]);
 
   /** Performanca: një rresht, llogaritur nga hook-u i përbashkët. */
   const activity = useAgentActivity(
@@ -282,6 +291,7 @@ export default function AgentPanelPage() {
     try {
       await assignReport(report.id, currentUser.name);
       addAuditLog('Punë e marrë përsipër', 'success', `${report.trackingId ?? report.id} — ${report.title}`);
+      setTab('mine');
     } catch (error) {
       // The server owns the gate; its refusal explains itself in Albanian.
       alert((error as Error)?.message || dt('Puna nuk mund të merrej përsipër.'));
@@ -323,7 +333,8 @@ export default function AgentPanelPage() {
       claim: 'Pending Review',
       pass_to_municipality: 'Approved',
       municipality_accept: 'In Progress',
-      municipality_done: 'Resolved',
+      municipality_done: 'In Progress',
+      staff_return: 'In Progress',
       staff_verify: 'Resolved',
       reject: 'Rejected',
     };

@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { BadgeCheck, Flag, Landmark, LayoutDashboard, Megaphone, MessageSquare } from 'lucide-react';
+import { BadgeCheck, Flag, Landmark, LayoutDashboard, Megaphone, MessageSquare, ShieldAlert } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import { debateStats, formatEur } from '../../lib/debateApi';
 import { DebatePayments } from './DebatePayments';
 import { DebatePosts } from './DebatePosts';
+import { DebateModeration } from './DebateModeration';
 import { DebateAds, DebateTicks } from './DebateAdsAndTicks';
 import { ErrorNote, Panel, Stat, btn, useLoad } from './ui';
 
-type Tab = 'overview' | 'payments' | 'ticks' | 'ads' | 'posts';
+type Tab = 'overview' | 'moderation' | 'payments' | 'ticks' | 'ads' | 'posts';
 
 const TABS: ReadonlyArray<{ id: Tab; label: string; icon: typeof Landmark }> = [
   { id: 'overview', label: 'Përmbledhje', icon: LayoutDashboard },
+  { id: 'moderation', label: 'Moderimi', icon: ShieldAlert },
   { id: 'payments', label: 'Pagesat', icon: Landmark },
   { id: 'ticks', label: 'Verifikimet', icon: BadgeCheck },
   { id: 'ads', label: 'Reklamat', icon: Megaphone },
@@ -74,13 +76,14 @@ export function DebateConsole() {
               </li>
               <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3 dark:border-white/10">
                 <span><strong>{stats.data?.reported ?? 0}</strong> {dt('postime janë raportuar nga qytetarët')}</span>
-                <button type="button" onClick={() => { setPostFilter('reported'); setTab('posts'); }} className={cn(btn.ghost, 'min-h-9 px-3 text-xs')}><Flag className="h-3.5 w-3.5" aria-hidden="true" />{dt('Shqyrto')}</button>
+                <button type="button" onClick={() => setTab('moderation')} className={cn(btn.ghost, 'min-h-9 px-3 text-xs')}><Flag className="h-3.5 w-3.5" aria-hidden="true" />{dt('Shqyrto')}</button>
               </li>
             </ul>
           </Panel>
         </div>
       )}
 
+      {tab === 'moderation' && <DebateModeration onChanged={refreshStats} />}
       {tab === 'payments' && <DebatePayments onChanged={refreshStats} />}
       {tab === 'ticks' && <DebateTicks />}
       {tab === 'ads' && <DebateAds />}

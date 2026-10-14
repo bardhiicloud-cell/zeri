@@ -1,5 +1,6 @@
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { applyReportToCase, readCaseFor } from './moderationCases';
 
 /**
  * Administration of the public debate, for the `debatwp` role (section `debate`).
@@ -105,6 +106,18 @@ export function parseBulk(body: any): BulkDecision {
   return { outcome: 'ok', ids, action };
 }
 
+/**
+ * What is kept when a post is removed from public view for good.
+ *
+ * Deleting a post used to erase the only copy of what was reported, so a later appeal or a
+ * legal request had nothing to look at. The deleted post is copied here first, in the same
+ * batch as the delete, to `moderationEvidence/{postId}` (server-only: Firestore's default
+ * deny applies, so no client can read or change it). Pure, so the shape is tested.
+ */
+export function evidenceRecord(postId: string, data: Record<string, unknown>, staffUid: string | null, reason: string): Record<string, unknown> {
+  return { postId, post: data, removedBy: staffUid, reason: clip(reason, 300), removedAt: FieldValue.serverTimestamp() };
+}
+
 export function isHttpsUrl(value: unknown): value is string {
   if (typeof value !== 'string' || value.length > 500) return false;
   try {
@@ -130,15 +143,25 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
     const filter = (['all', 'reported', 'hidden', 'promoted', 'visible'].includes(String(req.query.filter)) ? req.query.filter : 'all') as PostFilter;
     const q = clip(req.query.q, 100);
     try {
-      const snapshot = await deps.db().collection('forumPosts').orderBy('createdAt', 'desc').limit(400).get();
+      // A reported or hidden post older than the newest 400 must still be reachable, so those two
+      // filters ask the database for exactly those posts instead of searching a recent window.
+      const posts = deps.db().collection('forumPosts');
+      const source = filter === 'reported' ? posts.where('reportCount', '>', 0).orderBy('reportCount', 'desc')
+        : filter === 'hidden' ? posts.where('isHidden', '==', true).orderBy('createdAt', 'desc')
+        : posts.orderBy('createdAt', 'desc');
+      const [snapshot, reportedCount, hiddenCount] = await Promise.all([
+        source.limit(400).get(),
+        posts.where('reportCount', '>', 0).count().get(),
+        posts.where('isHidden', '==', true).count().get(),
+      ]);
       const rows = snapshot.docs.map((doc) => toPostRow(doc.id, doc.data()));
       const filtered = filterPosts(rows, filter, q);
       return res.json({
         posts: filtered.slice(0, 200),
         counts: {
           all: rows.length,
-          reported: rows.filter((r) => r.reportCount > 0).length,
-          hidden: rows.filter((r) => r.isHidden).length,
+          reported: reportedCount.data().count,
+          hidden: hiddenCount.data().count,
           promoted: rows.filter((r) => isPromotionActive(r)).length,
         },
       });
@@ -168,11 +191,14 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
         else if (action === 'unhide') batch.update(snap.ref, { isHidden: false, hiddenBy: FieldValue.delete(), hiddenAt: FieldValue.delete() });
         else if (action === 'clear_reports') batch.update(snap.ref, { reportCount: 0, needsReview: false });
         else if (action === 'unpromote') batch.update(snap.ref, { isAd: false, adLink: null, promotedUntil: FieldValue.delete() });
-        else if (action === 'delete') batch.delete(snap.ref);
+        else if (action === 'delete') {
+          batch.set(deps.db().collection('moderationEvidence').doc(snap.id), evidenceRecord(snap.id, snap.data() as Record<string, unknown>, staff, String(req.body?.reason ?? '')));
+          batch.delete(snap.ref);
+        }
         results.push({ id: snap.id, result: 'done' });
       }
       await batch.commit();
-      deps.audit(`debate.posts.${action}`, req, { count: results.filter((r) => r.result === 'done').length, ids: ids.slice(0, 20) });
+      deps.audit(`debate.posts.${action}`, req, { count: results.filter((r) => r.result === 'done').length, ids: ids.slice(0, 20), reason: clip(req.body?.reason, 300) || null });
       return res.json({ results });
     } catch (error: any) {
       console.error('[DEBATE] bulk failed:', error?.message);
@@ -242,13 +268,18 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       const postRef = deps.db().collection('forumPosts').doc(id);
       const reportRef = postRef.collection('reports').doc(uid);
       const outcome = await deps.db().runTransaction(async (transaction) => {
-        const [post, report] = await Promise.all([transaction.get(postRef), transaction.get(reportRef)]);
+        const [post, report, moderationCase] = await Promise.all([transaction.get(postRef), transaction.get(reportRef), readCaseFor(transaction, deps.db(), 'post', id)]);
         if (!post.exists) return 'missing' as const;
         if (report.exists) return 'duplicate' as const;
         const stored = post.data()?.reportCount;
         const count = (typeof stored === 'number' ? stored : 0) + 1;
         transaction.update(postRef, { reportCount: count, needsReview: count >= REVIEW_THRESHOLD });
         transaction.create(reportRef, { uid, reason, note: clip(req.body?.note, 300), at: FieldValue.serverTimestamp() });
+        const p = post.data() ?? {};
+        applyReportToCase(transaction, deps.db(), moderationCase, {
+          kind: 'post', targetId: id, postId: id, subjectUid: String(p.authorId ?? ''), reason,
+          snapshot: { excerpt: clip(p.content, 300), authorName: clip(p.authorName, 120), imageUrl: typeof p.imageUrl === 'string' ? p.imageUrl : null },
+        }, Date.now());
         return 'reported' as const;
       });
       if (outcome === 'missing') return res.status(404).json({ error: 'Postimi nuk u gjet.' });

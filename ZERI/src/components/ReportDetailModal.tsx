@@ -11,6 +11,7 @@ import { validateComment } from '../lib/moderation';
 import { useLanguage } from '../lib/LanguageContext';
 import { ReportTimeline } from './reports/ReportTimeline';
 import { statusLabel } from '../lib/reportStatus';
+import { applyTransition } from '../lib/adminApi';
 
 interface ReportDetailModalProps {
   report: Report;
@@ -136,6 +137,22 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
   const [aiResponseGenerating, setAiResponseGenerating] = useState(false);
   const [adminReason, setAdminReason] = useState('');
   const [adminResponse, setAdminResponse] = useState('');
+  const [returnNote, setReturnNote] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const claim = (report as Report & { resolutionClaimed?: boolean; resolutionClaim?: { by?: string; at?: string; note?: string; image?: string } });
+
+  /** Confirm or send back a municipality's claim that the work is done (server: staff_verify / staff_return). */
+  const decideClaim = async (transition: 'staff_verify' | 'staff_return') => {
+    if (transition === 'staff_return' && returnNote.trim().length < 5) { alert(dt('Shkruani çka mungon ose çka nuk u konfirmua (të paktën 5 shenja).')); return; }
+    setVerifying(true);
+    try {
+      await applyTransition({ reportId: report.id, transition, note: transition === 'staff_return' ? returnNote.trim() : dt('Zgjidhja u verifikua nga platforma.') });
+      alert(transition === 'staff_verify' ? dt('Zgjidhja u verifikua; raportimi u mbyll si i zgjidhur.') : dt('Raportimi u kthye te komuna me arsyen tuaj.'));
+      setReturnNote('');
+    } catch (error) {
+      alert((error as Error)?.message || dt('Veprimi dështoi.'));
+    } finally { setVerifying(false); }
+  };
 
   const generateAIResponse = async () => {
      if (!adminReason) {
@@ -513,6 +530,18 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
               {/* Status Management */}
               {((currentUser?.role && ['admin', 'approver'].includes(currentUser.role)) || currentUser?.permissions?.includes('reports')) && (
                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[1rem] border border-slate-200/60 dark:border-white/10 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.2)]">
+                   {claim.resolutionClaimed === true && ['admin', 'superadmin'].includes(currentUser?.role ?? '') && (
+                     <div className="mb-4 space-y-2 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-500/30 dark:bg-blue-500/10">
+                       <p className="text-xs font-bold text-blue-900 dark:text-blue-200">{dt('Komuna raporton se punimet u kryen. Raportimi mbyllet vetëm pasi ta verifikoni.')}</p>
+                       {claim.resolutionClaim?.note && <p className="text-xs text-blue-900/80 dark:text-blue-100/80">{claim.resolutionClaim.note}</p>}
+                       {claim.resolutionClaim?.image && <a href={claim.resolutionClaim.image} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-700 underline">{dt('Shiko dëshminë')}</a>}
+                       <textarea value={returnNote} onChange={(e) => setReturnNote(e.target.value)} rows={2} maxLength={1000} placeholder={dt('Nëse e ktheni: çka mungon ose çka nuk u konfirmua (e lexon komuna)')} className="w-full rounded-lg border border-blue-200 bg-white p-2 text-xs dark:border-white/10 dark:bg-slate-900" />
+                       <div className="flex flex-wrap gap-2">
+                         <button type="button" disabled={verifying} onClick={() => void decideClaim('staff_verify')} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{dt('Verifiko zgjidhjen')}</button>
+                         <button type="button" disabled={verifying} onClick={() => void decideClaim('staff_return')} className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-200">{dt('Kthe te komuna')}</button>
+                       </div>
+                     </div>
+                   )}
                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{dt(`Përditëso Statusin`)}</h4>
                    <div className="flex flex-wrap gap-2">
                      {report.status === 'Pending Review' && (

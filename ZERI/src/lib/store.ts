@@ -1473,7 +1473,7 @@ export const useStore = create<AppState>()(
 
         set(state => ({
           reports: state.reports.map(r => r.id === id
-            ? { ...r, assignedTo, status: report?.status ?? r.status, timeline: [...(r.timeline || []), newTimelineEvent] }
+            ? { ...r, assignedTo, assignedToUid: currentUser?.id ?? r.assignedToUid, status: report?.status ?? r.status, timeline: [...(r.timeline || []), newTimelineEvent] }
             : r)
         }));
       },

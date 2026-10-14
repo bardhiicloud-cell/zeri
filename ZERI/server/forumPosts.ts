@@ -13,6 +13,7 @@
  * The Firestore instance is a parameter so the logic runs against the emulator
  * in tests without the server's global Firebase initialisation.
  */
+import { describeRestriction, isRestricted } from './accountRestrictions';
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import { extractHashtags, extractMentions, toHandle } from '../src/lib/forumTrends';
@@ -158,11 +159,19 @@ async function loadPost(tx: Transaction, fs: Firestore, postId: string) {
   return { ref, data };
 }
 
+/** Tell a suspended person until when, rather than a bare "restricted". */
+function restrictionMessage(user: Record<string, any> | undefined): string {
+  const r = describeRestriction(user);
+  return r?.kind === 'suspension' && r.untilMs
+    ? `Llogaria juaj është e pezulluar deri më ${new Date(r.untilMs).toLocaleDateString('sq-AL')}.`
+    : 'Llogaria juaj është e kufizuar.';
+}
+
 async function loadActor(tx: Transaction, fs: Firestore, uid: string) {
   const snap = await tx.get(fs.collection('users').doc(uid));
   const d = snap.data() as Record<string, any> | undefined;
   if (!snap.exists || d?.role === 'guest') throw new PostError('Kyçuni me llogari për të vazhduar.', 403, 'no_account');
-  if (d?.isBanned === true) throw new PostError('Llogaria juaj është e kufizuar.', 403, 'banned');
+  if (isRestricted(d)) throw new PostError(restrictionMessage(d), 403, 'banned');
   return d as Record<string, any>;
 }
 

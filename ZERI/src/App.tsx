@@ -20,6 +20,7 @@ import CookieConsentBanner, { CookiePreferencesButton } from './components/Cooki
 const Dashboard = React.lazy(() => import('./pages/Dashboard.tsx'));
 const DetailedRegistryPage = React.lazy(() => import('./pages/DetailedRegistryPage.tsx'));
 const TrackIdPage = React.lazy(() => import('./pages/TrackIdPage'));
+const MyModerationPage = React.lazy(() => import('./pages/MyModerationPage'));
 const CitizenHelpCenterPage = React.lazy(() => import('./pages/CitizenHelpCenterPage.tsx'));
 const ReportIssue = React.lazy(() => import('./pages/ReportIssue'));
 const MapPage = React.lazy(() => import('./pages/MapPage.tsx'));
@@ -135,6 +136,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/regjistri': 'Regjistri i Raporteve',
   '/registry': 'Regjistri i Raporteve',
   '/trackid': 'Gjej Raportin Tim',
+  '/moderimi-im': 'Moderimi i llogarisë sime',
   '/ndihma': 'Qendra e Ndihmës',
   '/raporto': 'Raporto një Problem',
   '/harta': 'Harta e Raporteve',
@@ -856,6 +858,7 @@ export default function App() {
               <Route path="/forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="/trackid" element={<TrackIdPage />} />
+              <Route path="/moderimi-im" element={<MyModerationPage />} />
               <Route path="/ndihma" element={<CitizenHelpCenterPage />} />
               <Route path="/regjistri" element={<DetailedRegistryPage />} />
               <Route path="/registry" element={<DetailedRegistryPage />} />
@@ -903,6 +906,7 @@ export default function App() {
               <Route path="forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="trackid" element={<TrackIdPage />} />
+              <Route path="moderimi-im" element={<MyModerationPage />} />
               <Route path="ndihma" element={<CitizenHelpCenterPage />} />
               <Route path="regjistri" element={<DetailedRegistryPage />} />
               <Route path="registry" element={<DetailedRegistryPage />} />

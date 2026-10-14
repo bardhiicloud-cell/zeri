@@ -64,6 +64,20 @@ export const SECTION_GUIDES: Record<string, SectionGuide> = {
     ],
     next: [{ id: 'workfacts', why: 'faktet dhe kërkesat që dërgon komuna' }],
   },
+  work: {
+    purpose: 'Detyrat dhe ngarkesa: çfarë ke në dorë, çfarë pret të caktohet dhe sa është e ngarkuar secila nga ekipi.',
+    steps: [
+      'Te "Puna ime" hap një detyrë dhe zgjidh veprimin e radhës (prano, fillo, dërgo për shqyrtim, mbyll).',
+      'Menaxherët shohin te "Përmbledhje" pengesat, te "Radha" detyrat pa caktuar ose me vonesë, dhe te "Ekipi" ngarkesën e secilit.',
+      'Çdo veprim kërkon shënimin ose arsyen që ka treguar sistemi; kjo mbetet në historikun e detyrës.',
+    ],
+    rules: [
+      'Statusi ndryshon vetëm përmes veprimeve që serveri lejon për rolin dhe gjendjen tënde; një ndryshim i dikujt tjetër pas hapjes të kthen një njoftim.',
+      'Marrja e punës nga dikush tjetër kërkon arsye dhe regjistrohet si ndërhyrje.',
+      'Roli i monitorimit lexon çdo gjë dhe nuk ndryshon asgjë.',
+    ],
+    next: [{ id: 'reports', why: 'për raportimet që lidhen me detyrën' }],
+  },
   workflow: {
     purpose: 'Rrjedha e punës e raportimeve: faza në të cilën gjendet secila dhe kush është radha.',
     steps: [

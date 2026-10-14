@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_BULK, filterPosts, isHttpsUrl, isPromotionActive, parseBulk, toPostRow, type PostRow } from '../../server/debateAdmin';
+import { MAX_BULK, evidenceRecord, filterPosts, isHttpsUrl, isPromotionActive, parseBulk, toPostRow, type PostRow } from '../../server/debateAdmin';
 
 const NOW = Date.parse('2026-10-12T12:00:00Z');
 
@@ -77,5 +77,14 @@ describe('links', () => {
     expect(isHttpsUrl('javascript:alert(1)')).toBe(false);
     expect(isHttpsUrl('')).toBe(false);
     expect(isHttpsUrl(undefined)).toBe(false);
+  });
+});
+
+describe('evidence of a removed post', () => {
+  it('keeps the whole post, who removed it and why, and clips the reason', () => {
+    const record = evidenceRecord('p9', { content: 'text', authorId: 'u7', reportCount: 4 }, 'staff1', 'x'.repeat(500));
+    expect(record).toMatchObject({ postId: 'p9', post: { content: 'text', authorId: 'u7', reportCount: 4 }, removedBy: 'staff1' });
+    expect(String(record.reason)).toHaveLength(300);
+    expect(record.removedAt).toBeDefined();
   });
 });

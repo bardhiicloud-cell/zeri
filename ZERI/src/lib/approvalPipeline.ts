@@ -86,7 +86,15 @@ export const STAGE_OWNER: Record<PipelineStage, 'agent' | 'municipality' | 'staf
  * before this pipeline was defined, so the stage is derived rather than stored.
  * That keeps every existing record readable instead of needing a migration.
  */
-export function stageOf(report: Pick<Report, 'status' | 'assignedTo'>): PipelineStage {
+/**
+ * "Punimet u kryen" is the municipality's CLAIM that the work is done, not the end of
+ * the case. It leaves the report In Progress with `resolutionClaimed: true` (stage
+ * `responded`). Only the platform's staff then confirm it (`staff_verify`, which writes
+ * Resolved) or send it back (`staff_return`, with a reason the municipality reads).
+ * Before this, the municipality's own click wrote Resolved and the case was closed with
+ * nobody independent having looked.
+ */
+export function stageOf(report: Pick<Report, 'status' | 'assignedTo'> & { resolutionClaimed?: boolean }): PipelineStage {
   switch (report.status) {
     case 'Draft':
     case 'Pending Review':
@@ -95,13 +103,12 @@ export function stageOf(report: Pick<Report, 'status' | 'assignedTo'>): Pipeline
       return 'inspected';
     case 'Assigned':
     case 'In Progress':
-      return 'responding';
+    case 'Overdue':
+      return report.resolutionClaimed === true ? 'responded' : 'responding';
     case 'Resolved':
       return 'published';
     case 'Rejected':
       return 'rejected';
-    case 'Overdue':
-      return 'responding';
     default:
       return 'submitted';
   }
@@ -183,6 +190,7 @@ export type Transition =
   | 'municipality_accept'   // municipality picks it up
   | 'municipality_done'     // municipality reports the work complete
   | 'staff_verify'          // staff confirms and publishes
+  | 'staff_return'          // staff send an unconfirmed resolution back to the municipality
   | 'reject';
 
 export interface TransitionRule {
@@ -242,7 +250,8 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     label: 'Punimet u kryen',
     by: 'municipality',
     from: ['responding', 'inspected'],
-    toStatus: 'Resolved',
+    // A claim: the report stays In Progress until staff verify it (see stageOf).
+    toStatus: 'In Progress',
     guard: (report) => {
       // The municipality must have described the work; a bare status change is
       // not evidence, and the newsroom has nothing to verify.
@@ -262,6 +271,13 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     by: 'staff',
     from: ['published', 'responded'],
     toStatus: 'Resolved',
+  },
+  {
+    transition: 'staff_return',
+    label: 'Kthe te komuna (zgjidhja nuk u konfirmua)',
+    by: 'staff',
+    from: ['responded'],
+    toStatus: 'In Progress',
   },
   {
     transition: 'reject',

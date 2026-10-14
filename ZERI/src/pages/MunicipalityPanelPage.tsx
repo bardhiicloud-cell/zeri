@@ -550,16 +550,22 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
         </div>
       )}
 
-      {canWork && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && !canRegisterWorks && (
+      {['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (report as { resolutionClaimed?: boolean }).resolutionClaimed === true && (
+        <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-semibold text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+          {dt('Keni raportuar punimet të kryera. Platforma po e verifikon; raportimi mbyllet vetëm pas konfirmimit. Nëse kthehet, arsyeja shfaqet te historiku.')}
+        </p>
+      )}
+
+      {canWork && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (report as { resolutionClaimed?: boolean }).resolutionClaimed !== true && !canRegisterWorks && (
         <>
           <PlanLock feature="workFacts" what="Regjistrimi i fakteve të punimeve" />
-          <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u shënuan të kryera.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
+          <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u raportuan të kryera; presin verifikimin e platformës.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
             <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Punimet u kryen')}
           </button>
         </>
       )}
 
-      {canWork && canRegisterWorks && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (
+      {canWork && canRegisterWorks && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (report as { resolutionClaimed?: boolean }).resolutionClaimed !== true && (
         <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
           <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Fakte për punimet e kryera')}</h3>
           <p className="text-[10px] leading-relaxed text-slate-500">{dt('Përshkruani çka u rregullua. Redaksia e verifikon para se të shfaqet si fakt i konfirmuar.')}</p>
@@ -573,7 +579,7 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
             <button type="button" disabled={busy || fact.description.trim().length < 10} onClick={() => void run(() => addWorkFact({ reportId: report.id, ...fact }), dt('Faktet u regjistruan dhe presin verifikimin.'), () => setFact({ description: '', completedAt: '', performedBy: '', cost: '' }))} className={primary}>
               {dt('Regjistro faktet')}
             </button>
-            <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u shënuan të kryera.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
+            <button type="button" disabled={busy} onClick={() => void run(() => applyTransition({ reportId: report.id, transition: 'municipality_done' }), dt('Punimet u raportuan të kryera; presin verifikimin e platformës.'))} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5" /> {dt('Punimet u kryen')}
             </button>
           </div>

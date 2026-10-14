@@ -10,6 +10,7 @@
 import type { Express, Request, Response, RequestHandler } from 'express';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { createRateLimiter } from './directMessages';
+import { applyReportToCase, readCaseFor } from './moderationCases';
 
 export const REPORT_KINDS = ['comment', 'user', 'ad'] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
@@ -88,11 +89,14 @@ export async function submitReport(fs: Firestore, input: SubmitReportInput): Pro
       }
     }
 
-    if ((await tx.get(reportRef)).exists) return { status: 'duplicate' as const };
+    const [existing, moderationCase] = await Promise.all([tx.get(reportRef), readCaseFor(tx, fs, kind, targetId)]);
+    if (existing.exists) return { status: 'duplicate' as const };
     tx.create(reportRef, {
       kind, targetId, postId, reportedUserId, reporterId: uid, reason, details, snapshot,
       status: 'open', createdAt: FieldValue.serverTimestamp(),
     });
+    // One moderation case per reported thing, however many people report it.
+    applyReportToCase(tx, fs, moderationCase, { kind, targetId, postId, subjectUid: reportedUserId, reason, snapshot }, Date.now());
     return { status: 'reported' as const };
   });
 }

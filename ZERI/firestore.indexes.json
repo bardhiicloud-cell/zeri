@@ -1003,6 +1003,138 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "open",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "priorityRank",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastReportedAtMs",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "open",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "priorityRank",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastReportedAtMs",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "assigneeUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "open",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastReportedAtMs",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "open",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "escalated",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastReportedAtMs",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAtMs",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "firstReportedAtMs",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "moderationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "subjectUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAtMs",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isBanned",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "suspendedUntil",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

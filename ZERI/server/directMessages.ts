@@ -18,6 +18,7 @@
  * The Firestore instance is a parameter so the logic runs against the emulator
  * in tests without the server's global Firebase initialisation.
  */
+import { isRestricted } from './accountRestrictions';
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 
@@ -167,10 +168,10 @@ export async function sendDirectMessage(
     if (!senderDoc.exists || senderDoc.data()?.role === 'guest') {
       throw new DmError('Kyçuni me llogari për të dërguar mesazhe.', 403, 'no_account');
     }
-    if (!receiverDoc.exists || receiverDoc.data()?.isBanned === true) {
+    if (!receiverDoc.exists || isRestricted(receiverDoc.data())) {
       throw new DmError('Marrësi nuk u gjet.', 404, 'not_found');
     }
-    if (senderDoc.data()?.isBanned === true) throw new DmError('Llogaria juaj është e kufizuar.', 403, 'banned');
+    if (isRestricted(senderDoc.data())) throw new DmError('Llogaria juaj është e kufizuar.', 403, 'banned');
 
     const receiverFollowing = receiverDoc.data()?.followingIds;
     const conv = convSnap.exists ? (convSnap.data() as ConversationState) : null;

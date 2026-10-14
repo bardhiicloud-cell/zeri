@@ -74,6 +74,8 @@ import { registerForumReelRoutes } from './server/forumReels';
 import { registerForumFeedRoutes } from './server/forumFeed';
 import { registerForumPeopleRoutes } from './server/forumPeople';
 import { registerForumReportRoutes } from './server/forumReports';
+import { registerModerationRoutes, startSuspensionSweep } from './server/moderationCases';
+import { registerSupportDeskRoutes } from './server/supportDesk';
 import { publishDueScheduled, registerScheduledPostRoutes } from './server/scheduledPosts';
 import { registerStoryRoutes } from './server/storyViews';
 import { registerPaymentRoutes } from './server/paymentRoutes';
@@ -2171,7 +2173,7 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
     // A note is mandatory where the citizen will read one, and required for a
     // rejection specifically.
     if (rule.requiresNote && !note) {
-      return res.status(400).json({ error: 'Refuzimi kërkon arsye të shkruar.', code: 'NOTE_REQUIRED' });
+      return res.status(400).json({ error: transition === 'staff_return' ? 'Shkruani çka mungon ose çka nuk u konfirmua; e lexon komuna.' : 'Refuzimi kërkon arsye të shkruar.', code: 'NOTE_REQUIRED' });
     }
 
     const now = new Date().toISOString();
@@ -2209,10 +2211,20 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
       timeline: FieldValue.arrayUnion(timelineEvent),
     };
 
-    // Only the transitions that genuinely mean "the work is done" set a
-    // resolution time; `staff_verify` closes an already-resolved report.
-    if (transition === 'municipality_done' || transition === 'staff_verify') {
+    // The municipality claims; the platform verifies. Only verification sets the
+    // resolution time and the Resolved status (see stageOf in server/approvalPipeline.ts).
+    if (transition === 'municipality_done') {
+      updates.resolutionClaimed = true;
+      updates.resolutionClaim = { byUid: actor.uid, by: actorInstitution, at: now, note: note || '', ...(resolvedImage ? { image: resolvedImage } : {}) };
+    }
+    if (transition === 'staff_verify') {
       updates.resolvedAt = now;
+      updates.resolutionClaimed = false;
+      updates.resolutionVerified = { byUid: actor.uid, at: now };
+    }
+    if (transition === 'staff_return') {
+      updates.resolutionClaimed = false;
+      updates.resolutionReturned = { byUid: actor.uid, at: now, note };
     }
     if (resolvedImage) updates.resolvedImage = resolvedImage;
 
@@ -2279,7 +2291,7 @@ app.post('/api/v1/reports/:id/transition', requireAuth, async (req, res) => {
     // a citizen with only a Track ID still hears about their case.
     const authorId = String(report?.authorId ?? '');
     if (authorId) {
-      const label = REPORT_STATUS_LABELS[toStatus] || toStatus;
+      const label = transition === 'municipality_done' ? 'Komuna raporton punimet të kryera; në verifikim' : REPORT_STATUS_LABELS[toStatus] || toStatus;
       const trackId = String(report?.trackingId ?? '');
       try {
         await db().collection('notifications').add({
@@ -2428,6 +2440,9 @@ registerAdRoutes(app, { db });
 registerForumFeedRoutes(app, { requireAuth, db });
 registerForumPeopleRoutes(app, { requireAuth, db });
 registerForumReportRoutes(app, { requireAuth, db });
+registerModerationRoutes(app, { requireAuth, db, authAdmin, actingUser, audit });
+registerSupportDeskRoutes(app, { requireAuth, db, authAdmin, actingUser, audit });
+startSuspensionSweep(db);
 registerScheduledPostRoutes(app, { requireAuth, db });
 registerStoryRoutes(app, { requireAuth, db });
 registerForumReelRoutes(app, {

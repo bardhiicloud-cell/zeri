@@ -81,6 +81,8 @@ export type AdminSection =
    * four, and each move is still checked by the server for the field it belongs to.
    */
   | 'workflow'
+  /** The work queue (tasks, referrals, moderation cases). Derived like the inbox: the server decides what each role may see in it. */
+  | 'work'
   | 'support'
   | 'polls'
   | 'news'
@@ -195,6 +197,7 @@ export function canAccessSection(
   if (!user) return false;
 
   if (section === 'inbox') return canAccessSection(user, 'dashboard');
+  if (section === 'work') return canAccessSection(user, 'dashboard');
   if (section === 'workflow') {
     return (['reports', 'donations', 'health', 'news'] as const).some(s => canAccessSection(user, s));
   }

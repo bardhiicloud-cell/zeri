@@ -82,6 +82,7 @@ export const SECTION_LABELS: Record<AdminSection, string> = {
   users: 'Regjistri i Qytetarëve',
   forum: 'Moderimi i Debatit Publik',
   debate: 'Admini i Debatit Publik (pagesa, ticke, reklama)',
+  work: 'Detyrat dhe ngarkesa e punës (çdo staf sheh vetëm punën e lejuar nga serveri)',
   workflow: 'Rrjedha e Aprovimit (hapet për kë ka raporte, donacione, shëndetësi ose lajme)',
   polls: 'Sondazhet Publike',
   agents: 'Menaxhimi i Stafit',
