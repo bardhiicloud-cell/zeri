@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "zeri-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "ZERI", "run", "dev"],
+      "runtimeExecutable": "C:\\Users\\bardh\\AppData\\Local\\nvm\\v22.18.0\\node.exe",
+      "runtimeArgs": ["node_modules/tsx/dist/cli.mjs", "server.ts"],
+      "cwd": "ZERI",
       "port": 3002
     },
     {
