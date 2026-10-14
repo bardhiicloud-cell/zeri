@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canRead, itemView, itemsCsv, planList, ITEM_CSV_HEADERS } from '../../server/workItemRoutes';
+import { canRead, eventView, itemView, itemsCsv, planList, ITEM_CSV_HEADERS } from '../../server/workItemRoutes';
 import type { WorkItemDoc } from '../../server/workItems';
 
 const NOW = Date.UTC(2026, 9, 14, 9, 0, 0);
@@ -120,5 +120,28 @@ describe('itemsCsv', () => {
   it('leaves the overdue column empty for finished work', () => {
     const csv = itemsCsv([{ id: 'a', item: item({ open: false, status: 'done', dueAtMs: NOW - 99 * 3_600_000, doneAtMs: NOW }) }], NOW);
     expect(csv.split('\n')[1]).toContain('"","0","0"');
+  });
+});
+
+describe('eventView', () => {
+  const secret = { id: 'e1', type: 'transition', action: 'confirm_violation', from: 'under_review', to: 'violation_confirmed', atMs: NOW, actorUid: 'm1', actorRole: 'debatwp', actorName: 'Moderatori', reason: 'Gjuhë urrejtjeje (e brendshme)', note: 'shënim privat', evidence: ['https://x.test/a.jpg'], softOverride: null, toAssignee: 'm1' };
+  const debate = { kind: 'moderation_case' as const, assigneeUid: 'm1' };
+
+  it('gives staff who run the work the whole record', () => {
+    for (const actor of [people.owner, people.monitor, people.mod]) expect(eventView(secret, actor, debate)).toEqual(secret);
+    expect(eventView(secret, { uid: 'ana', role: 'agent' }, { kind: 'internal_task', assigneeUid: 'ana' })).toEqual(secret);
+  });
+
+  it('shows the person a case is about, and a municipality, what happened and when, never the notes staff wrote or who they were', () => {
+    for (const [actor, item] of [[people.citizen, debate], [people.peja, { kind: 'report_referral' as const, assigneeUid: null }]] as const) {
+      const view = eventView(secret, actor, item);
+      expect(view).toEqual({ id: 'e1', type: 'transition', action: 'confirm_violation', from: 'under_review', to: 'violation_confirmed', atMs: NOW, by: 'platforma' });
+      expect(JSON.stringify(view)).not.toMatch(/urrejtjeje|privat|evidence|a\.jpg|Moderatori|"m1"/);
+    }
+  });
+
+  it('shows a person their own entries in full', () => {
+    const own = { ...secret, actorUid: 'cit1', actorRole: 'citizen', reason: 'Postimi nuk shkel rregullat.' };
+    expect(eventView(own, people.citizen, debate)).toEqual(own);
   });
 });

@@ -118,6 +118,26 @@ export function itemView(id: string, item: WorkItemDoc, actor: { role: string })
   return { id, ...rest, ...(roles.has('manager') || roles.has('moderator') ? { subjectUid } : {}) };
 }
 
+/**
+ * What of an item's history a given account may read. Staff who run the work (managers, the
+ * monitoring role, the holder, and moderators on a debate case) read everything. Anyone else who
+ * may see the item (a municipality on its referral, the person a moderation case is about) sees
+ * what happened and when, but not the notes, reasons or evidence staff wrote, and not who the
+ * staff member was. Their own entries are shown in full.
+ */
+export function eventView(
+  event: Record<string, unknown> & { id: string },
+  actor: { uid: string; role: string },
+  item: Pick<WorkItemDoc, 'kind' | 'assigneeUid'>
+): Record<string, unknown> {
+  const roles = workRolesOf(actor);
+  const full = roles.has('manager') || roles.has('observer') || item.assigneeUid === actor.uid
+    || (roles.has('moderator') && item.kind === 'moderation_case') || event.actorUid === actor.uid;
+  if (full) return event;
+  const sees = (event.actorRole === 'municipality' ? 'komuna' : 'platforma');
+  return { id: event.id, type: event.type, action: event.action ?? null, from: event.from ?? null, to: event.to ?? null, atMs: event.atMs, by: sees };
+}
+
 const encodeCursor = (value: unknown, id: string) => Buffer.from(JSON.stringify([value, id])).toString('base64url');
 function decodeCursor(raw: unknown): [unknown, string] | null {
   if (typeof raw !== 'string' || !raw) return null;
@@ -207,7 +227,7 @@ export function registerWorkItemRoutes(app: Express, deps: WorkRouteDeps): void 
       }).map(def => ({ action: def.action, label: def.label, requires: def.requires ?? [], to: def.to }));
       return res.json({
         item: itemView(snap.id, item, actor),
-        events: events.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        events: events.docs.map(doc => eventView({ id: doc.id, ...doc.data() }, actor, item)),
         actions,
         workflow: { kind: item.kind, states: WORKFLOWS[item.kind].states },
       });

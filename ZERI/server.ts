@@ -3117,9 +3117,10 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
   // post is published in one transaction. (scripts/publish-scheduled-posts.ts does the same from a scheduler.)
   if (!isPrototypeSandbox) {
     setInterval(() => { void publishDueScheduled(db()).catch((e) => console.warn('[SCHEDULE] run failed:', e?.message)); }, 60_000).unref();
-    // Deadlines and escalation: every run is idempotent (each escalation is one document keyed by its step), so overlapping workers are safe.
-    startWorkScheduler(db);
   }
+  // Deadlines and escalation. Every run is idempotent (each escalation is one document keyed by its step), so overlapping workers
+  // are safe, and it only touches work items, so it also runs in the sandbox (where the manager console would otherwise show a stale scheduler).
+  startWorkScheduler(db);
 
   // Keep sockets from outliving a rolling deploy, so Cloud Run can drain the
   // worker instead of resetting in-flight requests.
