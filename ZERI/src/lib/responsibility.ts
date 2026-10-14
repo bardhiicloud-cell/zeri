@@ -98,6 +98,8 @@ export interface Recipient {
   /** True when the address is safe for an automatic send. */
   sendable: boolean;
   phone?: string;
+  /** The institution's own website: where its contact was read. */
+  site?: string;
   note?: string;
 }
 
@@ -125,6 +127,7 @@ function municipalRecipient(municipality: string, office: string): Recipient {
     emailStatus: contact.status,
     sendable: Boolean(contact.email) && isSendable(contact.status),
     phone: contact.phone,
+    site: contact.site,
     note: contact.note,
   };
 }
@@ -139,6 +142,7 @@ function centralRecipient(key: keyof typeof CENTRAL_BODIES): Recipient {
     emailStatus: body.contact.status,
     sendable: Boolean(body.contact.email) && isSendable(body.contact.status),
     phone: body.contact.phone,
+    site: body.contact.site,
     note: body.contact.note,
   };
 }

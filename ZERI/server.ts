@@ -51,6 +51,7 @@ import { registerReportAssignmentRoutes } from './server/reportAssignment';
 import { registerPhotoEditRoutes } from './server/reportPhotoEdit';
 import { registerMunicipalityDeskRoutes } from './server/municipalityDesk';
 import { registerInstitutionMailRoutes } from './server/institutionMail';
+import { registerReportClassificationRoutes } from './server/reportClassification';
 import { registerTeamOverviewRoutes } from './server/teamOverview';
 import { registerTransparencyRoutes } from './server/transparency';
 import { registerReportCaseRoutes } from './server/reportCase';
@@ -2416,6 +2417,7 @@ registerInstitutionMailRoutes(app, {
   requireAuth, db, mailer: () => institutionMailer, actingUser, audit,
   baseUrl: () => process.env.PUBLIC_APP_URL || process.env.APP_URL || '',
 });
+registerReportClassificationRoutes(app, { requireAuth, db, actingUser, audit });
 registerForumSocialRoutes(app, { requireAuth, requireUsersSection: requireSection('users'), db, audit });
 registerForumAnalyticsRoutes(app, { requireAuth, db });
 registerDirectMessageRoutes(app, { requireAuth, db });
