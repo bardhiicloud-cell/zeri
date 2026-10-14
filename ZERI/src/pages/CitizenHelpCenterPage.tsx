@@ -237,7 +237,7 @@ export default function CitizenHelpCenterPage() {
                         </ol>
                       )}
                       {a.body && <p className="au-sub">{dt(a.body)}</p>}
-                      {a.link && <Link to={a.link.to} className="inline-flex items-center gap-1 text-[14px] font-semibold text-[var(--au-accent)]">{dt(a.link.label)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>}
+                      {a.link && <Link to={a.link.to} className="inline-flex min-h-10 items-center gap-1 text-[14px] font-semibold text-[var(--au-accent)]">{dt(a.link.label)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>}
                     </div>
                   )}
                 </article>

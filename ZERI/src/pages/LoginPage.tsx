@@ -7,6 +7,7 @@ import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
 import { getOrCreateGuestUser } from '../lib/session';
+import { PROFILE_SYNC_FAILED, profileSyncError, syncProfile } from '../lib/authSync';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { canAccessAdmin } from '../lib/adminPermissions';
@@ -200,26 +201,17 @@ export default function LoginPage() {
       provider.setCustomParameters({ prompt: 'select_account' });
       const credential = await signInWithGoogle(provider);
       const user = credential.user;
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/v1/auth/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: user.displayName || '',
-          avatar: user.photoURL || '',
-        }),
-      });
-      if (!response.ok) throw new Error('Backend sync failed');
+      const sync = await syncProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
 
       // The login effect below reads currentUser and routes: staff to /admin,
       // everyone else to /. If the document does not exist yet the sync call
       // above just created it, so re-reading it here keeps the role fresh.
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.exists() ? userDoc.data() : {};
+      const userDoc = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+      // An existing profile (every administrator has one) is enough to continue: the sync only
+      // creates first-time profiles. Without a profile and without a sync there is no account.
+      if (!userDoc?.exists() && !sync.ok) throw profileSyncError(sync);
+      if (!sync.ok) console.warn('[LOGIN] profile sync failed but the profile exists; continuing.', sync.status, sync.serverMessage);
+      const userData = userDoc?.exists() ? userDoc.data() : {};
       login({
         id: user.uid,
         name: userData.name || user.displayName || '',
@@ -250,9 +242,12 @@ export default function LoginPage() {
         setError('Firebase App Check është i detyrueshëm për hyrjen por ky aplikacion nuk po dërgon token të vlefshëm. Kontakto administratorin.');
       } else if (err?.code === 'auth/configuration-not-found' || err?.code === 'auth/invalid-api-key') {
         setError('Konfigurimi i Firebase mungon ose është i gabuar — kontakto administratorin.');
+      } else if (err?.code === PROFILE_SYNC_FAILED) {
+        setError(err.message);
       } else {
         console.error('[LOGIN] Google sign-in failed:', err?.code, err?.message);
-        setError(`Hyrja me Google dështoi (${err?.code || 'gabim i panjohur'}). Provoni përsëri.`);
+        // Never "unknown": say what the browser was told.
+        setError(`Hyrja me Google dështoi (${err?.code || err?.message || 'pa përshkrim nga shfletuesi'}). Provoni përsëri.`);
       }
     } finally {
       setLoading(false);
@@ -307,10 +302,10 @@ export default function LoginPage() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight text-center">
-            {view === 'login' ? 'Mirësevini' : view === 'reset-success' ? 'Verifikoni Emailin' : 'Rikthe Qasjen'}
+            {dt(view === 'login' ? 'Mirësevini' : view === 'reset-success' ? 'Verifikoni Emailin' : 'Rikthe Qasjen')}
           </h2>
           <p className="text-slate-400 font-medium mb-10 text-center text-sm">
-            {view === 'login' ? 'Identifikohuni përmes portalit të sigurtë' : view === 'reset-success' ? '' : 'Rivendosja e fjalëkalimit me protokoll të sigurtë'}
+            {dt(view === 'login' ? 'Identifikohuni përmes portalit të sigurtë' : view === 'reset-success' ? '' : 'Rivendosja e fjalëkalimit me protokoll të sigurtë')}
           </p>
 
           {error && (
@@ -384,7 +379,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full flex items-center justify-between px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 transition-all rounded-xl text-sm tracking-wide disabled:opacity-50 mt-8 group"
               >
-                <span>{loading ? 'Duke Verifikuar...' : view === 'login' ? 'Kyçu në Sistem' : 'Rikthe Fjalëkalimin'}</span>
+                <span>{dt(loading ? 'Duke Verifikuar...' : view === 'login' ? 'Kyçu në Sistem' : 'Rikthe Fjalëkalimin')}</span>
                 {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
               </button>
 

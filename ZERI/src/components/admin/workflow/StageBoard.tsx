@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, CheckCheck, ChevronDown, Loader2, Search, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCheck, ChevronDown, ChevronRight, Clock, Loader2, Search, UserRound, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';
 import {
   ALL_STAGES,
   FLOW_STAGES,
+  nextFlowStage,
+  stageActor,
   stageText,
   type BoardKind,
   type NoteMode,
@@ -20,7 +22,24 @@ export interface BoardItem {
   /** A short label on the right of the row (urgency, category). */
   tag?: string;
   stage: StageKey;
+  /** Whole days since the record was filed, when known. Shown as a fact, never as a deadline. */
+  ageDays?: number | null;
+  /** Who holds it now (a person or an office), when known. */
+  owner?: string;
+  /** Marked urgent by the record itself (e.g. "Kritike"). */
+  urgent?: boolean;
 }
+
+type SortKey = 'list' | 'oldest' | 'newest' | 'urgent';
+const SORTS: ReadonlyArray<{ value: SortKey; label: string }> = [
+  { value: 'list', label: 'Siç vijnë' },
+  { value: 'oldest', label: 'Më të vjetrat së pari' },
+  { value: 'newest', label: 'Më të rejat së pari' },
+  { value: 'urgent', label: 'Urgjentet së pari' },
+];
+
+const ageLabel = (days: number) => (days === 0 ? dt('sot') : days === 1 ? `1 ${dt('ditë')}` : `${days} ${dt('ditë')}`);
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('');
 
 export type MoveCheck = { ok: true; note: NoteMode } | { ok: false; reason: string };
 
@@ -39,6 +58,8 @@ export interface StageBoardProps {
   moreAvailable?: boolean;
   onLoadMore?: () => void;
   loadingMore?: boolean;
+  /** Told whenever the selection changes, so a screen can offer actions for it. */
+  onSelectionChange?: (ids: string[]) => void;
 }
 
 const TONE: Record<StageKey, { chip: string; active: string; dot: string }> = {
@@ -77,9 +98,10 @@ interface Result {
  * photo, a stage that belongs to the municipality) is listed with its reason and never
  * stops the others.
  */
-export function StageBoard({ kind, items, loading, error, check, move, onOpen, onMoved, moreAvailable, onLoadMore, loadingMore }: StageBoardProps) {
+export function StageBoard({ kind, items, loading, error, check, move, onOpen, onMoved, moreAvailable, onLoadMore, loadingMore, onSelectionChange }: StageBoardProps) {
   const [stage, setStage] = useState<StageKey>('reported');
   const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortKey>('list');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [shown, setShown] = useState(PAGE);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -96,11 +118,32 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
 
   const inStage = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return items.filter(item =>
+    const found = items.filter(item =>
       item.stage === stage &&
-      (!needle || `${item.title} ${item.subtitle ?? ''} ${item.id} ${item.tag ?? ''}`.toLowerCase().includes(needle))
+      (!needle || `${item.title} ${item.subtitle ?? ''} ${item.id} ${item.tag ?? ''} ${item.owner ?? ''}`.toLowerCase().includes(needle))
     );
-  }, [items, stage, query]);
+    if (sort === 'list') return found;
+    const age = (item: BoardItem) => item.ageDays ?? -1;
+    return [...found].sort((a, b) =>
+      sort === 'oldest' ? age(b) - age(a)
+        : sort === 'newest' ? age(a) - age(b)
+          : Number(Boolean(b.urgent)) - Number(Boolean(a.urgent)) || age(b) - age(a)
+    );
+  }, [items, stage, query, sort]);
+
+  /** What the person looking at this stage needs to know to move the work on. */
+  const guide = useMemo(() => {
+    const here = items.filter(item => item.stage === stage);
+    const ages = here.map(item => item.ageDays).filter((d): d is number => typeof d === 'number');
+    return {
+      actor: stageActor(kind, stage),
+      next: nextFlowStage(stage),
+      oldest: ages.length ? Math.max(...ages) : null,
+      urgent: here.filter(item => item.urgent).length,
+      unheld: here.filter(item => item.owner !== undefined && !item.owner).length,
+      tracksOwner: here.some(item => item.owner !== undefined),
+    };
+  }, [items, stage, kind]);
 
   // A selection belongs to the column it was made in.
   useEffect(() => {
@@ -108,6 +151,8 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
     setShown(PAGE);
     setPending(null);
   }, [stage, query]);
+
+  useEffect(() => { onSelectionChange?.([...selected]); }, [selected, onSelectionChange]);
 
   // Records that left the list (moved, deleted elsewhere) drop out of the selection.
   useEffect(() => {
@@ -222,7 +267,31 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
         })}
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">{dt(text.hint)}</p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900" data-testid="stage-guide">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-black text-slate-900 dark:text-white">{dt(text.label)}</p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{dt(text.hint)}</p>
+          </div>
+          <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
+            {guide.oldest !== null && guide.oldest > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-200"><Clock className="h-3 w-3" aria-hidden="true" />{dt('Më e vjetra')}: {ageLabel(guide.oldest)}</span>
+            )}
+            {guide.urgent > 0 && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">{guide.urgent} {dt('urgjente')}</span>}
+            {guide.tracksOwner && guide.unheld > 0 && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">{guide.unheld} {dt('pa të zot')}</span>}
+          </div>
+        </div>
+        {(guide.actor || guide.next) && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-white/10 dark:text-slate-300">
+            {guide.actor && <span><strong className="text-slate-900 dark:text-white">{dt(guide.actor.who)}</strong>: {dt(guide.actor.does)}</span>}
+            {guide.next && (
+              <span className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-blue-300">
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />{dt('Më pas')}: {dt(stageText(kind, guide.next).label)}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-0 flex-1 basis-56">
@@ -235,6 +304,16 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
             placeholder={dt('Kërko në këtë fazë…')}
             className="min-h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-base text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-900 dark:text-white"
           />
+        </label>
+        <label className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+          <span className="sr-only sm:not-sr-only">{dt('Rendit')}</span>
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as SortKey)}
+            className="min-h-11 rounded-xl border border-slate-200 bg-white px-2.5 text-sm text-slate-900 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+          >
+            {SORTS.map(option => <option key={option.value} value={option.value}>{dt(option.label)}</option>)}
+          </select>
         </label>
         <button
           type="button"
@@ -385,6 +464,21 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
                   <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
                     {[item.subtitle, item.meta].filter(Boolean).join(' · ')}
                   </span>
+                  {(typeof item.ageDays === 'number' || item.owner !== undefined) && (
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                      {typeof item.ageDays === 'number' && (
+                        <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold', item.ageDays >= 7 ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300')}>
+                          <Clock className="h-3 w-3" aria-hidden="true" />{ageLabel(item.ageDays)}
+                        </span>
+                      )}
+                      {item.owner !== undefined && (
+                        item.owner
+                          ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"><span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[8px] text-white" aria-hidden="true">{initials(item.owner)}</span>{item.owner}</span>
+                          : <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-500 dark:bg-white/10 dark:text-slate-400"><UserRound className="h-3 w-3" aria-hidden="true" />{dt('Pa të zot')}</span>
+                      )}
+                      {item.urgent && <span className="rounded-full bg-rose-100 px-2 py-0.5 font-bold text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">{dt('Urgjente')}</span>}
+                    </span>
+                  )}
                 </button>
                 {item.tag && <span className="hidden shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 sm:inline dark:bg-white/10 dark:text-slate-300">{item.tag}</span>}
                 {next && forward?.ok && (

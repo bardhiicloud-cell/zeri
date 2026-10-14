@@ -7,7 +7,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 
 /**
  * Run with: npm run test:rules
@@ -699,5 +699,30 @@ describe('monitor — read-only oversight', () => {
 
   it('a plain citizen still cannot read the audit trail', async () => {
     await assertFails(getDoc(doc(asUser(C), 'auditLogs', 'l1')));
+  });
+});
+
+describe('suspensions (server/moderationCases.ts)', () => {
+  const post = () => ({ authorId: B, content: 'hello', visibility: 'public', likes: [], comments: [], reactions: {}, createdAt: serverTimestamp() });
+  const suspend = (untilMs: number) => env.withSecurityRulesDisabled(async (ctx) => {
+    await updateDoc(doc(ctx.firestore(), 'users', B), { isBanned: true, suspendedUntil: Timestamp.fromMillis(untilMs) });
+  });
+
+  it('blocks writes while the suspension runs', async () => {
+    await suspend(Date.now() + 86_400_000);
+    await assertFails(addDoc(collection(asUser(B), 'forumPosts'), post()));
+  });
+
+  it('lets the account act again once the end has passed, before any sweep clears the flag', async () => {
+    await suspend(Date.now() - 60_000);
+    await assertSucceeds(addDoc(collection(asUser(B), 'forumPosts'), post()));
+  });
+
+  it.each([
+    ['suspendedUntil', null],
+    ['restriction', null],
+    ['warningCount', 0],
+  ])('does not let a person clear their own %s', async (field, value) => {
+    await assertFails(updateDoc(doc(asUser(A), 'users', A), { [field]: value }));
   });
 });

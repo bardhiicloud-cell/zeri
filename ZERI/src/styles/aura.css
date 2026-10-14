@@ -40,12 +40,14 @@ html.dark {
 .au-hero { --a: #12315f; --b: #0a1830; position: relative; isolation: isolate; overflow: hidden; border-radius: 24px; color: #fff; background: radial-gradient(120% 140% at 100% 0%, var(--a) 0%, transparent 60%), linear-gradient(160deg, var(--b), #05070d); box-shadow: var(--au-shadow); }
 .au-hero::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .16; pointer-events: none; background-image: linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px); background-size: 36px 36px; -webkit-mask-image: radial-gradient(ellipse at 85% 10%, #000, transparent 65%); mask-image: radial-gradient(ellipse at 85% 10%, #000, transparent 65%); }
 .au-glow { position: absolute; z-index: -1; border-radius: 999px; filter: blur(46px); opacity: .5; pointer-events: none; background: var(--a); }
-.au-orbit { position: relative; width: 250px; height: 250px; }
+.au-orbit { position: relative; width: 196px; height: 196px; }
 .au-orbit-ring { position: absolute; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); }
 .au-orbit-core { position: absolute; inset: 34%; display: grid; place-items: center; border-radius: 999px; color: #fff; background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.55), rgba(255,255,255,.12)); box-shadow: 0 0 36px rgba(255,255,255,.25), inset 0 0 0 1px rgba(255,255,255,.3); }
-.au-orbit-sat { position: absolute; display: grid; place-items: center; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 13px; transition: transform .2s ease, background .2s ease; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); animation: au-bob 6s ease-in-out infinite; }
+.au-orbit-sat { position: absolute; display: grid; place-items: center; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 10px; transition: transform .2s ease, background .2s ease; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); animation: au-bob 6s ease-in-out infinite; }
 a.au-orbit-sat:hover, .au-orbit-sat:is(a):hover { background: rgba(255,255,255,.3); transform: scale(1.12); }
-@media (max-width: 640px) { .au-orbit { width: 200px; height: 200px; } .au-orbit-sat { width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 12px; } }
+@media (max-width: 640px) { .au-orbit { width: 148px; height: 148px; } .au-orbit-sat { width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 9px; } .au-orbit-sat svg { width: 14px; height: 14px; } .au-orbit-core svg { width: 16px; height: 16px; } }
+/* Invisible hit area: the satellites stay visually small but take a 40px touch. */
+.au-orbit-sat::before { content: ""; position: absolute; inset: -5px; border-radius: inherit; }
 @keyframes au-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .au-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(255,255,255,.07), transparent 40%); pointer-events: none; }
 .au-hero[data-tone="blue"]   { --a: #1e56b8; --b: #0a1b3d; }
@@ -116,3 +118,11 @@ textarea.au-input { height: auto; min-height: 110px; padding: 12px 14px; resize:
   .au-tile-link, .au-btn, .au-chip, .au-photo > img { transition: none; }
   .au-tile-link:hover { transform: none; }
 }
+
+/* Orbit caption: names the hovered/focused/pressed satellite; marks the current page. */
+.au-orbit-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.au-orbit-caption { min-height: 16px; max-width: 100%; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.6); transition: color .15s ease; }
+.au-orbit-caption[data-active="true"] { color: #fff; }
+.au-orbit-sat[data-current="true"] { background: rgba(255,255,255,.34); border-color: rgba(255,255,255,.7); box-shadow: 0 0 0 3px rgba(255,255,255,.14); }
+.au-orbit-sat:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 640px) { .au-orbit-caption { font-size: 9px; letter-spacing: .04em; } }

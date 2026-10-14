@@ -13,6 +13,7 @@ import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, limit } from 'firebase/firestore';
+import { PLACEMENTS, PLACEMENT_META, placementsOf, type NotificationPlacement } from '../../lib/notificationPlacements';
 
 /**
  * Admin control centre for the bell's "Njoftime" (general broadcast) channel.
@@ -66,6 +67,9 @@ interface FormState {
   urgent: boolean;
   link: string;
   state: NotificationState;
+  placements: NotificationPlacement[];
+  /** datetime-local value, '' = never expires */
+  expiresAt: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -77,6 +81,8 @@ const EMPTY_FORM: FormState = {
   urgent: false,
   link: '',
   state: 'published',
+  placements: ['bell'],
+  expiresAt: '',
 };
 
 export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicNews?: () => void }) {
@@ -138,6 +144,8 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
       urgent: Boolean(n.urgent),
       link: n.link || '',
       state: (n.state || 'published') as NotificationState,
+      placements: placementsOf(n),
+      expiresAt: n.expiresAt ? new Date(n.expiresAt).toISOString().slice(0, 16) : '',
     });
     setEditingId(n.id);
     setIsCreating(true);
@@ -159,6 +167,8 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
     urgent: form.urgent,
     link: form.link.trim() || null,
     state: form.state,
+    placements: Array.from(new Set<NotificationPlacement>(['bell', ...form.placements])),
+    expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
     channel: 'general',
     audience: 'all',
     sender: 'Komunikimi Publik',
@@ -307,8 +317,8 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
 
       <aside className="flex flex-col gap-3 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/50 dark:bg-blue-950/20 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
-          <strong className="font-black text-slate-900 dark:text-white">{dt('Këto njoftime dërgohen në zilen e përdoruesit (kategoria “Njoftime”).')}</strong>{' '}
-          {dt('Për njoftime publike në faqet e platformës, përdorni Menaxhimin e Lajmeve.')}
+          <strong className="font-black text-slate-900 dark:text-white">{dt('Çdo njoftim del te zilja. Zgjidhni më poshtë nëse del edhe si banner në ballinë, si pop-up ose në krye të Lajmeve.')}</strong>{' '}
+          {dt('Artikujt e lajmeve publikohen te Lajmet; ky panel është për njoftime të shkurtra.')}
         </p>
         {onOpenPublicNews && (
           <button
@@ -397,6 +407,66 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
                 <input type="text" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className={inputCls} placeholder="/lajme ose /trackid?id=..." />
                 <p className="mt-1.5 text-[11px] text-slate-400">{dt('Përdorni një rrugë të brendshme, psh. /lajme. Lini bosh nëse njoftimi nuk ka faqe destinacion.')}</p>
               </div>
+
+              <fieldset className="md:col-span-2 rounded-xl border border-slate-200/60 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-800">
+                <legend className="px-1 text-sm font-semibold text-slate-700 dark:text-slate-300">{dt('Ku do të dalë ky njoftim')}</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {PLACEMENTS.map(p => {
+                    const meta = PLACEMENT_META[p];
+                    const on = p === 'bell' || form.placements.includes(p);
+                    return (
+                      <label key={p} className={cn('flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm', on ? 'border-indigo-300 bg-white dark:border-indigo-500/50 dark:bg-slate-900' : 'border-slate-200 dark:border-white/10', p === 'bell' && 'cursor-default')}>
+                        <input type="checkbox" className="mt-1 h-4 w-4 accent-indigo-600" checked={on} disabled={p === 'bell'}
+                          onChange={(e) => setForm({ ...form, placements: e.target.checked ? [...form.placements, p] : form.placements.filter(x => x !== p) })} />
+                        <span>
+                          <span className="block font-bold text-slate-900 dark:text-white">{dt(meta.label)}</span>
+                          <span className="block text-xs text-slate-500">{dt(meta.where)}</span>
+                          <span className="block text-[11px] text-slate-400">{dt(meta.behaviour)}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">{dt('Skadon më (opsionale)')}
+                    <input type="datetime-local" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} className={inputCls + ' mt-1'} />
+                  </label>
+                  <p className="self-end text-[11px] text-slate-500">
+                    {form.state === 'published' ? dt('Do të dalë menjëherë pas ruajtjes.') : dt('Nuk do të dalë askund derisa gjendja të jetë "Publikuar".')}
+                    {form.urgent && form.placements.includes('popup') ? ` ${dt('Është urgjente: pop-up-i shfaqet para çdo gjëje tjetër.')}` : ''}
+                  </p>
+                </div>
+
+                {/* What the visitor will actually see, drawn from what is typed above. */}
+                <div className="mt-4 space-y-2" aria-label={dt('Parapamje')}>
+                  <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">{dt('Parapamje')}</p>
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-xs dark:border-white/10 dark:bg-slate-900">
+                    <Bell className="h-4 w-4 shrink-0 text-indigo-600" />
+                    <span className="min-w-0 flex-1 truncate"><b>{form.title || dt('Titulli')}</b> · {form.message || dt('Mesazhi')}</span>
+                    {form.urgent && <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" />}
+                    <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400">{dt('Zilja')}</span>
+                  </div>
+                  {form.placements.includes('banner') && (
+                    <div className={cn('flex items-center gap-2 rounded-lg border p-2.5 text-xs', form.urgent ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-blue-200 bg-blue-50 text-blue-900')}>
+                      <Megaphone className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 truncate"><b>{form.title || dt('Titulli')}</b> {form.message}</span><X className="h-3.5 w-3.5 shrink-0" />
+                      <span className="shrink-0 text-[10px] font-bold uppercase opacity-60">{dt('Banner')}</span>
+                    </div>
+                  )}
+                  {form.placements.includes('news') && (
+                    <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-900">
+                      <Newspaper className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 truncate"><b>{form.title || dt('Titulli')}</b> {form.message}</span>
+                      <span className="shrink-0 text-[10px] font-bold uppercase opacity-60">{dt('Krye i Lajmeve')}</span>
+                    </div>
+                  )}
+                  {form.placements.includes('popup') && (
+                    <div className="mx-auto max-w-xs rounded-2xl border border-slate-200 bg-white p-4 text-xs shadow-lg dark:border-white/10 dark:bg-slate-900">
+                      <p className="text-[10px] font-bold uppercase text-slate-400">{dt('Pop-up')}</p>
+                      <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">{form.title || dt('Titulli')}</p>
+                      <p className="mt-1 text-slate-600 dark:text-slate-300">{form.message || dt('Mesazhi')}</p>
+                    </div>
+                  )}
+                </div>
+              </fieldset>
 
               <label className="md:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 px-4 py-3 cursor-pointer">
                 <input type="checkbox" checked={form.urgent} onChange={(e) => setForm({ ...form, urgent: e.target.checked })} className="h-4 w-4 accent-rose-600" />
@@ -520,6 +590,12 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
                         <StateIcon className="w-3 h-3" />
                         {meta.label}
                       </span>
+                      {placementsOf(n).filter(p => p !== 'bell').map(p => (
+                        <span key={p} className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50">{dt(PLACEMENT_META[p].label)}</span>
+                      ))}
+                      {n.expiresAt && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold tracking-wide rounded border bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-white/10">{dt('skadon')} {new Date(n.expiresAt).toLocaleDateString('sq-AL')}</span>
+                      )}
                       {n.urgent && (
                         <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50">
                           {dt('Urgjente')}

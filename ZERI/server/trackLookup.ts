@@ -211,17 +211,18 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
 
   // The pipeline (server/approvalPipeline.ts) writes `Resolved` twice for a case
   // that is properly finished: first when the institution reports the work done,
-  // then again, with the status unchanged, when the platform's staff verify it
-  // (`staff_verify`). `Closed` is not written by the pipeline but is honoured
-  // if a report carries it. Nothing is inferred beyond those facts.
+  // then again, with the status unchanged, when the platform's staff verify it.
+  // `Closed` is not written by the pipeline but is honoured if present.
   const resolvedEvents = timeline.filter(event => event.status === 'Resolved');
-  const resolvedEvent = resolvedEvents.find(event => event.previousStatus !== 'Resolved') ?? resolvedEvents[0];
-  const closedEvent = resolvedEvents.find(event => event !== resolvedEvent && event.previousStatus === 'Resolved' && event.source !== 'municipality')
+  const declaredEvent = resolvedEvents.find(event => event.previousStatus !== 'Resolved') ?? resolvedEvents[0];
+  const verificationEvent = resolvedEvents.find(event => event !== declaredEvent && event.previousStatus === 'Resolved' && event.source !== 'municipality')
     ?? lastEvent(['Closed']);
 
   let state: ResolutionState = 'none';
-  if (status === 'Resolved') state = closedEvent ? 'verified' : 'awaiting_verification';
-  else if (status === 'Closed') state = closedEvent ? 'verified' : 'closed';
+  if (status === 'Resolved') state = verificationEvent ? 'verified' : 'awaiting_verification';
+  else if (status === 'Closed') state = verificationEvent ? 'verified' : 'closed';
+  const resolvedEvent = declaredEvent;
+  const closedEvent = verificationEvent;
 
   const resolvedAt = toIso(report.resolvedAt) ?? resolvedEvent?.date ?? null;
   const resolvedImage = typeof report.resolvedImage === 'string' && report.resolvedImage.startsWith('https://') ? report.resolvedImage : null;

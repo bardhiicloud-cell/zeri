@@ -11,16 +11,16 @@ import {
   where,
 } from 'firebase/firestore';
 import {
-  Camera,
+  ArrowLeft,
+  Check,
   Eye,
   Send,
   ChevronLeft,
   ChevronRight,
   CirclePlay,
   ImagePlus,
-  Move,
-  Palette,
   Plus,
+  Sparkles,
   Type,
   Upload,
   X,
@@ -32,7 +32,7 @@ import { fetchStoryViewersApi, recordStoryViewApi, replyToStoryApi, type StoryVi
 
 
 import { dt } from '@/src/lib/dt';
-type StoryEffect = 'natural' | 'vivid' | 'warm' | 'mono';
+type StoryEffect = 'natural' | 'vivid' | 'warm' | 'cool' | 'fade' | 'drama' | 'mono' | 'noir';
 
 interface ForumStory {
   id: string;
@@ -68,7 +68,11 @@ const EFFECTS: { id: StoryEffect; label: string; className: string }[] = [
   { id: 'natural', label: 'Natyrale', className: '' },
   { id: 'vivid', label: 'Gjallëruese', className: 'saturate-150 contrast-110' },
   { id: 'warm', label: 'E ngrohtë', className: 'sepia-[.28] saturate-125' },
+  { id: 'cool', label: 'E ftohtë', className: 'hue-rotate-[-14deg] saturate-110 brightness-105' },
+  { id: 'fade', label: 'E zbehtë', className: 'contrast-75 brightness-110 saturate-75' },
+  { id: 'drama', label: 'Dramatike', className: 'contrast-125 saturate-110 brightness-90' },
   { id: 'mono', label: 'Bardh e zi', className: 'grayscale' },
+  { id: 'noir', label: 'Noir', className: 'grayscale contrast-125 brightness-90' },
 ];
 
 const effectClass = (effect: string) =>
@@ -89,6 +93,9 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
   const [overlayColor, setOverlayColor] = useState('#ffffff');
   const [overlaySize, setOverlaySize] = useState(18);
   const [isDraggingOverlay, setIsDraggingOverlay] = useState(false);
+  const [isDropping, setIsDropping] = useState(false);
+  const [editingText, setEditingText] = useState(false);
+  const [tool, setTool] = useState<'filters' | 'text'>('filters');
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activeStoryGroup, setActiveStoryGroup] = useState<ForumStory[] | null>(null);
@@ -231,7 +238,24 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
     }
   };
 
+  /** Validates at pick time, so a too-large file is refused before any editing. */
+  const pickFile = (file: File | null) => {
+    if (!file) return;
+    if (!/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm))$/.test(file.type)) {
+      toast.error('Formati nuk mbështetet. Zgjidhni JPG, PNG, WebP, GIF, MP4 ose WebM.');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES.reports) {
+      toast.error('Media duhet të jetë më e vogël se 10 MB.');
+      return;
+    }
+    setSelectedFile(file);
+    setTool('filters');
+  };
+
   const resetComposer = () => {
+    setEditingText(false);
+    setTool('filters');
     setIsComposerOpen(false);
     setSelectedFile(null);
     setTextOverlay('');
@@ -358,65 +382,114 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
       </section>
 
       {isComposerOpen && (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5" onClick={resetComposer}>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/90 p-0 backdrop-blur-md sm:p-5" onClick={resetComposer}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+            className="hidden"
+            onChange={(event) => pickFile(event.target.files?.[0] ?? null)}
+          />
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="forum-story-title"
-            className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white shadow-2xl dark:bg-zinc-950"
+            className="relative flex h-full w-full flex-col overflow-hidden bg-zinc-950 text-white shadow-2xl sm:h-auto sm:max-h-[94dvh] sm:w-auto sm:rounded-3xl sm:border sm:border-white/10"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-zinc-800">
-              <div>
-                <h2 id="forum-story-title" className="font-black text-slate-900 dark:text-white">Krijo Debat Story</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{dt('Foto ose video, aktive për 24 orë')}</p>
-              </div>
-              <button type="button" onClick={resetComposer} aria-label={dt('Mbyll')} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800">
-                <X className="h-5 w-5" />
-              </button>
-            </header>
+            <h2 id="forum-story-title" className="sr-only">Krijo Debat Story</h2>
 
-            <div className="flex min-h-0 flex-1 overflow-y-auto">
-              {/* Preview with draggable text overlay */}
-              <div className="flex min-w-0 flex-1 flex-col p-4">
+            {!selectedFile ? (
+              /* Step 1 — Instagram-style: the only decision is the media. */
+              <div className="flex h-full flex-col sm:w-[min(92vw,30rem)]">
+                <header className="flex items-center justify-between px-4 py-3">
+                  <span className="text-base font-black">{dt('Story i ri')}</span>
+                  <button type="button" onClick={resetComposer} aria-label={dt('Mbyll')} className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white">
+                    <X className="h-5 w-5" />
+                  </button>
+                </header>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(event) => { event.preventDefault(); setIsDropping(true); }}
+                  onDragLeave={() => setIsDropping(false)}
+                  onDrop={(event) => { event.preventDefault(); setIsDropping(false); pickFile(event.dataTransfer.files?.[0] ?? null); }}
+                  className={`mx-4 mb-4 flex min-h-[26rem] flex-1 flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed p-8 text-center transition-colors sm:aspect-[9/14] sm:flex-none ${isDropping ? 'border-blue-400 bg-blue-500/10' : 'border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/10'}`}
+                >
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-violet-600 shadow-lg shadow-rose-500/20">
+                    <ImagePlus className="h-9 w-9 text-white" aria-hidden="true" />
+                  </span>
+                  <span className="text-xl font-black">{dt('Zgjidh foto ose video')}</span>
+                  <span className="max-w-[16rem] text-sm text-white/60">{dt('Tërhiqe këtu ose kliko për ta zgjedhur. Pastaj shton tekst, ngjyra dhe efekte.')}</span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-black text-white">
+                    <Upload className="h-4 w-4" aria-hidden="true" /> {dt('Zgjidh nga pajisja')}
+                  </span>
+                  <span className="text-[11px] text-white/40">{dt('JPG, PNG, WebP, GIF, MP4 ose WebM • deri në 10 MB • aktive 24 orë')}</span>
+                </button>
+              </div>
+            ) : (
+              /* Step 2 — full-bleed 9:16 editor with the tools floating on the canvas. */
               <div
                 ref={overlayRef}
-                className="relative flex min-h-[20rem] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-100 text-slate-500 select-none dark:border-zinc-700 dark:bg-zinc-900"
+                className="relative h-full w-full select-none overflow-hidden bg-black sm:h-[min(88dvh,50rem)] sm:w-[calc(min(88dvh,50rem)*9/16)]"
+                style={{ aspectRatio: '9 / 16' }}
               >
-                {selectedFile ? (
-                  selectedFile.type.startsWith('video/') ? (
-                    <video src={previewUrl} className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} controls playsInline />
-                  ) : (
-                    <img src={previewUrl} alt="Parapamje e story-t" className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} draggable={false} />
-                  )
+                {selectedFile.type.startsWith('video/') ? (
+                  <video src={previewUrl} className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} autoPlay loop muted playsInline />
                 ) : (
-                  <span className="flex flex-col items-center gap-2 p-6 text-center">
-                    <Camera className="h-9 w-9 text-blue-600" />
-                    <span className="font-bold text-slate-800 dark:text-white">Zgjidh media</span>
-                    <span className="text-xs">{dt('JPG, PNG, WebP, GIF, MP4 ose WebM • deri në 10 MB')}</span>
-                  </span>
+                  <img src={previewUrl} alt="Parapamje e story-t" className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} draggable={false} />
                 )}
-                {textOverlay && selectedFile && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/80 to-transparent" />
+
+                {/* Top bar */}
+                <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between p-3">
+                  <button type="button" onClick={() => { setSelectedFile(null); setEditingText(false); }} aria-label={dt('Ndrysho median')} className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur hover:bg-black/60">
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setTool('text'); setEditingText(true); }}
+                      aria-label={dt('Shto tekst')}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur ${tool === 'text' ? 'bg-white text-black' : 'bg-black/40 hover:bg-black/60'}`}
+                    >
+                      <Type className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setTool('filters'); setEditingText(false); }}
+                      aria-label={dt('Efektet')}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur ${tool === 'filters' ? 'bg-white text-black' : 'bg-black/40 hover:bg-black/60'}`}
+                    >
+                      <Sparkles className="h-5 w-5" />
+                    </button>
+                    <button type="button" onClick={resetComposer} aria-label={dt('Mbyll')} className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur hover:bg-black/60">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Text on the canvas: drag to move, tap to edit. */}
+                {textOverlay && !editingText && (
                   <span
                     role="slider"
-                    aria-label="Pozicioni i tekstit — tërhiqe për ta zhvendosur"
+                    tabIndex={0}
+                    aria-label="Pozicioni i tekstit — tërhiqe për ta zhvendosur, kliko për ta ndryshuar"
                     aria-valuetext={`x ${Math.round(overlayPos.x)}%, y ${Math.round(overlayPos.y)}%`}
+                    onKeyDown={(event) => { if (event.key === 'Enter') setEditingText(true); }}
                     onPointerDown={(event) => {
-                      /*
-                       * The drag used to live on the whole preview container, so
-                       * clicking anywhere on the photo/video and moving the
-                       * mouse dragged the text by accident — it read as the
-                       * whole editor being “grabbed”. The pointer capture now
-                       * starts on the text itself, which is the only element a
-                       * citizen intends to move.
-                       */
                       event.preventDefault();
                       event.stopPropagation();
-                      setIsDraggingOverlay(true);
                       const container = overlayRef.current;
                       if (!container) return;
                       const rect = container.getBoundingClientRect();
+                      const startX = event.clientX;
+                      const startY = event.clientY;
+                      let moved = false;
+                      setIsDraggingOverlay(true);
                       const move = (e: PointerEvent) => {
+                        if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 4) moved = true;
                         setOverlayPos({
                           x: Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100)),
                           y: Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100)),
@@ -426,11 +499,12 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                         setIsDraggingOverlay(false);
                         window.removeEventListener('pointermove', move);
                         window.removeEventListener('pointerup', up);
+                        if (!moved) { setTool('text'); setEditingText(true); }
                       };
                       window.addEventListener('pointermove', move);
                       window.addEventListener('pointerup', up);
                     }}
-                    className={`absolute max-w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-center font-black drop-shadow-md ${isDraggingOverlay ? 'cursor-grabbing ring-2 ring-blue-400/70' : 'cursor-grab'}`}
+                    className={`absolute z-10 max-w-[85%] -translate-x-1/2 -translate-y-1/2 whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-center font-black drop-shadow-md ${isDraggingOverlay ? 'cursor-grabbing ring-2 ring-white/70' : 'cursor-grab'}`}
                     style={{
                       left: `${overlayPos.x}%`,
                       top: `${overlayPos.y}%`,
@@ -443,47 +517,31 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                     {textOverlay}
                   </span>
                 )}
-                {selectedFile && textOverlay && (
-                  <span className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold text-white">
-                    <Move className="h-3 w-3" /> Tërhiqe tekstin ku të duash
-                  </span>
-                )}
-              </div>
-              </div>
 
-              {/* Sidebar: text + effects, like a real story editor */}
-              <aside className="flex w-64 shrink-0 flex-col gap-4 overflow-y-auto border-l border-slate-200 bg-slate-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
-                  className="hidden"
-                  onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-                />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-200 dark:hover:bg-zinc-800">
-                  <Upload className="h-4 w-4" /> {selectedFile ? 'Ndrysho median' : 'Ngarko foto/video'}
-                </button>
-
-                <label className="block">
-                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                    <Type className="h-3.5 w-3.5" /> Teksti mbi media
-                  </span>
-                  <textarea
-                    value={textOverlay}
-                    onChange={(event) => setTextOverlay(event.target.value.slice(0, 180))}
-                    maxLength={180}
-                    rows={3}
-                    placeholder="Shkruaj një mesazh të shkurtër..."
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:ring-blue-900/40"
-                  />
-                  <span className="mt-1 block text-right text-[11px] text-slate-400">{textOverlay.length}/180</span>
-                </label>
-
-                {textOverlay && (
-                  <>
-                    <fieldset>
-                      <legend className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">Ngjyra e tekstit</legend>
-                      <div className="flex flex-wrap gap-2">
+                {/* Text editing mode — scrim, live input, colour dots and size. */}
+                {editingText && (
+                  <div className="absolute inset-0 z-30 flex flex-col bg-black/65 backdrop-blur-sm">
+                    <div className="flex items-center justify-between p-3">
+                      <span className="text-xs font-bold text-white/60">{textOverlay.length}/180</span>
+                      <button type="button" onClick={() => setEditingText(false)} className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-black text-black">
+                        <Check className="h-4 w-4" /> {dt('Gati')}
+                      </button>
+                    </div>
+                    <div className="flex flex-1 items-center justify-center px-6">
+                      <textarea
+                        autoFocus
+                        value={textOverlay}
+                        onChange={(event) => setTextOverlay(event.target.value.slice(0, 180))}
+                        maxLength={180}
+                        rows={4}
+                        placeholder={dt('Shkruaj diçka…')}
+                        aria-label="Teksti mbi media"
+                        className="w-full resize-none bg-transparent text-center font-black outline-none placeholder:text-white/40"
+                        style={{ color: overlayColor, fontSize: `${overlaySize}px`, textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}
+                      />
+                    </div>
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-center justify-center gap-2.5" role="group" aria-label="Ngjyra e tekstit">
                         {OVERLAY_COLORS.map((color) => (
                           <button
                             key={color}
@@ -491,65 +549,74 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                             aria-label={`Ngjyra ${color}`}
                             aria-pressed={overlayColor === color}
                             onClick={() => setOverlayColor(color)}
-                            className={`h-7 w-7 rounded-full border-2 transition ${overlayColor === color ? 'border-blue-600 scale-110' : 'border-white/60 dark:border-zinc-600'}`}
+                            className={`h-8 w-8 rounded-full border-2 transition ${overlayColor === color ? 'scale-125 border-white' : 'border-white/40'}`}
                             style={{ backgroundColor: color }}
                           />
                         ))}
                       </div>
-                    </fieldset>
-                    <fieldset>
-                      <legend className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">{dt('Madhësia e tekstit')}</legend>
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <div className="flex items-center justify-center gap-2" role="group" aria-label={dt('Madhësia e tekstit')}>
                         {OVERLAY_SIZES.map((size) => (
                           <button
                             key={size}
                             type="button"
                             aria-pressed={overlaySize === size}
                             onClick={() => setOverlaySize(size)}
-                            className={`rounded-lg border py-1.5 text-[10px] font-black transition ${overlaySize === size ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : 'border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800'}`}
+                            className={`h-9 w-12 rounded-full text-xs font-black transition ${overlaySize === size ? 'bg-white text-black' : 'bg-white/15 text-white hover:bg-white/25'}`}
                           >
                             {size === 14 ? 'S' : size === 18 ? 'M' : size === 24 ? 'L' : 'XL'}
                           </button>
                         ))}
                       </div>
-                    </fieldset>
-                  </>
+                    </div>
+                  </div>
                 )}
 
-                <fieldset>
-                  <legend className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                    <Palette className="h-3.5 w-3.5" /> Efektet e medias
-                  </legend>
-                  <div className="grid gap-1.5">
-                    {EFFECTS.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        aria-pressed={effect === item.id}
-                        onClick={() => setEffect(item.id)}
-                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold transition ${effect === item.id ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : 'border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800'}`}
-                      >
-                        {item.label}
-                        <span className={`h-5 w-9 rounded-md bg-gradient-to-br from-slate-300 to-slate-400 ${item.className} dark:from-zinc-500 dark:to-zinc-700`} />
+                {/* Bottom: filter strip + publish */}
+                {!editingText && (
+                  <div className="absolute inset-x-0 bottom-0 z-20 space-y-3 p-3">
+                    {tool === 'filters' && (
+                      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar" role="group" aria-label="Efektet e medias">
+                        {EFFECTS.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            aria-pressed={effect === item.id}
+                            onClick={() => setEffect(item.id)}
+                            className="flex w-16 shrink-0 flex-col items-center gap-1"
+                          >
+                            <span className={`relative block h-20 w-16 overflow-hidden rounded-xl border-2 transition ${effect === item.id ? 'border-white' : 'border-transparent opacity-80'}`}>
+                              {selectedFile.type.startsWith('video/') ? (
+                                <video src={previewUrl} muted preload="metadata" className={`h-full w-full object-cover ${item.className}`} />
+                              ) : (
+                                <img src={previewUrl} alt="" draggable={false} className={`h-full w-full object-cover ${item.className}`} />
+                              )}
+                            </span>
+                            <span className={`text-[10px] font-bold ${effect === item.id ? 'text-white' : 'text-white/60'}`}>{item.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {tool === 'text' && !textOverlay && (
+                      <button type="button" onClick={() => setEditingText(true)} className="mx-auto flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold backdrop-blur hover:bg-white/25">
+                        <Type className="h-4 w-4" /> {dt('Prek për të shtuar tekst')}
                       </button>
-                    ))}
+                    )}
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[11px] leading-snug text-white/60">{dt('Publik • zhduket pas 24 orësh')}</p>
+                      <button
+                        type="button"
+                        onClick={() => void publishStory()}
+                        disabled={isPublishing}
+                        className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-black text-white shadow-lg transition hover:bg-blue-500 disabled:opacity-60"
+                      >
+                        {isPublishing ? <span className="animate-spin">◌</span> : <Send className="h-4 w-4" />}
+                        {dt('Shpërndaje')}
+                      </button>
+                    </div>
                   </div>
-                </fieldset>
-
-                <p className="mt-auto text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                  Debat Story është publik dhe zhduket nga debati pas 24 orësh.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void publishStory()}
-                  disabled={!selectedFile || isPublishing}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-black text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isPublishing ? <span className="animate-spin">◌</span> : <Plus className="h-4 w-4" />}
-                  Publiko Story
-                </button>
-              </aside>
-            </div>
+                )}
+              </div>
+            )}
           </section>
         </div>
       )}

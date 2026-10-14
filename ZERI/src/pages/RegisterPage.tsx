@@ -7,6 +7,7 @@ import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle } from '../lib/firebase';
 import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider } from 'firebase/auth';
+import { PROFILE_SYNC_FAILED, profileSyncError, syncProfile } from '../lib/authSync';
 import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import {
@@ -152,20 +153,9 @@ export default function RegisterPage() {
       provider.setCustomParameters({ prompt: 'select_account' });
       const credential = await signInWithGoogle(provider);
       const user = credential.user;
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/v1/auth/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: user.displayName || '',
-          avatar: user.photoURL || '',
-        }),
-      });
-      if (!response.ok) throw new Error('Backend sync failed');
+      // Registration needs the server to create the profile; a failure is reported with its real cause.
+      const sync = await syncProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
+      if (!sync.ok) throw profileSyncError(sync);
 
       register({
         name: user.displayName || '',
@@ -185,8 +175,11 @@ export default function RegisterPage() {
         setError('Regjistrimi me Google nuk është i aktivizuar në projekt. Aktivizoje në Firebase Console → Authentication.');
       } else if (err?.code === 'auth/firebase-app-check-token-is-invalid') {
         setError('Firebase App Check është i detyrueshëm për hyrjen por ky aplikacion nuk po dërgon token të vlefshëm. Kontakto administratorin.');
+      } else if (err?.code === PROFILE_SYNC_FAILED) {
+        setError(err.message);
       } else {
-        setError('Regjistrimi me Google dështoi. Provoni përsëri.');
+        console.error('[REGISTER] Google sign-up failed:', err?.code, err?.message);
+        setError(`Regjistrimi me Google dështoi (${err?.code || err?.message || 'pa përshkrim nga shfletuesi'}). Provoni përsëri.`);
       }
     } finally {
       setLoading(false);
@@ -215,11 +208,11 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 pt-20 sm:p-12 sm:pt-24 lg:pt-12 relative overflow-y-auto">
         <div className="w-full max-w-md relative z-10 flex flex-col items-center">
 
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight text-center">
-             {isVerifyingOtp ? "Verifikimi i Email-it" : "Krijo Llogarinë"}
+             {isVerifyingOtp ? dt('Verifikimi i Email-it') : dt('Krijo Llogarinë')}
           </h2>
           <p className="text-slate-400 font-medium mb-10 text-center text-sm">
              {isVerifyingOtp

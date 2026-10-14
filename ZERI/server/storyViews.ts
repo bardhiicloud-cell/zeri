@@ -9,6 +9,7 @@
  * Viewer documents carry `expireAt` (the story's expiry + 7 days) so a Firestore TTL policy on
  * the `viewers` collection group can remove them; see the deploy notes.
  */
+import { isRestricted } from './accountRestrictions';
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { DmError, blockId, createRateLimiter, isSafeId, sendDirectMessage } from './directMessages';
@@ -53,7 +54,7 @@ export async function recordStoryView(fs: Firestore, input: { storyId: string; u
       tx.get(fs.collection('forum_blocks').doc(blockId(story.authorId, input.uid))),
     ]);
     if (viewer.exists || b1.exists || b2.exists) return { recorded: false };
-    if (!user.exists || user.data()?.role === 'guest' || user.data()?.isBanned === true) return { recorded: false };
+    if (!user.exists || user.data()?.role === 'guest' || isRestricted(user.data())) return { recorded: false };
     tx.create(viewerRef, { uid: input.uid, at: FieldValue.serverTimestamp(), expireAt: Timestamp.fromMillis(story.expiresAtMs + VIEWER_RETENTION_MS) });
     return { recorded: true };
   });
@@ -77,7 +78,7 @@ export async function listStoryViewers(fs: Firestore, input: { storyId: string; 
   const viewers: StoryViewer[] = [];
   snap.docs.forEach((d, i) => {
     const u = users[i].data();
-    if (!u || u.isBanned === true) return; // erased or banned accounts disappear from the list
+    if (!u || isRestricted(u)) return; // erased or banned accounts disappear from the list
     viewers.push({
       id: d.id,
       name: clip(u.name, 120) || 'Qytetar',

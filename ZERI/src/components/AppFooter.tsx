@@ -79,20 +79,20 @@ export function AppFooter() {
               {dt('Platforma kombëtare e angazhimit qytetar. Raportoni çështjet, ndiqni zgjidhjet dhe merrni pjesë në vendimmarrjen komunale.')}
             </p>
 
-            <div className="mt-4 space-y-1.5 text-xs">
+            <div className="mt-4 space-y-0 text-sm md:space-y-1.5 md:text-xs">
               <Link
                 to="/kontakt"
-                className="flex items-center gap-2 text-slate-500 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                className="flex min-h-10 items-center gap-2 text-slate-500 transition-colors md:min-h-0 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                Na shkruani (formulari i kontaktit)
+                {dt('Na shkruani (formulari i kontaktit)')}
               </Link>
               <Link
                 to="/kontakt-numrat"
-                className="flex items-center gap-2 text-slate-500 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                className="flex min-h-10 items-center gap-2 text-slate-500 transition-colors md:min-h-0 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                Numrat e institucioneve
+                {dt('Numrat e institucioneve')}
               </Link>
             </div>
 
@@ -134,12 +134,12 @@ export function AppFooter() {
               <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                 {dt(column.title)}
               </h2>
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-2 md:mt-3 md:space-y-2">
                 {column.links.map((link) => (
                   <li key={link.to}>
                     <Link
                       to={link.to}
-                      className="text-xs text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                      className="inline-flex min-h-10 items-center text-sm text-slate-600 transition-colors hover:text-blue-600 md:min-h-0 md:text-xs dark:text-slate-400 dark:hover:text-blue-400"
                     >
                       {dt(link.label)}
                     </Link>

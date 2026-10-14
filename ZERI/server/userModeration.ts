@@ -125,7 +125,7 @@ export function registerUserModerationRoutes(app: Express, deps: UserModerationD
         await ref.update(
           banned
             ? { isBanned: true, bannedAt: FieldValue.serverTimestamp(), bannedBy: actor.uid, banReason: reason }
-            : { isBanned: false, bannedAt: FieldValue.delete(), bannedBy: FieldValue.delete(), banReason: FieldValue.delete() }
+            : { isBanned: false, bannedAt: FieldValue.delete(), bannedBy: FieldValue.delete(), banReason: FieldValue.delete(), suspendedUntil: FieldValue.delete(), restriction: FieldValue.delete() }
         );
       } else {
         await ref.update({ isVerified: action === 'verify' });

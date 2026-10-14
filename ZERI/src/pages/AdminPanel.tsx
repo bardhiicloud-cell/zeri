@@ -17,7 +17,7 @@ import {
 import { MunicipalityScopeControl } from '../components/admin/MunicipalityScopeControl';
 import { hashForSection, paramsFromHash, sectionFromHash } from '../lib/adminDeepLink';
 import { AdminCountsProvider, useAdminCounts } from '../components/admin/AdminCountsContext';
-import { NAV_BY_ID, NAV_SECTIONS } from '../components/admin/nav/navConfig';
+import { NAV_BY_ID, NAV_SECTIONS, moduleTabs, sidebarSections } from '../components/admin/nav/navConfig';
 import { SidebarNav, shortcutLabel } from '../components/admin/nav/SidebarNav';
 import { CommandPalette } from '../components/admin/nav/CommandPalette';
 import SectionGuidePanel from '../components/admin/SectionGuidePanel';
@@ -47,8 +47,12 @@ const AdminHealthRegistry = lazy(() => import('../components/admin/AdminHealthRe
 const AdminForum = lazy(() => import('../components/admin/AdminForum.tsx'));
 const AdminPolls = lazy(() => import('../components/admin/AdminPolls.tsx'));
 const AdminNews = lazy(() => import('../components/admin/AdminNews.tsx'));
+import { SupportRequestAlert } from '../components/admin/SupportRequestAlert';
+const ReportTasksPanel = lazy(() => import('../components/admin/workflow/ReportTasksPanel.tsx'));
+const ReportsSection = lazy(() => import('../components/admin/workflow/ReportsSection.tsx'));
 const WorkflowCenter = lazy(() => import('../components/admin/workflow/WorkflowCenter.tsx'));
 const AdminSupportChats = lazy(() => import('../components/admin/AdminSupportChats.tsx'));
+const SupportOverview = lazy(() => import('../components/admin/SupportOverview.tsx'));
 const AdminUpdates = lazy(() => import('../components/admin/AdminUpdates.tsx'));
 const AdminAgentMonitoring = lazy(() => import('../components/admin/AdminAgentMonitoring.tsx'));
 const MunicipalityProvisioning = lazy(() => import('../components/admin/MunicipalityProvisioning.tsx'));
@@ -286,9 +290,12 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
     navigate('/login');
   };
 
+  // A folded module highlights its parent in the sidebar; its own tab is in the strip above the page.
+  const tabs = moduleTabs(activeTab, visibleSections);
+  const sidebarActive = activeSection?.mergedInto && visibleSections.some(section => section.id === activeSection.mergedInto) ? activeSection.mergedInto : activeTab;
   const sidebarProps = {
-    sections: visibleSections,
-    activeId: activeTab,
+    sections: sidebarSections(visibleSections),
+    activeId: sidebarActive,
     onSelect: selectSection,
     badges,
     onOpenPalette: () => {
@@ -416,6 +423,22 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
               transition={{ duration: 0.15 }}
               className="mx-auto min-h-full max-w-[1600px]"
             >
+              {tabs.length > 0 && (
+                <div role="tablist" aria-label={dt('Pjesët e modulit')} className="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-800">
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={tab.id === activeTab}
+                      onClick={() => selectSection(tab.id)}
+                      className={cn('-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-semibold', tab.id === activeTab ? 'border-rose-600 text-rose-700 dark:text-rose-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200')}
+                    >
+                      {dt(tab.nav)}
+                    </button>
+                  ))}
+                </div>
+              )}
               <Suspense fallback={
                 <div className="flex h-64 flex-col items-center justify-center gap-3 text-slate-400">
                   <Loader2 className="w-6 h-6 animate-spin text-rose-500" />
@@ -425,7 +448,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
               {activeTab === 'inbox' && <AdminInbox onOpen={(section, params) => selectSection(section, params)} />}
               {activeTab === 'dashboard' && <AdminDashboard onTabChange={selectSection} />}
               {activeTab === 'updates' && <AdminUpdates onTabChange={(t: string) => selectSection(t as AdminSection)} />}
-              {activeTab === 'reports' && <AdminReports openReportId={linkParams.open} />}
+              {activeTab === 'reports' && <ReportsSection openReportId={linkParams.open} />}
               {activeTab === 'health' && <AdminHealthRegistry />}
               {activeTab === 'donations' && <AdminDonations />}
               {activeTab === 'users' && <AdminUsers />}
@@ -447,9 +470,10 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
               )}
               {activeTab === 'forum' && <AdminForum />}
               {activeTab === 'debate' && <DebateConsole />}
-              {activeTab === 'support' && <AdminSupportChats />}
+              {activeTab === 'support' && (<><SupportOverview /><AdminSupportChats openChatId={linkParams.open} /></>)}
               {activeTab === 'polls' && <AdminPolls />}
               {activeTab === 'news' && <AdminNews />}
+              {activeTab === 'work' && <ReportTasksPanel />}
               {activeTab === 'workflow' && <WorkflowCenter />}
               {activeTab === 'security' && <AdminSecurity />}
               {activeTab === 'settings' && <AdminSettings />}
@@ -470,6 +494,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
         />
       )}
 
+      {canAccessSection(viewer, 'support') && <SupportRequestAlert onOpen={(chatId) => selectSection('support', { open: chatId })} />}
       <CommandPalette
         open={isPaletteOpen}
         onClose={() => setIsPaletteOpen(false)}

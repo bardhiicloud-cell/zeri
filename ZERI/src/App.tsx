@@ -20,6 +20,9 @@ import CookieConsentBanner, { CookiePreferencesButton } from './components/Cooki
 const Dashboard = React.lazy(() => import('./pages/Dashboard.tsx'));
 const DetailedRegistryPage = React.lazy(() => import('./pages/DetailedRegistryPage.tsx'));
 const TrackIdPage = React.lazy(() => import('./pages/TrackIdPage'));
+const LajmeroPage = React.lazy(() => import('./pages/LajmeroPage'));
+const MyModerationPage = React.lazy(() => import('./pages/MyModerationPage'));
+const VerificationRequestPage = React.lazy(() => import('./pages/VerificationRequestPage'));
 const CitizenHelpCenterPage = React.lazy(() => import('./pages/CitizenHelpCenterPage.tsx'));
 const ReportIssue = React.lazy(() => import('./pages/ReportIssue'));
 const MapPage = React.lazy(() => import('./pages/MapPage.tsx'));
@@ -49,6 +52,7 @@ const TransparencyPage = React.lazy(() => import('./pages/TransparencyPage.tsx')
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
 import { useStore, DEMO_REPORTS } from './lib/store';
+import { isLive as isBroadcastLive } from './lib/notificationPlacements';
 import { realContactOrEmpty } from './lib/placeholderContacts';
 import { PUBLIC_LIMITS, STAFF_LIMITS } from './lib/loadLimits';
 import { canAccessAdmin } from './lib/adminPermissions';
@@ -64,6 +68,7 @@ import { SeriousAnnouncementPopup } from './components/SeriousAnnouncementPopup'
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { canReadAllReports, startPublicReports } from './lib/publicReportsApi';
+import { registerGuest } from './lib/guestApi';
 import { doc, getDoc, collection, onSnapshot, query, orderBy, setDoc, getDocs, limit, where } from 'firebase/firestore';
 import { createGuestUser, getOrCreateGuestUser } from './lib/session';
 import { GA_CONFIG, hasAnalyticsConsent, onConsentChange } from './lib/consent';
@@ -134,6 +139,9 @@ const ROUTE_TITLES: Record<string, string> = {
   '/regjistri': 'Regjistri i Raporteve',
   '/registry': 'Regjistri i Raporteve',
   '/trackid': 'Gjej Raportin Tim',
+  '/lajmero': 'Lajmëro',
+  '/moderimi-im': 'Moderimi i llogarisë sime',
+  '/verifikimi': 'Kërko verifikimin',
   '/ndihma': 'Qendra e Ndihmës',
   '/raporto': 'Raporto një Problem',
   '/harta': 'Harta e Raporteve',
@@ -156,6 +164,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/kushtet-e-perdorimit': 'Kushtet e Përdorimit',
   '/terms': 'Kushtet e Përdorimit',
   '/privatesia': 'Politika e Privatësisë',
+  '/politika-e-priveritetit': 'Politika e Privatësisë',
+  '/politika-e-cookies': 'Politika e Privatësisë',
   '/donacion': 'Ndihma & Donacione',
   '/partneret': 'Partnerët & Reklama',
   '/login': 'Hyrja',
@@ -452,8 +462,13 @@ export default function App() {
           try {
             const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
             let userData: any;
-            if (userDoc.exists()) {
+            if (userDoc.exists() && !(firebaseUser.isAnonymous && typeof userDoc.data().guestNumber !== 'number')) {
               userData = userDoc.data();
+              setCurrentUser(userData);
+            } else if (firebaseUser.isAnonymous) {
+              // A guest gets their number and profile from the server (Mysafir-0000001, …): the
+              // database rules refuse a guest writing their own profile from the browser.
+              userData = await registerGuest(firebaseUser);
               setCurrentUser(userData);
             } else {
               // Create profile for new users (including anonymous/guest)
@@ -694,7 +709,10 @@ export default function App() {
     // Firestore rules can authorize each result set without exposing private notices.
     const qPublicNotifications = query(
       collection(db, 'notifications'),
-      where('audience', '==', 'all')
+      where('audience', '==', 'all'),
+      // The rules only let a visitor read published broadcasts; the query has to say so, or the
+      // whole read is refused for everyone but staff.
+      where('state', '==', 'published')
     );
     const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
       if (docSnap.exists()) {
@@ -743,7 +761,7 @@ export default function App() {
           ? data.createdAt.toDate().toISOString()
           : typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString();
         return { ...data, id: notificationDoc.id, createdAt };
-      });
+      }).filter(notification => isBroadcastLive(notification as { state?: string; expiresAt?: unknown }));
       syncNotifications();
     }, (error) => {
       console.error('Njoftimet publike nuk u ngarkuan:', error);
@@ -848,6 +866,9 @@ export default function App() {
               <Route path="/forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="/trackid" element={<TrackIdPage />} />
+              <Route path="/lajmero" element={<LajmeroPage />} />
+              <Route path="/moderimi-im" element={<MyModerationPage />} />
+              <Route path="/verifikimi" element={<VerificationRequestPage />} />
               <Route path="/ndihma" element={<CitizenHelpCenterPage />} />
               <Route path="/regjistri" element={<DetailedRegistryPage />} />
               <Route path="/registry" element={<DetailedRegistryPage />} />
@@ -895,6 +916,9 @@ export default function App() {
               <Route path="forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="trackid" element={<TrackIdPage />} />
+              <Route path="lajmero" element={<LajmeroPage />} />
+              <Route path="moderimi-im" element={<MyModerationPage />} />
+              <Route path="verifikimi" element={<VerificationRequestPage />} />
               <Route path="ndihma" element={<CitizenHelpCenterPage />} />
               <Route path="regjistri" element={<DetailedRegistryPage />} />
               <Route path="registry" element={<DetailedRegistryPage />} />

@@ -25,7 +25,7 @@ import type { SearchableSection } from '../../../lib/adminNav';
  * names) so the "go to…" search finds what they mean.
  */
 
-export type NavGroupId = 'daily' | 'community' | 'team' | 'system';
+export type NavGroupId = 'daily' | 'services' | 'community' | 'team' | 'system';
 
 export type NavIcon = React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 
@@ -33,77 +33,95 @@ export interface NavSection extends SearchableSection {
   id: AdminSection;
   icon: NavIcon;
   group: NavGroupId;
+  /**
+   * A module that has been folded into another one. It is not deleted: its page, its route,
+   * its permissions and its data stay exactly as they were. It only stops taking a line of
+   * its own in the sidebar when the viewer can open the parent; it is then reached from the
+   * parent's tab strip. A role that cannot open the parent (e.g. a monitor without
+   * `monitoring`) still sees it in the sidebar as before.
+   */
+  mergedInto?: AdminSection;
 }
 
 export const NAV_GROUPS: Record<NavGroupId, { label: string; order: number }> = {
-  daily: { label: 'Punë ditore', order: 0 },
-  community: { label: 'Komuniteti & përmbajtja', order: 1 },
-  team: { label: 'Ekipi & monitorimi', order: 2 },
-  system: { label: 'Sistemi', order: 3 },
+  daily: { label: 'Përmbledhje', order: 0 },
+  services: { label: 'Shërbimet për qytetarët', order: 1 },
+  community: { label: 'Përmbajtja & komunikimi', order: 2 },
+  team: { label: 'Organizimi & operacionet', order: 3 },
+  system: { label: 'Sistemi & siguria', order: 4 },
 };
 
 export const NAV_SECTIONS: readonly NavSection[] = [
   // ── Daily ──────────────────────────────────────────────────────────────────
-  {
-    id: 'inbox', group: 'daily', icon: Inbox,
-    nav: 'Kutia e punës', label: 'Kutia e Punës', hint: 'Gjithçka që pret veprim, sipas urgjencës',
-    keywords: ['inbox', 'detyra', 'pret', 'urgjente', 'vonuara', 'todo', 'veprime'],
-  },
   {
     id: 'dashboard', group: 'daily', icon: LayoutDashboard,
     nav: 'Paneli', label: 'Paneli i Përgjithshëm', hint: 'Numrat e ditës dhe çka kërkon vëmendje',
     keywords: ['kreu', 'home', 'overview', 'statistika', 'dashboard'],
   },
   {
+    id: 'inbox', group: 'daily', icon: Inbox,
+    nav: 'Kutia e punës', label: 'Kutia e Punës', hint: 'Gjithçka që pret veprim, sipas urgjencës',
+    keywords: ['inbox', 'detyra', 'pret', 'urgjente', 'vonuara', 'todo', 'veprime'],
+  },
+  {
     id: 'reports', group: 'daily', icon: FileText,
-    nav: 'Raportet', label: 'Inspektimi i Raporteve', hint: 'Radha e raporteve të qytetarëve',
+    nav: 'Raportet', label: 'Raportet sipas fazës', hint: 'Në pritje, U aprovua, I caktuar, Në proces, U zgjidh, U mbyll, Të refuzuara',
     keywords: ['raporte', 'dosje', 'ankesa', 'ankesë', 'complaints', 'reports', 'aprovim', 'approve'],
   },
   {
+    id: 'work', group: 'daily', icon: ClipboardCheck,
+    nav: 'Detyrat', label: 'Detyrat', hint: 'Detyrat e mia nga raportet, ato që kërkojnë caktim dhe afatet',
+    keywords: ['detyra', 'task', 'tasks', 'ngarkesa', 'workload', 'ekipi', 'afate', 'sla', 'caktim', 'radha', 'queue', 'kapaciteti'],
+  },
+  {
     id: 'workflow', group: 'daily', icon: ListChecks,
-    nav: 'Rrjedha e aprovimit', label: 'Rrjedha e Aprovimit', hint: 'Raportuar, aprovuar, në pritje, përgjigje, përfunduar',
+    nav: 'Aprovime të tjera', label: 'Donacione, Shëndetësi, Lajme', hint: 'Aprovimi i kërkesave që nuk janë raportime',
     keywords: ['aprovim', 'faza', 'stages', 'workflow', 'masiv', 'bulk', 'zgjidh të gjitha', 'përfunduar', 'në pritje', 'përgjigje', 'tabela'],
   },
   {
     id: 'support', group: 'daily', icon: Headphones,
-    nav: 'Mbështetja', label: 'Kërkesat për Agjent', hint: 'Bisedat me qytetarë që kërkojnë ndihmë',
+    nav: 'Qendra e mbështetjes', label: 'Kërkesat për Agjent', hint: 'Bisedat me qytetarë që kërkojnë ndihmë',
     keywords: ['chat', 'biseda', 'mesazhe', 'ndihmë', 'support', 'help', 'tiket'],
   },
+
+  // ── Citizen services ──────────────────────────────────────────────────────
   {
-    id: 'health', group: 'daily', icon: HeartPulse,
+    id: 'health', group: 'services', icon: HeartPulse,
     nav: 'Shëndetësia', label: 'Regjistri Shëndetësor & Spitalet', hint: 'Rastet shëndetësore të regjistruara',
     keywords: ['spital', 'spitale', 'mjekësor', 'health', 'raste', 'pacient'],
   },
   {
-    id: 'donations', group: 'daily', icon: Heart,
+    id: 'donations', group: 'services', icon: Heart,
     nav: 'Donacionet', label: 'Aprovimi i Donacioneve', hint: 'Kërkesat për fonde që presin vendim',
     keywords: ['donacion', 'fonde', 'ndihmë sociale', 'donations', 'solidaritet'],
   },
   {
-    id: 'users', group: 'daily', icon: Users,
-    nav: 'Qytetarët', label: 'Regjistri i Qytetarëve', hint: 'Llogaritë dhe statusi i tyre',
+    id: 'debate', group: 'services', icon: Landmark,
+    nav: 'Debati qytetar', label: 'Debati Qytetar', hint: 'Moderimi, llogaritë, pagesat, verifikimet dhe promovimet e debatit',
+    keywords: ['debat', 'pagesa', 'iban', 'paysera', 'tick', 'verifikim', 'reklama', 'debatwp'],
+  },
+  {
+    id: 'polls', group: 'services', icon: Vote,
+    nav: 'Sondazhet & anketat', label: 'Sondazhet Publike', hint: 'Pyetësorët dhe rezultatet',
+    keywords: ['sondazh', 'votim', 'polls', 'pyetësor'],
+  },
+  {
+    id: 'forum', group: 'services', icon: MessageSquare,
+    nav: 'Moderimi i postimeve', label: 'Moderimi i Debatit Publik', hint: 'Postimet dhe raportimet e komunitetit',
+    keywords: ['debat', 'postime', 'komente', 'forum', 'moderim'],
+    mergedInto: 'debate',
+  },
+  {
+    id: 'users', group: 'services', icon: Users,
+    nav: 'Llogaritë e qytetarëve', label: 'Regjistri i Qytetarëve', hint: 'Llogaritë dhe statusi i tyre',
     keywords: ['përdorues', 'perdorues', 'llogari', 'users', 'citizens', 'ban', 'bllokim'],
+    mergedInto: 'debate',
   },
 
   // ── Community & content ────────────────────────────────────────────────────
   {
-    id: 'forum', group: 'community', icon: MessageSquare,
-    nav: 'Forumi', label: 'Moderimi i Debatit Publik', hint: 'Postimet dhe raportimet e komunitetit',
-    keywords: ['debat', 'postime', 'komente', 'forum', 'moderim'],
-  },
-  {
-    id: 'debate', group: 'community', icon: Landmark,
-    nav: 'Admini i Debatit', label: 'Admini i Debatit Publik', hint: 'Pagesat me kod, ticku, reklamat dhe postimet',
-    keywords: ['debat', 'pagesa', 'iban', 'paysera', 'tick', 'verifikim', 'reklama', 'debatwp'],
-  },
-  {
-    id: 'polls', group: 'community', icon: Vote,
-    nav: 'Sondazhet', label: 'Sondazhet Publike', hint: 'Pyetësorët dhe rezultatet',
-    keywords: ['sondazh', 'votim', 'polls', 'pyetësor'],
-  },
-  {
     id: 'news', group: 'community', icon: Newspaper,
-    nav: 'Lajmet', label: 'Menaxhimi i Lajmeve', hint: 'Botimi dhe redaktimi i lajmeve',
+    nav: 'Redaksia', label: 'Menaxhimi i Lajmeve', hint: 'Botimi dhe redaktimi i lajmeve',
     keywords: ['artikuj', 'artikull', 'botim', 'news', 'redaktim', 'editorial'],
   },
   {
@@ -115,10 +133,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'videos', group: 'community', icon: Video,
     nav: 'Videot', label: 'Menaxhimi i Videove', hint: 'Video publike për sidebar dhe faqe',
     keywords: ['video', 'reels', 'media'],
+    mergedInto: 'news',
   },
   {
     id: 'ads', group: 'community', icon: Megaphone,
-    nav: 'Reklamat', label: 'Menaxhimi i Reklamave', hint: 'Sloti dhe fushatat',
+    nav: 'Reklamat & partneritetet', label: 'Reklamat & Partneritetet', hint: 'Sloti dhe fushatat',
     keywords: ['reklamë', 'reklame', 'fushata', 'ads', 'slot', 'banner'],
   },
 
@@ -140,37 +159,41 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     id: 'workfacts', group: 'team', icon: ClipboardCheck,
-    nav: 'Faktet e Komunave', label: 'Faktet e Komunave', hint: 'Verifikimi i punimeve të raportuara nga komunat',
+    nav: 'Të dhënat e komunave', label: 'Të Dhënat e Komunave', hint: 'Verifikimi i punimeve të raportuara nga komunat',
     keywords: ['punime', 'verifikim', 'work facts', 'fakte'],
   },
   {
     id: 'monitoring', group: 'team', icon: Activity,
-    nav: 'Monitorimi i Agjentëve', label: 'Monitorimi i Agjentëve', hint: 'Aktiviteti, ngarkesa dhe anomalitë',
+    nav: 'Monitorimi operacional', label: 'Monitorimi Operacional', hint: 'Ngarkesa e agjentëve, afatet e komunave, pengesat e rrjedhës',
     keywords: ['performancë', 'ngarkesa', 'aktivitet', 'monitoring', 'agjent'],
   },
   {
     id: 'monitorim', group: 'team', icon: Eye,
     nav: 'Monitorim i Plotë', label: 'Monitorim i Plotë', hint: 'Mbikëqyrje e thellë e agjentëve dhe komunave',
     keywords: ['mbikëqyrje', 'monitorim', 'oversight', 'afate', 'vonesa'],
+    mergedInto: 'monitoring',
   },
   {
     id: 'agentpanel', group: 'team', icon: UserCheck,
     nav: 'Paneli i Agjentit', label: 'Paneli i Agjentëve', hint: 'Konsola e punës së agjentëve',
     keywords: ['agjent', 'kutia hyrëse', 'inbox', 'punët e mia'],
+    mergedInto: 'monitoring',
   },
   {
     id: 'komunapanel', group: 'team', icon: Landmark,
     nav: 'Paneli i Komunës', label: 'Paneli i Komunave', hint: 'Konsola e punëve të komunave',
     keywords: ['komuna', 'komunë', 'municipality', 'punët'],
+    mergedInto: 'municipalities',
   },
   {
     id: 'moderim', group: 'team', icon: ShieldAlert,
     nav: 'Qendra e Moderimit', label: 'Qendra e Moderimit', hint: 'Anomalitë, auditimi dhe moderimi',
     keywords: ['anomali', 'auditim', 'moderim', 'moderation', 'abuzim'],
+    mergedInto: 'debate',
   },
   {
     id: 'updates', group: 'team', icon: History,
-    nav: 'Aktiviteti i stafit', label: 'Përditësimet e Adminit', hint: 'Çka ka bërë stafi së fundi',
+    nav: 'Aktiviteti & auditimi', label: 'Aktiviteti i Stafit & Auditimi', hint: 'Çka ka bërë stafi së fundi',
     keywords: ['përditësime', 'historia', 'aktivitet', 'updates', 'log'],
   },
 
@@ -195,6 +218,28 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 export const NAV_BY_ID: ReadonlyMap<AdminSection, NavSection> = new Map(
   NAV_SECTIONS.map(section => [section.id, section] as const)
 );
+
+/**
+ * The sections that take a line in the sidebar: those the viewer may open, minus the ones
+ * folded into a parent the viewer can also open.
+ */
+export function sidebarSections(visible: readonly NavSection[]): NavSection[] {
+  const ids = new Set(visible.map(section => section.id));
+  return visible.filter(section => !(section.mergedInto && ids.has(section.mergedInto)));
+}
+
+/**
+ * The tab strip of a consolidated module: the parent first, then the folded modules the
+ * viewer may open. Empty when nothing is folded into it, so no strip is drawn.
+ */
+export function moduleTabs(activeId: AdminSection, visible: readonly NavSection[]): NavSection[] {
+  const ids = new Set(visible.map(section => section.id));
+  const active = NAV_BY_ID.get(activeId);
+  const parent = active?.mergedInto && ids.has(active.mergedInto) ? active.mergedInto : activeId;
+  const children = visible.filter(section => section.mergedInto === parent);
+  const head = visible.find(section => section.id === parent);
+  return children.length && head ? [head, ...children] : [];
+}
 
 /** Groups in display order, each with the sections the viewer may open. */
 export function groupVisible(

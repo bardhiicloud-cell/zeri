@@ -68,7 +68,15 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
  * pre-approval statuses: a report that has an inspector attached is being
  * worked, not merely sitting in the queue.
  */
-export function stageOf(report: { status?: unknown; assignedTo?: unknown }): PipelineStage {
+/**
+ * "Punimet u kryen" is the municipality's CLAIM that the work is done, not the end of
+ * the case. It leaves the report In Progress with `resolutionClaimed: true` (stage
+ * `responded`). Only the platform's staff then confirm it (`staff_verify`, which writes
+ * Resolved) or send it back (`staff_return`, with a reason the municipality reads).
+ * Before this, the municipality's own click wrote Resolved and the case was closed with
+ * nobody independent having looked.
+ */
+export function stageOf(report: { status?: unknown; assignedTo?: unknown; resolutionClaimed?: unknown }): PipelineStage {
   const status = String(report?.status ?? '');
   const assigned = Boolean(String(report?.assignedTo ?? '').trim());
 
@@ -80,13 +88,12 @@ export function stageOf(report: { status?: unknown; assignedTo?: unknown }): Pip
       return 'inspected';
     case 'Assigned':
     case 'In Progress':
-      return 'responding';
+    case 'Overdue':
+      return report?.resolutionClaimed === true ? 'responded' : 'responding';
     case 'Resolved':
       return 'published';
     case 'Rejected':
       return 'rejected';
-    case 'Overdue':
-      return 'responding';
     default:
       return 'submitted';
   }
@@ -197,6 +204,7 @@ export type Transition =
   | 'municipality_accept'
   | 'municipality_done'
   | 'staff_verify'
+  | 'staff_return'
   | 'reject';
 
 export const ALL_TRANSITIONS: readonly Transition[] = [
@@ -205,6 +213,7 @@ export const ALL_TRANSITIONS: readonly Transition[] = [
   'municipality_accept',
   'municipality_done',
   'staff_verify',
+  'staff_return',
   'reject',
 ];
 
@@ -267,7 +276,8 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     label: 'Punimet u kryen',
     by: 'municipality',
     from: ['responding', 'inspected'],
-    toStatus: 'Resolved',
+    // A claim: the report stays In Progress until staff verify it (see stageOf).
+    toStatus: 'In Progress',
     guard: (report) => {
       // The municipality must have described the work somewhere in the
       // timeline; a bare status change is not evidence the newsroom can verify.
@@ -290,6 +300,15 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     by: 'staff',
     from: ['published', 'responded'],
     toStatus: 'Resolved',
+  },
+  {
+    transition: 'staff_return',
+    label: 'Kthe te komuna (zgjidhja nuk u konfirmua)',
+    by: 'staff',
+    from: ['responded'],
+    toStatus: 'In Progress',
+    // The municipality must be told what is missing or disputed.
+    requiresNote: true,
   },
   {
     transition: 'reject',

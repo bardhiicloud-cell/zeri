@@ -13,6 +13,18 @@ async function call<T>(path: string, init: { method?: string; body?: unknown } =
   return data as T;
 }
 
+/* ------------------------------------------- sponsored posts & ticks */
+
+export const createAdPost = (input: { content: string; sponsorName: string; imageUrl?: string; adLink?: string; days: number }) =>
+  call<{ ok: true; id: string }>('/api/v1/debate/ads', { method: 'POST', body: input });
+
+export interface VerificationRequest { uid: string; name: string; reason: string; link: string | null; status: string; note: string; createdAtMs: number }
+export const verificationRequests = (status = 'pending') => call<{ items: VerificationRequest[] }>(`/api/v1/debate/verification-requests?status=${status}`).then((r) => r.items);
+export const decideVerification = (uid: string, decision: 'approve' | 'reject', note?: string) =>
+  call<{ ok: true }>(`/api/v1/debate/verification-requests/${encodeURIComponent(uid)}`, { method: 'POST', body: { decision, note } });
+export const requestVerification = (reason: string, link?: string) => call<{ ok: true }>('/api/v1/forum/verification-requests', { method: 'POST', body: { reason, link } });
+export const myVerificationRequest = () => call<{ request: { status: string; note: string; createdAtMs: number } | null }>('/api/v1/forum/verification-requests/mine');
+
 /* ---------------------------------------------------------------- types */
 
 export type PaymentKind = 'verification' | 'ad-package';

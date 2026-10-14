@@ -128,8 +128,12 @@ service cloud.firestore {
     // `.get('isBanned', false)` matters: profiles created by /api/v1/auth/sync have
     // no `isBanned` field, and reading the missing property directly raised an
     // evaluation error, which denied every write for that (non-banned) account.
+    // A suspension (`suspendedUntil`, set by server/moderationCases.ts) ends on its own: once
+    // its end has passed the account is treated as unrestricted even before the sweep clears it.
     function isBanned() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isBanned', false) == true;
+      let profile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return isAuthenticated() && profile.get('isBanned', false) == true
+        && (profile.get('suspendedUntil', null) == null || request.time < profile.suspendedUntil);
     }
 
     // Ensure a non-banned, authenticated user
@@ -149,7 +153,8 @@ service cloud.firestore {
       return [
         'role', 'isBanned', 'points', 'isVerified', 'permissions', 'municipality',
         'municipalityPlan', 'badges', 'email', 'internalNote', 'passwordSetDirectly',
-        'bannedAt', 'bannedBy', 'banReason',
+        'bannedAt', 'bannedBy', 'banReason', 'suspendedUntil', 'restriction', 'suspensionLiftedAt',
+        'warningCount', 'lastWarningAt', 'lastWarningReason',
         'editorialClauseAcceptedAt', 'editorialClauseText',
         // Follows are written only by PUT/DELETE /api/v1/forum/follow/:uid so that
         // counters, blocks and notifications cannot be bypassed.
@@ -223,7 +228,10 @@ service cloud.firestore {
                     request.resource.data.createdAt == request.time &&
                     // Pipeline state belongs to the server; a client-written timeline,
                     // assignment or counter would forge the public history of a report.
-                    !request.resource.data.keys().hasAny(['timeline', 'assignedTo', 'resolvedAt', 'resolvedImage', 'upvotes', 'commentsCount']) &&
+                    !request.resource.data.keys().hasAny(['timeline', 'assignedTo', 'resolvedAt', 'resolvedImage', 'upvotes', 'commentsCount',
+                      'assignedToUid', 'assigneeUids', 'assignedMunicipalities', 'workflow', 'priorityScore', 'priorityLevel',
+                      'resolutionClaimed', 'resolutionClaim', 'resolutionVerified', 'resolutionSummary', 'rejectionReason',
+                      'closedAt', 'closedBy', 'finalOutcome', 'awaitingInfo']) &&
                     (!('trackingId' in request.resource.data) ||
                       (request.resource.data.trackingId is string && request.resource.data.trackingId.size() <= 40));
 
@@ -247,7 +255,10 @@ service cloud.firestore {
           && request.resource.data.authorId == resource.data.authorId
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'status', 'timeline', 'assignedTo', 'resolvedAt', 'resolvedImage',
-            'upvotes', 'commentsCount', 'authorId', 'createdAt'
+            'upvotes', 'commentsCount', 'authorId', 'createdAt',
+            'assignedToUid', 'assigneeUids', 'assignedMunicipalities', 'workflow', 'priorityScore', 'priorityLevel',
+            'resolutionClaimed', 'resolutionClaim', 'resolutionVerified', 'resolutionSummary', 'rejectionReason',
+            'closedAt', 'closedBy', 'finalOutcome', 'awaitingInfo'
           ])
         )
         || isSuperAdmin()
@@ -398,15 +409,49 @@ service cloud.firestore {
 
     // Support requests — registered citizens can start a bot session and request an agent.
     // The requester can see their own conversation; support staff handle replies.
+    // Support desk (server/supportDesk.ts). A citizen reads and writes their own conversation.
+    // A support agent reads the waiting queue and the conversations THEY accepted; once a
+    // colleague accepts one it is no longer readable by the others. Agents change nothing
+    // from the browser: accepting, replying, transferring and closing go through the server.
+    function isSupportStaff() {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        request.auth.token.agent == true ||
+        request.auth.token.approver == true ||
+        request.auth.token.perm_support == true
+      );
+    }
+
     match /supportChats/{chatId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isStaff());
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isSuperAdmin() ||
+        (isSupportStaff() && (resource.data.status == 'waiting_agent' || resource.data.get('assignedTo', null) == request.auth.uid))
+      );
       allow create: if canAct() && !isGuest() &&
                     request.resource.data.userId == request.auth.uid &&
-                    request.resource.data.status in ['bot', 'waiting_agent'];
-      allow update: if isStaff() || (isAuthenticated() &&
+                    request.resource.data.status in ['bot', 'waiting_agent'] &&
+                    request.resource.data.get('assignedTo', null) == null;
+      // The citizen adds messages and may ask for an agent (bot/resolved -> waiting_agent).
+      // They cannot pick, keep or remove an agent, or close the conversation themselves.
+      allow update: if isAuthenticated() &&
                     resource.data.userId == request.auth.uid &&
-                    request.resource.data.userId == request.auth.uid);
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                      'messages', 'updatedAt', 'status', 'agentTrackId', 'agentRequestedAt', 'department',
+                      'assignedTo', 'assignedAgentName', 'userName', 'userEmail'
+                    ]) &&
+                    (request.resource.data.status == resource.data.status ||
+                      (request.resource.data.status == 'waiting_agent' && resource.data.status in ['bot', 'resolved'])) &&
+                    (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['assignedTo', 'assignedAgentName']) ||
+                      (request.resource.data.status == 'waiting_agent' && request.resource.data.get('assignedTo', null) == null));
       allow delete: if isSuperAdmin();
+
+      // Who accepted, transferred or closed it, and why. Server-written only.
+      match /events/{eventId} {
+        allow read: if isSuperAdmin();
+        allow write: if false;
+      }
     }
 
     // ──────────────────────────────────────────────
@@ -1053,6 +1098,73 @@ service cloud.firestore {
                         resource.data.authorUserId == request.auth.uid &&
                         resource.data.review == 'pending')
                     || isSuperAdmin();
+    }
+
+    // ──────────────────────────────────────────────
+    // Work items (shared workflow engine): server-written, role-scoped reads
+    //
+    // No client ever creates, edits or deletes any of these; the Admin SDK in
+    // server/workItems.ts is the only writer (it bypasses rules), so the
+    // transition validator cannot be skipped from a browser. Reads are the
+    // narrowest that still lets each console list its own work:
+    //   - supervisors (admin, superadmin, dispatcher, read-only monitor): all
+    //   - an agent: items assigned to them
+    //   - a municipality: report referrals addressed to its own municipality
+    // The event history holds internal notes, so a municipality never reads it.
+    // ──────────────────────────────────────────────
+    function isWorkManager() {
+      return isSuperAdmin() || (isAuthenticated() && request.auth.token.role == 'dispatcher');
+    }
+
+    function isWorkSupervisor() {
+      return isWorkManager() || isMonitor();
+    }
+
+    match /workItems/{itemId} {
+      allow read: if isWorkSupervisor()
+                  || (isAuthenticated() && request.auth.token.agent == true && resource.data.assigneeUid == request.auth.uid)
+                  || (isMunicipality() && resource.data.kind == 'report_referral'
+                      && resource.data.municipality == ownMunicipality())
+                  || (isAuthenticated() && resource.data.kind == 'moderation_case'
+                      && (request.auth.token.role == 'moderator' || request.auth.token.debatwp == true));
+      allow write: if false;
+
+      match /events/{eventId} {
+        allow read: if isWorkSupervisor()
+                    || (isAuthenticated() && request.auth.token.agent == true
+                        && get(/databases/$(database)/documents/workItems/$(itemId)).data.assigneeUid == request.auth.uid);
+        allow write: if false;
+      }
+    }
+
+    match /workerProfiles/{uid} {
+      allow read: if isWorkSupervisor() || (isAuthenticated() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
+    match /workNotifications/{noteId} {
+      allow read: if isAuthenticated() && (
+        resource.data.toUid == request.auth.uid
+        || (resource.data.toRole == 'manager' && isWorkManager()));
+      // The recipient may mark a notification read, and nothing else about it.
+      allow update: if isAuthenticated() && resource.data.toUid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAtMs']);
+      allow create, delete: if false;
+    }
+
+    // Report tasks (server/reportWorkflow.ts): generated from reports, written only by
+    // the server. Read here mirrors the API: supervisors, the person holding the task,
+    // and a municipality for tasks given to it.
+    match /reportTasks/{taskId} {
+      allow read: if isWorkSupervisor()
+                  || (isAuthenticated() && resource.data.assigneeUid == request.auth.uid)
+                  || (isMunicipality() && resource.data.assigneeMunicipality == ownMunicipality());
+      allow write: if false;
+    }
+
+    match /workflowConfig/{configId} {
+      allow read: if isWorkSupervisor();
+      allow write: if false;
     }
 
     // ──────────────────────────────────────────────

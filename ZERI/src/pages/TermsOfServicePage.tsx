@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { AuraHero, AuraOrbit } from '../components/aura/Aura';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -149,33 +150,18 @@ export default function TermsOfServicePage() {
       <div className="mx-auto w-full max-w-4xl">
         <Link
           to="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400"
+          className="mb-8 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {dt('Kthehu në Ballinë')}
         </Link>
 
-        <header className="luxury-hero relative mb-6 overflow-hidden rounded-[26px] p-6 text-white sm:p-10">
-          <div className="relative z-10">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600">
-                <Scale className="h-6 w-6" aria-hidden="true" />
-              </div>
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">
-                {dt('Dokument ligjor')}
-              </span>
-            </div>
-            <h1 className="title-serif text-3xl font-black tracking-tight sm:text-5xl">
-              {dt('Kushtet e Përdorimit')}
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              {dt('Rregullat që përcaktojnë përdorimin e sigurt, të drejtë dhe transparent të platformës Zëri Qytetarëve.')}
-            </p>
-            <p className="mt-5 text-xs text-slate-400">
-              {dt('Versioni 2.0 · Përditësuar më 19 shtator 2026 · Në fuqi nga 1 tetor 2026')}
-            </p>
-          </div>
-        </header>
+        <div className="mb-6">
+          <AuraHero tone="slate" eyebrow={dt('Dokument ligjor')} icon={Scale} visual={<AuraOrbit core={Scale} />}
+            title={dt('Kushtet e Përdorimit')}
+            subtitle={dt('Rregullat që përcaktojnë përdorimin e sigurt, të drejtë dhe transparent të platformës Zëri Qytetarëve.')}
+            aside={<p className="rounded-xl bg-white/10 px-3 py-2.5 text-[12px] leading-snug text-white/75">{dt('Versioni 2.0 · Përditësuar më 19 shtator 2026 · Në fuqi nga 1 tetor 2026')}</p>} />
+        </div>
 
         <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[

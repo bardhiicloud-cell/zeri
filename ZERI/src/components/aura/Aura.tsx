@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, Building, FileText, LifeBuoy, ListChecks, MapPin, Phone, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
@@ -56,22 +56,18 @@ export function AuraHero({ tone = 'blue', eyebrow, icon: Icon, title, subtitle, 
     <header data-tone={tone} className="au-hero">
       <span aria-hidden="true" className="au-glow -right-10 -top-16 h-52 w-52" />
       <span aria-hidden="true" className="au-glow -bottom-20 left-10 h-40 w-40 opacity-30" />
-      <div className={cn('grid gap-6 p-6 sm:p-10', (aside || visual) && 'md:grid-cols-[1fr_auto] md:items-center')}>
-        <div className="max-w-2xl">
+      <div className={cn('grid gap-3 p-4 sm:gap-6 sm:p-7', visual ? cn('grid-cols-[1fr_auto] items-center', aside && 'md:grid-cols-[1fr_auto_auto]') : aside && 'md:grid-cols-[1fr_auto] md:items-center')}>
+        <div className="min-w-0 max-w-2xl">
           <p className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/70">
             {live ? <span className="au-dot au-pulse text-emerald-300" aria-hidden="true" /> : Icon ? <Icon className="h-3.5 w-3.5" aria-hidden="true" /> : null}
             {eyebrow}
           </p>
-          <h1 className="mt-3 text-[32px] font-bold leading-[1.05] sm:text-[52px]">{title}</h1>
-          {subtitle && <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/75 sm:text-[18px]">{subtitle}</p>}
-          {actions && <div className="mt-5 flex flex-wrap items-center gap-2.5">{actions}</div>}
+          <h1 className="mt-2 text-[26px] font-bold leading-[1.08] sm:text-[40px]">{title}</h1>
+          {subtitle && <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-white/75 sm:text-[16px]">{subtitle}</p>}
+          {actions && <div className="mt-4 flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-        {(aside || visual) && (
-          <div className="flex min-w-0 items-center gap-5 md:w-auto">
-            {visual && <div className="flex justify-center md:block">{visual}</div>}
-            {aside && <div className="min-w-0 flex-1 md:w-[15rem] md:flex-none">{aside}</div>}
-          </div>
-        )}
+        {visual && <div className="flex justify-center">{visual}</div>}
+        {aside && <div className={cn('min-w-0 md:w-[15rem]', visual && 'col-span-2 md:col-span-1')}>{aside}</div>}
       </div>
     </header>
   );
@@ -159,21 +155,39 @@ const DEFAULT_ORBIT: Array<{ to: string; label: string; icon: LucideIcon }> = [
 export function AuraOrbit({ core: Core, icons, links }: { core: LucideIcon; icons?: LucideIcon[]; links?: Array<{ to: string; label: string }> }) {
   const items = icons && links ? icons.map((icon, i) => ({ icon, ...links[i] })).filter(x => x.to) : DEFAULT_ORBIT;
   const sats = items.slice(0, 8);
+  const { pathname } = useLocation();
+  // The language prefix (/en/harta) is not part of the route being compared.
+  const here = pathname.replace(/^\/[a-z]{2,3}(?=\/|$)/, '') || '/';
+  const [label, setLabel] = useState<string | null>(null);
+  const idle = dt('Lidhje të shpejta');
+  /*
+    The caption under the ring names the satellite being hovered, focused or held
+    down with a finger. A tooltip would be clipped by the hero's overflow and does
+    not exist on touch; a caption inside the orbit's own width does neither.
+  */
   return (
-    <nav className="au-orbit" aria-label={dt('Lidhje të shpejta')}>
-      <span aria-hidden="true" className="au-orbit-ring inset-[6%]" />
-      <span aria-hidden="true" className="au-orbit-ring inset-[26%]" />
-      <span aria-hidden="true" className="au-orbit-core"><Core className="h-6 w-6" /></span>
-      {sats.map((it, i) => {
-        const ang = (i / sats.length) * Math.PI * 2 - Math.PI / 2;
-        const r = i % 2 ? 34 : 46;
-        return (
-          <Link key={it.to} to={it.to} aria-label={dt(it.label)} title={dt(it.label)} className="au-orbit-sat"
-            style={{ left: `${50 + Math.cos(ang) * r}%`, top: `${50 + Math.sin(ang) * r}%`, animationDelay: `${i * 0.6}s` }}>
-            <it.icon className="h-[18px] w-[18px]" />
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="au-orbit-wrap">
+      <nav className="au-orbit" aria-label={idle} onMouseLeave={() => setLabel(null)}>
+        <span aria-hidden="true" className="au-orbit-ring inset-[6%]" />
+        <span aria-hidden="true" className="au-orbit-ring inset-[26%]" />
+        <span aria-hidden="true" className="au-orbit-core"><Core className="h-5 w-5" /></span>
+        {sats.map((it, i) => {
+          const ang = (i / sats.length) * Math.PI * 2 - Math.PI / 2;
+          const r = i % 2 ? 34 : 46;
+          const text = dt(it.label);
+          const current = it.to === here;
+          return (
+            <Link key={it.to} to={it.to} aria-label={text} aria-current={current ? 'page' : undefined} title={text}
+              data-current={current ? 'true' : undefined} className="au-orbit-sat"
+              onMouseEnter={() => setLabel(text)} onFocus={() => setLabel(text)} onBlur={() => setLabel(null)}
+              onTouchStart={() => setLabel(text)} onTouchEnd={() => setLabel(null)} onTouchCancel={() => setLabel(null)}
+              style={{ left: `${50 + Math.cos(ang) * r}%`, top: `${50 + Math.sin(ang) * r}%`, animationDelay: `${i * 0.6}s` }}>
+              <it.icon className="h-4 w-4" />
+            </Link>
+          );
+        })}
+      </nav>
+      <p className="au-orbit-caption" aria-hidden="true" data-active={label ? 'true' : undefined}>{label ?? idle}</p>
+    </div>
   );
 }

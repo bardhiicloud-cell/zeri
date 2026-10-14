@@ -77,7 +77,7 @@ export function decideAssignment(input: AssignmentInput): AssignmentDecision {
     return { outcome: 'allow', kind: 'release', reason: reasonText };
   }
 
-  if (!isOwner) return deny(403, 'Vetëm administratori ose dispatcher-i ia cakton punën dikujt tjetër. Ju mund ta merrni përsipër vetë.');
+  if (!isOwner) return deny(403, 'Vetëm menaxheri (dispatcher) ose superadmini cakton punë. Detyrat tuaja i gjeni te "Detyrat e mia".');
   if (!input.target) return deny(404, 'Personi nuk u gjet.');
   if (input.target.disabled) return deny(409, 'Llogaria e këtij personi është e pezulluar.');
   if (pipelineRoleOf(input.target.role, input.target.permissions) !== 'agent') {
@@ -128,6 +128,8 @@ export function registerReportAssignmentRoutes(app: Express, deps: ReportAssignm
       const now = new Date().toISOString();
       const result = await deps.db().runTransaction(async tx => {
         const snap = await tx.get(ref);
+        const taskRef = deps.db().collection('reportTasks').doc(`${reportId}__review`);
+        const taskSnap = await tx.get(taskRef);
         const decision = decideAssignment({
           actor,
           report: snap.exists ? (snap.data() as Record<string, unknown>) : null,
@@ -160,6 +162,11 @@ export function registerReportAssignmentRoutes(app: Express, deps: ReportAssignm
         }
         if (fromUid && fromUid !== actor.uid && fromUid !== (decision.kind === 'assign' ? target!.uid : '')) {
           notify(fromUid, `Raportimi${label} kaloi te dikush tjetër`, decision.reason || 'Nuk është më nën përgjegjësinë tuaj.');
+        }
+        if (taskSnap.exists && taskSnap.get('status') === 'open') {
+          tx.update(taskRef, decision.kind === 'release'
+            ? { assigneeType: 'queue', assigneeUid: null, assigneeName: '', needsAssignment: true, updatedAtMs: Date.now() }
+            : { assigneeType: 'user', assigneeUid: target!.uid, assigneeName: targetName.slice(0, 120), needsAssignment: false, updatedAtMs: Date.now() });
         }
         tx.update(
           ref,

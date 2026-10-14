@@ -1,5 +1,6 @@
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { applyReportToCase, readCaseFor } from './moderationCases';
 
 /**
  * Administration of the public debate, for the `debatwp` role (section `debate`).
@@ -105,6 +106,18 @@ export function parseBulk(body: any): BulkDecision {
   return { outcome: 'ok', ids, action };
 }
 
+/**
+ * What is kept when a post is removed from public view for good.
+ *
+ * Deleting a post used to erase the only copy of what was reported, so a later appeal or a
+ * legal request had nothing to look at. The deleted post is copied here first, in the same
+ * batch as the delete, to `moderationEvidence/{postId}` (server-only: Firestore's default
+ * deny applies, so no client can read or change it). Pure, so the shape is tested.
+ */
+export function evidenceRecord(postId: string, data: Record<string, unknown>, staffUid: string | null, reason: string): Record<string, unknown> {
+  return { postId, post: data, removedBy: staffUid, reason: clip(reason, 300), removedAt: FieldValue.serverTimestamp() };
+}
+
 export function isHttpsUrl(value: unknown): value is string {
   if (typeof value !== 'string' || value.length > 500) return false;
   try {
@@ -130,15 +143,25 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
     const filter = (['all', 'reported', 'hidden', 'promoted', 'visible'].includes(String(req.query.filter)) ? req.query.filter : 'all') as PostFilter;
     const q = clip(req.query.q, 100);
     try {
-      const snapshot = await deps.db().collection('forumPosts').orderBy('createdAt', 'desc').limit(400).get();
+      // A reported or hidden post older than the newest 400 must still be reachable, so those two
+      // filters ask the database for exactly those posts instead of searching a recent window.
+      const posts = deps.db().collection('forumPosts');
+      const source = filter === 'reported' ? posts.where('reportCount', '>', 0).orderBy('reportCount', 'desc')
+        : filter === 'hidden' ? posts.where('isHidden', '==', true).orderBy('createdAt', 'desc')
+        : posts.orderBy('createdAt', 'desc');
+      const [snapshot, reportedCount, hiddenCount] = await Promise.all([
+        source.limit(400).get(),
+        posts.where('reportCount', '>', 0).count().get(),
+        posts.where('isHidden', '==', true).count().get(),
+      ]);
       const rows = snapshot.docs.map((doc) => toPostRow(doc.id, doc.data()));
       const filtered = filterPosts(rows, filter, q);
       return res.json({
         posts: filtered.slice(0, 200),
         counts: {
           all: rows.length,
-          reported: rows.filter((r) => r.reportCount > 0).length,
-          hidden: rows.filter((r) => r.isHidden).length,
+          reported: reportedCount.data().count,
+          hidden: hiddenCount.data().count,
           promoted: rows.filter((r) => isPromotionActive(r)).length,
         },
       });
@@ -168,11 +191,14 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
         else if (action === 'unhide') batch.update(snap.ref, { isHidden: false, hiddenBy: FieldValue.delete(), hiddenAt: FieldValue.delete() });
         else if (action === 'clear_reports') batch.update(snap.ref, { reportCount: 0, needsReview: false });
         else if (action === 'unpromote') batch.update(snap.ref, { isAd: false, adLink: null, promotedUntil: FieldValue.delete() });
-        else if (action === 'delete') batch.delete(snap.ref);
+        else if (action === 'delete') {
+          batch.set(deps.db().collection('moderationEvidence').doc(snap.id), evidenceRecord(snap.id, snap.data() as Record<string, unknown>, staff, String(req.body?.reason ?? '')));
+          batch.delete(snap.ref);
+        }
         results.push({ id: snap.id, result: 'done' });
       }
       await batch.commit();
-      deps.audit(`debate.posts.${action}`, req, { count: results.filter((r) => r.result === 'done').length, ids: ids.slice(0, 20) });
+      deps.audit(`debate.posts.${action}`, req, { count: results.filter((r) => r.result === 'done').length, ids: ids.slice(0, 20), reason: clip(req.body?.reason, 300) || null });
       return res.json({ results });
     } catch (error: any) {
       console.error('[DEBATE] bulk failed:', error?.message);
@@ -242,13 +268,18 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       const postRef = deps.db().collection('forumPosts').doc(id);
       const reportRef = postRef.collection('reports').doc(uid);
       const outcome = await deps.db().runTransaction(async (transaction) => {
-        const [post, report] = await Promise.all([transaction.get(postRef), transaction.get(reportRef)]);
+        const [post, report, moderationCase] = await Promise.all([transaction.get(postRef), transaction.get(reportRef), readCaseFor(transaction, deps.db(), 'post', id)]);
         if (!post.exists) return 'missing' as const;
         if (report.exists) return 'duplicate' as const;
         const stored = post.data()?.reportCount;
         const count = (typeof stored === 'number' ? stored : 0) + 1;
         transaction.update(postRef, { reportCount: count, needsReview: count >= REVIEW_THRESHOLD });
         transaction.create(reportRef, { uid, reason, note: clip(req.body?.note, 300), at: FieldValue.serverTimestamp() });
+        const p = post.data() ?? {};
+        applyReportToCase(transaction, deps.db(), moderationCase, {
+          kind: 'post', targetId: id, postId: id, subjectUid: String(p.authorId ?? ''), reason,
+          snapshot: { excerpt: clip(p.content, 300), authorName: clip(p.authorName, 120), imageUrl: typeof p.imageUrl === 'string' ? p.imageUrl : null },
+        }, Date.now());
         return 'reported' as const;
       });
       if (outcome === 'missing') return res.status(404).json({ error: 'Postimi nuk u gjet.' });
@@ -306,6 +337,119 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
     } catch (error: any) {
       console.error('[DEBATE] ad status failed:', error?.message);
       return res.status(500).json({ error: 'Statusi nuk u ruajt.' });
+    }
+  });
+
+  /* ------------------------------------------------- sponsored posts */
+
+  /**
+   * The debate admin publishes an ad straight into the public debate: a post marked
+   * `isAd` (the feed shows it with the "Sponsorizuar" bar and its link), running for a set
+   * number of days. Same fields the forum composer writes, so the feed needs no change.
+   */
+  app.post('/api/v1/debate/ads', ...guard, async (req: Request, res: Response) => {
+    const content = clip(req.body?.content, 2000);
+    const sponsor = clip(req.body?.sponsorName, 120);
+    const imageUrl = req.body?.imageUrl ? String(req.body.imageUrl) : '';
+    const link = req.body?.adLink ? String(req.body.adLink) : '';
+    const days = Number(req.body?.days);
+    if (content.length < 3) return res.status(400).json({ error: 'Shkruani tekstin e reklamës.' });
+    if (sponsor.length < 2) return res.status(400).json({ error: 'Shkruani emrin e sponsorit.' });
+    if (imageUrl && !isHttpsUrl(imageUrl)) return res.status(400).json({ error: 'Imazhi duhet të jetë një link https://.' });
+    if (link && !isHttpsUrl(link)) return res.status(400).json({ error: 'Linku duhet të fillojë me https://.' });
+    if (!Number.isInteger(days) || days < 1 || days > 90) return res.status(400).json({ error: 'Kohëzgjatja duhet të jetë 1–90 ditë.' });
+    try {
+      const ref = await deps.db().collection('forumPosts').add({
+        isHidden: false, authorId: req.user?.uid ?? 'platform', authorName: sponsor, authorRole: 'sponsor', authorBadge: 'Sponsorizuar',
+        content, hashtags: [], category: 'Reklamë', imageUrl: imageUrl || null, imageUrls: imageUrl ? [imageUrl] : [],
+        visibility: 'public', isAd: true, adLink: link || null, promotedUntil: Timestamp.fromMillis(Date.now() + days * 86_400_000),
+        promotedBy: req.user?.uid ?? null, likes: [], comments: [], reactions: {}, reportCount: 0, viewCount: 0, createdAt: FieldValue.serverTimestamp(),
+      });
+      deps.audit('debate.ad.create', req, { id: ref.id, days });
+      return res.status(201).json({ ok: true, id: ref.id });
+    } catch (error: any) {
+      console.error('[DEBATE] ad create failed:', error?.message);
+      return res.status(500).json({ error: 'Reklama nuk u publikua.' });
+    }
+  });
+
+  /* ------------------------------------------- verification requests */
+
+  /** A citizen asks for the tick. One open request per account; the debate admin decides. */
+  app.post('/api/v1/forum/verification-requests', deps.requireAuth, async (req: Request, res: Response) => {
+    const uid = req.user?.uid;
+    if (!uid || !req.user?.email) return res.status(403).json({ error: 'Kyçuni me llogari për të kërkuar verifikim.' });
+    const reason = clip(req.body?.reason, 600);
+    const link = req.body?.link ? String(req.body.link) : '';
+    if (reason.length < 10) return res.status(400).json({ error: 'Shpjegoni pse kërkoni verifikim (të paktën 10 shenja).' });
+    if (link && !isHttpsUrl(link)) return res.status(400).json({ error: 'Linku duhet të fillojë me https://.' });
+    try {
+      const ref = deps.db().collection('verificationRequests').doc(uid);
+      const outcome = await deps.db().runTransaction(async (tx) => {
+        const [current, user] = await Promise.all([tx.get(ref), tx.get(deps.db().collection('users').doc(uid))]);
+        if (user.data()?.isVerified === true) return 'verified' as const;
+        if (current.exists && current.data()?.status === 'pending') return 'pending' as const;
+        tx.set(ref, { uid, name: clip(user.data()?.name, 120), reason, link: link || null, status: 'pending', createdAt: FieldValue.serverTimestamp(), decidedAt: null, decidedBy: null, note: '' });
+        return 'created' as const;
+      });
+      if (outcome === 'verified') return res.status(409).json({ error: 'Llogaria juaj është tashmë e verifikuar.' });
+      if (outcome === 'pending') return res.status(409).json({ error: 'Keni një kërkesë në pritje.' });
+      return res.status(201).json({ ok: true });
+    } catch (error: any) {
+      console.error('[DEBATE] verification request failed:', error?.message);
+      return res.status(500).json({ error: 'Kërkesa nuk u dërgua.' });
+    }
+  });
+
+  app.get('/api/v1/forum/verification-requests/mine', deps.requireAuth, async (req: Request, res: Response) => {
+    try {
+      const snap = await deps.db().collection('verificationRequests').doc(req.user?.uid ?? '-').get();
+      const d = snap.data();
+      return res.json({ request: snap.exists ? { status: d?.status, note: d?.note ?? '', createdAtMs: millis(d?.createdAt) } : null });
+    } catch { return res.status(500).json({ error: 'Nuk u ngarkua.' }); }
+  });
+
+  app.get('/api/v1/debate/verification-requests', ...guard, async (req: Request, res: Response) => {
+    const status = ['pending', 'approved', 'rejected'].includes(String(req.query.status)) ? String(req.query.status) : 'pending';
+    try {
+      const snap = await deps.db().collection('verificationRequests').where('status', '==', status).limit(200).get();
+      const items = snap.docs.map((doc) => ({ uid: doc.id, name: clip(doc.data().name, 120), reason: clip(doc.data().reason, 600), link: doc.data().link ?? null, status: doc.data().status, note: doc.data().note ?? '', createdAtMs: millis(doc.data().createdAt) }))
+        .sort((a, b) => a.createdAtMs - b.createdAtMs);
+      return res.json({ items });
+    } catch (error: any) {
+      console.error('[DEBATE] verification queue failed:', error?.message);
+      return res.status(500).json({ error: 'Kërkesat nuk u ngarkuan.' });
+    }
+  });
+
+  /** Approve (tick for 30 days, renewable from the ticks list) or reject with a reason the person reads. */
+  app.post('/api/v1/debate/verification-requests/:uid', ...guard, async (req: Request, res: Response) => {
+    const uid = String(req.params.uid ?? '');
+    const decision = req.body?.decision;
+    const note = clip(req.body?.note, 300);
+    if (!uid || uid.includes('/')) return res.status(400).json({ error: 'Kërkesa nuk është e vlefshme.' });
+    if (decision !== 'approve' && decision !== 'reject') return res.status(400).json({ error: 'Vendimi nuk njihet.' });
+    if (decision === 'reject' && note.length < 5) return res.status(400).json({ error: 'Shkruani arsyen e refuzimit (e lexon personi).' });
+    try {
+      const done = await deps.db().runTransaction(async (tx) => {
+        const ref = deps.db().collection('verificationRequests').doc(uid);
+        const snap = await tx.get(ref);
+        if (!snap.exists || snap.data()?.status !== 'pending') return false;
+        tx.update(ref, { status: decision === 'approve' ? 'approved' : 'rejected', note, decidedBy: req.user?.uid ?? null, decidedAt: FieldValue.serverTimestamp() });
+        if (decision === 'approve') tx.update(deps.db().collection('users').doc(uid), { isVerified: true, verifiedUntil: Timestamp.fromMillis(Date.now() + 30 * 86_400_000), verifiedBy: req.user?.uid ?? null });
+        tx.set(deps.db().collection('notifications').doc(), {
+          title: decision === 'approve' ? 'Llogaria juaj u verifikua' : 'Kërkesa për verifikim u refuzua', message: note || 'Tick-u shfaqet tani te profili juaj.',
+          channel: 'forum', category: 'forum', type: decision === 'approve' ? 'success' : 'info', priority: 'normal', urgent: false,
+          audience: 'user', userId: uid, state: 'published', link: '/verifikimi', sender: 'Debati Publik', createdAt: FieldValue.serverTimestamp(),
+        });
+        return true;
+      });
+      if (!done) return res.status(409).json({ error: 'Kërkesa nuk është më në pritje.' });
+      deps.audit(`debate.verification.${decision}`, req, { uid });
+      return res.json({ ok: true });
+    } catch (error: any) {
+      console.error('[DEBATE] verification decision failed:', error?.message);
+      return res.status(500).json({ error: 'Vendimi nuk u ruajt.' });
     }
   });
 

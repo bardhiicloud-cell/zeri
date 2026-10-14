@@ -314,11 +314,11 @@ export function KosovoDashboardMap({
             className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1.5 cursor-pointer border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Rikthe</span>
+            <span>{dt('Rikthe')}</span>
           </button>
           <button
             onClick={handleGoToMap}
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            className="min-h-10 md:min-h-0 text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
             <span>{dt('Harta e plotë')}</span>
             <ArrowRight className="w-3.5 h-3.5" />

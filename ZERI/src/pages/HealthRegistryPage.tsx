@@ -18,20 +18,24 @@ import { getMunicipalNeighborhoods } from '../lib/kosovoNeighborhoods';
 import { getHospitalInfoForMunicipality, HospitalContact } from '../data/kosovoHospitals';
 import AdBanner from '../components/AdBanner.tsx';
 import { MedicineShortages } from '../components/health/MedicineShortages';
+import { HealthCaseWizard, type HealthFormState } from '../components/health/HealthCaseWizard';
+import { CATEGORY_META, URGENCY_META, categoryMeta, statusMeta, urgencyMeta } from '../lib/healthCategories';
 import toast from 'react-hot-toast';
 
 import { HealthCase } from '../types';
 export type { HealthCase };
 
-const DISEASE_CATEGORIES = [
+const DISEASE_CATEGORIES: { id: string; name: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'all', name: 'Të Gjitha Sëmundjet', icon: HeartPulse },
-  { id: 'Kancer / Onkologji', name: 'Kancer & Onkologji', icon: ShieldAlert },
-  { id: 'Sëmundje të Zemrës', name: 'Zemër (Kardiake)', icon: Heart },
-  { id: 'Sëmundje të Mushkërive', name: 'Mushkëri (Pulmonare)', icon: Activity },
-  { id: 'Sëmundje të Veshkave & Dializë', name: 'Veshkë & Dializë', icon: Droplets },
-  { id: 'Diabet me Komplikime', name: 'Diabet me Komplikime', icon: Pill },
-  { id: 'Sëmundje Neurologjike', name: 'Neurologjike', icon: Stethoscope },
-  { id: 'Sëmundje e Rrallë', name: 'Sëmundje të Rralla', icon: Sparkles },
+  ...CATEGORY_META,
+];
+
+type GroupBy = 'none' | 'category' | 'urgency' | 'municipality';
+const GROUP_OPTIONS: { id: GroupBy; label: string }[] = [
+  { id: 'category', label: 'Sipas kategorisë' },
+  { id: 'urgency', label: 'Sipas urgjencës' },
+  { id: 'municipality', label: 'Sipas komunës' },
+  { id: 'none', label: 'Pa grupim' },
 ];
 
 export default function HealthRegistryPage() {
@@ -63,16 +67,16 @@ export default function HealthRegistryPage() {
   const [isSavingGoFundMe, setIsSavingGoFundMe] = useState(false);
 
   // Form State
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<HealthFormState>({
     fullName: '',
     age: 45,
-    gender: 'Mashkull' as HealthCase['gender'],
+    gender: 'Mashkull',
     municipality: 'Prishtinë',
     neighborhood: '',
-    category: 'Kancer / Onkologji' as HealthCase['category'],
+    category: 'Kancer / Onkologji',
     diagnosis: '',
     diagnosedYear: new Date().getFullYear(),
-    urgency: 'Urgjente' as HealthCase['urgency'],
+    urgency: 'Urgjente',
     needsInput: '',
     description: '',
     contactPhone: '',
@@ -82,11 +86,9 @@ export default function HealthRegistryPage() {
     supportAmountNeeded: 0,
     donationUrl: '',
     imageUrl: '',
-    documentType: 'image' as 'image' | 'pdf',
+    documentType: 'image',
     documentName: '',
   });
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Health records are private by design; only the signed-in owner's cases load here.
   useEffect(() => {
@@ -143,7 +145,44 @@ export default function HealthRegistryPage() {
     });
   }, [cases, selectedMunicipality, selectedCategory, selectedUrgency, searchQuery]);
 
-  const displayedCases = filteredCases;
+  const [groupBy, setGroupBy] = useState<GroupBy>('category');
+
+  /**
+   * Cases are ordered so the most urgent come first inside every group, and
+   * the groups themselves follow the order of the taxonomy (category list,
+   * urgency rank) rather than whichever case happened to be newest.
+   */
+  const { displayedCases, groupLabelFor } = useMemo(() => {
+    const groupKey = (c: HealthCase) =>
+      groupBy === 'category' ? c.category : groupBy === 'urgency' ? c.urgency : groupBy === 'municipality' ? c.municipality : 'all';
+    const groupRank = (c: HealthCase) =>
+      groupBy === 'category' ? CATEGORY_META.findIndex((m) => m.id === c.category)
+        : groupBy === 'urgency' ? urgencyMeta(c.urgency).rank
+        : 0;
+    const sorted = [...filteredCases].sort((a, b) =>
+      groupRank(a) - groupRank(b)
+      || (groupBy === 'municipality' ? a.municipality.localeCompare(b.municipality) : 0)
+      || urgencyMeta(a.urgency).rank - urgencyMeta(b.urgency).rank
+      || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const counts = new Map<string, number>();
+    sorted.forEach((c) => counts.set(groupKey(c), (counts.get(groupKey(c)) ?? 0) + 1));
+    return {
+      displayedCases: sorted,
+      /** Returns the group header for the first case of each group, otherwise null. */
+      groupLabelFor: (c: HealthCase, index: number) => {
+        if (groupBy === 'none') return null;
+        const key = groupKey(c);
+        if (index > 0 && groupKey(sorted[index - 1]) === key) return null;
+        return { key, count: counts.get(key) ?? 0 };
+      },
+    };
+  }, [filteredCases, groupBy]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: cases.length };
+    cases.forEach((c) => { counts[c.category] = (counts[c.category] ?? 0) + 1; });
+    return counts;
+  }, [cases]);
 
   // Aggregate stats per municipality (all 38 municipalities)
   const municipalityStats = useMemo(() => {
@@ -215,8 +254,8 @@ export default function HealthRegistryPage() {
   }, [previewPhoto]);
 
   // Submit new Health Case
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRegisterSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const diagnosis = form.diagnosis.trim();
     if (!diagnosis) {
       toast.error('Ju lutem shënoni diagnozën specifike.');
@@ -552,9 +591,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 </select>
                 <select aria-label={dt('Urgjenca')} value={selectedUrgency} onChange={e => setSelectedUrgency(e.target.value)} className="au-input sm:!w-52">
                   <option value="all">{dt('⚡ Të gjitha Nivelet e Urgjencës')}</option>
-                  <option value="Urgjente">{dt('Urgjente')}</option>
-                  <option value="Mesatare">{dt('Mesatare')}</option>
-                  <option value="Kronike e Stabilizuar">Kronike e Stabilizuar</option>
+                  {URGENCY_META.map((item) => (<option key={item.id} value={item.id}>{dt(item.label)}</option>))}
                 </select>
               </div>
               <div className="au-rail" role="group" aria-label={dt('Kategoritë')}>
@@ -562,12 +599,30 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   const Icon = cat.icon;
                   return (
                     <button key={cat.id} type="button" aria-pressed={selectedCategory === cat.id} onClick={() => setSelectedCategory(cat.id)} className="au-chip">
-                      <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span>{cat.name}</span>
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span>{dt(cat.name)}</span>
+                      <span className="ml-1 rounded-full bg-black/10 px-1.5 text-[10px] font-black tabular-nums dark:bg-white/15">{categoryCounts[cat.id] ?? 0}</span>
                     </button>
                   );
                 })}
               </div>
             </div>
+
+            {displayedCases.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-slate-500" aria-live="polite">
+                  {displayedCases.length} {displayedCases.length === 1 ? dt('rast') : dt('raste')}
+                  {urgentCount > 0 && <> · <span className="text-rose-600 dark:text-rose-400">{urgentCount} {dt('urgjente')}</span></>}
+                </p>
+                <div className="inline-flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-zinc-800" role="radiogroup" aria-label={dt('Grupimi i rasteve')}>
+                  {GROUP_OPTIONS.map((option) => (
+                    <button key={option.id} type="button" role="radio" aria-checked={groupBy === option.id} onClick={() => setGroupBy(option.id)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${groupBy === option.id ? 'bg-white text-rose-700 shadow-sm dark:bg-zinc-700 dark:text-rose-300' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      {dt(option.label)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Cases Grid */}
             {displayedCases.length === 0 ? (
@@ -583,39 +638,49 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {displayedCases.map(c => {
+                {displayedCases.map((c, index) => {
                   const assignedHospital = getHospitalInfoForMunicipality(c.municipality);
+                  const cMeta = categoryMeta(c.category);
+                  const uMeta = urgencyMeta(c.urgency);
+                  const sMeta = statusMeta(c.status, c.hospitalNotified);
+                  const groupHeader = groupLabelFor(c, index);
+                  const headerMeta = groupHeader && groupBy === 'category' ? categoryMeta(groupHeader.key) : null;
                   return (
+                    <React.Fragment key={c.id}>
+                    {groupHeader && (
+                      <div className="col-span-full flex items-center gap-2.5 pt-2 first:pt-0">
+                        <span className={`h-5 w-1 rounded-full ${headerMeta ? headerMeta.bar : groupBy === 'urgency' ? urgencyMeta(groupHeader.key).dot : 'bg-slate-400'}`} />
+                        <h3 className={`text-sm font-black ${headerMeta ? headerMeta.accent : 'text-slate-900 dark:text-white'}`}>
+                          {groupBy === 'category' ? dt(headerMeta!.name) : groupBy === 'urgency' ? dt(urgencyMeta(groupHeader.key).label) : groupHeader.key}
+                        </h3>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black tabular-nums text-slate-600 dark:bg-zinc-800 dark:text-slate-300">{groupHeader.count}</span>
+                        <span className="h-px flex-1 bg-slate-200 dark:bg-zinc-800" />
+                      </div>
+                    )}
                     <motion.div
-                      key={c.id}
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="au-tile flex flex-col justify-between p-4"
+                      className={`au-tile flex flex-col justify-between border-l-4 p-4 ${c.urgency === 'Urgjente' ? 'border-l-rose-500' : c.urgency === 'Mesatare' ? 'border-l-amber-400' : 'border-l-emerald-400'}`}
                     >
                       <div className="space-y-3.5">
                         {/* Header */}
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
-                              c.category === 'Kancer / Onkologji'
-                                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                                : c.category === 'Sëmundje të Zemrës'
-                                ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
-                                : c.category === 'Sëmundje të Mushkërive'
-                                ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300'
-                                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                            }`}>
-                              {c.category === 'Kancer / Onkologji' ? 'ONK' : c.category === 'Sëmundje të Zemrës' ? 'KRD' : c.category === 'Sëmundje të Mushkërive' ? 'PUL' : 'SHËN'}
+                            <div className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl ${cMeta.tile}`} title={dt(cMeta.name)}>
+                              <cMeta.icon className="h-4 w-4" aria-hidden="true" />
+                              <span className="mt-0.5 text-[8px] font-black leading-none">{cMeta.abbr}</span>
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <h3 className="font-bold text-base text-slate-900 dark:text-white leading-tight">
                                   {c.isAnonymous ? 'Rast anonim i mbrojtur' : c.fullName}
                                 </h3>
-                                <span title="Rast i verifikuar">
-                                  <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
-                                </span>
+                                {(c.status === 'verified' || c.status === 'resolved') && (
+                                  <span title={dt('Rast i verifikuar')}>
+                                    <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
+                                  </span>
+                                )}
                               </div>
                               <p className="text-xs text-slate-500 font-medium mt-0.5">
                                 {c.age} vjeç • {c.gender} • Viti i diagnozës: {c.diagnosedYear}
@@ -623,13 +688,12 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                             </div>
                           </div>
 
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            c.urgency === 'Urgjente'
-                              ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900'
-                              : 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900'
-                          }`}>
-                            {c.urgency}
-                          </span>
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${uMeta.pill}`}>
+                              {dt(uMeta.label)}
+                            </span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${sMeta.pill}`}>{dt(sMeta.label)}</span>
+                          </div>
                         </div>
 
                         <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/45" aria-label={`Statusi i rastit ${c.trackingId || c.id}`}>
@@ -816,6 +880,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                         </div>
                       </div>
                     </motion.div>
+                    </React.Fragment>
                   );
                 })}
               </div>
@@ -985,10 +1050,13 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-zinc-800 space-y-6 my-8 max-h-[90vh] overflow-y-auto custom-scrollbar"
+              role="dialog"
+              aria-modal="true"
+              aria-label={dt('Regjistro Rast Shëndetësor')}
+              className="bg-white dark:bg-zinc-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 dark:border-zinc-800 my-4 max-h-[94vh] flex flex-col overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-4">
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-100 dark:border-zinc-800 px-6 py-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                     <HeartPulse className="w-5 h-5" />
@@ -1010,333 +1078,17 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 </button>
               </div>
 
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 dark:border-zinc-700/60 dark:bg-zinc-800/60">
-                  <p className="mb-2 text-xs font-bold text-slate-900 dark:text-white">{dt('Si dëshironi ta dërgoni kërkesën?')}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setForm(prev => ({
-                      ...prev, isAnonymous: true, fullName: '', contactPhone: '', contactName: '',
-                      imageUrl: '', documentName: '', donationUrl: '',
-                    }))} aria-pressed={form.isAnonymous}
-                      className={`rounded-lg border px-3 py-2 text-xs font-bold ${form.isAnonymous ? 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-200' : 'border-slate-200 text-slate-600 dark:border-zinc-700 dark:text-slate-300'}`}>
-                      Anonim
-                    </button>
-                    <button type="button" onClick={() => setForm(prev => ({ ...prev, isAnonymous: false }))} aria-pressed={!form.isAnonymous}
-                      className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.isAnonymous ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200' : 'border-slate-200 text-slate-600 dark:border-zinc-700 dark:text-slate-300'}`}>
-                      {dt('Me identitet')}
-                    </button>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    {form.isAnonymous
-                      ? 'Nuk ruajmë emër, telefon, lagje, dokumente ose link donacioni. Mos shkruani emra apo të dhëna identifikuese në përshkrim; të dhënat mjekësore mbeten konfidenciale për stafin e autorizuar.'
-                      : 'Emri ruhet privatisht për verifikim nga stafi. Kyçja nuk kërkohet; telefoni mund të lihet bosh.'}
-                  </p>
-                </div>
-
-                {!form.isAnonymous && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Emri i pacientit *
-                    </label>
-                    <input
-                      type="text"
-                      required={!form.isAnonymous}
-                      maxLength={120}
-                      value={form.fullName}
-                      onChange={e => setForm({ ...form, fullName: e.target.value })}
-                      placeholder={dt('Shfaqet vetëm për stafin e autorizuar')}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                    />
-                  </div>
-                </div>}
-
-                {!form.isAnonymous && <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Numri i Telefonit / Kontaktit</label>
-                  <input type="text" maxLength={40} value={form.contactPhone} onChange={e => setForm({ ...form, contactPhone: e.target.value })} placeholder="+383 44 123 456" className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium" />
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{dt('Kontakti ruhet në regjistrin e kufizuar për pronarin dhe stafin e autorizuar; nuk publikohet në faqen publike.')}</p>
-                </div>}
-
-                {/* Age, Gender, Year */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      {dt('Mosha (vjeç)')}
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={120}
-                      value={form.age}
-                      onChange={e => setForm({ ...form, age: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Gjinia
-                    </label>
-                    <select
-                      value={form.gender}
-                      onChange={e => setForm({ ...form, gender: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                    >
-                      <option value="Mashkull">Mashkull</option>
-                      <option value="Femër">{dt('Femër')}</option>
-                      <option value="Tjetër">{dt('Tjetër')}</option>
-                    </select>
-                  </div>
-
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      {dt('Viti i Diagnozës')}
-                    </label>
-                    <input
-                      type="number"
-                      min={1980}
-                      max={new Date().getFullYear()}
-                      value={form.diagnosedYear}
-                      onChange={e => setForm({ ...form, diagnosedYear: parseInt(e.target.value) || 2024 })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                    />
-                  </div>
-                </div>
-
-                {/* Municipality & Neighborhood */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      {dt('Komuna (nga 38 Komunat) *')}
-                    </label>
-                    <select
-                      value={form.municipality}
-                      onChange={e => setForm({ ...form, municipality: e.target.value, neighborhood: '' })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
-                    >
-                      {KOSOVO_MUNICIPALITIES.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Lagjja / Fshati
-                    </label>
-                    {currentAvailableNeighborhoods.length > 0 ? (
-                      <select
-                        value={form.neighborhood}
-                        onChange={e => setForm({ ...form, neighborhood: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                      >
-                        <option value="">Zgjedh Lagjen...</option>
-                        {currentAvailableNeighborhoods.map(n => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        value={form.neighborhood}
-                        onChange={e => setForm({ ...form, neighborhood: e.target.value })}
-                        placeholder="psh. Qendra, Dardania"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Category & Urgency */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      {dt('Kategoria e Sëmundjes *')}
-                    </label>
-                    <select
-                      value={form.category}
-                      onChange={e => setForm({ ...form, category: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
-                    >
-                      <option value="Kancer / Onkologji">Kancer / Onkologji</option>
-                      <option value="Sëmundje të Zemrës">{dt('Sëmundje të Zemrës (Kardiake)')}</option>
-                      <option value="Sëmundje të Mushkërive">{dt('Sëmundje të Mushkërive (Pulmonare)')}</option>
-                      <option value="Sëmundje të Veshkave & Dializë">{dt('Sëmundje të Veshkave & Dializë')}</option>
-                      <option value="Diabet me Komplikime">{dt('Diabet me Komplikime')}</option>
-                      <option value="Sëmundje Neurologjike">{dt('Sëmundje Neurologjike')}</option>
-                      <option value="Sëmundje e Rrallë">{dt('Sëmundje e Rrallë')}</option>
-                      <option value="Tjetër">{dt('Tjetër')}</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      {dt('Niveli i Urgjencës')}
-                    </label>
-                    <select
-                      value={form.urgency}
-                      onChange={e => setForm({ ...form, urgency: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500"
-                    >
-                      <option value="Urgjente">{dt('Urgjente (Ka nevojë për ndërhyrje/barna menjëherë)')}</option>
-                      <option value="Mesatare">Mesatare (Terapia kronike e rregullt)</option>
-                      <option value="Kronike e Stabilizuar">Kronike e Stabilizuar</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Specific Diagnosis */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Diagnoza Specifike *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={300}
-                    value={form.diagnosis}
-                    onChange={e => setForm({ ...form, diagnosis: e.target.value })}
-                    placeholder={dt('psh. Adenokarcinomë, Kardiomiopati e Dilatuar, SPOK, Leuçemi...')}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                  />
-                </div>
-
-                {/* Private attachments require a signed-in, identified owner. */}
-                {!form.isAnonymous && auth.currentUser && !auth.currentUser.isAnonymous && <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {dt('Foto e Dokumentit Mjekësor / Epikrizës / Recetës (Opsionale)')}
-                  </label>
-                  
-                  {form.imageUrl ? (
-                    <div className="relative p-3 bg-slate-50 dark:bg-zinc-800 rounded-2xl border border-slate-200 dark:border-zinc-700 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-xl border border-slate-200 bg-white text-rose-600 dark:border-zinc-700 dark:bg-zinc-900">
-                          {form.documentType === 'pdf' ? <FileText className="h-6 w-6" /> : <Camera className="h-6 w-6" />}
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900 dark:text-white">Dokumenti u ngarkua</p>
-                          <p className="max-w-48 truncate text-[11px] text-emerald-600 font-medium">{form.documentName || 'Gati për regjistrim'}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setForm(prev => ({ ...prev, imageUrl: '' }))}
-                        className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                      >
-                        Largo foton
-                      </button>
-                    </div>
-                  ) : (
-                    <div 
-                      onClick={() => !isUploadingDocument && fileInputRef.current?.click()}
-                      className="cursor-pointer border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-rose-500 dark:hover:border-rose-500 rounded-2xl p-5 text-center transition-all bg-slate-50/50 dark:bg-zinc-800/40 hover:bg-rose-50/30"
-                    >
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handlePhotoSelect} 
-                        accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
-                        className="hidden" 
-                      />
-                      {isUploadingDocument ? <Activity className="w-8 h-8 text-rose-500 mx-auto mb-1.5 animate-pulse" /> : <Upload className="w-8 h-8 text-slate-400 mx-auto mb-1.5" />}
-                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        {isUploadingDocument ? 'Duke ngarkuar dokumentin privat…' : 'Ngarko epikrizë, analizë ose recetë'}
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {dt('JPG, PNG, WEBP ose PDF · Maksimumi 5MB · Qasje vetëm për ju dhe stafin shëndetësor')}
-                      </p>
-                    </div>
-                  )}
-                </div>}
-                {!form.isAnonymous && (!auth.currentUser || auth.currentUser.isAnonymous) && (
-                  <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-                    {dt('Bashkëngjitja e dokumenteve është opsionale dhe kërkon llogari të kyçur. Kërkesën mund ta dërgoni tani pa dokument.')}
-                  </p>
-                )}
-
-                {/* Primary Needs */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {dt('Nevojat Kryesore (të ndara me presje)')}
-                  </label>
-                  <input
-                    type="text"
-                    value={form.needsInput}
-                    onChange={e => setForm({ ...form, needsInput: e.target.value })}
-                    placeholder={dt('psh. Barna Citostatike, Dializë, Koncentrator Oksigjeni, Ndihmë Financiare')}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {dt('Përshkrimi i Situatës dhe Nevoja për Ndihmë')}
-                  </label>
-                  <textarea
-                    rows={3}
-                    maxLength={2000}
-                    value={form.description}
-                    onChange={e => setForm({ ...form, description: e.target.value })}
-                    placeholder={dt('Shpjegoni shkurtimisht gjendjen shëndetësore, barnat që mungojnë në spital apo nevojën për trajtim...')}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500 font-medium resize-none"
-                  />
-                </div>
-
-                {/* Donation links require an identified account and are reviewed by staff. */}
-                {!form.isAnonymous && auth.currentUser && !auth.currentUser.isAnonymous && <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Linku i GoFundMe / Donacionit (Opsionale)</span>
-                    </span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{dt('Për butonin "Kontribo"')}</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="url"
-                      value={form.donationUrl}
-                      onChange={e => setForm({ ...form, donationUrl: e.target.value })}
-                      placeholder="https://www.gofundme.com/f/emri-i-fushatës..."
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
-                    />
-                    <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    {dt('Nëse keni hapur fushatë në GoFundMe apo platformë tjetër, vendosni linkun këtu për ta pasur pranë rastit tuaj.')}
-                  </p>
-                </div>}
-
-                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    required
-                    checked={form.consentToProcessing}
-                    onChange={e => setForm(prev => ({ ...prev, consentToProcessing: e.target.checked }))}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-rose-600"
-                  />
-                  <span>
-                    {dt('Pajtohem që këto të dhëna shëndetësore të përpunohen vetëm për shqyrtimin e kërkesës nga stafi i autorizuar. E kuptoj se kërkesa nuk është publike dhe se kodi shërben për referim gjatë komunikimit me stafin. *')}
-                  </span>
-                </label>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsRegisterModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  >
-                    {dt('Anulo')}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-rose-600/20 active:scale-95 transition-all flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4 stroke-[3]" />
-                    <span>{isSubmitting ? 'Duke regjistruar...' : 'Dërgo në Regjistër'}</span>
-                  </button>
-                </div>
-              </form>
+              <HealthCaseWizard
+                form={form}
+                setForm={setForm}
+                neighborhoods={currentAvailableNeighborhoods}
+                canAttach={Boolean(auth.currentUser && !auth.currentUser.isAnonymous)}
+                isSubmitting={isSubmitting}
+                isUploadingDocument={isUploadingDocument}
+                onPickDocument={handlePhotoSelect}
+                onSubmit={() => void handleRegisterSubmit()}
+                onClose={() => setIsRegisterModalOpen(false)}
+              />
             </motion.div>
           </div>
         )}

@@ -24,7 +24,7 @@ import {
 import { PostFormatter } from "../components/PostFormatter";
 import { HashtagSheet } from '../components/forum/HashtagSheet';
 import { adVisibleInFeed } from '../lib/adCampaign';
-import { Clock as ClockIcon } from 'lucide-react';
+import { Clock as ClockIcon, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { PostGallery } from '../components/forum/PostGallery';
 import { ScheduledPostsSheet } from '../components/forum/ScheduledPostsSheet';
 import { localInputToMs, msToLocalInput, schedulePostApi } from '../lib/forumScheduleApi';
@@ -273,6 +273,15 @@ export default function ForumPage() {
 
   // Direct Messages & Quote Posts State
   const [isDMModalOpen, setIsDMModalOpen] = useState(false);
+  // Desktop left rail: open (labels) or closed (icons only). Remembered per browser.
+  const [railCollapsed, setRailCollapsed] = useState(() => {
+    try { return localStorage.getItem('zeri:forum-rail-collapsed') === '1'; } catch { return false; }
+  });
+  const toggleRail = () => setRailCollapsed((value) => {
+    const next = !value;
+    try { localStorage.setItem('zeri:forum-rail-collapsed', next ? '1' : '0'); } catch { /* storage unavailable */ }
+    return next;
+  });
   const [dmTargetUser, setDmTargetUser] = useState<{ id: string; name: string; avatar?: string } | null>(null);
 
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -680,6 +689,32 @@ export default function ForumPage() {
       textareaRef.current?.focus();
     }, 120);
   };
+  // The mobile dock's "+" sends citizens here with `?create=post|reel|ad` (or the
+  // `zeri:forum-create` event when the forum is already open).
+  const createFromDockRef = useRef<(kind: string) => void>(() => {});
+  createFromDockRef.current = (kind: string) => {
+    if (kind === 'ad') {
+      if (!isSignedInCitizen) { setShowAuthPrompt(true); return; }
+      setAdModalPostId(undefined);
+      setAdModalPostContent(undefined);
+      setIsAdRequestModalOpen(true);
+    } else if (kind === 'reel' || kind === 'post') {
+      handleCreateAction(kind);
+    }
+  };
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const kind = params.get('create');
+    if (kind) {
+      params.delete('create');
+      const rest = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}${window.location.hash}`);
+      createFromDockRef.current(kind);
+    }
+    const onCreate = (event: Event) => createFromDockRef.current(String((event as CustomEvent).detail ?? ''));
+    window.addEventListener('zeri:forum-create', onCreate);
+    return () => window.removeEventListener('zeri:forum-create', onCreate);
+  }, []);
   const [showVerification, setShowVerification] = useState(false);
   const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
@@ -1324,14 +1359,25 @@ export default function ForumPage() {
             Now: no empty banner, real numbers only, and the rail scrolls with
             the page instead of pinning a column that cannot fit.
           */}
-          <div className="hidden lg:flex w-64 shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
+          <div className={`hidden lg:flex shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:self-start transition-[width] duration-200 ease-out ${railCollapsed ? 'w-[68px]' : 'w-64'}`}>
+             <button
+               type="button"
+               onClick={toggleRail}
+               aria-label={railCollapsed ? dt('Zgjero menunë') : dt('Mblidh menunë')}
+               aria-expanded={!railCollapsed}
+               title={railCollapsed ? dt('Zgjero menunë') : dt('Mblidh menunë')}
+               className={`flex h-9 items-center rounded-xl border border-slate-200/80 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 ${railCollapsed ? 'w-9 justify-center self-center' : 'w-full gap-2 px-3 text-xs font-bold'}`}
+             >
+               {railCollapsed ? <PanelLeftOpen className="h-4 w-4" aria-hidden="true" /> : (<><PanelLeftClose className="h-4 w-4" aria-hidden="true" /><span>{dt('Mblidh menunë')}</span></>)}
+             </button>
              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 overflow-hidden">
-               <div className="flex items-center gap-3 p-4">
+               <div className={`flex items-center gap-3 ${railCollapsed ? 'justify-center p-2.5' : 'p-4'}`}>
                  <img
                    src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'}
                    className="h-12 w-12 shrink-0 rounded-full border border-slate-200 bg-white object-cover dark:border-zinc-700"
                    alt=""
                  />
+                 {!railCollapsed && (
                  <div className="min-w-0 flex-1">
                    <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
                      {currentUser?.name || dt('Përdorues i Paidentifikuar')}
@@ -1340,12 +1386,13 @@ export default function ForumPage() {
                      {currentUser?.role === 'guest' ? dt('Mysafir') : dt('Qytetar')}
                    </p>
                  </div>
+                 )}
                </div>
                {/* Only the post count is real; the influence figure was a literal 0. */}
                <button
                  type="button"
                  onClick={() => setActiveTab('profile')}
-                 className="flex w-full items-center justify-between border-t border-slate-100 px-4 py-2.5 text-left transition-colors hover:bg-slate-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                 className={`${railCollapsed ? 'hidden' : 'flex'} w-full items-center justify-between border-t border-slate-100 px-4 py-2.5 text-left transition-colors hover:bg-slate-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50`}
                >
                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{dt('Postime')}</span>
                  <span className="text-sm font-black text-slate-900 dark:text-white">
@@ -1407,16 +1454,20 @@ export default function ForumPage() {
                    type="button"
                    onClick={onClick}
                    aria-current={active ? 'page' : undefined}
-                   className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-colors ${
+                   aria-label={railCollapsed ? dt(label) : undefined}
+                   title={railCollapsed ? dt(label) : undefined}
+                   className={`relative flex min-h-11 items-center rounded-xl py-2.5 text-sm font-bold transition-colors ${
+                     railCollapsed ? 'justify-center px-0' : 'gap-3 px-3.5'
+                   } ${
                      active
-                       ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
+                       ? 'bg-blue-50 text-blue-700 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-blue-600 dark:bg-blue-500/10 dark:text-blue-300'
                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-zinc-800/50'
                    }`}
                  >
-                   <Icon className="h-4.5 w-4.5" aria-hidden="true" />
-                   <span className="flex-1 text-left">{dt(label)}</span>
+                   <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+                   {!railCollapsed && <span className="flex-1 text-left">{dt(label)}</span>}
                    {badge ? (
-                     <span className="rounded-full bg-blue-600 px-1.5 text-[10px] font-black text-white">{badge}</span>
+                     <span className={`rounded-full bg-blue-600 px-1.5 text-[10px] font-black text-white ${railCollapsed ? 'absolute right-1 top-1' : ''}`}>{badge}</span>
                    ) : null}
                  </button>
                ))}
@@ -1424,10 +1475,12 @@ export default function ForumPage() {
                  type="button"
                  onClick={openCreateMenu}
                  aria-haspopup="dialog"
-                 className="mt-1 flex min-h-11 items-center justify-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
+                 aria-label={railCollapsed ? dt('Krijo') : undefined}
+                 title={railCollapsed ? dt('Krijo') : undefined}
+                 className={`mt-1 flex min-h-11 items-center justify-center gap-2 rounded-full bg-blue-600 text-sm font-black text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] ${railCollapsed ? 'px-0' : 'px-4'}`}
                >
                  <Plus className="h-4 w-4" aria-hidden="true" />
-                 {dt('Krijo')}
+                 {!railCollapsed && dt('Krijo')}
                </button>
              </nav>
           </div>
@@ -1750,7 +1803,7 @@ export default function ForumPage() {
                     <button
                       onClick={() => setFeedSortBy('foryou')}
                       aria-pressed={feedSortBy === 'foryou'}
-                      className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${feedSortBy === 'foryou' ? 'bg-white text-indigo-600 shadow-xs dark:bg-zinc-700 dark:text-indigo-300' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center gap-1 rounded-full px-3 py-2 text-[11px] font-bold transition-colors md:py-1 ${feedSortBy === 'foryou' ? 'bg-white text-indigo-600 shadow-xs dark:bg-zinc-700 dark:text-indigo-300' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       <Sparkles className="w-3 h-3" />
                       {dt('Për Ty')}
@@ -1758,14 +1811,14 @@ export default function ForumPage() {
                     <button
                       onClick={() => setFeedSortBy('recent')}
                       aria-pressed={feedSortBy === 'recent'}
-                      className={`rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${feedSortBy === 'recent' ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-700 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`rounded-full px-3 py-2 text-[11px] font-bold transition-colors md:py-1 ${feedSortBy === 'recent' ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-700 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       {dt('Të Rejat')}
                     </button>
                     <button
                       onClick={() => setFeedSortBy('trending')}
                       aria-pressed={feedSortBy === 'trending'}
-                      className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${feedSortBy === 'trending' ? 'bg-white text-blue-600 shadow-xs dark:bg-zinc-700 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center gap-1 rounded-full px-3 py-2 text-[11px] font-bold transition-colors md:py-1 ${feedSortBy === 'trending' ? 'bg-white text-blue-600 shadow-xs dark:bg-zinc-700 dark:text-blue-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       <TrendingUp className="w-3 h-3" />
                       {dt('Në Trend')}
@@ -1773,7 +1826,7 @@ export default function ForumPage() {
                     <button
                       onClick={() => setFeedSortBy('hot')}
                       aria-pressed={feedSortBy === 'hot'}
-                      className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${feedSortBy === 'hot' ? 'bg-white text-rose-500 shadow-xs dark:bg-zinc-700' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center gap-1 rounded-full px-3 py-2 text-[11px] font-bold transition-colors md:py-1 ${feedSortBy === 'hot' ? 'bg-white text-rose-500 shadow-xs dark:bg-zinc-700' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       <Flame className="w-3 h-3" />
                       {dt('Hot')}

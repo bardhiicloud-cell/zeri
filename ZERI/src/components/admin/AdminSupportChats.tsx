@@ -1,8 +1,10 @@
 import { dt } from '@/src/lib/dt';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, doc, onSnapshot, serverTimestamp, updateDoc, arrayUnion, query, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, where } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 import { ArrowLeft, Bot, CheckCircle2, Clipboard, Headphones, Info, MessageSquare, Search, Send, UserRound, X } from 'lucide-react';
-import { db } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
+import { supportDesk } from '../../lib/supportDeskApi';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
@@ -15,7 +17,6 @@ import {
   SUPPORT_STATUS_ORDER,
   SupportChatRecord,
   SupportChatStatus,
-  SupportMessage,
 } from '../../lib/supportChat';
 
 type QueueFilter = 'all' | SupportChatStatus;
@@ -34,19 +35,13 @@ function formatChatTime(value?: string | null) {
   return date.toLocaleString('sq-AL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-function createAgentMessage(content: string): SupportMessage {
-  return {
-    id: `agent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    role: 'agent',
-    content,
-    createdAt: new Date().toISOString(),
-  };
-}
 
-export default function AdminSupportChats() {
+export default function AdminSupportChats({ openChatId }: { openChatId?: string } = {}) {
   const currentUser = useStore((state) => state.currentUser);
   const [chats, setChats] = useState<SupportChatRecord[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(openChatId ?? null);
+  // A link (or the "someone is waiting" card) can open one conversation directly.
+  useEffect(() => { if (openChatId) setActiveChatId(openChatId); }, [openChatId]);
   const [queue, setQueue] = useState<QueueFilter>('all');
   const [search, setSearch] = useState('');
   const [input, setInput] = useState('');
@@ -58,15 +53,34 @@ export default function AdminSupportChats() {
   const [copiedId, setCopiedId] = useState<'conversation' | 'tracking' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const myUid = auth.currentUser?.uid || currentUser?.id || '';
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  const [agents, setAgents] = useState<Array<{ uid: string; name: string }>>([]);
+  const [transferTo, setTransferTo] = useState('');
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+
+  /**
+   * An administrator sees every conversation. An agent sees two things only: the queue of
+   * citizens waiting for someone, and the conversations they accepted. Once a colleague
+   * accepts a conversation it disappears from everyone else's screen (firestore.rules
+   * enforce the same, so this is not just a hidden row).
+   */
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribe = onSnapshot(
-      query(collection(db, 'supportChats'), orderBy('updatedAt', 'desc'), limit(STAFF_LIMITS.chats)),
+    const sources = isAdmin
+      ? [query(collection(db, 'supportChats'), orderBy('updatedAt', 'desc'), limit(STAFF_LIMITS.chats))]
+      : [
+          query(collection(db, 'supportChats'), where('status', '==', 'waiting_agent'), limit(STAFF_LIMITS.chats)),
+          query(collection(db, 'supportChats'), where('assignedTo', '==', myUid), limit(STAFF_LIMITS.chats)),
+        ];
+    const parts = new Map<number, SupportChatRecord[]>();
+    const unsubscribes = sources.map((source, index) => onSnapshot(
+      source,
       (snapshot) => {
-        const nextChats = snapshot.docs
-          .map((snapshotDoc) => normalizeSupportChat(snapshotDoc.id, snapshotDoc.data()))
-          .sort((a, b) => getSupportSortTime(b) - getSupportSortTime(a));
-        setChats(nextChats);
+        parts.set(index, snapshot.docs.map((snapshotDoc) => normalizeSupportChat(snapshotDoc.id, snapshotDoc.data())));
+        const merged = new Map<string, SupportChatRecord>();
+        for (const list of parts.values()) for (const chat of list) merged.set(chat.id, chat);
+        setChats([...merged.values()].sort((a, b) => getSupportSortTime(b) - getSupportSortTime(a)));
         setIsLoading(false);
         setError(null);
       },
@@ -75,12 +89,30 @@ export default function AdminSupportChats() {
         setIsLoading(false);
         setError('Bisedat nuk mund të ngarkohen. Kontrolloni lejet ose lidhjen dhe provoni përsëri.');
       }
-    );
-    return () => unsubscribe();
-  }, []);
+    ));
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [isAdmin, myUid]);
+
+  useEffect(() => { supportDesk.agents().then(setAgents).catch(() => setAgents([])); }, []);
+
+  /** Run one desk action with feedback; the listener brings the new state. */
+  const runDesk = async (label: string, action: () => Promise<unknown>, success?: string) => {
+    setBusyAction(label);
+    setError(null);
+    try {
+      await action();
+      if (success) toast.success(success);
+      return true;
+    } catch (reason) {
+      setError((reason as Error).message);
+      return false;
+    } finally {
+      setBusyAction(null);
+    }
+  };
 
   const queueCounts = useMemo(() => ({
-    all: chats.length,
+    all: chats.filter((chat) => chat.status !== 'resolved').length,
     waiting_agent: chats.filter((chat) => chat.status === 'waiting_agent').length,
     active_agent: chats.filter((chat) => chat.status === 'active_agent').length,
     bot: chats.filter((chat) => chat.status === 'bot').length,
@@ -90,7 +122,8 @@ export default function AdminSupportChats() {
   const visibleChats = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('sq');
     return chats
-      .filter((chat) => queue === 'all' || chat.status === queue)
+      // "Të gjitha" are the open ones; finished conversations live under their own filter (and are cleared by the owner).
+      .filter((chat) => (queue === 'all' ? chat.status !== 'resolved' : chat.status === queue))
       .filter((chat) => {
         if (!query) return true;
         return [chat.userName, chat.userEmail, chat.id, chat.agentTrackId, chat.department]
@@ -138,22 +171,14 @@ export default function AdminSupportChats() {
       return;
     }
 
-    const message = createAgentMessage(input.trim());
     setIsSending(true);
     setError(null);
     try {
-      await updateDoc(doc(db, 'supportChats', activeChat.id), {
-        messages: arrayUnion(message),
-        status: 'active_agent',
-        department,
-        assignedTo: currentUser?.id || null,
-        assignedAgentName: currentUser?.name || 'Agjenti i mbështetjes',
-        updatedAt: serverTimestamp(),
-      });
+      await supportDesk.reply(activeChat.id, input.trim());
       setInput('');
     } catch (reason) {
       console.error('Agent reply failed', reason);
-      setError('Përgjigjja nuk u dërgua. Teksti juaj u ruajt në fushë; provoni përsëri.');
+      setError(`${(reason as Error).message} Teksti juaj u ruajt në fushë.`);
     } finally {
       setIsSending(false);
     }
@@ -162,28 +187,38 @@ export default function AdminSupportChats() {
   const handleResolve = async () => {
     if (!activeChat || activeChat.status === 'resolved') return;
     if (!window.confirm('A dëshironi ta shënoni këtë bisedë si të zgjidhur?')) return;
-    try {
-      await updateDoc(doc(db, 'supportChats', activeChat.id), {
-        status: 'resolved',
-        resolvedAt: new Date().toISOString(),
-        resolvedBy: currentUser?.id || null,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (reason) {
-      console.error('Resolve support chat failed', reason);
-      setError('Biseda nuk u shënua si e zgjidhur. Provoni përsëri.');
-    }
+    const othersChat = Boolean(activeChat.assignedTo) && activeChat.assignedTo !== myUid;
+    const reason = othersChat ? window.prompt('Kjo bisedë është e një agjenti tjetër. Pse e mbyllni? (të paktën 5 shenja)') ?? '' : '';
+    if (othersChat && reason.trim().length < 5) return;
+    await runDesk('resolve', () => supportDesk.resolve(activeChat.id, reason || undefined), 'Biseda u mbyll.');
+  };
+
+  const handleAccept = async () => {
+    if (!activeChat) return;
+    await runDesk('accept', () => supportDesk.accept(activeChat.id), 'E pranuat bisedën. Tani është vetëm e juaja.');
+  };
+
+  const handleRelease = async () => {
+    if (!activeChat) return;
+    const othersChat = Boolean(activeChat.assignedTo) && activeChat.assignedTo !== myUid;
+    const reason = othersChat ? window.prompt('Pse ia merrni bisedën agjentit? (të paktën 5 shenja)') ?? '' : '';
+    if (othersChat && reason.trim().length < 5) return;
+    await runDesk('release', () => supportDesk.release(activeChat.id, reason || undefined), 'Biseda u kthye në radhë për një agjent tjetër.');
+  };
+
+  const handleTransfer = async (targetUid: string) => {
+    if (!activeChat || !targetUid) return;
+    const othersChat = Boolean(activeChat.assignedTo) && activeChat.assignedTo !== myUid;
+    const reason = othersChat ? window.prompt('Pse e transferoni bisedën e një agjenti tjetër? (të paktën 5 shenja)') ?? '' : '';
+    if (othersChat && reason.trim().length < 5) return;
+    const ok = await runDesk('transfer', () => supportDesk.transfer(activeChat.id, targetUid, reason || undefined), targetUid === myUid ? 'E morët përsipër bisedën.' : 'Biseda u transferua.');
+    if (ok) setTransferTo('');
   };
 
   const handleDepartmentChange = async (value: string) => {
     if (!activeChat || activeChat.status === 'resolved') return;
     setDepartment(value);
-    try {
-      await updateDoc(doc(db, 'supportChats', activeChat.id), { department: value, updatedAt: serverTimestamp() });
-    } catch (reason) {
-      console.error('Department update failed', reason);
-      setError('Departamenti nuk u përditësua.');
-    }
+    await runDesk('department', () => supportDesk.department(activeChat.id, value));
   };
 
   const statusButtons: Array<{ id: QueueFilter; label: string }> = [
@@ -266,7 +301,22 @@ export default function AdminSupportChats() {
               </div>
             </div>
 
-            {activeChat.status === 'resolved' ? <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">Kjo bisedë është shënuar e zgjidhur. Nuk mund të dërgoni më mesazhe.</div> : <form onSubmit={handleSend} className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 dark:border-white/10 dark:bg-slate-900"><label htmlFor="support-agent-reply" className="mb-2 block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Përgjigjja juaj</label><div className="flex gap-2"><input id="support-agent-reply" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Shkruaj përgjigjen si agjent..." disabled={isSending} className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-(--color-border-soft) bg-(--color-surface-subtle) px-3.5 text-sm text-(--color-text) outline-none focus:border-(--color-brand-primary) dark:border-white/10 dark:bg-slate-800 dark:text-white" /><button type="submit" disabled={!input.trim() || isSending} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-(--color-brand-primary) px-4 text-xs font-black text-white transition-colors hover:bg-(--color-brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50">{isSending ? 'Duke dërguar...' : 'Dërgo përgjigjen'}<Send className="h-4 w-4" aria-hidden="true" /></button></div>{error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}</form>}
+            {activeChat.status === 'waiting_agent' ? (
+              <div className="shrink-0 border-t border-(--color-border-soft) bg-amber-50 p-4 dark:border-white/10 dark:bg-amber-500/10">
+                <p className="text-sm font-bold text-amber-900 dark:text-amber-200">{dt('Qytetari po pret një agjent.')} {activeChat.agentRequestedAt ? `${dt('Kërkuar më')} ${formatChatTime(activeChat.agentRequestedAt)}.` : ''}</p>
+                <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{dt('Kur e pranoni, biseda bëhet vetëm e juaja dhe zhduket nga radha e agjentëve të tjerë.')}</p>
+                {error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
+                <button type="button" onClick={() => void handleAccept()} disabled={busyAction !== null} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-emerald-600 px-5 text-sm font-black text-white hover:bg-emerald-700 disabled:opacity-50"><CheckCircle2 className="h-4 w-4" aria-hidden="true" />{busyAction === 'accept' ? dt('Duke pranuar…') : dt('Prano bisedën')}</button>
+              </div>
+            ) : activeChat.status === 'active_agent' && activeChat.assignedTo && activeChat.assignedTo !== myUid ? (
+              <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-sm dark:border-white/10 dark:bg-slate-900">
+                <p className="font-semibold text-slate-600 dark:text-slate-300">{dt('Këtë bisedë e ka pranuar')} <strong>{activeChat.assignedAgentName || dt('një agjent tjetër')}</strong>.</p>
+                {isAdmin && <button type="button" onClick={() => void handleTransfer(myUid)} disabled={busyAction !== null} className="mt-2 inline-flex min-h-10 items-center rounded-[10px] border border-(--color-border-soft) px-4 text-xs font-black text-(--color-brand-primary) disabled:opacity-50">{dt('Merre përsipër (me arsye)')}</button>}
+                {error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
+              </div>
+            ) : activeChat.status === 'bot' ? (
+              <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">{dt('Qytetari po flet me asistentin automatik dhe nuk ka kërkuar agjent.')}</div>
+            ) : activeChat.status === 'resolved' ? <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">Kjo bisedë është shënuar e zgjidhur. Nuk mund të dërgoni më mesazhe.</div> : <form onSubmit={handleSend} className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 dark:border-white/10 dark:bg-slate-900"><label htmlFor="support-agent-reply" className="mb-2 block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Përgjigjja juaj</label><div className="flex gap-2"><input id="support-agent-reply" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Shkruaj përgjigjen si agjent..." disabled={isSending} className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-(--color-border-soft) bg-(--color-surface-subtle) px-3.5 text-sm text-(--color-text) outline-none focus:border-(--color-brand-primary) dark:border-white/10 dark:bg-slate-800 dark:text-white" /><button type="submit" disabled={!input.trim() || isSending} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-(--color-brand-primary) px-4 text-xs font-black text-white transition-colors hover:bg-(--color-brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50">{isSending ? 'Duke dërguar...' : 'Dërgo përgjigjen'}<Send className="h-4 w-4" aria-hidden="true" /></button></div>{error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}</form>}
           </>
         ) : <div className="flex flex-1 items-center justify-center p-8 text-center text-sm font-semibold text-slate-500 dark:text-slate-400"><MessageSquare className="mb-3 h-8 w-8 text-slate-300" aria-hidden="true" /><p>Zgjidhni një bisedë nga lista.</p></div>}
       </section>
@@ -275,6 +325,18 @@ export default function AdminSupportChats() {
         <div className="flex items-center justify-between"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Detajet</p><button type="button" onClick={() => setIsDetailsOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800" aria-label="Mbyll detajet"><X className="h-4 w-4" aria-hidden="true" /></button></div>
         <div className="mt-5 space-y-5 text-sm">
           <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Statusi</p><p className="mt-1 flex items-center gap-2 font-bold text-(--color-text) dark:text-white"><span className={cn('h-2 w-2 rounded-full', statusTone[activeChat.status])} />{SUPPORT_STATUS_LABELS[activeChat.status]}</p></div>
+          <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{dt('Agjenti')}</p><p className="mt-1 font-bold text-(--color-text) dark:text-white">{activeChat.assignedTo ? (activeChat.assignedTo === myUid ? dt('Ju') : activeChat.assignedAgentName || dt('Agjent tjetër')) : dt('Askush ende')}</p></div>
+          {activeChat.status === 'active_agent' && (activeChat.assignedTo === myUid || isAdmin) && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{dt('Kalimi i bisedës')}</p>
+              <select value={transferTo} onChange={(event) => setTransferTo(event.target.value)} aria-label={dt('Transfero te')} className="min-h-10 w-full rounded-lg border border-(--color-border-soft) bg-(--color-surface-subtle) px-2 text-xs font-bold dark:border-white/10 dark:bg-slate-800 dark:text-white">
+                <option value="">{dt('Transfero te…')}</option>
+                {agents.map((agent) => <option key={agent.uid} value={agent.uid}>{agent.name || agent.uid}</option>)}
+              </select>
+              <button type="button" disabled={!transferTo || busyAction !== null} onClick={() => void handleTransfer(transferTo)} className="min-h-9 w-full rounded-lg border border-(--color-border-soft) text-xs font-black text-(--color-brand-primary) disabled:opacity-40">{dt('Transfero')}</button>
+              <button type="button" disabled={busyAction !== null} onClick={() => void handleRelease()} className="min-h-9 w-full rounded-lg border border-(--color-border-soft) text-xs font-black text-slate-600 disabled:opacity-40 dark:text-slate-300">{dt('Ktheje në radhë')}</button>
+            </div>
+          )}
           <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Departamenti</p><select value={department} onChange={(event) => void handleDepartmentChange(event.target.value)} disabled={activeChat.status === 'resolved'} className="mt-1 min-h-10 w-full rounded-lg border border-(--color-border-soft) bg-(--color-surface-subtle) px-2 text-xs font-bold text-(--color-text) outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white">{SUPPORT_DEPARTMENTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></div>
           <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">ID i bisedës</p><button type="button" onClick={() => void copyIdentifier(activeChat.id, 'conversation')} className="mt-1 flex w-full items-center gap-2 break-all text-left font-mono text-xs font-bold text-(--color-brand-primary)"><Clipboard className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />{copiedId === 'conversation' ? 'U kopjua' : activeChat.id}</button></div>
           <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">ID i ndjekjes</p><button type="button" disabled={!activeChat.agentTrackId} onClick={() => activeChat.agentTrackId && void copyIdentifier(activeChat.agentTrackId, 'tracking')} className="mt-1 flex w-full items-center gap-2 break-all text-left font-mono text-xs font-bold text-(--color-brand-primary) disabled:text-slate-400"><Clipboard className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />{copiedId === 'tracking' ? 'U kopjua' : activeChat.agentTrackId || 'Pa kërkesë aktive'}</button></div>

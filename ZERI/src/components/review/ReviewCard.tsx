@@ -17,6 +17,7 @@
  * not a deletion.
  */
 import { useState } from 'react';
+import { MediaViewer, type ViewerItem } from './MediaViewer';
 import { dt } from '../../lib/dt';
 import type { Report } from '../../types';
 import {
@@ -70,6 +71,14 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
   ].filter(Boolean);
 
   const marked = new Set(markedImages);
+
+  // Photos first, then videos, documents and voice notes, in one sequence for the viewer.
+  const others = (report.media ?? []).filter((m) => m.type !== 'image' && m.url);
+  const viewerItems: ViewerItem[] = [
+    ...images.map((url) => ({ url, type: 'image' as const })),
+    ...others.map((m) => ({ url: m.url, type: m.type, name: m.name })),
+  ];
+  const [viewerAt, setViewerAt] = useState<number | null>(null);
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
@@ -125,7 +134,7 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
                   <div key={`${url}_${i}`} className="group relative">
                     <button
                       type="button"
-                      onClick={() => setOpenImage(url)}
+                      onClick={() => setViewerAt(Math.max(0, images.indexOf(url)))}
                       onMouseEnter={() => setHoveredImage(url)}
                       onMouseLeave={() => setHoveredImage(null)}
                       onFocus={() => setHoveredImage(url)}
@@ -152,7 +161,7 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
                     <div className="absolute inset-x-0 bottom-0 flex justify-center gap-1 rounded-b-xl bg-slate-900/75 p-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                       <button
                         type="button"
-                        onClick={() => setOpenImage(url)}
+                        onClick={() => setViewerAt(Math.max(0, images.indexOf(url)))}
                         aria-label={dt('Zmadho')}
                         className="rounded p-1 text-white hover:bg-white/20"
                       >
@@ -192,6 +201,22 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
                 />
               </div>
             )}
+          </section>
+        )}
+
+        {others.length > 0 && (
+          <section>
+            <h4 className="mb-2 text-[11px] font-black uppercase tracking-wider text-slate-500">{dt('Video, dokumente dhe audio')} ({others.length})</h4>
+            <div className="flex flex-wrap gap-2">
+              {others.map((m, i) => (
+                <button key={`${m.url}_${i}`} type="button" onClick={() => setViewerAt(images.length + i)}
+                  className="relative grid h-24 w-32 place-items-center overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-900 text-xs font-bold text-white hover:border-blue-500 dark:border-white/10">
+                  {m.type === 'video'
+                    ? <><video src={m.url} muted preload="metadata" className="absolute inset-0 h-full w-full object-cover opacity-80" /><span className="relative rounded-full bg-black/60 px-3 py-1">▶ {dt('Video')}</span></>
+                    : <span className="px-2 text-center">{m.type === 'audio' ? dt('Audio') : dt('Dokument')}<br /><span className="font-normal text-white/70">{m.name}</span></span>}
+                </button>
+              ))}
+            </div>
           </section>
         )}
 
@@ -343,7 +368,9 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
         </section>
       </div>
 
-      {/* Lightbox */}
+      {viewerAt !== null && viewerItems.length > 0 && <MediaViewer items={viewerItems} start={viewerAt} onClose={() => setViewerAt(null)} />}
+
+      {/* Lightbox (kept for other callers of setOpenImage) */}
       {openImage && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 p-4"

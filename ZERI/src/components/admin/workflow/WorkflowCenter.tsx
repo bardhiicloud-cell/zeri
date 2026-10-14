@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { Heart, HeartPulse, ListChecks, Newspaper, FileText } from 'lucide-react';
+import { Heart, HeartPulse, ListChecks, Megaphone, Newspaper, FileText } from 'lucide-react';
+import NewsTipsPanel from './NewsTipsPanel';
 import { dt } from '@/src/lib/dt';
 import { db } from '../../../lib/firebase';
 import { useStore } from '../../../lib/store';
@@ -12,6 +13,7 @@ import { useServerReports } from '../../../lib/adminReportsApi';
 import { takeDecision } from '../../../lib/decisionsApi';
 import { DECISION_KINDS } from '../../../lib/decisionRules';
 import {
+  daysSince,
   docStage,
   pipelineRoleFor,
   planDocMove,
@@ -25,19 +27,20 @@ import {
 import type { Report } from '../../../types';
 import ReportDetailModal from '../../ReportDetailModal.tsx';
 import { StageBoard, type BoardItem, type MoveCheck } from './StageBoard';
+import { ReportsBulkDrawer } from './ReportsBulkTools';
 
 interface Domain {
-  kind: BoardKind;
+  kind: BoardKind | 'tips';
   label: string;
   section: AdminSection;
   icon: typeof FileText;
 }
 
 const DOMAINS: readonly Domain[] = [
-  { kind: 'report', label: 'Raportet', section: 'reports', icon: FileText },
   { kind: 'donation', label: 'Donacionet', section: 'donations', icon: Heart },
   { kind: 'health', label: 'Regjistri shëndetësor', section: 'health', icon: HeartPulse },
-  { kind: 'news', label: 'Lajmet', section: 'news', icon: Newspaper },
+  { kind: 'tips', label: 'Lajme nga qytetarët', section: 'news', icon: Megaphone },
+  { kind: 'news', label: 'Artikujt tanë', section: 'news', icon: Newspaper },
 ];
 
 /** A date that may be an ISO string, a Firestore timestamp or missing. */
@@ -59,9 +62,9 @@ export default function WorkflowCenter() {
   const domains = DOMAINS.filter(d => {
     if (!canAccessSection(currentUser, d.section)) return false;
     // A municipality answers reports and health cases; appeals and news are not its to move.
-    return !(currentUser?.role === 'municipality' && (d.kind === 'donation' || d.kind === 'news'));
+    return !(currentUser?.role === 'municipality' && (d.kind === 'donation' || d.kind === 'news' || d.kind === 'tips'));
   });
-  const [kind, setKind] = useState<BoardKind | null>(null);
+  const [kind, setKind] = useState<Domain['kind'] | null>(null);
   const active = domains.find(d => d.kind === kind) ?? domains[0];
 
   if (!active) {
@@ -73,8 +76,8 @@ export default function WorkflowCenter() {
       <header className="flex items-start gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white"><ListChecks className="h-5 w-5" aria-hidden="true" /></span>
         <div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white">{dt('Rrjedha e Aprovimit')}</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-300">{dt('Zgjidh një ose të gjitha dhe i zhvendos nga një fazë te tjetra. Çdo lëvizje kontrollohet nga serveri dhe regjistrohet.')}</p>
+          <h1 className="text-xl font-black text-slate-900 dark:text-white">{dt('Aprovime të tjera: donacione, shëndetësi, lajme')}</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{dt('Raportimet e qytetarëve punohen te "Raportet". Këtu kalojnë faza kërkesat për donacione, rastet shëndetësore dhe lajmet; çdo lëvizje kontrollohet nga serveri dhe regjistrohet.')}</p>
         </div>
       </header>
 
@@ -99,85 +102,8 @@ export default function WorkflowCenter() {
         </div>
       )}
 
-      {active.kind === 'report' ? <ReportsBoard key="report" /> : <DocBoard key={active.kind} kind={active.kind} />}
+      {active.kind === 'tips' ? <NewsTipsPanel key="tips" /> : <DocBoard key={active.kind} kind={active.kind as DocBoardKind} />}
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Reports                                                             */
-/* ------------------------------------------------------------------ */
-
-const STATUS_FOR: Record<string, 'Approved' | 'In Progress' | 'Resolved' | 'Rejected'> = {
-  pass_to_municipality: 'Approved',
-  municipality_accept: 'In Progress',
-  municipality_done: 'Resolved',
-  reject: 'Rejected',
-};
-
-function ReportsBoard() {
-  const currentUser = useStore(s => s.currentUser);
-  const scope = useStore(s => s.userMunicipality);
-  const storeReports = useStore(s => s.reports);
-  const updateReportStatus = useStore(s => s.updateReportStatus);
-  const scopeName = isSpecificScope(scope) ? normalizeScope(scope) : undefined;
-  const list = useServerReports({ municipality: scopeName }, true);
-  const [openId, setOpenId] = useState<string | null>(null);
-
-  const fromServer = list.status !== 'error';
-  const reports = useMemo<Report[]>(
-    () => (fromServer ? list.items : filterByScope(storeReports, scope)),
-    [fromServer, list.items, storeReports, scope]
-  );
-  const role = pipelineRoleFor(currentUser?.role ?? '', currentUser?.permissions ?? []);
-  const byId = useMemo(() => new Map(reports.map(r => [r.id, r])), [reports]);
-
-  const items = useMemo<BoardItem[]>(
-    () => reports.map(r => ({
-      id: r.id,
-      title: r.title || r.trackingId || r.id,
-      subtitle: [r.location?.municipality, r.category].filter(Boolean).join(' · '),
-      meta: [r.trackingId, shortDate(r.createdAt)].filter(Boolean).join(' · '),
-      tag: r.urgency,
-      stage: reportStage(r),
-    })),
-    [reports]
-  );
-
-  const check = useCallback((item: BoardItem, target: StageKey): MoveCheck => {
-    const report = byId.get(item.id);
-    if (!report) return { ok: false, reason: dt('Raporti nuk është më në listë.') };
-    const plan = planReportMove(report, target, role);
-    return plan.ok === false ? { ok: false, reason: plan.reason } : { ok: true, note: plan.note };
-  }, [byId, role]);
-
-  const move = useCallback(async (item: BoardItem, target: StageKey, note: string) => {
-    const report = byId.get(item.id);
-    if (!report) throw new Error(dt('Raporti nuk është më në listë.'));
-    const plan = planReportMove(report, target, role);
-    if (plan.ok === false) throw new Error(plan.reason);
-    await updateReportStatus(report.id, STATUS_FOR[plan.transition], note || undefined);
-  }, [byId, role, updateReportStatus]);
-
-  const opened = openId ? byId.get(openId) : undefined;
-
-  return (
-    <>
-      <StageBoard
-        kind="report"
-        items={items}
-        loading={list.status === 'loading' || list.status === 'idle'}
-        error={list.status === 'error' ? dt('Lista nga serveri nuk u ngarkua; po shfaqen raportet e ngarkuara në shfletues.') : null}
-        check={check}
-        move={move}
-        onOpen={item => setOpenId(item.id)}
-        onMoved={() => void list.refresh()}
-        moreAvailable={fromServer && Boolean(list.nextCursor)}
-        onLoadMore={list.loadMore}
-        loadingMore={list.isLoadingMore}
-      />
-      {opened && <ReportDetailModal report={opened} onClose={() => { setOpenId(null); void list.refresh(); }} />}
-    </>
   );
 }
 
@@ -219,7 +145,7 @@ function useRecords(kind: DocBoardKind): { rows: Raw[]; loading: boolean; error:
 
 function describe(kind: DocBoardKind, row: Raw): Omit<BoardItem, 'stage'> {
   if (kind === 'donation') {
-    return { id: row.id, title: row.title || row.id, subtitle: row.category, meta: shortDate(row.createdAt) };
+    return { id: row.id, title: row.title || row.id, subtitle: row.category, meta: shortDate(row.createdAt), ageDays: daysSince(row.createdAt) };
   }
   if (kind === 'health') {
     return {
@@ -229,6 +155,8 @@ function describe(kind: DocBoardKind, row: Raw): Omit<BoardItem, 'stage'> {
       subtitle: [row.municipality, row.category].filter(Boolean).join(' · '),
       meta: shortDate(row.createdAt),
       tag: row.urgency,
+      ageDays: daysSince(row.createdAt),
+      urgent: /kritik|urgjent/i.test(String(row.urgency ?? '')),
     };
   }
   return {
@@ -236,6 +164,7 @@ function describe(kind: DocBoardKind, row: Raw): Omit<BoardItem, 'stage'> {
     title: row.title || row.id,
     subtitle: [row.municipality, row.category].filter(Boolean).join(' · '),
     meta: shortDate(row.date || row.createdAt),
+    ageDays: daysSince(row.date || row.createdAt),
   };
 }
 

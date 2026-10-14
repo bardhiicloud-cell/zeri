@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Crop, HelpCircle, ImageOff, Loader2, MapPin, StickyNote, Trash2, Undo2, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Crop, HelpCircle, ImageOff, Loader2, MapPin, Send, StickyNote, Trash2, Undo2, X, XCircle } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import type { Report } from '../../types';
@@ -15,6 +15,11 @@ import { addNote, escalateReport, loadCase, requestInfo, resolveEscalation, type
 import { assignReport, claimReport, releaseReport, type Holder } from '../../lib/reportAssignmentApi';
 import { useStore } from '../../lib/store';
 import { useStaffDirectory } from '../../lib/useCitizenDirectory';
+import ReviewRouting from './ReviewRouting';
+import { routeReport } from '../../lib/routingExport';
+import { contactRefFor, ensureContact } from '../../lib/routingContacts';
+import { sendReportEmail } from '../../lib/institutionMailApi';
+import type { ClassifyChange } from '../../lib/reportClassifyApi';
 
 /**
  * Review Mode: open a record, check it, act, and move to the next one.
@@ -99,7 +104,21 @@ export default function ReviewMode({
     [staff, teamAgents, isDispatcher]
   );
 
-  const current = ids[index] ? getReport(ids[index]) ?? queue[index] : undefined;
+  /** Classification saved during this review, shown at once instead of after the list reloads. */
+  const [classified, setClassified] = useState<Record<string, ClassifyChange>>({});
+  const baseCurrent = ids[index] ? getReport(ids[index]) ?? queue[index] : undefined;
+  const current = useMemo(() => {
+    if (!baseCurrent) return undefined;
+    const saved = classified[baseCurrent.id];
+    if (!saved) return baseCurrent;
+    return {
+      ...baseCurrent,
+      ...(saved.topicCategory ? { topicCategory: saved.topicCategory } : {}),
+      ...(saved.zone ? { zone: saved.zone } : {}),
+      ...(saved.municipality ? { location: { ...baseCurrent.location, municipality: saved.municipality } } : {}),
+    } as Report;
+  }, [baseCurrent, classified]);
+  const routed = useMemo(() => (current ? routeReport(current) : null), [current]);
   const images = current ? photos[current.id] ?? current.images ?? [] : [];
   const progress = reviewProgress(ids, handled);
   const finished = progress.remaining === 0 && ids.length > 0;
@@ -145,6 +164,21 @@ export default function ReviewMode({
   }, [finishRecord]);
 
   const approve = () => { if (current && canApprove && !busy) void run(() => onApprove(current.id), current.id, dt('Aprovuar')); };
+  /** Approve, then hand the report to the body that answers it, in one step. */
+  const approveAndSend = () => {
+    if (!current || !routed || !canApprove || busy) return;
+    const recipient = routed.resolution.primary;
+    void run(async () => {
+      await onApprove(current.id);
+      await ensureContact(recipient, routed.municipality);
+      try {
+        await sendReportEmail(current.id, contactRefFor(recipient, routed.municipality).id, '');
+        toast.success(`${dt('U dërgua te')} ${recipient.name}.`);
+      } catch (error) {
+        toast.error(`${dt('Aprovuar, por emaili nuk u dërgua')}: ${(error as Error)?.message ?? ''}`);
+      }
+    }, current.id, dt('Aprovuar dhe dërguar'));
+  };
   const reject = (reason: string) => { if (current) void run(() => onReject(current.id, reason), current.id, dt('Refuzuar')).then(() => setAsk(null)); };
   const remove = () => {
     if (!current || !canDelete || busy) return;
@@ -408,21 +442,18 @@ export default function ReviewMode({
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /> {current.location.address}
                 </p>
               )}
+              <ReviewRouting report={current} canClassify={canEditPhotos} onClassified={(id, change) => setClassified(previous => ({ ...previous, [id]: { ...previous[id], ...change } }))} />
               {['Draft', 'Pending Review'].includes(current.status) && (() => {
                 const holder = holderOf(current);
                 const mine = holder.assignedToUid && holder.assignedToUid === me?.id;
                 return (
                   <div className="mt-5 rounded-xl border border-slate-200 p-3 dark:border-white/10">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Kush e ka përsipër')}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Shqyrtuesi i caktuar')}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      {holder.assignedTo ? (mine ? `${holder.assignedTo} (${dt('ju')})` : holder.assignedTo) : dt('Askush, në radhën e përbashkët')}
+                      {holder.assignedTo ? (mine ? `${holder.assignedTo} (${dt('ju')})` : holder.assignedTo) : dt('Pa shqyrtues — pret caktimin nga sistemi ose menaxheri')}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {canApprove && !mine && (!holder.assignedToUid || canAssign) && (
-                        <button type="button" disabled={busy} onClick={() => void changeHolder(() => claimReport(current.id), { assignedToUid: me?.id ?? '', assignedTo: me?.name ?? '' }, dt('E morët përsipër.'))} className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 disabled:opacity-40 dark:bg-white dark:text-slate-900">
-                          {dt('Merr përsipër')}
-                        </button>
-                      )}
+                      {/* No self-claim: the system or a manager assigns the reviewer (Detyrat). */}
                       {holder.assignedToUid && (mine || canAssign) && (
                         <button type="button" disabled={busy} onClick={() => (mine ? void changeHolder(() => releaseReport(current.id, { expectedHolderUid: holder.assignedToUid }), { assignedToUid: '', assignedTo: '' }, dt('U kthye në radhën e përbashkët.')) : setAsk({ kind: 'handover', text: '' }))} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:text-slate-200">
                           {dt('Lësho')}
@@ -494,6 +525,11 @@ export default function ReviewMode({
             {canApprove && current.status === 'Pending Review' && !thread?.awaitingInfo && (
               <button type="button" onClick={approve} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" aria-hidden="true" />} {dt('Aprovo & vazhdo')} <kbd className="rounded bg-white/20 px-1 text-[10px]">A</kbd>
+              </button>
+            )}
+            {canApprove && current.status === 'Pending Review' && !thread?.awaitingInfo && routed?.resolution.primary.sendable && (
+              <button type="button" onClick={approveAndSend} disabled={busy} title={routed.resolution.primary.name} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-40">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" aria-hidden="true" />} {dt('Aprovo & dërgo te institucioni')}
               </button>
             )}
             {canEditPhotos && ['Pending Review', 'Draft'].includes(current.status) && !thread?.awaitingInfo && (
