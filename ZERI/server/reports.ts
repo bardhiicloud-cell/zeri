@@ -11,6 +11,7 @@
  * status; the direct-write fallback stored all of them, the server path silently
  * dropped them, so reports filed the normal way lost data that 28 files read.
  */
+import { formatTrackingId } from './trackingIds';
 import { getAccountabilityDueDate, getAccountabilityProfile } from '../src/lib/accountability';
 
 export const URGENCY_LEVELS = ['E ulët', 'Mesatare', 'E lartë', 'Kritike'] as const;
@@ -37,6 +38,8 @@ export interface ParsedReport {
   media: ReportMedia[];
   /** A tracking id the client proposed; honoured only if well formed and unused. */
   requestedTrackingId: string;
+  /** Id the client generated up front (media is stored under it); makes a retry idempotent. */
+  clientReportId: string;
   /** Advisory output of the AI photo analysis, relayed by the client (untrusted). */
   ai: { score?: number; routingReason?: string; forensicsReport?: string };
 }
@@ -47,6 +50,7 @@ export type ParseResult =
 
 const TOPIC_ID = /^[a-z0-9-]{1,40}$/;
 const TRACKING_ID = /^[A-Z0-9-]{8,40}$/;
+const CLIENT_REPORT_ID = /^[A-Za-z0-9]{20}$/;
 
 /** Name stored for an anonymous report, whatever the client sent. */
 export const ANONYMOUS_AUTHOR_NAME = 'Qytetar Anonim';
@@ -120,6 +124,7 @@ export function parseReportInput(body: unknown): ParseResult {
       isAnonymous,
       media,
       requestedTrackingId: TRACKING_ID.test(requested) ? requested : '',
+      clientReportId: CLIENT_REPORT_ID.test(String(input.clientReportId ?? '')) ? String(input.clientReportId) : '',
       ai,
     },
   };
@@ -127,8 +132,7 @@ export function parseReportInput(body: unknown): ParseResult {
 
 /** `ZQ-YYYYMMDD-<time><random>` - the same shape the client has always shown. */
 export function generateTrackingId(nowMs: number, randomHex: string): string {
-  const day = new Date(nowMs).toISOString().slice(0, 10).replace(/-/g, '');
-  return `ZQ-${day}-${nowMs.toString(36).toUpperCase()}${randomHex.toUpperCase()}`;
+  return formatTrackingId('ZQ', nowMs, randomHex);
 }
 
 export interface BuildContext {

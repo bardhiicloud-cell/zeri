@@ -631,7 +631,6 @@ export default function ReportIssue() {
       // The report id is generated up front so media lands under
       // reports/{uid}/{reportId}/... which the Storage rules accept.
       const reportRef = doc(collection(db, 'reports'));
-      const trackingId = createTrackingId('ZQ', reportRef.id);
 
       // Check if Forensics found an issue during AI Analyze step earlier
       if (aiInsights && aiInsights.authenticityScore < 40) {
@@ -734,7 +733,6 @@ export default function ReportIssue() {
       }
 
       reportData.id = reportRef.id;
-      reportData.trackingId = trackingId;
 
       /**
        * Everything that tells the citizen "your report exists" lives here and is
@@ -764,10 +762,9 @@ export default function ReportIssue() {
 
       const uploadResults = await Promise.allSettled(
         mediaItems.map(async (media) => {
-          const downloadUrl = await uploadFileToStorage(media.file, 'reports', {
-            userId: authorUid,
-            scope: reportRef.id,
-          });
+          // One retry: a flaky mobile link is the usual reason a photo or video fails.
+          const send = () => uploadFileToStorage(media.file, 'reports', { userId: authorUid, scope: reportRef.id });
+          const downloadUrl = await send().catch(() => send());
           return {
             url: downloadUrl,
             type: media.type,
@@ -782,10 +779,15 @@ export default function ReportIssue() {
       if (failedUploads.length > 0) {
         const firstReason = (failedUploads[0] as PromiseRejectedResult).reason;
         const reasonText = firstReason instanceof Error ? firstReason.message : 'Gabim i panjohur gjatë ngarkimit.';
-        toast.error(
-          `${failedUploads.length} nga ${mediaItems.length} dëshmi nuk u ngarkuan dhe raporti do të ruhet pa to. Arsyeja: ${reasonText}`,
-          { duration: 8000 }
+        console.warn('Media upload failed:', reasonText);
+        // Never drop the citizen's evidence silently: they choose to send without it or retry.
+        const sendWithout = window.confirm(
+          dt(`${failedUploads.length} nga ${mediaItems.length} foto/video nuk u ngarkuan (${reasonText}). Shtypni "OK" për ta dërguar raportin pa to, ose "Anulo" për të provuar përsëri (të dhënat ruhen).`)
         );
+        if (!sendWithout) {
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       reportData.images = uploadedMedia.filter(m => m.type === 'image').map(m => m.url);
@@ -818,7 +820,8 @@ export default function ReportIssue() {
               media: reportData.media,
               isAnonymous: reportData.isAnonymous === true,
               authorName: reportData.authorName ?? '',
-              trackingId: reportData.trackingId,
+              // The server mints the Track ID; the report id only makes a retry idempotent.
+              clientReportId: reportRef.id,
               aiCategoryScore: reportData.aiCategoryScore,
               aiRoutingReason: reportData.aiRoutingReason,
               aiForensicsReport: reportData.aiForensicsReport,
@@ -827,7 +830,7 @@ export default function ReportIssue() {
 
           if (response.ok) {
             const created = await response.json();
-            const serverTrackingId = created.trackingId || reportData.trackingId;
+            const serverTrackingId = created.trackingId;
             reportData.trackingId = serverTrackingId;
             reportData.id = created.id;
 
@@ -854,6 +857,8 @@ export default function ReportIssue() {
       }
 
       try {
+        // Server unreachable: the only case the browser has to mint an id itself.
+        reportData.trackingId = createTrackingId('ZQ', reportRef.id);
         await setDoc(reportRef, {
           ...reportData,
           createdAt: serverTimestamp() // native firebase timestamp

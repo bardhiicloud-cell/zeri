@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import { getReportTopic } from '../../lib/reportTopics';
 
 import { dt } from '@/src/lib/dt';
+import { trackingIdOf } from '../../lib/trackingId';
 interface RegistryRowProps {
   report: Report;
   dt: (text: string) => string;
@@ -26,7 +27,7 @@ export function RegistryRow({ report, dt, onOpen, onShare }: RegistryRowProps) {
   const urgencyTone = report.urgency === 'Kritike' ? 'text-rose-700 dark:text-rose-300' : report.urgency === 'E lartë' ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400';
   const mediaUrl = report.media?.[0]?.url || report.images?.[0];
   const mediaType = report.media?.[0]?.type || 'image';
-  const trackingId = report.trackingId || `ZQ-${report.id.substring(0, 8).toUpperCase()}`;
+  const trackingId = trackingIdOf(report);
   const reportTopic = getReportTopic(report);
 
   return (

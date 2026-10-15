@@ -187,3 +187,11 @@ describe('generateTrackingId', () => {
     expect(generateTrackingId(1, 'aaaa')).not.toBe(generateTrackingId(1, 'bbbb'));
   });
 });
+
+describe('clientReportId', () => {
+  it('keeps a well-formed Firestore auto id and drops anything else', () => {
+    expect(parsed({ clientReportId: 'aB3dE5gH7jK9mN1pQ3sT' }).clientReportId).toBe('aB3dE5gH7jK9mN1pQ3sT');
+    expect(parsed({ clientReportId: '../../x' }).clientReportId).toBe('');
+    expect(parsed({}).clientReportId).toBe('');
+  });
+});

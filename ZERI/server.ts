@@ -87,8 +87,9 @@ import { registerDebateAdminRoutes } from './server/debateAdmin';
 import { buildRoleClaims } from './server/roleClaims';
 import { VoteError, castVote } from './server/polls';
 import { UpvoteError, castUpvote } from './server/upvotes';
-import { buildReportDocument, generateTrackingId, parseReportInput } from './server/reports';
+import { buildReportDocument, parseReportInput } from './server/reports';
 import { randomBytes } from 'node:crypto';
+import { reserveTrackingId } from './server/trackingIds';
 import { validateDateOfBirth } from './src/lib/validation';
 import * as editorialFirewall from './server/editorialFirewall.js';
 
@@ -1957,6 +1958,24 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
   }
   const report = parsed.value;
 
+  // ── Idempotency: a retry of the same submission returns the same report ─────
+  // The form generates the report id before uploading media. If the first request
+  // got through but the answer was lost (slow mobile link, double tap), the retry
+  // must hand back the existing report and Track ID, never mint a second one.
+  if (report.clientReportId) {
+    try {
+      const existing = await db().collection('reports').doc(report.clientReportId).get();
+      if (existing.exists) {
+        const data = existing.data() as { authorId?: string; trackingId?: string; status?: string };
+        if (data.authorId === actor.uid && data.trackingId) {
+          return res.status(200).json({ id: existing.id, trackingId: data.trackingId, status: data.status ?? 'Pending Review', duplicate: true } as any);
+        }
+      }
+    } catch (error: any) {
+      console.error('[REPORTS] idempotency check failed:', error?.message);
+    }
+  }
+
   // ── Duplicate-window check: same uid + same title within 10 minutes ──────
   try {
     const since = new Date(Date.now() - 10 * 60 * 1000);
@@ -1984,21 +2003,18 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
     // a legitimate report), but keep the write validated server-side.
   }
 
-  // ── Tracking id: honour the client's only if it is well formed and unused ─
-  // A client-chosen id used to be stored as is, so one citizen could register
-  // another report's tracking id and make the public lookup ambiguous.
+  // ── Tracking id: minted here, once, and reserved in a unique registry ───────
+  // The client's proposal is ignored: the server is the only place that mints ids.
   const nowMs = Date.now();
-  let trackId = report.requestedTrackingId;
-  if (trackId) {
-    try {
-      const taken = await db().collection('reports').where('trackingId', '==', trackId).limit(1).get();
-      if (!taken.empty) trackId = '';
-    } catch (error: any) {
-      console.error('[REPORTS] tracking id check failed:', error?.message);
-      trackId = '';
-    }
+  let trackId: string;
+  try {
+    trackId = await reserveTrackingId(db(), {
+      prefix: 'ZQ', kind: 'report', ownerUid: actor.uid, nowMs, randomHex: () => randomBytes(4).toString('hex'),
+    });
+  } catch (error: any) {
+    console.error('[REPORTS] tracking id reservation failed:', error?.message);
+    return res.status(500).json({ error: 'Raportimi nuk u ruajt. Provoni përsëri.' });
   }
-  if (!trackId) trackId = generateTrackingId(nowMs, randomBytes(4).toString('hex'));
 
   const reportDoc = buildReportDocument(report, {
     uid: actor.uid,
@@ -2009,7 +2025,16 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
   });
 
   try {
-    const ref = await db().collection('reports').add(reportDoc);
+    // The client-chosen id only names the document (media lives under it); an id owned
+    // by someone else, or already taken, falls back to a fresh one.
+    let ref = report.clientReportId ? db().collection('reports').doc(report.clientReportId) : db().collection('reports').doc();
+    try {
+      await ref.create(reportDoc);
+    } catch (error: any) {
+      if (!report.clientReportId || !(error?.code === 6 || /ALREADY_EXISTS/i.test(String(error?.message)))) throw error;
+      ref = db().collection('reports').doc();
+      await ref.create(reportDoc);
+    }
 
     audit('report.create', req, { reportId: ref.id, trackId });
     void Promise.all([loadPriorityRules(db()), loadPool(db(), authAdmin()).catch(() => null)])
