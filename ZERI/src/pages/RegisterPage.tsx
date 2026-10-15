@@ -1,8 +1,9 @@
 import { dt } from '@/src/lib/dt';
+import { BrandLockup } from '@/src/components/BrandLogo';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
-import { UserPlus, ShieldAlert, Phone, ArrowLeft, Mail, Lock, User, Shield, CheckCircle2, Calendar } from 'lucide-react';
+import { UserPlus, ShieldAlert, Phone, ArrowLeft, Mail, Lock, User, CheckCircle2, Calendar } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle } from '../lib/firebase';
@@ -195,16 +196,18 @@ export default function RegisterPage() {
         <ArrowLeft className="w-4 h-4" /> <span>{t('login_back')}</span>
       </button>
 
-      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-end p-16 overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-stretch p-16 overflow-hidden">
+                <img src="/cover.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(59,130,246,0.15),transparent_50%)]"></div>
-        <div className="relative z-10 max-w-xl">
-           <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(37,99,235,0.3)] border border-blue-500/50">
-             <Shield className="w-8 h-8 text-white" />
-           </div>
-           <h1 className="text-5xl font-bold mb-6 title-serif tracking-tight leading-tight">{dt(`Bashkohu me`)} <br />{dt(`Zërin e Qytetarëve`)}<span className="text-blue-500">.</span>
-           </h1>
+        <div className="relative z-10 flex h-full w-full max-w-xl flex-col justify-between">
+           <BrandLockup size="lg" />
+           <div>
+           <div className="mb-5 h-px w-16 bg-gradient-to-r from-cyan-400 to-transparent"></div>
+           <h1 className="text-4xl font-bold mb-5 tracking-tight leading-tight">{dt(`Së bashku për një Kosovë më të mirë`)}<span className="text-cyan-400">.</span></h1>
            <p className="text-lg text-slate-400 font-medium max-w-md leading-relaxed">{dt(`Krijo llogarinë tënde për të raportuar, mbështetur vizionet e komunitetit dhe ndërtuar një të ardhme më të përgjegjshme përmes platformës.`)}
            </p>
+           </div>
         </div>
       </div>
 

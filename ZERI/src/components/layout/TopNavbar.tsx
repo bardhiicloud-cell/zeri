@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { BrandLogo } from '@/src/components/BrandLogo';
 import { useEffect, useState } from 'react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -87,18 +88,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
 
       {/* Brand */}
       <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={dt('Zëri Qytetarëve — Ballina')}>
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--color-brand-primary) text-sm font-black text-white">
-          Z
-        </span>
-        <span className="flex flex-col leading-none">
-          <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
-            {dt('Zëri Qytetarëve')}
-            <span className="text-blue-600">.</span>
-          </span>
-          <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400">
-            {dt('Republika e Kosovës')}
-          </span>
-        </span>
+        <BrandLogo />
       </Link>
 
       {/* Primary links */}
