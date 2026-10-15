@@ -170,3 +170,40 @@ export const GA_CONFIG = {
   client_storage: 'none' as const,
   cookie_flags: 'SameSite=None; Secure',
 };
+
+/* ------------------------------------------------------------------ first-visit gates */
+
+export const AGE_VERIFICATION_KEY = 'zeri_age_verified_v1';
+export const AGE_EVENT = 'zeri:age-verified';
+
+/** True once the visitor has passed the 16+ question (only the fact is stored, never the age). */
+export function ageGatePassed(): boolean {
+  try {
+    return window.localStorage.getItem(AGE_VERIFICATION_KEY) === 'passed';
+  } catch {
+    return false;
+  }
+}
+
+export function announceAgeVerified(): void {
+  window.dispatchEvent(new Event(AGE_EVENT));
+}
+
+/**
+ * The two legal prompts (age, then cookie consent) come before everything else.
+ * Optional prompts, such as the municipality picker, must wait until both are
+ * answered so a first-time visitor never faces stacked dialogs.
+ */
+export function legalGatesCleared(): boolean {
+  return ageGatePassed() && hasDecided();
+}
+
+export function onLegalGatesChange(listener: () => void): () => void {
+  if (typeof window === 'undefined') return () => { };
+  window.addEventListener(AGE_EVENT, listener);
+  window.addEventListener(CONSENT_EVENT, listener);
+  return () => {
+    window.removeEventListener(AGE_EVENT, listener);
+    window.removeEventListener(CONSENT_EVENT, listener);
+  };
+}

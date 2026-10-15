@@ -80,11 +80,16 @@ export interface PublicSourceHandlers {
   onReports: (reports: Report[]) => void;
   onCursor: (cursor: string | null) => void;
   onReady: () => void;
-  /** Called when the feed could not be read, so the page can show an honest empty/error state. */
+  /**
+   * Called when a refresh of the feed failed. The page must then say "could not load",
+   * never "no reports": `onReady` is NOT called for a feed that has never loaded.
+   */
   onError: (error: unknown) => void;
 }
 
 export const PUBLIC_FEED_REFRESH_MS = 60_000;
+/** Before the first successful load the feed is retried sooner, so a brief outage does not last a minute. */
+export const PUBLIC_FEED_RETRY_MS = 15_000;
 
 /**
  * Start the non-staff source. Returns a function that stops it.
@@ -98,6 +103,7 @@ export function startPublicReports(handlers: PublicSourceHandlers): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let controller: AbortController | undefined;
   let unsubscribeOwn: (() => void) | undefined;
+  /** True once the feed has been read successfully at least once. A failed read does not count. */
   let feedLoaded = false;
 
   const publish = () => {
@@ -118,15 +124,18 @@ export function startPublicReports(handlers: PublicSourceHandlers): () => void {
       publish();
     } catch (error) {
       if (stopped || (error as { name?: string })?.name === 'AbortError') return;
-      feedLoaded = true;
+      // Previously: `feedLoaded = true` here, which reported "ready" with an empty
+      // list and made an outage look like "no reports". Keep what was loaded before
+      // (if anything) and tell the page the refresh failed.
       handlers.onError(error);
-      publish();
+      if (own.length > 0) handlers.onReports(mergeOwnReports(feed, own));
     } finally {
       if (!stopped) {
+        const delay = feedLoaded ? PUBLIC_FEED_REFRESH_MS : PUBLIC_FEED_RETRY_MS;
         timer = setTimeout(() => {
-          if (typeof document !== 'undefined' && document.hidden) { timer = setTimeout(() => void refresh(), PUBLIC_FEED_REFRESH_MS); return; }
+          if (typeof document !== 'undefined' && document.hidden) { timer = setTimeout(() => void refresh(), delay); return; }
           void refresh();
-        }, PUBLIC_FEED_REFRESH_MS);
+        }, delay);
       }
     }
   };

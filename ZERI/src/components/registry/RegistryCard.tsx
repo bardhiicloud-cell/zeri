@@ -60,9 +60,9 @@ export function RegistryCard({ report, dt, onOpen, onShare }: RegistryCardProps)
         <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/55 to-transparent" />
         <StatusPill status={report.status} className="absolute left-3 top-3 border-white/60 bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/90" />
         {critical && (
-          <span className="absolute right-3 top-3 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-sm">{dt(report.urgency)}</span>
+          <span className="absolute right-3 top-3 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-white shadow-sm">{dt(report.urgency)}</span>
         )}
-        <span className="absolute bottom-3 left-3 rounded-md bg-slate-950/70 px-2 py-1 font-mono text-[10px] font-bold text-white backdrop-blur">#{trackingIdOf(report)}</span>
+        <span className="absolute bottom-3 left-3 rounded-md bg-slate-950/70 px-2 py-1 font-mono text-xs font-bold text-white backdrop-blur">#{trackingIdOf(report)}</span>
       </button>
 
       <div className="flex flex-1 flex-col p-5">

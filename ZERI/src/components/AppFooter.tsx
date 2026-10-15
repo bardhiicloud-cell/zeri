@@ -69,7 +69,7 @@ export function AppFooter() {
                 <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
                   {dt('Zëri Qytetarëve')}
                 </span>
-                <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   {dt('Republika e Kosovës')}
                 </span>
               </span>
@@ -107,7 +107,7 @@ export function AppFooter() {
               and a citizen should not have to scroll to the bottom to follow.
             */}
             <div className="mt-5">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 {dt('Na ndiqni')}
               </h2>
               <ul className="mt-3 flex items-center gap-2">
@@ -131,7 +131,7 @@ export function AppFooter() {
 
           {COLUMNS.map((column) => (
             <nav key={column.title} aria-label={dt(column.title)}>
-              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 {dt(column.title)}
               </h2>
               <ul className="mt-2 md:mt-3 md:space-y-2">

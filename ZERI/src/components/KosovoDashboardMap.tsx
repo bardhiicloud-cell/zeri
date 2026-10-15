@@ -4,6 +4,7 @@ import {
   Plus, Minus, MapPin, ArrowRight, Filter, Sun, Moon, Satellite, RotateCcw
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import '../lib/leafletLifecycle';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';

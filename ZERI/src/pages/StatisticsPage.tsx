@@ -513,7 +513,7 @@ export default function StatisticsPage() {
           {/* Interactive Filters Bar */}
           <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="relative">
-              <label className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Filtro Komunën`)}</label>
+              <label className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Filtro Komunën`)}</label>
               <div className="relative">
                 <select
                   value={selectedMunicipality}
@@ -535,7 +535,7 @@ export default function StatisticsPage() {
             </div>
 
             <div className="relative">
-              <label className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Kategoria e Problemit`)}</label>
+              <label className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Kategoria e Problemit`)}</label>
               <div className="relative">
                 <select 
                   value={selectedCategory} 
@@ -549,7 +549,7 @@ export default function StatisticsPage() {
             </div>
 
             <div className="relative">
-              <label className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Periudha Kohore`)}</label>
+              <label className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1.5 block">{dt(`Periudha Kohore`)}</label>
               <div className="relative">
                 <select 
                   value={timeRange} 
@@ -577,8 +577,8 @@ export default function StatisticsPage() {
               </div>
               <div>
                     <div className="mb-1 flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-cyan-300">{dt(`Përmbledhje e të dhënave`)}</span>
-                      <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[9px] font-black uppercase text-slate-200">{dt(`Llogaritur nga filtrat`)}</span>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-cyan-300">{dt(`Përmbledhje e të dhënave`)}</span>
+                      <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[11px] font-black uppercase text-slate-200">{dt(`Llogaritur nga filtrat`)}</span>
                 </div>
                 <p className="text-sm text-slate-200 font-medium leading-relaxed max-w-4xl">
                   {aiInsight}
@@ -586,7 +586,7 @@ export default function StatisticsPage() {
               </div>
             </div>
             <div className="shrink-0 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur-md">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">{dt(`Komuna në pamje`)}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300">{dt(`Komuna në pamje`)}</p>
               <p className="text-lg font-black text-cyan-200">{selectedMunicipality === 'Të gjitha' ? '38' : '1'}</p>
             </div>
           </div>
@@ -622,9 +622,9 @@ export default function StatisticsPage() {
               <div className={`mb-4 inline-flex p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-white/5 ${kpi.color}`}>
                 <kpi.icon className="w-5 h-5" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1">{kpi.label}</p>
+              <p className="text-[11px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1">{kpi.label}</p>
               <p className={`text-3xl md:text-4xl font-black tracking-tight title-serif ${kpi.color}`}>{kpi.value}</p>
-              <p className="mt-2 text-[10px] font-bold text-[var(--color-text-muted)]">{kpi.note}</p>
+              <p className="mt-2 text-xs font-bold text-[var(--color-text-muted)]">{kpi.note}</p>
             </motion.div>
           ))}
         </div>
@@ -645,11 +645,11 @@ export default function StatisticsPage() {
 
           <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:min-w-[20rem]">
             <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt(`Raportime`)}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt(`Raportime`)}</p>
               <p className="text-xl font-black text-white">{stats.totalReports.toLocaleString('sq-AL')}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt(`Kontribuues`)}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt(`Kontribuues`)}</p>
               <p className="text-xl font-black text-cyan-300">{stats.contributors.toLocaleString('sq-AL')}</p>
             </div>
           </div>
@@ -735,7 +735,7 @@ export default function StatisticsPage() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none flex-col">
                   <span className="text-2xl font-black text-[var(--color-text)] dark:text-white">{stats.totalReports.toLocaleString('sq-AL')}</span>
-                  <span className="text-[9px] uppercase font-bold text-[var(--color-text-muted)]">{dt(`Totali`)}</span>
+                  <span className="text-[11px] uppercase font-bold text-[var(--color-text-muted)]">{dt(`Totali`)}</span>
                 </div>
               </div>
               
@@ -746,7 +746,7 @@ export default function StatisticsPage() {
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                       <span className="font-semibold text-slate-700 dark:text-[var(--color-text-muted)] truncate max-w-[150px]" title={cat.name}>{cat.name}</span>
                     </div>
-                    <span className="font-black text-[var(--color-text)] dark:text-white">{cat.value.toLocaleString('sq-AL')} <span className="text-[10px] text-[var(--color-text-muted)] font-normal">({Math.round((cat.value / Math.max(stats.totalReports, 1)) * 100)}%)</span></span>
+                    <span className="font-black text-[var(--color-text)] dark:text-white">{cat.value.toLocaleString('sq-AL')} <span className="text-xs text-[var(--color-text-muted)] font-normal">({Math.round((cat.value / Math.max(stats.totalReports, 1)) * 100)}%)</span></span>
                   </div>
                 ))}
               </div>
@@ -756,11 +756,11 @@ export default function StatisticsPage() {
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-[var(--spacing-6)] border border-blue-500 text-white shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
               <Users className="w-8 h-8 text-blue-200 mb-3" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">{dt(`Kontribuues të dallueshëm`)}</p>
+              <p className="text-[11px] font-black uppercase tracking-widest text-blue-200 mb-1">{dt(`Kontribuues të dallueshëm`)}</p>
               <h3 className="text-3xl font-black tracking-tight mb-2">{stats.contributors.toLocaleString('sq-AL')}</h3>
               <p className="text-xs text-blue-100 font-medium leading-relaxed mb-4">{dt(`Numri i llogarive unike që kanë raportime në grupin e të dhënave aktualisht të filtruar.`)}
               </p>
-              <div className="flex items-center gap-2 text-[10px] font-bold text-blue-200 bg-white/10 px-3 py-1.5 rounded-full w-max">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-200 bg-white/10 px-3 py-1.5 rounded-full w-max">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />{dt(`Të llogaritur nga raportimet`)}
               </div>
             </div>
@@ -776,7 +776,7 @@ export default function StatisticsPage() {
               </p>
             </div>
             {comparison.periodDays > 0 && (
-              <span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[10px] font-bold text-indigo-800 dark:border-indigo-300/20 dark:bg-indigo-300/10 dark:text-indigo-200">
+              <span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 dark:border-indigo-300/20 dark:bg-indigo-300/10 dark:text-indigo-200">
                 {dt('Periudha paraprake:')} {comparison.previousTotal.toLocaleString('sq-AL')} {dt('raportime')}
               </span>
             )}
@@ -837,7 +837,7 @@ export default function StatisticsPage() {
           <div className="border-b border-slate-200/70 bg-slate-50/80 p-5 dark:border-white/10 dark:bg-slate-800/50 sm:p-7">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-800 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-200">
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-blue-800 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-200">
                   <FileText className="h-3.5 w-3.5" />
                   {dt('Dosje e shkarkueshme')}
                 </div>
@@ -874,7 +874,7 @@ export default function StatisticsPage() {
 
             <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
               <label className="block">
-                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt('Komuna e dosjes')}</span>
+                <span className="mb-1.5 block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt('Komuna e dosjes')}</span>
                 <select
                   value={dossierMunicipality}
                   onChange={event => setDossierMunicipality(event.target.value)}
@@ -885,7 +885,7 @@ export default function StatisticsPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt('Reparti / kategoria')}</span>
+                <span className="mb-1.5 block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt('Reparti / kategoria')}</span>
                 <select
                   value={dossierCategory}
                   onChange={event => setDossierCategory(event.target.value)}
@@ -956,12 +956,12 @@ export default function StatisticsPage() {
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:border-white/10 dark:text-slate-300">{report.status}</span>
-                          <span className="font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">{report.trackingId || report.id}</span>
+                          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-600 dark:border-white/10 dark:text-slate-300">{report.status}</span>
+                          <span className="font-mono text-xs font-bold text-slate-500 dark:text-slate-400">{report.trackingId || report.id}</span>
                         </div>
                       </div>
                       <p className="mt-2 whitespace-pre-line break-words text-xs leading-relaxed text-slate-700 dark:text-slate-300">{report.description || dt('Nuk ka përshkrim.')}</p>
-                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                         <span>{formatReportDate(report.createdAt)}</span>
                         <span>{attachments.length} {dt('foto/video')}</span>
                         {report.responsibleInstitution && <span>{report.responsibleInstitution}</span>}
@@ -980,10 +980,10 @@ export default function StatisticsPage() {
                               {attachment.type === 'video'
                                 ? <video src={attachment.url} preload="metadata" muted className="h-full w-full object-cover" />
                                 : <img src={attachment.url} loading="lazy" alt={attachment.label} className="h-full w-full object-cover transition group-hover/media:scale-105" />}
-                              <span className="absolute inset-x-0 bottom-0 truncate bg-black/65 px-1 py-0.5 text-center text-[8px] font-bold text-white">{attachment.type === 'video' ? dt('VIDEO') : dt('FOTO')}</span>
+                              <span className="absolute inset-x-0 bottom-0 truncate bg-black/65 px-1 py-0.5 text-center text-[11px] font-bold text-white">{attachment.type === 'video' ? dt('VIDEO') : dt('FOTO')}</span>
                             </a>
                           ))}
-                          {attachments.length > 4 && <span className="self-center text-[10px] font-bold text-slate-500 dark:text-slate-400">+{attachments.length - 4} media</span>}
+                          {attachments.length > 4 && <span className="self-center text-xs font-bold text-slate-500 dark:text-slate-400">+{attachments.length - 4} media</span>}
                         </div>
                       )}
                     </div>
@@ -1036,31 +1036,31 @@ export default function StatisticsPage() {
                       <span className="font-bold text-[var(--color-text)] dark:text-white text-sm">{stat.municipality}</span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-[var(--color-text-muted)]">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-[var(--color-text-muted)]">
                     {stat.topCategory}
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 rounded-2xl p-4">
                   <div>
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt(`Raportime`)}</p>
+                    <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt(`Raportime`)}</p>
                     <p className="font-bold text-slate-700 dark:text-[var(--color-text-muted)]">{stat.total.toLocaleString('sq-AL')}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt(`Të Zgjidhura`)}</p>
+                    <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt(`Të Zgjidhura`)}</p>
                     <p className="font-bold text-emerald-600">{stat.resolved.toLocaleString('sq-AL')}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt('Në shqyrtim')}</p>
+                    <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt('Në shqyrtim')}</p>
                     <p className="font-bold text-amber-600">{stat.pending.toLocaleString('sq-AL')}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt('Urgjente')}</p>
+                    <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt('Urgjente')}</p>
                     <p className="font-bold text-rose-600">{stat.urgent.toLocaleString('sq-AL')}</p>
                   </div>
                   <div className="col-span-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Efikasiteti`)}</p>
+                      <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Efikasiteti`)}</p>
                       <span className="font-black text-[var(--color-text)] dark:text-white text-xs">{stat.rate}%</span>
                     </div>
                     <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -1071,7 +1071,7 @@ export default function StatisticsPage() {
                     </div>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt(`Koha Mesatare`)}</p>
+                    <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">{dt(`Koha Mesatare`)}</p>
                     <p className="font-bold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] text-xs">{stat.avgDays === 'N/A' ? 'N/A' : `${stat.avgDays}${dt(' ditë')}`}</p>
                   </div>
                 </div>
@@ -1083,15 +1083,15 @@ export default function StatisticsPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5">
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Renditja`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Komuna`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Raportime`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Të Zgjidhura`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt('Në shqyrtim')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt('Urgjente')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Shkalla e Efikasitetit`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Koha Mesatare`)}</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Sektori Dominues`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Renditja`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Komuna`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Raportime`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Të Zgjidhura`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt('Në shqyrtim')}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt('Urgjente')}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Shkalla e Efikasitetit`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Koha Mesatare`)}</th>
+                  <th className="px-6 py-4 text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{dt(`Sektori Dominues`)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">

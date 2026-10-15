@@ -308,7 +308,7 @@ export default function DetailedRegistryPage() {
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
               {dt('Filtra')}
-              {chips.length > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-blue-700 px-1 text-[10px] text-white">{chips.length}</span>}
+              {chips.length > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-blue-700 px-1 text-xs text-white">{chips.length}</span>}
             </button>
             <button type="button" onClick={downloadCSV} disabled={filteredReports.length === 0} className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
               <Download className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">{dt('Eksporto CSV')}</span><span className="sm:hidden">CSV</span>
@@ -324,7 +324,7 @@ export default function DetailedRegistryPage() {
                 <button key={item.id} type="button" role="tab" aria-selected={active} onClick={() => { setStatusFilter(item.id); setCurrentPage(1); }}
                   className={cn('inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition', active ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700')}>
                   {dt(item.label)}
-                  <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', active ? 'bg-white/20' : 'bg-white text-slate-500 dark:bg-slate-900')}>{counts[item.id]}</span>
+                  <span className={cn('rounded-full px-1.5 py-0.5 text-xs tabular-nums', active ? 'bg-white/20' : 'bg-white text-slate-500 dark:bg-slate-900')}>{counts[item.id]}</span>
                 </button>
               );
             })}
@@ -366,7 +366,7 @@ export default function DetailedRegistryPage() {
 
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2" aria-label={dt('Filtra aktivë')}>
-          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{dt('Filtra aktivë')}</span>
+          <span className="mr-1 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{dt('Filtra aktivë')}</span>
           {chips.map(chip => <FilterChip key={chip.id} label={chip.label} onRemove={chip.onRemove} />)}
           <button type="button" onClick={resetFilters} className="ml-auto inline-flex min-h-8 items-center gap-1 text-xs font-black text-blue-700 hover:underline dark:text-blue-300"><X className="h-3.5 w-3.5" aria-hidden="true" />{dt('Pastro filtrat')}</button>
         </div>

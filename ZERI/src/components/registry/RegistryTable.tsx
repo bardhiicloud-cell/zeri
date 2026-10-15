@@ -20,7 +20,7 @@ export function RegistryTable({ reports, dt, onOpen, onShare }: RegistryTablePro
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs dark:border-white/10 dark:bg-slate-900">
       <table className="w-full table-fixed text-left text-sm">
         <caption className="sr-only">{dt('Regjistri i raportimeve publike')}</caption>
-        <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+        <thead className="bg-slate-50 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
           <tr>
             <th scope="col" className="w-[38%] px-5 py-3.5">{dt('Raportimi')}</th>
             <th scope="col" className="w-[13%] px-3 py-3.5">{dt('Statusi')}</th>

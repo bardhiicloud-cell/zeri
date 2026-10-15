@@ -16,10 +16,16 @@ import { getAccountabilityDueDate, getAccountabilityProfile } from '../src/lib/a
 export const URGENCY_LEVELS = ['E ulët', 'Mesatare', 'E lartë', 'Kritike'] as const;
 export type Urgency = (typeof URGENCY_LEVELS)[number];
 
+export const MAX_REPORT_MEDIA = 6;
+const MEDIA_TYPES = ['image', 'video', 'audio', 'document'] as const;
+
 export interface ReportMedia {
-  type: 'image' | 'video';
+  type: (typeof MEDIA_TYPES)[number];
   url: string;
   path?: string;
+  name?: string;
+  sizeBytes?: number;
+  mimeType?: string;
 }
 
 export interface ParsedReport {
@@ -37,6 +43,12 @@ export interface ParsedReport {
   media: ReportMedia[];
   /** A tracking id the client proposed; honoured only if well formed and unused. */
   requestedTrackingId: string;
+  /**
+   * The Firestore id the client generated for this submission. Using it as the
+   * document id makes a retry (or the direct-write fallback) hit the same
+   * document instead of creating a second report.
+   */
+  requestedReportId: string;
   /** Advisory output of the AI photo analysis, relayed by the client (untrusted). */
   ai: { score?: number; routingReason?: string; forensicsReport?: string };
 }
@@ -47,6 +59,7 @@ export type ParseResult =
 
 const TOPIC_ID = /^[a-z0-9-]{1,40}$/;
 const TRACKING_ID = /^[A-Z0-9-]{8,40}$/;
+const REPORT_ID = /^[A-Za-z0-9]{20}$/;
 
 /** Name stored for an anonymous report, whatever the client sent. */
 export const ANONYMOUS_AUTHOR_NAME = 'Qytetar Anonim';
@@ -87,16 +100,26 @@ export function parseReportInput(body: unknown): ParseResult {
   const isAnonymous = input.isAnonymous === true;
 
   // Media URLs are Storage download URLs - accept only https.
-  type RawMedia = { type?: unknown; url?: unknown; path?: unknown };
-  const media: ReportMedia[] = (Array.isArray(input.media) ? (input.media as RawMedia[]).slice(0, 6) : [])
+  type RawMedia = { type?: unknown; url?: unknown; path?: unknown; name?: unknown; sizeBytes?: unknown; mimeType?: unknown };
+  const media: ReportMedia[] = (Array.isArray(input.media) ? (input.media as RawMedia[]) : [])
     .filter((item) => item && typeof item.url === 'string' && item.url.startsWith('https://'))
-    .map((item) => ({
-      type: item.type === 'video' ? ('video' as const) : ('image' as const),
-      url: String(item.url).slice(0, 2048),
-      ...(item.path ? { path: String(item.path).slice(0, 512) } : {}),
-    }));
+    .slice(0, MAX_REPORT_MEDIA)
+    .map((item) => {
+      const size = Number(item.sizeBytes);
+      return {
+        // Audio and documents used to be coerced to "image" here, so the public
+        // and agent viewers tried to render a PDF or a voice note as a picture.
+        type: (MEDIA_TYPES as readonly unknown[]).includes(item.type) ? (item.type as ReportMedia['type']) : ('image' as const),
+        url: String(item.url).slice(0, 2048),
+        ...(item.path ? { path: String(item.path).slice(0, 512) } : {}),
+        ...(item.name ? { name: String(item.name).slice(0, 200) } : {}),
+        ...(Number.isFinite(size) && size > 0 ? { sizeBytes: Math.round(size) } : {}),
+        ...(item.mimeType ? { mimeType: String(item.mimeType).slice(0, 100) } : {}),
+      };
+    });
 
   const requested = text(input.trackingId, 40).toUpperCase();
+  const requestedReportId = text(input.reportId, 40);
 
   const score = Number(input.aiCategoryScore);
   const ai: ParsedReport['ai'] = {};
@@ -120,6 +143,7 @@ export function parseReportInput(body: unknown): ParseResult {
       isAnonymous,
       media,
       requestedTrackingId: TRACKING_ID.test(requested) ? requested : '',
+      requestedReportId: REPORT_ID.test(requestedReportId) ? requestedReportId : '',
       ai,
     },
   };

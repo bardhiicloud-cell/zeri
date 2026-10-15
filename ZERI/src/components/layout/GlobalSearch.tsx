@@ -285,7 +285,7 @@ export function SearchPalette({
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-xs font-black">{dt(result.label)}</span>
                           {result.hint && (
-                            <span className="block truncate text-[10px] opacity-70">{dt(result.hint)}</span>
+                            <span className="block truncate text-xs opacity-70">{dt(result.hint)}</span>
                           )}
                         </span>
                         {index === highlighted && (
@@ -307,7 +307,7 @@ export function SearchPalette({
               </div>
             )}
 
-            <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-2.5 text-[10px] font-bold text-slate-400 dark:border-white/5">
+            <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-2.5 text-xs font-bold text-slate-400 dark:border-white/5">
               <span className="flex items-center gap-1">
                 <kbd className="rounded border border-slate-200 px-1 py-0.5 font-mono dark:border-white/10">↑↓</kbd>
                 {dt('Lëviz')}

@@ -188,7 +188,7 @@ export default function TrackIdPage() {
 
           {myReports.length > 0 && (
             <div className="mt-4 border-t border-slate-100 pt-4 dark:border-white/10">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{dt('Raportimet e dërguara nga kjo pajisje')}</p>
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{dt('Raportimet e dërguara nga kjo pajisje')}</p>
               <div className="flex flex-wrap gap-2">
                 {myReports.map(item => (
                   <button
@@ -232,7 +232,7 @@ function IdleState() {
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
             <step.icon className="h-5 w-5" aria-hidden="true" />
           </span>
-          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">{dt('Hapi')} {index + 1}</p>
+          <p className="mt-4 text-[11px] font-black uppercase tracking-widest text-slate-400">{dt('Hapi')} {index + 1}</p>
           <h2 className="mt-1 text-base font-black text-slate-900 dark:text-white">{dt(step.title)}</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{dt(step.text)}</p>
         </li>
@@ -318,7 +318,7 @@ function ReportView({ report }: { report: PublicTrackView }) {
         <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Track ID')}</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Track ID')}</span>
               <button
                 type="button"
                 onClick={() => copy(report.trackingId, dt('Track ID u kopjua.'))}
@@ -438,7 +438,7 @@ function Journey({ steps, current }: { steps: JourneyStep[]; current: JourneySte
                 )}
               </div>
               <p className={cn('mt-2.5 pr-2 text-xs font-black leading-tight', step.state === 'upcoming' ? 'text-slate-400' : 'text-slate-900 dark:text-white')}>{dt(step.label)}</p>
-              <p className="mt-0.5 text-[10px] text-slate-400">{step.date && step.state !== 'upcoming' ? formatDate(step.date) : step.state === 'upcoming' ? dt('Në pritje') : ''}</p>
+              <p className="mt-0.5 text-xs text-slate-400">{step.date && step.state !== 'upcoming' ? formatDate(step.date) : step.state === 'upcoming' ? dt('Në pritje') : ''}</p>
             </li>
           );
         })}
@@ -491,7 +491,7 @@ function Detail({ icon: Icon, label, value }: { icon: React.ComponentType<{ clas
     <div className="flex gap-3 rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-blue-700 dark:text-blue-300" />
       <div className="min-w-0">
-        <dt className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</dt>
+        <dt className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</dt>
         <dd className="mt-0.5 break-words font-bold text-slate-800 dark:text-slate-100">{value}</dd>
       </div>
     </div>
@@ -591,7 +591,7 @@ function ResolutionCard({ report }: { report: PublicTrackView }) {
 
       <div className="space-y-4">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
             {dt('Zgjidhja e deklaruar nga institucioni')}{resolution.resolvedBy ? ` · ${resolution.resolvedBy}` : ''}
           </p>
           <p className="mt-1.5 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-300">
@@ -611,7 +611,7 @@ function ResolutionCard({ report }: { report: PublicTrackView }) {
 
         {resolution.verifiedAt && (
           <div className="border-t border-slate-100 pt-4 dark:border-white/10">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{dt('Verifikimi')}</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Verifikimi')}</p>
             {resolution.verificationNote && <p className="mt-1.5 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-300">{resolution.verificationNote}</p>}
             <p className="mt-1.5 text-xs text-slate-500">{formatDate(resolution.verifiedAt, true)}</p>
           </div>
@@ -647,7 +647,7 @@ function OfficialResponses({ report }: { report: PublicTrackView }) {
               {response.attachments.length > 0 && (
                 <div className="mt-3"><ReportAttachments media={response.attachments} title="" layout="row" /></div>
               )}
-              <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Statusi në atë moment')}: {statusLabel(response.status)}</p>
+              <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt('Statusi në atë moment')}: {statusLabel(response.status)}</p>
             </li>
           ))}
         </ul>
@@ -676,7 +676,7 @@ function History({ report }: { report: PublicTrackView }) {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-black', tone.badge)}>{statusLabel(event.status)}</span>
-                    {latest && <span className="rounded-full bg-blue-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">{dt('Më e fundit')}</span>}
+                    {latest && <span className="rounded-full bg-blue-700 px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-white">{dt('Më e fundit')}</span>}
                   </span>
                   <time dateTime={event.date} className="text-[11px] font-semibold text-slate-500">{formatDate(event.date, true)}</time>
                 </div>

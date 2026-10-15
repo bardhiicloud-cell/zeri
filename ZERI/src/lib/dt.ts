@@ -3,6 +3,7 @@ import { uiTranslations } from './uiTranslations';
 import { newLanguageTranslations } from './newLanguageTranslations';
 import { siteTranslations } from './siteTranslations';
 import { publicPagesTranslations } from './publicPagesTranslations';
+import { auditTranslations } from './auditTranslations';
 import {
   DEFAULT_LANGUAGE,
   isSupportedLanguage,
@@ -67,8 +68,10 @@ export function dt(text: string, forcedLang?: string): string {
   const uiTranslation = uiTranslations[text]?.[lang];
   if (uiTranslation) return uiTranslation;
 
+  // Audit-remediation copy (English and German); checked last so it can never
+  // override an established translation of the same Albanian text.
   const entry = dynamicTranslations[text];
-  if (!entry) return text;
+  if (!entry) return auditTranslations[text]?.[lang] ?? text;
 
   const translated = (entry as Record<string, string>)[lang];
   if (translated) return translated;

@@ -628,8 +628,10 @@ export default function App() {
       }
     }, (error) => {
       console.error("Gabim me rikthimin e raporteve", error);
-      setReports(import.meta.env.DEV ? DEMO_REPORTS : []);
-      setReportsStatus('ready');
+      // Keep whatever was already loaded and say the read failed; wiping the list
+      // and reporting "ready" made an outage look like an empty platform.
+      if (useStore.getState().reports.length === 0 && import.meta.env.DEV) setReports(DEMO_REPORTS);
+      setReportsStatus('error', error instanceof Error ? error.message : 'load-failed');
     });
     };
 
@@ -644,7 +646,11 @@ export default function App() {
         api.setHasMoreReports(Boolean(cursor));
       },
       onReady: () => setReportsStatus('ready'),
-      onError: (error) => console.error('Raportimet publike nuk u ngarkuan', error),
+      onError: (error) => {
+        console.error('Raportimet publike nuk u ngarkuan', error);
+        // "Could not load" is not "no reports": pages read this status to tell the two apart.
+        setReportsStatus('error', error instanceof Error ? error.message : 'load-failed');
+      },
     });
     switchReportsSource = async (user) => {
       const run = ++reportsRun;

@@ -1,12 +1,13 @@
 import { dt } from '@/src/lib/dt';
 import React, { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, ZoomControl } from 'react-leaflet';
+import '../lib/leafletLifecycle';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import { useStore } from '../lib/store';
 import { formatDistanceToNow } from 'date-fns';
 import { sq } from 'date-fns/locale';
-import { MapPin, Search, Filter, Layers, Clock, X, ChevronRight, Moon, Sun, Maximize, Minimize, LocateFixed, Activity, RotateCcw } from 'lucide-react';
+import { MapPin, Search, Filter, Layers, Clock, X, ChevronRight, Moon, Sun, Maximize, Minimize, LocateFixed, Activity, RotateCcw, List } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useLocation } from 'react-router-dom';
@@ -58,6 +59,9 @@ export default function MapPage() {
   const currentUser = useStore(state => state.currentUser);
   const userMunicipality = useStore(state => state.userMunicipality);
   const setUserMunicipality = useStore(state => state.setUserMunicipality);
+  const reportsStatus = useStore(state => state.reportsStatus);
+  const [isListView, setIsListView] = useState(false);
+  const [locationNotice, setLocationNotice] = useState('');
 
   /**
    * Scope priority, in order:
@@ -102,7 +106,6 @@ export default function MapPage() {
   const [isAdVisible, setIsAdVisible] = useState(false);
   const [mapTheme, setMapTheme] = useState<'light' | 'dark' | 'satellite'>('dark');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [isHeatmapView, setIsHeatmapView] = useState(false);
   const [legendFilters, setLegendFilters] = useState<Record<string, boolean>>({
     'Kritike': true,
@@ -193,15 +196,18 @@ export default function MapPage() {
 
   const handleMyLocation = () => {
     if (navigator.geolocation) {
+      setLocationNotice('');
       navigator.geolocation.getCurrentPosition((position) => {
         setMapCenter([position.coords.latitude, position.coords.longitude]);
         setMapZoom(14);
       }, (error) => {
         console.error("Geolocation error:", error);
-        toast.error("Nuk mund të qasemi në lokacionin tuaj. Sigurohuni që keni dhënë leje për lokacionin në shfletues.");
+        setLocationNotice(error.code === 1
+          ? dt('Qasja në vendndodhje u refuzua. Lejojeni te cilësimet e shfletuesit për ta parë pozicionin tuaj në hartë.')
+          : dt('Vendndodhja juaj nuk mund të gjendet tani. Përdorni zgjedhjen e komunës.'));
       });
     } else {
-      toast.error("Shfletuesi juaj nuk mbështet kërkimin e lokacionit.");
+      setLocationNotice(dt('Shfletuesi juaj nuk mbështet gjetjen e vendndodhjes. Përdorni zgjedhjen e komunës.'));
     }
   };
 
@@ -214,7 +220,8 @@ export default function MapPage() {
     const isVisibleToViewer = (report: Report) => {
       if (currentUser?.role === 'admin') return true;
       if (currentUser && report.authorId === currentUser.id && report.authorId !== 'guest') return true;
-      return report.status !== 'Rejected';
+      // The public feed already withholds these; this keeps a stray cached copy off the public map too.
+      return !['Rejected', 'Pending Review', 'Draft'].includes(report.status);
     };
 
     const neighborhoodQuery = selectedNeighborhood.trim().toLowerCase();
@@ -256,19 +263,23 @@ export default function MapPage() {
   );
 
   const handleMunicipalityChange = (municipality: string) => {
-    setIsSearching(true);
+    // No artificial "searching" delay: the filter applies immediately.
     setSelectedMunicipality(municipality);
     setUserMunicipality(municipality || ALL_SCOPE);
-    
-    // Simulate searching effect
-    setTimeout(() => {
-      setIsSearching(false);
-      // If we're on mobile, close the HUD after selection to show the map
-      if (window.innerWidth < 1024) {
-        setIsHudOpen(false);
-      }
-    }, 1000);
+    // On mobile, close the filter sheet after a choice so the map is visible.
+    if (window.innerWidth < 1024) setIsHudOpen(false);
   };
+
+  /** Plain statement of what the map is showing, announced to assistive technology. */
+  const reportsLoading = reportsStatus === 'loading' && reports.length === 0;
+  const reportsFailed = reportsStatus === 'error' && reports.length === 0;
+  const mapNotice = reportsLoading
+    ? dt('Po ngarkohen raportet…')
+    : reportsFailed
+      ? dt('Raportet nuk u ngarkuan. Kjo nuk do të thotë se nuk ka raporte. Rifreskoni faqen për të provuar përsëri.')
+      : filteredReports.length === 0
+        ? dt('Asnjë raport publik nuk përputhet me zgjedhjet. Ndryshoni filtrat ose zgjidhni të gjithë Kosovën.')
+        : '';
 
   const getUrgencyTranslation = (filter: string) => {
     if (filter === 'map_all') return t('map_all');
@@ -301,14 +312,35 @@ export default function MapPage() {
         ? "fixed inset-0 h-[100dvh] w-screen z-[10000] border-0" 
         : "flex-1 h-full min-h-[50vh] z-0"
     )}>
-      {/* Searching Overlay */}
-      {isSearching && (
-        <div className="absolute inset-0 z-[12000] bg-white/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500 text-[var(--color-text)] dark:text-[var(--color-surface)]">
-          <div className="w-16 h-16 border-8 border-slate-900 dark:border-slate-700 border-t-rose-600 rounded-full animate-spin mb-6" />
-          <h3 className="text-2xl font-bold text-[var(--color-text)] dark:text-[var(--color-surface)] tracking-wide title-serif">
-            {t('map_searching')}
-          </h3>
-          <p className="text-xs font-bold text-slate-700 dark:text-slate-200 dark:text-slate-300 mt-2 tracking-wide">{selectedMunicipality || t('map_all_kosovo')}</p>
+      <h1 className="sr-only">{dt('Harta e raportimeve publike')}</h1>
+      <p role="status" aria-live="polite" className="sr-only">
+        {mapNotice || `${filteredReports.length} ${t('nav_report')}`}
+      </p>
+
+      {/* Loading, failure and empty states: a failed request must never look like "no reports". */}
+      {(mapNotice || locationNotice) && (
+        <div className="pointer-events-none absolute inset-x-4 top-20 z-[1200] flex flex-col items-center gap-2 lg:top-4">
+          {mapNotice && (
+            <div className={cn(
+              'pointer-events-auto flex max-w-xl items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-xl backdrop-blur-md',
+              reportsFailed ? 'border-rose-300 bg-rose-50 text-rose-900' : 'border-slate-200 bg-white/95 text-slate-900',
+            )}>
+              <span>{mapNotice}</span>
+              {reportsFailed && (
+                <button type="button" onClick={() => window.location.reload()} className="min-h-11 shrink-0 rounded-lg bg-rose-700 px-3 text-sm font-bold text-white hover:bg-rose-800">
+                  {dt('Provo përsëri')}
+                </button>
+              )}
+            </div>
+          )}
+          {locationNotice && (
+            <div role="status" className="pointer-events-auto flex max-w-xl items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 shadow-xl">
+              <span>{locationNotice}</span>
+              <button type="button" onClick={() => setLocationNotice('')} aria-label={dt('Mbyll')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg hover:bg-amber-100">
+                <X aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -332,7 +364,8 @@ export default function MapPage() {
               <Search className="w-5 h-5" />
             </div>
             <div className="flex-1 relative h-10">
-              <select 
+              <select
+                aria-label={t('map_search_city')}
                 value={selectedMunicipality}
                 onChange={(e) => handleMunicipalityChange(e.target.value)}
                 className="absolute inset-0 w-full h-full bg-transparent font-bold text-[var(--color-text)] dark:text-[var(--color-surface)] text-sm outline-none tracking-wide cursor-pointer appearance-none px-2 z-10"
@@ -346,10 +379,13 @@ export default function MapPage() {
                  <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
               </div>
             </div>
-            <button 
+            <button
+              type="button"
+              aria-label={t('map_filters')}
+              aria-expanded={isHudOpen}
               onClick={() => setIsHudOpen(!isHudOpen)}
               className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ml-1",
+                "w-11 h-11 rounded-xl flex items-center justify-center transition-all shrink-0 ml-1",
                 isHudOpen ? "bg-rose-600 text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-rose-600/20" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
               )}
             >
@@ -369,7 +405,10 @@ export default function MapPage() {
       )}>
         
         {/* Toggle Button for Desktop */}
-        <button 
+        <button
+          type="button"
+          aria-label={t('map_navigator')}
+          aria-expanded={isHudOpen}
           onClick={() => setIsHudOpen(!isHudOpen)}
           className={cn(
             "absolute z-[1001] transition-all duration-500 pointer-events-auto flex items-center justify-center shadow-xl backdrop-blur-md",
@@ -402,13 +441,14 @@ export default function MapPage() {
           <div className="p-4 md:p-5">
             <div className="flex flex-col gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-white tracking-wide ml-1">
+                <label htmlFor="map-municipality-filter" className="text-xs font-bold text-white tracking-wide ml-1">
                    {t('map_search_city')}
                 </label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <select 
+                    <select
+                      id="map-municipality-filter"
                       value={selectedMunicipality}
                       onChange={(e) => handleMunicipalityChange(e.target.value)}
                       className="w-full pl-9 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition-all focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
@@ -437,11 +477,12 @@ export default function MapPage() {
 
               {selectedMunicipality && currentNeighborhoods.length > 0 && (
                 <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-xs font-bold text-white tracking-wide ml-1 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-rose-500" />{dt(`Filtro sipas Lagjes`)}
+                  <label htmlFor="map-neighborhood-filter" className="text-xs font-bold text-white tracking-wide ml-1 flex items-center gap-1">
+                    <MapPin aria-hidden="true" className="w-3.5 h-3.5 text-rose-500" />{dt(`Filtro sipas Lagjes`)}
                   </label>
                   <div className="relative">
-                    <select 
+                    <select
+                      id="map-neighborhood-filter"
                       value={selectedNeighborhood}
                       onChange={(e) => setSelectedNeighborhood(e.target.value)}
                       className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition-all focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
@@ -546,7 +587,7 @@ export default function MapPage() {
           
           <div className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="map-topic-filter-mobile" className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{dt('Tema e raportimit')}</label>
+              <label htmlFor="map-topic-filter-mobile" className="text-[11px] font-bold text-slate-300 tracking-widest uppercase">{dt('Tema e raportimit')}</label>
               <select
                 id="map-topic-filter-mobile"
                 value={selectedTopic}
@@ -558,7 +599,7 @@ export default function MapPage() {
               </select>
             </div>
             <div className="space-y-3">
-               <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('map_urgency_level')}</label>
+               <p className="text-[11px] font-bold text-slate-300 tracking-widest uppercase">{t('map_urgency_level')}</p>
               <div className="grid grid-cols-3 gap-2">
                 {['map_all', 'map_urgent', 'map_critical'].map(f => (
                   <button 
@@ -578,11 +619,12 @@ export default function MapPage() {
 
             {selectedMunicipality && currentNeighborhoods.length > 0 && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-rose-500" />{dt(`Lagjet e Qytetit (`)}{selectedMunicipality})
+                <label htmlFor="map-neighborhood-filter-mobile" className="text-[11px] font-bold text-slate-300 tracking-widest uppercase flex items-center gap-1">
+                  <MapPin aria-hidden="true" className="w-3.5 h-3.5 text-rose-500" />{dt(`Lagjet e Qytetit (`)}{selectedMunicipality})
                 </label>
                 <div className="relative">
-                  <select 
+                  <select
+                    id="map-neighborhood-filter-mobile"
                     value={selectedNeighborhood}
                     onChange={(e) => setSelectedNeighborhood(e.target.value)}
                     className="w-full px-4 py-3.5 bg-black/40 border border-white/10 rounded-2xl font-bold text-white text-sm outline-none cursor-pointer tracking-wide focus:border-white focus:ring-1 focus:ring-white transition-all appearance-none"
@@ -597,7 +639,7 @@ export default function MapPage() {
             )}
 
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('map_display')}</label>
+              <p className="text-[11px] font-bold text-slate-300 tracking-widest uppercase">{t('map_display')}</p>
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button 
                   onClick={() => setMapTheme(getNextMapTheme(mapTheme))}
@@ -643,13 +685,18 @@ export default function MapPage() {
             : "bottom-28 lg:bottom-24"
       )}>
         <button 
+          type="button"
+          aria-label={t('map_my_location')}
           onClick={handleMyLocation}
           className="w-14 h-14 md:w-12 md:h-12 bg-white/95 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none flex items-center justify-center text-[var(--color-text)] dark:text-[var(--color-surface)] pointer-events-auto hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800 active:scale-95 transition-all"
           title={t('map_my_location')}
         >
-          <LocateFixed className="w-7 h-7 md:w-6 md:h-6" />
+          <LocateFixed aria-hidden="true" className="w-7 h-7 md:w-6 md:h-6" />
         </button>
         <button 
+          type="button"
+          aria-label={t('map_heatmap')}
+          aria-pressed={isHeatmapView}
           onClick={() => setIsHeatmapView(!isHeatmapView)}
           className={cn(
             "w-14 h-14 md:w-12 md:h-12 border rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] flex items-center justify-center pointer-events-auto active:scale-95 transition-all mt-3",
@@ -657,14 +704,29 @@ export default function MapPage() {
           )}
           title={t('map_heatmap')}
         >
-          <Activity className="w-7 h-7 md:w-6 md:h-6" />
+          <Activity aria-hidden="true" className="w-7 h-7 md:w-6 md:h-6" />
         </button>
         <button 
+          type="button"
+          aria-label={t('map_reset')}
           onClick={handleResetMap}
           className="w-14 h-14 md:w-12 md:h-12 bg-white/95 backdrop-blur-md border border-slate-200/60 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] flex items-center justify-center text-[var(--color-text)] dark:text-[var(--color-surface)] pointer-events-auto hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800 active:scale-95 transition-all mt-3"
           title={t('map_reset')}
         >
           <RotateCcw className="w-7 h-7 md:w-6 md:h-6" />
+        </button>
+        <button
+          type="button"
+          aria-label={dt('Shiko raportet si listë')}
+          aria-expanded={isListView}
+          aria-controls="map-report-list"
+          onClick={() => setIsListView(open => !open)}
+          className={cn(
+            "w-14 h-14 md:w-12 md:h-12 border rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center pointer-events-auto active:scale-95 transition-all mt-3",
+            isListView ? "bg-slate-900 border-slate-900 text-white" : "bg-white/95 backdrop-blur-md border-slate-200/60 text-[var(--color-text)]"
+          )}
+        >
+          <List aria-hidden="true" className="w-7 h-7 md:w-6 md:h-6" />
         </button>
       </div>
 
@@ -744,6 +806,8 @@ export default function MapPage() {
                     key={report.id}
                     position={[lat, lng]}
                     icon={createCustomIcon(report.urgency)}
+                    title={`${report.title} — ${getUrgencyLabel(report.urgency)}`}
+                    alt={`${report.title} — ${getUrgencyLabel(report.urgency)}`}
                     eventHandlers={{ click: () => setActivePreviewReport(report) }}
                   />
                 );
@@ -761,11 +825,13 @@ export default function MapPage() {
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               className="absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:-translate-x-0 lg:right-6 z-[1000] w-[calc(100%-2rem)] lg:w-85 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
             >
-              <button 
+              <button
+                type="button"
+                aria-label={dt('Mbyll')}
                 onClick={() => setActivePreviewReport(null)}
-                className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 text-white p-1.5 rounded-full z-10 transition-colors backdrop-blur-sm"
+                className="absolute top-1 right-1 flex h-11 w-11 items-center justify-center bg-black/40 hover:bg-black/60 text-white rounded-full z-10 transition-colors backdrop-blur-sm"
               >
-                <X className="w-4 h-4" />
+                <X aria-hidden="true" className="w-4 h-4" />
               </button>
               
               {activePreviewReport.images?.length > 0 && (
@@ -781,7 +847,7 @@ export default function MapPage() {
               <div className="p-4">
                 <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                   <span className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider text-white",
+                    "px-2 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider text-white",
                     activePreviewReport.urgency === 'Kritike' ? 'bg-rose-600 shadow-sm dark:shadow-none shadow-rose-600/10' :
                     activePreviewReport.urgency === 'E lartë' ? 'bg-orange-500 shadow-sm dark:shadow-none shadow-orange-500/10' :
                     activePreviewReport.urgency === 'Mesatare' ? 'bg-amber-500 shadow-sm dark:shadow-none shadow-amber-500/10' :
@@ -790,10 +856,10 @@ export default function MapPage() {
                     {getUrgencyLabel(activePreviewReport.urgency)}
                   </span>
                   <span className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider",
+                    "px-2 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider",
                     activePreviewReport.status === 'Resolved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
                   )}>
-                    {activePreviewReport.status === 'Resolved' ? t('dash_resolved') : "Në Proces"}
+                    {activePreviewReport.status === 'Resolved' ? t('dash_resolved') : dt('Në proces')}
                   </span>
                 </div>
                 <h3 className="font-bold text-[var(--color-text)] dark:text-[var(--color-surface)] leading-tight mb-2 text-base line-clamp-2">{activePreviewReport.title}</h3>
@@ -807,7 +873,7 @@ export default function MapPage() {
                     <Clock className="w-3.5 h-3.5 text-slate-400" /> {formatDistanceToNow(new Date(activePreviewReport.createdAt), { addSuffix: true, locale: sq })}{dt(`nga`)} <span className="text-[var(--color-text)] dark:text-[var(--color-surface)] font-semibold">{activePreviewReport.authorName}</span>
                   </p>
                   <p className="text-xs font-medium text-[var(--color-text-muted)] tracking-wide flex items-center gap-1.5 truncate">
-                    <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" /> <span className="truncate">{activePreviewReport.location?.address || 'Nuk ka adresë'}</span>
+                    <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" /> <span className="truncate">{activePreviewReport.location?.address || activePreviewReport.location?.neighborhood || activePreviewReport.location?.municipality || dt('Nuk ka adresë')}</span>
                   </p>
                 </div>
                 <button 
@@ -827,15 +893,17 @@ export default function MapPage() {
 
         {/* Modern Map Legend */}
         <div className={cn("absolute bottom-6 left-6 z-[1000] hidden md:flex flex-col gap-3 bg-slate-900/95 backdrop-blur-xl p-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/15 animate-in slide-in-from-bottom-4 duration-500 min-w-[200px]", selectedReportId && "hidden")}>
-          <div className="text-[10px] font-black tracking-widest text-rose-400 uppercase mb-1.5 border-b border-white/10 pb-1">{t('map_urgency_level')}</div>
+          <div className="text-[11px] font-black tracking-widest text-rose-400 uppercase mb-1.5 border-b border-white/10 pb-1">{t('map_urgency_level')}</div>
           <p className="max-w-56 text-[11px] leading-relaxed text-slate-400">{dt('Numri në rreth tregon raportimet e grupuara në atë zonë. Kliko rrethin për t’i parë më afër.')}</p>
           {Object.entries(urgencyColors).map(([level, colorClass]) => {
             const isActive = legendFilters[level] !== false;
             return (
-             <button 
-               key={level} 
+             <button
+               key={level}
+               type="button"
+               aria-pressed={isActive}
                onClick={() => setLegendFilters(prev => ({...prev, [level]: !isActive}))}
-               className={`flex items-center justify-between w-full text-left transition-all py-1 ${!isActive ? 'opacity-30 grayscale' : 'opacity-100 hover:translate-x-1'}`}
+               className={`flex items-center justify-between w-full text-left transition-all min-h-10 py-1 ${!isActive ? 'opacity-30 grayscale' : 'opacity-100 hover:translate-x-1'}`}
              >
                <span className="text-xs font-extrabold text-slate-200">{getUrgencyLabel(level)}</span>
                <div className={`relative w-4 h-4 rounded-full border-2 border-slate-900 shadow-sm dark:shadow-none flex items-center justify-center ${colorClass}`}>
@@ -847,6 +915,43 @@ export default function MapPage() {
         </div>
         </div>
       </div>
+
+      {/* Non-map alternative: the same filtered public reports as a list. */}
+      {isListView && (
+        <section
+          id="map-report-list"
+          aria-label={dt('Raportet në hartë si listë')}
+          className="absolute inset-y-0 right-0 z-[3000] flex w-full max-w-md flex-col bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white"
+        >
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
+            <h2 className="text-base font-bold">{dt('Raportet në hartë si listë')} ({mappableReports.length})</h2>
+            <button type="button" aria-label={dt('Mbyll')} onClick={() => setIsListView(false)} className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+              <X aria-hidden="true" className="h-5 w-5" />
+            </button>
+          </div>
+          {mappableReports.length === 0 ? (
+            <p className="p-4 text-sm">{mapNotice || dt('Asnjë raport publik nuk përputhet me zgjedhjet. Ndryshoni filtrat ose zgjidhni të gjithë Kosovën.')}</p>
+          ) : (
+            <ul className="flex-1 divide-y divide-slate-100 overflow-y-auto dark:divide-white/10">
+              {mappableReports.slice(0, 100).map(report => (
+                <li key={report.id}>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedReportId(report.id); setIsListView(false); }}
+                    className="flex min-h-11 w-full flex-col gap-0.5 px-4 py-3 text-left hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:outline-none dark:hover:bg-slate-800"
+                  >
+                    <span className="text-sm font-bold">{report.title}</span>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">
+                      {[report.location?.neighborhood, report.location?.municipality].filter(Boolean).join(', ')} · {getUrgencyLabel(report.urgency)} · {report.status === 'Resolved' ? t('dash_resolved') : dt('Në proces')}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {mappableReports.length > 100 && <p className="border-t border-slate-200 p-3 text-xs dark:border-white/10">{dt('Po shfaqen 100 raportet e para. Përdorni filtrat ose regjistrin për të parë më shumë.')}</p>}
+        </section>
+      )}
 
       {selectedReportId && (() => {
         const selectedReport = reports.find(r => r.id === selectedReportId);

@@ -7,7 +7,9 @@ import { cn } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeMunicipalityName, isInsideKosovo } from '../lib/municipalityNormalizer';
-import { hasAnalyticsConsent, onConsentChange } from '../lib/consent';
+import { useLocation } from 'react-router-dom';
+import { hasAnalyticsConsent, legalGatesCleared, onConsentChange, onLegalGatesChange } from '../lib/consent';
+import { isTaskPath } from '../lib/promptRoutes';
 import {
   ALL_MUNICIPALITIES,
   ALL_SCOPE,
@@ -25,6 +27,9 @@ import {
 
 export function LocationDetectorModal() {
   const { dt } = useLanguage();
+  const { pathname } = useLocation();
+  const [legalGatesClear, setLegalGatesClear] = useState<boolean>(() => legalGatesCleared());
+  useEffect(() => onLegalGatesChange(() => setLegalGatesClear(legalGatesCleared())), []);
   const userMunicipality = useStore(state => state.userMunicipality);
   const setUserMunicipality = useStore(state => state.setUserMunicipality);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,7 +142,7 @@ export function LocationDetectorModal() {
   // mount — the citizen could see their municipality saved while the gate
   // stayed up, and every in-app navigation re-showed it.
   const hasAnswered = useStore(state => state.hasChosenMunicipality);
-  if (hasAnswered) return null;
+  if (hasAnswered || !legalGatesClear || isTaskPath(pathname)) return null;
 
 
   return (

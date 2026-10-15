@@ -132,7 +132,7 @@ export function MunicipalitySwitcher({ collapsed = false, inline = false }: { co
             {!collapsed && (
               <>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[8px] font-black uppercase tracking-[0.12em] text-slate-400">
+                  <span className="block text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">
                     {dt('Komuna aktive')}
                   </span>
                   <span
@@ -240,7 +240,7 @@ export function MunicipalitySwitcher({ collapsed = false, inline = false }: { co
                         : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
                     )}
                   >
-                    <span className="min-w-[2.25rem] shrink-0 text-[10px] font-black text-slate-400">
+                    <span className="min-w-[2.25rem] shrink-0 text-xs font-black text-slate-400">
                       {ALL_MUNICIPALITIES.indexOf(name) + 1}
                     </span>
                     <span className="flex-1 truncate">{name}</span>
@@ -258,7 +258,7 @@ export function MunicipalitySwitcher({ collapsed = false, inline = false }: { co
           </ul>
 
           {canAccessAdmin && (
-            <p className="border-t border-slate-100 px-2.5 py-1.5 text-[9px] leading-tight text-slate-400 dark:border-white/5">
+            <p className="border-t border-slate-100 px-2.5 py-1.5 text-[11px] leading-tight text-slate-400 dark:border-white/5">
               {dt('Si administrator, kjo pamje përshtatet edhe panelit dhe statistikave.')}
             </p>
           )}

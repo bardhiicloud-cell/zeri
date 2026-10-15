@@ -4,6 +4,7 @@ import { Cookie, ShieldCheck, X, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { dt } from '@/src/lib/dt';
 import {
+  announceAgeVerified,
   announceConsentChange,
   CATEGORY_LABELS,
   hasDecided,
@@ -59,7 +60,7 @@ export default function CookieConsentBanner() {
     event.preventDefault();
     const age = Number(ageInput);
     if (!Number.isInteger(age) || age < 1 || age > 120) {
-      setAgeError('Shkruani moshën tuaj si numër të plotë.');
+      setAgeError(dt('Shkruani moshën tuaj si numër të plotë.'));
       setIsUnderage(false);
       return;
     }
@@ -70,6 +71,7 @@ export default function CookieConsentBanner() {
     }
 
     window.localStorage.setItem(AGE_VERIFICATION_KEY, 'passed');
+    announceAgeVerified();
     setAgeRequired(false);
     setIsUnderage(false);
     if (!hasDecided()) setIsOpen(true);
@@ -301,16 +303,16 @@ export default function CookieConsentBanner() {
             className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:p-8"
           >
             <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-blue-100 text-lg font-black text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">16+</div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">Para vazhdimit</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Para vazhdimit')}</p>
             <h2 id="age-verification-title" className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
               {dt('Sa vjeç jeni?')}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               {dt('Platforma është për persona 16 vjeç e lart. Shkruani moshën tuaj për të vazhduar. Mosha nuk ruhet.')}
             </p>
-            <form onSubmit={verifyAge} className="mt-6 space-y-4">
+            <form onSubmit={verifyAge} noValidate className="mt-6 space-y-4">
               <label htmlFor="age-verification-input" className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                Mosha juaj
+                {dt('Mosha juaj')}
               </label>
               <input
                 id="age-verification-input"
@@ -327,7 +329,7 @@ export default function CookieConsentBanner() {
                   setAgeError('');
                   setIsUnderage(false);
                 }}
-                placeholder="p.sh. 17"
+                placeholder={dt('p.sh. 17')}
                 aria-describedby={isUnderage ? 'age-verification-blocked' : ageError ? 'age-verification-error' : undefined}
                 className="min-h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-800 dark:text-white"
               />
@@ -341,8 +343,8 @@ export default function CookieConsentBanner() {
                 {dt('Vazhdo')}
               </button>
             </form>
-            <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-400">
-              Për verifikim ruhet vetëm shenja se mosha minimale është plotësuar; mosha që shkruani nuk regjistrohet.
+            <p className="mt-4 text-center text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              {dt('Për verifikim ruhet vetëm shenja se mosha minimale është plotësuar; mosha që shkruani nuk regjistrohet.')}
             </p>
           </motion.section>
         </div>

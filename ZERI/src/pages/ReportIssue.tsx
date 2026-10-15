@@ -3,6 +3,7 @@ import { dt } from '@/src/lib/dt';
 import React, { useState, useEffect, useRef, Component } from 'react';
 import toast from 'react-hot-toast';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import '../lib/leafletLifecycle';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useStore } from '../lib/store';
@@ -18,7 +19,7 @@ import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 
 import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constants';
-import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
+import { getReportTopicPlainLabel, REPORT_TOPIC_GROUPS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
@@ -46,8 +47,50 @@ async function ensureReportSession(): Promise<string | null> {
   }
 }
 
-import { validations, runValidations } from '../lib/validations';
+import { validations } from '../lib/validations';
 import { handleFirebaseError } from '../lib/errorHandler';
+import { checkEvidenceFile, classifyServerResponse, evidenceKind, MAX_REPORT_FILES, type FileProblem } from '../lib/reportSubmit';
+import {
+  draftOwner,
+  LEGACY_REPORT_DRAFT_KEY,
+  parseDraft,
+  REPORT_DRAFT_KEY,
+  serializeDraft,
+  type LocationSource,
+} from '../lib/reportDraft';
+
+/** Ids that the error summary and the focus management point at. */
+const FIELD_IDS: Record<string, string> = {
+  title: 'report-title',
+  description: 'report-description',
+  topicCategory: 'report-topic-category',
+  category: 'report-category',
+  municipality: 'report-municipality',
+  location: 'report-address',
+  guestName: 'report-guest-name',
+  guestPhone: 'report-guest-phone',
+};
+
+const labelClass = 'mb-2 block text-sm font-semibold text-[var(--color-text)] dark:text-white';
+const inputClass =
+  'min-h-11 w-full rounded-lg border bg-[var(--color-surface)] px-4 py-3 text-base text-[var(--color-text)] outline-none transition-colors placeholder:text-neutral-500 focus-visible:ring-2 focus-visible:ring-indigo-600/50 dark:bg-slate-900 dark:text-white';
+
+function RequiredMark() {
+  return <span aria-hidden="true" className="text-rose-600"> *</span>;
+}
+
+/** The message a field's `aria-describedby` points at. Empty when the field is valid. */
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="mt-1.5 flex items-start gap-1 text-sm font-semibold text-rose-700 dark:text-rose-300">
+      <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+      {message}
+    </p>
+  );
+}
+
+const DEFAULT_CENTRE: [number, number] = [42.6629, 21.1655];
 
 // Fix for default Leaflet icon in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -66,6 +109,10 @@ function MapUpdater({ mapCenter }: { mapCenter: [number, number] }) {
   
   React.useEffect(() => {
     map.flyTo(mapCenter, Math.max(map.getZoom(), 16));
+    // No cleanup on purpose: react-leaflet has already called map.remove() by
+    // the time this effect is torn down, remove() cancels a running fly itself,
+    // and calling map.stop() on a removed map throws. The zoom timer that
+    // remove() leaves behind is handled in lib/leafletLifecycle.ts.
   }, [mapCenter[0], mapCenter[1], map]);
 
   return null;
@@ -211,7 +258,7 @@ class SafeMapContainer extends Component<any, any> {
   }
 }
 
-function LocationMarker({ position, setPosition, setAddress, setMunicipality, preventSearchRef }: { position: [number, number], setPosition: (pos: [number, number]) => void, setAddress: (addr: string) => void, setMunicipality: (m: string) => void, preventSearchRef?: React.MutableRefObject<boolean> }) {
+function LocationMarker({ position, setPosition, setAddress, setMunicipality, preventSearchRef, onGeocodeError }: { position: [number, number], setPosition: (pos: [number, number]) => void, setAddress: (addr: string) => void, setMunicipality: (m: string) => void, preventSearchRef?: React.MutableRefObject<boolean>, onGeocodeError?: () => void }) {
   useMapEvents({
     async click(e) {
       const lat = e.latlng.lat;
@@ -219,6 +266,7 @@ function LocationMarker({ position, setPosition, setAddress, setMunicipality, pr
       setPosition([lat, lng]);
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        if (!res.ok) throw new Error(`reverse geocode ${res.status}`);
         const data = await res.json();
         if (data && data.address) {
           const city = data.address.city || data.address.town || data.address.village || data.address.municipality;
@@ -230,9 +278,13 @@ function LocationMarker({ position, setPosition, setAddress, setMunicipality, pr
           }
           if (preventSearchRef) preventSearchRef.current = true;
           setAddress(data.display_name);
+        } else {
+          onGeocodeError?.();
         }
       } catch (err) {
-         console.error(err);
+        // The pin is still valid; only the address text could not be looked up.
+        console.error(err);
+        onGeocodeError?.();
       }
     },
   });
@@ -295,24 +347,8 @@ export default function ReportIssue() {
   const startTime = useRef(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (isBanned) {
-    return (
-      <div className="max-w-md mx-auto my-12 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-indigo-600 rounded-[2rem] p-8 text-center space-y-6 shadow-xl animate-fade-in">
-        <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center text-indigo-600 mx-auto animate-pulse">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl font-extrabold text-[var(--color-text)] dark:text-white uppercase">{dt(`Raportimi u Bllokua`)}</h2>
-        <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] font-bold leading-relaxed">{dt(`Sistemi i Sigurisë (AI Guard) ka bllokuar këtë pajisje (IP:`)} {currentIP}{dt(`) për shkak të shkeljes së kushteve të përdorimit ose dyshimit për spam të vazhdueshëm.`)}
-        </p>
-        <div className="border-t border-slate-100 dark:border-white/5 pt-4">
-          <p className="text-[10px] text-[var(--color-text-muted)] font-mono">{dt(`CODE: BAN_IP_PREVENT_SUBMIT`)}</p>
-        </div>
-      </div>
-    );
-  }
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiInsights, setAiInsights] = useState<any>(null);
-  const [mediaError, setMediaError] = useState(false);
   
   // Form State
   const [title, setTitle] = useState('');
@@ -414,13 +450,69 @@ export default function ReportIssue() {
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [coordinates, setCoordinates] = useState<[number, number]>([42.6629, 21.1655]);
+  const [coordinates, setCoordinates] = useState<[number, number]>(DEFAULT_CENTRE);
+  /**
+   * Where the coordinates came from. `default` (the Prishtina map centre) and
+   * `municipality` (the centre of the chosen municipality) are NOT an incident
+   * location: the form asks for a pin, a GPS fix or a searched address before
+   * it accepts the report.
+   */
+  const [locationSource, setLocationSource] = useState<LocationSource>('default');
+  const [geoNotice, setGeoNotice] = useState('');
+  const [draftNotice, setDraftNotice] = useState(false);
+  const owner = draftOwner(currentUser);
+  const draftReady = useRef(false);
 
+  // Restore a draft from this tab, once, and only if it belongs to this account.
   useEffect(() => {
-    // A report is intentionally session-only until it is submitted.
-    localStorage.removeItem('reportDraft');
+    try {
+      localStorage.removeItem(LEGACY_REPORT_DRAFT_KEY);
+      const draft = parseDraft(sessionStorage.getItem(REPORT_DRAFT_KEY), owner);
+      if (draft) {
+        setTitle(draft.title);
+        setDescription(draft.description);
+        setCategory(draft.category);
+        setTopicCategory(draft.topicCategory);
+        if (draft.urgency) setUrgency(draft.urgency as UrgentLevel);
+        if (draft.municipality) setMunicipality(draft.municipality);
+        setAddress(draft.address);
+        preventSearch.current = true;
+        setCoordinates(draft.coordinates);
+        setLocationSource(draft.locationSource);
+        setDraftNotice(true);
+      }
+    } catch {
+      // Storage can be blocked (private mode); the form simply starts empty.
+    }
+    draftReady.current = true;
   }, []);
 
+  // Keep the draft current while the citizen types. Contact details and files
+  // are deliberately never written (see lib/reportDraft.ts).
+  useEffect(() => {
+    if (!draftReady.current || step === 3) return;
+    const timer = setTimeout(() => {
+      try {
+        const raw = serializeDraft({
+          owner, title, description, category, topicCategory, urgency, municipality, address, coordinates, locationSource,
+        });
+        if (raw) sessionStorage.setItem(REPORT_DRAFT_KEY, raw);
+        else sessionStorage.removeItem(REPORT_DRAFT_KEY);
+      } catch {
+        // ignore: recovery is best effort
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [owner, title, description, category, topicCategory, urgency, municipality, address, coordinates, locationSource, step]);
+
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(REPORT_DRAFT_KEY);
+      localStorage.removeItem(LEGACY_REPORT_DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     if (preventSearch.current) {
@@ -456,6 +548,8 @@ export default function ReportIssue() {
     
     preventSearch.current = true;
     setCoordinates([lat, lon]);
+    setLocationSource('search');
+    setGeoNotice('');
     setAddress(newAddress);
     
     // Attempt to extract municipality from OpenStreetMap address
@@ -480,34 +574,85 @@ export default function ReportIssue() {
   }, []);
 
   const [mediaItems, setMediaItems] = useState<{file: File, url: string, type: 'image' | 'video' | 'document' | 'audio'}[]>([]);
+  const [evidenceMessages, setEvidenceMessages] = useState<string[]>([]);
+  const [failedFileNames, setFailedFileNames] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState('');
+  const [forensicsPrompt, setForensicsPrompt] = useState(false);
+  const [aiStatus, setAiStatus] = useState('');
+  const forensicsAcknowledged = useRef(false);
+  const submittingRef = useRef(false);
+  /** Same document id on every attempt of one submission, so a retry cannot create a second report. */
+  const submissionRef = useRef<ReturnType<typeof doc> | null>(null);
+  /** Files that are already in Storage, so a retry uploads only what failed. */
+  const uploadedRef = useRef(new Map<File, { url: string; type: string; name: string; sizeBytes: number; mimeType?: string }>());
+  const submitErrorRef = useRef<HTMLDivElement>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  const fmt = (key: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((text, [name, value]) => text.split(`{${name}}`).join(String(value)), dt(key));
+
+  const fieldProps = (key: string, hintId?: string) => ({
+    id: FIELD_IDS[key],
+    'aria-invalid': errors[key] ? (true as const) : undefined,
+    'aria-describedby': [errors[key] ? `${FIELD_IDS[key]}-error` : '', hintId ?? ''].filter(Boolean).join(' ') || undefined,
+  });
+
+  // Moving to another step replaces the content; send focus to its heading so
+  // keyboard and screen-reader users land at the top of what is new.
+  const firstStepRender = useRef(true);
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    stepHeadingRef.current?.focus();
+  }, [step]);
+
+  useEffect(() => {
+    if (submitError && !isSubmitting) submitErrorRef.current?.focus();
+  }, [submitError, isSubmitting]);
+
+  // Revoke preview URLs when the page goes away.
+  const mediaRef = useRef(mediaItems);
+  mediaRef.current = mediaItems;
+  useEffect(() => () => mediaRef.current.forEach(item => item.url && URL.revokeObjectURL(item.url)), []);
+
+  const invalidateAnalysis = () => {
+    // The advice was about the photos that were analysed; once they change it no longer applies.
+    setAiInsights(null);
+    setForensicsPrompt(false);
+    forensicsAcknowledged.current = false;
+    setAiStatus('');
+  };
 
   const analyzeWithAI = async () => {
     // AI vision analysis only makes sense for a photo; a video, document or
     // voice note has no frame to read, so pick the first image explicitly.
     const imageMedia = mediaItems.find(m => m.type === 'image');
     if (!imageMedia) {
-      toast.error(dt("Ju lutem ngarkoni të paktën një foto për t'u analizuar nga AI."));
+      setAiStatus(dt('Analiza AI lexon vetëm një foto. Kthehuni te hapi 1 dhe shtoni një foto, ose plotësoni fushat vetë.'));
       return;
     }
 
     const imageFile = imageMedia.file;
     setIsAnalyzing(true);
-    
+    setAiStatus(dt('Po analizohet fotoja…'));
+
     try {
       // Convert file to base64
       const reader = new FileReader();
       reader.readAsDataURL(imageFile);
-      
+
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = error => reject(error);
       });
-      
+
       const base64DataUrl = await base64Promise;
       const parts = base64DataUrl.split(';');
       const mimeType = parts[0].split(':')[1];
       const imageBase64 = parts[1].split(',')[1];
-      
+
       const res = await fetch('/api/analyze-issue', {
         method: 'POST',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
@@ -519,130 +664,189 @@ export default function ReportIssue() {
           descriptionText: description
         })
       });
-      
+
       if (!res.ok) {
-        throw new Error("Dështoi analiza AI");
+        throw new Error('Dështoi analiza AI');
       }
-      
+
       const data = await res.json();
-      
-       if (data?.degraded) {
-        toast.error(dt('Analiza AI nuk është e disponueshme tani. Plotësoni fushat vetë.'));
+
+      if (data?.degraded) {
+        setAiStatus(dt('Analiza AI nuk është e disponueshme tani. Plotësoni fushat vetë — raporti mund të dërgohet pa të.'));
       } else if (data && (data.category || data.title)) {
         if (data.title) setTitle(data.title);
         if (data.description) setDescription(data.description);
         if (data.category) setCategory(data.category);
         if (data.urgency) setUrgency(data.urgency);
         setAiInsights(data);
+        setAiStatus(dt('AI sugjeroi titullin, përshkrimin dhe kategorinë. Kontrollojini dhe ndryshojini nëse nuk janë të sakta.'));
       } else {
-        toast.error("Nuk arritëm të gjejmë kategorinë e duhur për këtë problem.");
+        setAiStatus(dt('AI nuk gjeti një kategori të sigurt për këtë foto. Zgjidhni kategorinë vetë.'));
       }
     } catch (e) {
       console.error(e);
-      toast.error("Pati një gabim gjatë procesimit me AI. Ju lutem provoni përsëri ose zgjidhni kategorinë manualisht.");
+      setAiStatus(dt('Analiza AI dështoi. Provoni përsëri ose plotësoni fushat vetë — raporti mund të dërgohet pa të.'));
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
+  const addFiles = (files: FileList | null) => {
+    // Cancelling the file dialog gives no files: leave the current state alone.
+    if (files && files.length > 0) {
+      const messages: string[] = [];
+      const accepted: typeof mediaItems = [];
       Array.from(files).forEach((file: File) => {
-        // Matches the deployed Storage rules for reports/, which cap every
-        // object at 10 MB. Accepting more here only produced a failed upload.
-        if (file.size > MAX_UPLOAD_BYTES.reports) {
-          toast.error(
-            dt(`Fajlli "${file.name}" është ${(file.size / 1024 / 1024).toFixed(1)}MB. Kufiri për çdo foto ose video është ${formatBytes(MAX_UPLOAD_BYTES.reports)}.`)
-          );
-          return;
+        // Matches the deployed Storage rules for reports/ (10 MB per object) and
+        // the server, which keeps at most MAX_REPORT_FILES. These checks only
+        // save a doomed upload; Storage rules and the server enforce them again.
+        const problem: FileProblem | null = checkEvidenceFile(file, {
+          maxBytes: MAX_UPLOAD_BYTES.reports,
+          currentCount: mediaItems.length + accepted.length,
+        });
+        if (problem === 'too_large') {
+          messages.push(fmt('Fajlli “{name}” është {size}. Kufiri për çdo skedar është {max}.', {
+            name: file.name, size: formatBytes(file.size), max: formatBytes(MAX_UPLOAD_BYTES.reports),
+          }));
+        } else if (problem === 'unsupported') {
+          messages.push(fmt('Fajlli “{name}” nuk pranohet. Lejohen foto, video, audio, PDF, DOC/DOCX dhe TXT.', { name: file.name }));
+        } else if (problem === 'empty') {
+          messages.push(fmt('Fajlli “{name}” është bosh.', { name: file.name }));
+        } else if (problem === 'limit') {
+          messages.push(fmt('Mund të shtoni deri në {max} skedarë. “{name}” nuk u shtua.', { max: MAX_REPORT_FILES, name: file.name }));
+        } else {
+          const type = evidenceKind(file.type || '');
+          const url = type === 'image' || type === 'video' ? URL.createObjectURL(file) : '';
+          accepted.push({ file, url, type });
         }
-        const mime = file.type || '';
-        const type: 'image' | 'video' | 'audio' | 'document' =
-          mime.startsWith('video/') ? 'video'
-          : mime.startsWith('audio/') ? 'audio'
-          : mime.startsWith('image/') ? 'image'
-          : 'document';
-        const url = type === 'image' || type === 'video' ? URL.createObjectURL(file) : '';
-        setMediaItems(prev => [...prev, { file, url, type }].slice(0, 12));
-        setMediaError(false);
       });
+      if (accepted.length > 0) {
+        setMediaItems(prev => [...prev, ...accepted]);
+        invalidateAnalysis();
+        setFailedFileNames([]);
+      }
+      setEvidenceMessages(messages);
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    addFiles(e.target.files);
     // Allow re-selecting the same file after a validation error.
     e.target.value = '';
   };
 
   const removeMedia = (index: number) => {
+    const removed = mediaItems[index];
+    if (removed?.url) URL.revokeObjectURL(removed.url);
+    if (removed) uploadedRef.current.delete(removed.file);
     setMediaItems(prev => prev.filter((_, i) => i !== index));
+    setFailedFileNames([]);
+    setEvidenceMessages([]);
+    invalidateAnalysis();
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    const titleErr = validations.isRequired(title, 'Emërtimi i Çështjes') || validations.minLength(title, 5, 'Emërtimi i Çështjes');
-    if (titleErr) newErrors.title = titleErr;
-    
-    const descErr = validations.isRequired(description, 'Raporti i Detajuar') || validations.minLength(description, 20, 'Raporti i Detajuar');
-    if (descErr) newErrors.description = descErr;
-    
-    const catErr = validations.isRequired(category, 'Sektori / Ministria');
-    if (catErr) newErrors.category = catErr;
+    const required = (label: string) => fmt('Fusha “{field}” është e detyrueshme.', { field: dt(label) });
+    const tooShort = (label: string, min: number) => fmt('Fusha “{field}” duhet të ketë të paktën {min} karaktere.', { field: dt(label), min });
 
-    const topicErr = validations.isRequired(topicCategory, 'Kategoria tematike');
-    if (topicErr) newErrors.topicCategory = topicErr;
-    
-    const munErr = validations.isRequired(municipality, 'Komuna');
-    if (munErr) newErrors.municipality = munErr;
+    if (validations.isRequired(title, '')) newErrors.title = required('Emërtimi i Çështjes');
+    else if (validations.minLength(title, 5, '')) newErrors.title = tooShort('Emërtimi i Çështjes', 5);
+
+    if (validations.isRequired(description, '')) newErrors.description = required('Raporti i Detajuar');
+    else if (validations.minLength(description, 20, '')) newErrors.description = tooShort('Raporti i Detajuar', 20);
+
+    if (validations.isRequired(topicCategory, '')) newErrors.topicCategory = required('Tema e problemit');
+    if (validations.isRequired(category, '')) newErrors.category = required('Institucioni që e merr raportin');
+    if (validations.isRequired(municipality, '')) newErrors.municipality = required('Zona e Operimit (Komuna)');
+
+    // The map centre or a municipality centre is not where the problem is.
+    if ((locationSource === 'default' || locationSource === 'municipality') && !address.trim()) {
+      newErrors.location = dt('Shënoni vendin e saktë të problemit: klikoni në hartë, përdorni GPS ose shkruani adresën.');
+    }
 
     if ((!currentUser || currentUser?.role === 'guest') && !isAnonymous) {
-      const nameErr = validations.isRequired(guestName, 'Emri dhe Mbiemri') || validations.minLength(guestName, 3, 'Emri dhe Mbiemri');
-      if (nameErr) newErrors.guestName = nameErr;
-      
-      const phoneErr = validations.isRequired(guestPhone, 'Telefoni') || validations.isPhone(guestPhone);
-      if (phoneErr) newErrors.guestPhone = phoneErr;
+      if (validations.isRequired(guestName, '')) newErrors.guestName = required('Emri dhe Mbiemri');
+      else if (validations.minLength(guestName, 3, '')) newErrors.guestName = tooShort('Emri dhe Mbiemri', 3);
+
+      if (validations.isRequired(guestPhone, '')) newErrors.guestPhone = required('Kontakti');
+      else if (validations.isPhone(guestPhone)) newErrors.guestPhone = dt('Numri duhet të jetë në formatin e Kosovës, p.sh. +383 44 123 456.');
     }
-    
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  const startNewReport = () => {
+    mediaItems.forEach(item => item.url && URL.revokeObjectURL(item.url));
+    clearDraft();
+    submissionRef.current = null;
+    uploadedRef.current.clear();
+    forensicsAcknowledged.current = false;
+    setMediaItems([]); setEvidenceMessages([]); setFailedFileNames([]);
+    setTitle(''); setDescription(''); setCategory(''); setTopicCategory(''); setUrgency('Mesatare');
+    setAddress(''); setAddressSuggestions([]); setCoordinates(DEFAULT_CENTRE); setLocationSource('default'); setGeoNotice('');
+    setGuestName(''); setGuestPhone(''); setIsAnonymous(false);
+    setAiInsights(null); setAiStatus(''); setForensicsPrompt(false);
+    setErrors({}); setSubmitError(''); setDraftNotice(false); setSubmittedReportId('');
+    setStep(1);
+  };
+
+  const FIELD_ORDER = ['title', 'description', 'topicCategory', 'category', 'municipality', 'location', 'guestName', 'guestPhone'];
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    // Enter pressed twice, a double click, a second tab of the same button: one request at a time.
+    if (submittingRef.current) return;
+    setSubmitError('');
+
+    const found = validateForm();
+    const firstInvalid = FIELD_ORDER.find(key => found[key]);
+    if (firstInvalid) {
+      setTimeout(() => document.getElementById(FIELD_IDS[firstInvalid])?.focus(), 0);
+      return;
+    }
+
+    /*
+     * The photo analysis is advice, not a verdict: it ran in the citizen's own
+     * browser and its result is relayed by that browser, so it cannot be
+     * trusted as a gate, and a low score on a genuine photo (night, blur,
+     * screenshot) used to leave people with an unexplained dead end. A low
+     * score now asks once; the citizen can replace the evidence or send the
+     * report anyway. Every report is reviewed by staff before it is public, and
+     * the analysis text travels with it for that review.
+     */
+    if (aiInsights && Number(aiInsights.authenticityScore) < 40 && !forensicsAcknowledged.current) {
+      setForensicsPrompt(true);
+      return;
+    }
+
+    submittingRef.current = true;
     setIsSubmitting(true);
-    const timeSpentMs = Date.now() - startTime.current;
-    
+    const fail = (message: string) => setSubmitError(message);
+
     try {
       // 0. Firestore requires `authorId == request.auth.uid`, so a report can
       //    only be stored together with a real identity. Guarantee one up front
       //    instead of showing a Track ID for a report that was never persisted.
       const authorUid = await ensureReportSession();
       if (!authorUid) {
-        toast.error(
-          'Për të ruajtur raportin nevojitet një sesion aktiv. Kyçuni ose vazhdoni si mysafir (Guest) dhe provoni përsëri — të dhënat e formës ruhen.',
-          { duration: 10000 }
-        );
-        setIsSubmitting(false);
+        fail(dt('Për të ruajtur raportin nevojitet një sesion aktiv. Kyçuni ose vazhdoni si mysafir dhe provoni përsëri — të dhënat e formës ruhen.'));
         return;
       }
 
-      // The report id is generated up front so media lands under
-      // reports/{uid}/{reportId}/... which the Storage rules accept.
-      const reportRef = doc(collection(db, 'reports'));
+      // The report id is generated once per submission and reused by every retry:
+      // the server and the fallback both write to this document, so a repeated
+      // attempt cannot create a second report. It is also the media folder
+      // (reports/{uid}/{reportId}/...) the Storage rules accept.
+      const reportRef = (submissionRef.current ??= doc(collection(db, 'reports')));
       const trackingId = createTrackingId('ZQ', reportRef.id);
-
-      // Check if Forensics found an issue during AI Analyze step earlier
-      if (aiInsights && aiInsights.authenticityScore < 40) {
-        toast.error(dt(`Sistemi Forenzik AI bllokoi raportin: ${aiInsights.forensicsReport}`));
-        setIsSubmitting(false);
-        return;
-      }
 
       // 2. Anti-Spam / Duplication Geofencing & AI Duplicate Text Merger
       const getDistanceInM = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const R = 6371; 
+        const R = 6371;
         const dLat = (lat2 - lat1) * (Math.PI / 180);
         const dLon = (lon2 - lon1) * (Math.PI / 180);
         const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -653,7 +857,7 @@ export default function ReportIssue() {
       };
 
       // Find active reports in a 50m radius to send to AI
-      const nearbyReports = reports.filter(r => 
+      const nearbyReports = reports.filter(r =>
         r.status !== 'Resolved' && r.status !== 'Rejected' && r.location?.lat && r.location?.lng &&
         getDistanceInM(coordinates[0], coordinates[1], r.location.lat, r.location.lng) <= 50
       );
@@ -680,7 +884,7 @@ export default function ReportIssue() {
               );
               if (supportExisting) {
                 upvoteReport(dupData.duplicate_of_id);
-                setIsSubmitting(false);
+                clearDraft();
                 navigate(`/detailed-registry?report=${dupData.duplicate_of_id}`);
                 toast.success(dt(`Faleminderit! E mbështetët raportimin ekzistues.`), { duration: 6000 });
                 return;
@@ -694,10 +898,9 @@ export default function ReportIssue() {
       // Simulate AI Moderation for Text
       const { validateReportByAI } = await import('../lib/moderation');
       const aiCheck = await validateReportByAI(title, description);
-      
+
       if (!aiCheck.valid) {
-        toast.error(aiCheck.error);
-        setIsSubmitting(false);
+        fail(aiCheck.error || dt('Teksti i raportit nuk u pranua. Rishikoni formulimin.'));
         return;
       }
 
@@ -708,17 +911,17 @@ export default function ReportIssue() {
         topicCategory,
         urgency,
         status: 'Pending Review',
-        location: { lat: coordinates[0], lng: coordinates[1], address: address || 'Nuk ka adresë', municipality: municipality || 'Prishtinë' },
+        location: { lat: coordinates[0], lng: coordinates[1], address: address.trim() || 'Nuk ka adresë', municipality },
         images: [],
         media: [],
         authorId: authorUid,
         authorName: isAnonymous ? 'Qytetar Anonim' : (currentUser?.name || guestName || 'Anonim'),
         isAnonymous,
         createdAt: new Date().toISOString(),
-        ...(aiInsights ? { 
-          aiCategoryScore: aiInsights.authenticityScore, 
+        ...(aiInsights ? {
+          aiCategoryScore: aiInsights.authenticityScore,
           aiRoutingReason: aiInsights.routingReason,
-          aiForensicsReport: aiInsights.forensicsReport 
+          aiForensicsReport: aiInsights.forensicsReport
         } : {})
       };
       const accountability = getAccountabilityProfile(reportData.category);
@@ -752,42 +955,50 @@ export default function ReportIssue() {
             category: category || 'Të tjera',
             topicCategory,
             status: 'Pending Review',
-            municipality: municipality || 'Prishtinë',
+            municipality,
             createdAt: reportData.createdAt
           });
         }
         setSubmittedReportId(finalTrackingId);
         if (currentUser) addPoints(10);
-        localStorage.removeItem('reportDraft');
+        clearDraft();
+        submissionRef.current = null;
+        uploadedRef.current.clear();
         setStep(3);
       };
 
+      // Upload only what is not in Storage yet. A failed file used to be dropped
+      // silently ("the report will be saved without it"); now the citizen decides.
+      const pending = mediaItems.filter(media => !uploadedRef.current.has(media.file));
       const uploadResults = await Promise.allSettled(
-        mediaItems.map(async (media) => {
+        pending.map(async (media) => {
           const downloadUrl = await uploadFileToStorage(media.file, 'reports', {
             userId: authorUid,
             scope: reportRef.id,
           });
-          return {
+          uploadedRef.current.set(media.file, {
             url: downloadUrl,
             type: media.type,
             name: media.file.name,
             sizeBytes: media.file.size,
             mimeType: media.file.type || undefined,
-          };
+          });
         })
       );
-      const uploadedMedia = uploadResults.flatMap(result => result.status === 'fulfilled' ? [result.value] : []);
-      const failedUploads = uploadResults.filter(result => result.status === 'rejected');
-      if (failedUploads.length > 0) {
-        const firstReason = (failedUploads[0] as PromiseRejectedResult).reason;
-        const reasonText = firstReason instanceof Error ? firstReason.message : 'Gabim i panjohur gjatë ngarkimit.';
-        toast.error(
-          `${failedUploads.length} nga ${mediaItems.length} dëshmi nuk u ngarkuan dhe raporti do të ruhet pa to. Arsyeja: ${reasonText}`,
-          { duration: 8000 }
-        );
+      const failed = pending.filter((_, index) => uploadResults[index].status === 'rejected');
+      if (failed.length > 0) {
+        setFailedFileNames(failed.map(media => media.file.name));
+        fail(fmt('{count} nga {total} dëshmi nuk u ngarkuan. Provoni përsëri ose hiqini nga lista; raporti nuk është dërguar.', {
+          count: failed.length, total: mediaItems.length,
+        }));
+        return;
       }
+      setFailedFileNames([]);
 
+      const uploadedMedia = mediaItems.flatMap(media => {
+        const stored = uploadedRef.current.get(media.file);
+        return stored ? [stored] : [];
+      });
       reportData.images = uploadedMedia.filter(m => m.type === 'image').map(m => m.url);
       reportData.media = uploadedMedia;
 
@@ -795,20 +1006,26 @@ export default function ReportIssue() {
        * Preferred path: the server endpoint. The server re-validates fields,
        * applies a per-uid duplicate + rate window and assembles the document
        * itself, so a modified client cannot skip those checks. The direct
-       * Firestore write below remains as the fallback for the case where the
-       * server is unreachable — the security rules still bound what that write
-       * may contain, and the citizen's report is never lost either way.
+       * Firestore write below remains only for the case where the server cannot
+       * be reached at all; a refusal, a validation error or an expired sign-in
+       * is shown to the citizen and never bypassed.
        */
-      try {
-        const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-        if (token) {
+      let outcome: ReturnType<typeof classifyServerResponse> = { kind: 'fallback' };
+      let timedOut = false;
+      const token = auth.currentUser ? await auth.currentUser.getIdToken().catch(() => null) : null;
+      if (token) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 45_000);
+        try {
           const response = await fetch('/api/v1/reports', {
             method: 'POST',
+            signal: controller.signal,
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
+              reportId: reportRef.id,
               title: reportData.title,
               description: reportData.description,
               category: reportData.category,
@@ -824,35 +1041,53 @@ export default function ReportIssue() {
               aiForensicsReport: reportData.aiForensicsReport,
             }),
           });
-
-          if (response.ok) {
-            const created = await response.json();
-            const serverTrackingId = created.trackingId || reportData.trackingId;
-            reportData.trackingId = serverTrackingId;
-            reportData.id = created.id;
-
-            addReport({ ...reportData, id: created.id } as any);
-            confirmSubmission(serverTrackingId, created.id);
-            return;
+          const body = await response.json().catch(() => null);
+          outcome = classifyServerResponse(response.status, body);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            // The server may still be saving it. Do not write a second copy.
+            timedOut = true;
+            outcome = { kind: 'retry' };
+          } else {
+            outcome = { kind: 'fallback' };
           }
-          // A 409/429 carries a citizen-facing reason; surface it rather than
-          // silently degrading to the direct write the server just refused.
-          if (response.status === 409 || response.status === 429) {
-            const body = await response.json().catch(() => null) as { error?: string } | null;
-            throw new Error(body?.error || 'Raportimi u refuzua nga serveri.');
-          }
-          // Any other server failure falls through to the direct write below.
+        } finally {
+          clearTimeout(timer);
         }
-      } catch (error) {
-        // Only a deliberate refusal (duplicate/rate) should stop the flow; a
-        // network failure falls through to the direct-write fallback.
-        if (error instanceof Error && (error.message.includes('refuzua') || error.message.includes('Shumë raportime'))) {
-          toast.error(error.message, { duration: 7000 });
-          return;
-          }
-        console.warn('Server path unavailable; falling back to direct Firestore write.', error);
       }
 
+      if (outcome.kind === 'created') {
+        const serverTrackingId = outcome.trackingId || reportData.trackingId;
+        reportData.trackingId = serverTrackingId;
+        reportData.id = outcome.id;
+        addReport({ ...reportData, id: outcome.id } as any);
+        confirmSubmission(serverTrackingId, outcome.id);
+        return;
+      }
+      if (outcome.kind === 'refused') {
+        fail(outcome.code === 'DUPLICATE_WINDOW'
+          ? dt('Një raport i ngjashëm u dërgua së fundmi nga ju. Prisni disa minuta para se ta dërgoni përsëri.')
+          : outcome.code === 'RATE_WINDOW'
+            ? dt('Keni dërguar shumë raporte në pak minuta. Provoni përsëri pak më vonë.')
+            : outcome.message || dt('Raportimi u refuzua nga serveri.'));
+        return;
+      }
+      if (outcome.kind === 'invalid') {
+        fail(dt('Serveri nuk e pranoi raportin. Kontrolloni fushat dhe provoni përsëri.') + (outcome.message ? ` (${outcome.message})` : ''));
+        return;
+      }
+      if (outcome.kind === 'session') {
+        fail(dt('Sesioni juaj ka skaduar. Rifreskoni faqen ose kyçuni përsëri; teksti i raportit ruhet në këtë skedë, por dëshmitë duhen shtuar sërish.'));
+        return;
+      }
+      if (outcome.kind === 'retry') {
+        fail(timedOut
+          ? dt('Serveri po përgjigjet ngadalë. Raporti mund të jetë ruajtur. Provoni përsëri: nuk do të krijohet dublikat.')
+          : dt('Raporti nuk u ruajt. Provoni përsëri: nuk do të krijohet dublikat.'));
+        return;
+      }
+
+      // outcome.kind === 'fallback': the server was unreachable.
       try {
         await setDoc(reportRef, {
           ...reportData,
@@ -860,15 +1095,11 @@ export default function ReportIssue() {
         });
       } catch (e) {
         // The report was not stored anywhere the municipality or platform can
-        // see. Saying otherwise (the old "saved locally" success toast and Track
-        // ID) left citizens waiting on a complaint that did not exist. Keep the
-        // form and the draft so they can simply try again.
+        // see. Saying otherwise left citizens waiting on a complaint that did
+        // not exist. Keep the form so they can simply try again.
         const appError = handleFirebaseError(e);
         console.warn('Firestore save failed; the report was NOT stored.', appError.technicalMessage);
-        toast.error(
-          'Raporti NUK u dërgua dhe nuk u krijua Track ID. Të dhënat e formës janë ruajtur në këtë pajisje — kontrolloni lidhjen dhe provoni përsëri.',
-          { duration: 10000 }
-        );
+        fail(dt('Raporti NUK u dërgua dhe nuk u krijua Track ID. Të dhënat e formës janë ende këtu — kontrolloni lidhjen dhe provoni përsëri.'));
         return;
       }
 
@@ -880,12 +1111,28 @@ export default function ReportIssue() {
     } catch(err) {
       const appError = handleFirebaseError(err);
       console.error('Submission error:', appError.technicalMessage);
-      toast.error(appError.message || 'Ka ndodhur një gabim gjatë procesimit të të dhënave, provoni përsëri.');
+      fail(appError.message || dt('Ka ndodhur një gabim gjatë procesimit të të dhënave, provoni përsëri.'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
 
+  if (isBanned) {
+    return (
+      <div className="max-w-md mx-auto my-12 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-indigo-600 rounded-[2rem] p-8 text-center space-y-6 shadow-xl animate-fade-in">
+        <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center text-indigo-600 mx-auto animate-pulse">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-extrabold text-[var(--color-text)] dark:text-white uppercase">{dt(`Raportimi u Bllokua`)}</h2>
+        <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] font-bold leading-relaxed">{dt(`Sistemi i Sigurisë (AI Guard) ka bllokuar këtë pajisje (IP:`)} {currentIP}{dt(`) për shkak të shkeljes së kushteve të përdorimit ose dyshimit për spam të vazhdueshëm.`)}
+        </p>
+        <div className="border-t border-slate-100 dark:border-white/5 pt-4">
+          <p className="text-[10px] text-[var(--color-text-muted)] font-mono">{dt(`CODE: BAN_IP_PREVENT_SUBMIT`)}</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <>
     <motion.div 
@@ -896,13 +1143,41 @@ export default function ReportIssue() {
       className="max-w-4xl mx-auto pt-6 pb-32 md:py-12 px-4 sm:px-6 lg:px-8"
     >
       
-      {/* STEPS INDICATOR */}
+      {/* STEPS INDICATOR: named steps, current step exposed to assistive technology */}
       {step < 3 && (
-        <div className="flex items-center justify-center gap-4 mb-8 md:mb-16 w-full max-w-xs md:max-w-md mx-auto">
-          <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 border-2 font-bold text-xs md:text-sm title-serif ${step === 1 ? 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white border-slate-900 dark:border-white' : 'bg-transparent text-[var(--color-text)] dark:text-white border-slate-900 dark:border-white'}`}>1</div>
-          <div className="h-0.5 flex-1 bg-neutral-300"><div className={`h-full bg-indigo-600 transition-all ${step > 1 ? 'w-full' : 'w-0'}`} /></div>
-          <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 border-2 font-bold text-xs md:text-sm title-serif transition-colors ${step === 2 ? 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white border-slate-900 dark:border-white' : 'bg-transparent text-neutral-500 dark:text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] border-neutral-300 dark:border-slate-700'}`}>2</div>
-        </div>
+        <nav aria-label={dt('Hapat e raportimit')} className="mx-auto mb-6 w-full max-w-md md:mb-10">
+          <ol className="flex items-center gap-3">
+            {[{ n: 1, label: dt('Dëshmia') }, { n: 2, label: dt('Detajet dhe vendndodhja') }].map((item, index) => {
+              const state = step > item.n ? 'done' : step === item.n ? 'current' : 'todo';
+              return (
+                <React.Fragment key={item.n}>
+                  {index > 0 && (
+                    <li aria-hidden="true" className="h-0.5 flex-1 bg-neutral-300 dark:bg-slate-700">
+                      <div className={cn('h-full bg-indigo-600 transition-all', step > 1 ? 'w-full' : 'w-0')} />
+                    </li>
+                  )}
+                  <li aria-current={state === 'current' ? 'step' : undefined} className="flex min-w-0 items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold',
+                        state === 'current' && 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-slate-800',
+                        state === 'done' && 'border-indigo-600 bg-indigo-600 text-white',
+                        state === 'todo' && 'border-neutral-300 text-neutral-600 dark:border-slate-700 dark:text-slate-300',
+                      )}
+                    >
+                      {state === 'done' ? <CheckCircle2 className="h-5 w-5" /> : item.n}
+                    </span>
+                    <span className="text-xs font-semibold text-[var(--color-text)] dark:text-white md:text-sm">
+                      {item.label}
+                      <span className="sr-only"> ({state === 'done' ? dt('përfunduar') : state === 'current' ? dt('hapi aktual') : dt('hapi tjetër')})</span>
+                    </span>
+                  </li>
+                </React.Fragment>
+              );
+            })}
+          </ol>
+        </nav>
       )}
 
       {step === 1 && (
@@ -915,143 +1190,143 @@ export default function ReportIssue() {
 
       {step === 1 && (
         <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
-          <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 md:px-4 py-1 text-xs md:text-xs font-bold tracking-wide border-b-4 border-l-4 border-slate-900 dark:border-slate-700 rounded-bl-xl rounded-tr-xl">{dt(`Nr: 01`)}
+          <div className="mb-6 md:mb-8">
+            <h2 ref={stepHeadingRef} tabIndex={-1} className="mb-2 text-2xl font-bold leading-tight tracking-tight text-[var(--color-text)] outline-none dark:text-white sm:text-3xl">
+              {dt('Hapi 1: Shtoni dëshmi')} <span className="text-base font-medium text-[var(--color-text-muted)]">({dt('opsionale')})</span>
+            </h2>
+            <p id="evidence-help" className="max-w-2xl text-sm leading-relaxed text-slate-700 dark:text-slate-200 md:text-base">
+              {dt('Një foto, video ose dokument e ndihmon shqyrtimin, por nuk është e detyrueshme. Mund ta dërgoni raportin edhe pa dëshmi.')}
+            </p>
           </div>
 
-          <div className="mb-8 md:mb-12">
-            <h2 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 leading-[1.1]">{dt(`Hap`)}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
-            </h2>
-            <p className="text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-sm md:max-w-md font-serif italic text-sm md:text-lg">{dt(`Paraqit një çështje që ndikon drejtpërdrejt në shoqëri ose proceset e lëvizjes.`)}</p>
-          </div>
-          
           <div className="space-y-6 md:space-y-8">
             <div>
-               <div className="border-2 border-dashed border-slate-300 dark:border-white/20 p-4 md:p-8 flex flex-col items-center justify-center bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800/50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors relative h-40 sm:h-56 md:h-72 group cursor-pointer overflow-hidden mb-4 rounded-2xl">
-                 <div className="w-12 h-12 md:w-20 md:h-20 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl flex items-center justify-center mb-3 md:mb-6 group-hover:-translate-y-2 transition-transform">
-                   <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900" />
-                 </div>
-                 <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
-                 <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, PDF, DOC, MP3 · deri në 12 skedarë · max ${formatBytes(MAX_UPLOAD_BYTES.reports)} secili`)}</span>
-                 <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-               </div>
+              <label
+                htmlFor="report-evidence"
+                onDragOver={event => event.preventDefault()}
+                onDrop={event => {
+                  event.preventDefault();
+                  addFiles(event.dataTransfer.files);
+                }}
+                className="group relative mb-4 flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-400 bg-[var(--color-surface)] p-4 text-center transition-colors hover:bg-slate-50 focus-within:border-indigo-600 focus-within:ring-2 focus-within:ring-indigo-600/40 dark:border-white/30 dark:bg-slate-900/50 dark:hover:bg-slate-800/50 md:p-8"
+              >
+                <span aria-hidden="true" className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/60 bg-[var(--color-surface)] dark:border-white/10 dark:bg-slate-900/60 md:h-16 md:w-16">
+                  <Camera className="h-6 w-6 text-blue-900 dark:text-blue-300 md:h-8 md:w-8" />
+                </span>
+                <span className="mb-1 text-base font-bold text-[var(--color-text)] dark:text-white md:text-lg">{dt('Zgjidhni skedarë ose tërhiqini këtu')}</span>
+                <span id="evidence-limits" className="max-w-sm text-sm text-slate-700 dark:text-slate-200">
+                  {fmt('Foto, video, audio, PDF, DOC ose TXT · deri në {count} skedarë · deri në {size} secili', {
+                    count: MAX_REPORT_FILES,
+                    size: formatBytes(MAX_UPLOAD_BYTES.reports),
+                  })}
+                </span>
+                <input
+                  id="report-evidence"
+                  type="file"
+                  multiple
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  onChange={handleImageUpload}
+                  aria-describedby="evidence-help evidence-limits"
+                  className="sr-only"
+                />
+              </label>
 
-               {mediaItems.length > 0 && (
-                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-6">
-                   {mediaItems.map((media, idx) => (
-                     <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200/60 dark:border-white/10">
-                       {media.type === 'image' ? (
-                         <img src={media.url} alt="Preview" className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition-all" />
-                       ) : media.type === 'video' ? (
-                         <video src={media.url} className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition-all" muted playsInline />
-                       ) : (
-                         <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[var(--color-surface-subtle)] p-2 text-center">
-                           {media.type === 'audio'
-                             ? <Music className="w-6 h-6 text-indigo-600" />
-                             : <FileText className="w-6 h-6 text-indigo-600" />}
-                           <span className="text-[10px] font-bold text-[var(--color-text)] dark:text-white truncate w-full">{media.file.name}</span>
-                         </div>
-                       )}
-                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                         <button type="button" onClick={() => removeMedia(idx)} className="text-white text-xs font-bold uppercase border-b-2 border-indigo-600 pb-0.5 hover:text-rose-400">{t('remove')}</button>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               )}
-               
-               {mediaItems.length > 0 && (
-                 <div className="bg-blue-900 border-l-4 border-red-500 rounded-l-xl p-3 md:p-5 flex gap-3 text-white items-start">
-                   <Sparkles className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-[#C5A059]" />
-                   <p className="text-xs md:text-xs font-bold tracking-wide leading-relaxed">{t('report_ai_analysis_msg')}</p>
-                 </div>
-               )}
+              {evidenceMessages.length > 0 && (
+                <div role="alert" className="mb-4 flex items-start gap-3 rounded-xl border-l-4 border-rose-600 bg-rose-50 p-4 text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">
+                  <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+                  <ul className="space-y-1 text-sm font-medium">
+                    {evidenceMessages.map(message => <li key={message}>{message}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {mediaItems.length > 0 && (
+                <ul aria-label={dt('Dëshmitë e shtuara')} className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {mediaItems.map((media, idx) => (
+                    <li key={`${media.file.name}-${media.file.size}-${idx}`} className="overflow-hidden rounded-xl border border-slate-200/60 dark:border-white/10">
+                      <div className="relative aspect-square">
+                        {media.type === 'image' ? (
+                          <img src={media.url} alt={media.file.name} className="h-full w-full object-cover" />
+                        ) : media.type === 'video' ? (
+                          <video src={media.url} aria-label={media.file.name} className="h-full w-full object-cover" muted playsInline />
+                        ) : (
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--color-surface-subtle)] p-2 text-center">
+                            {media.type === 'audio'
+                              ? <Music aria-hidden="true" className="h-6 w-6 text-indigo-600" />
+                              : <FileText aria-hidden="true" className="h-6 w-6 text-indigo-600" />}
+                            <span className="w-full break-all text-xs font-semibold text-[var(--color-text)] dark:text-white">{media.file.name}</span>
+                          </div>
+                        )}
+                        {failedFileNames.includes(media.file.name) && (
+                          <span className="absolute inset-x-0 top-0 bg-rose-700 px-2 py-1 text-center text-xs font-bold text-white">{dt('Nuk u ngarkua')}</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(idx)}
+                        aria-label={fmt('Hiq {name}', { name: media.file.name })}
+                        className="flex min-h-11 w-full items-center justify-center gap-1 bg-slate-100 px-2 text-sm font-semibold text-slate-900 hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-slate-800 dark:text-white dark:hover:bg-rose-950"
+                      >
+                        {t('remove')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="flex items-start gap-3 rounded-xl border-l-4 border-indigo-500 bg-slate-100 p-3 text-slate-900 dark:bg-slate-800 dark:text-slate-100 md:p-5">
+                <Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+                <p className="text-sm leading-relaxed">{t('report_ai_analysis_msg')}</p>
+              </div>
             </div>
 
-            {mediaError && (
-              <div className="bg-rose-50 border-l-4 border-indigo-600 p-4 mb-6 rounded-r-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <AlertCircle className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-                <p className="text-rose-700 text-xs md:text-sm font-bold">{t('report_error_media')}</p>
-              </div>
-            )}
-
-            <button 
-              onClick={() => {
-                if (mediaItems.length === 0) {
-                  setMediaError(true);
-                  setTimeout(() => setMediaError(false), 5000);
-                  return;
-                }
-                setStep(2);
-              }}
-              className="w-full flex items-center justify-center gap-3 p-4 md:p-5 font-bold transition-all tracking-wide text-sm md:text-sm border rounded-xl active:scale-[0.99] mb-8 bg-slate-900 hover:bg-indigo-600 text-white border-slate-200/60 dark:border-white/10 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] hover:shadow-indigo-500/10"
-            >{dt(`Vazhdo te hapi tjetër (Konfirmo Lokacionin)`)} <ChevronRight className="w-4 h-4 animate-pulse text-rose-500" />
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="mb-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200/60 bg-slate-900 p-4 text-sm font-bold tracking-wide text-white transition-all hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 active:scale-[0.99] dark:border-white/10 md:p-5"
+            >
+              {mediaItems.length > 0 ? dt('Vazhdo te detajet dhe vendndodhja') : dt('Vazhdo pa dëshmi')}
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
             </button>
 
             {/* Dynamic & Beautiful Step-by-Step Reporting Guide for Citizens */}
             <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl p-6 md:p-8 hover:border-slate-950 transition-colors duration-300">
               <div className="flex items-start gap-3 mb-6 border-b border-slate-200/60 dark:border-white/10 pb-4">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-indigo-600/20 shrink-0">
+                <div aria-hidden="true" className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-indigo-600/20 shrink-0">
                   ?
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--color-text)] dark:text-white text-sm md:text-base uppercase tracking-wider">{dt(`Nuk dini si të raportoni? Ndihmë e Shpejtë`)}</h3>
-                  <p className="text-xs text-neutral-500 dark:text-[var(--color-text-muted)]">{dt(`Mësoni si të dërgoni një raportim të saktë dhe me impakt në komunitet vetëm me 3 hapa të thjeshtë.`)}</p>
+                  <h3 className="font-bold text-[var(--color-text)] dark:text-white text-sm md:text-base">{dt(`Nuk dini si të raportoni? Ndihmë e Shpejtë`)}</h3>
+                  <p className="text-sm text-neutral-600 dark:text-[var(--color-text-muted)]">{dt(`Mësoni si të dërgoni një raportim të saktë dhe me impakt në komunitet vetëm me 3 hapa të thjeshtë.`)}</p>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 p-5 border border-slate-200/60 dark:border-white/10 rounded-xl flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-shadow">
-                  <div>
-                    <div className="w-7 h-7 rounded-full bg-slate-900 text-rose-500 flex items-center justify-center font-bold text-xs mb-3 shadow-sm dark:shadow-none">
-                      1
-                    </div>
-                    <h4 className="font-bold text-[var(--color-text)] dark:text-white text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>{dt(`Ngarko Dëshminë`)}
-                    </h4>
-                    <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Bëni një foto ose video të problemit (gropë në rrugë, ndotje mjedisore, shtyllë e dëmtuar) dhe ngarkojeni te kutia më lart.`)}
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-indigo-600 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Foto duhet të jetë e qartë`)}
-                  </p>
-                </div>
-                
-                <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 p-5 border border-slate-200/60 dark:border-white/10 rounded-xl flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-shadow">
-                  <div>
-                    <div className="w-7 h-7 rounded-full bg-slate-900 text-rose-500 flex items-center justify-center font-bold text-xs mb-3 shadow-sm dark:shadow-none">
-                      2
-                    </div>
-                    <h4 className="font-bold text-[var(--color-text)] dark:text-white text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>{dt(`Vendodhja`)}
-                    </h4>
-                    <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Sistemi do të gjejë GPS tuaj automatikisht, ose mund të klikoni`)} <strong>{dt(`direkt mbi hartë`)}</strong>{dt(`për të vendosur pikën e saktë ku ndodhet problemi.`)}
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-indigo-600 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Kliko mbi Hartë për saktësi`)}
-                  </p>
-                </div>
-                
-                <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 p-5 border border-slate-200/60 dark:border-white/10 rounded-xl flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-shadow">
-                  <div>
-                    <div className="w-7 h-7 rounded-full bg-slate-900 text-rose-500 flex items-center justify-center font-bold text-xs mb-3 shadow-sm dark:shadow-none">
-                      3
-                    </div>
-                    <h4 className="font-bold text-[var(--color-text)] dark:text-white text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>{dt(`Detajet & AI`)}
-                    </h4>
-                    <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Kliko`)} <strong>{dt(`"Krijim me AI"`)}</strong>{dt(`që inteligjenca jonë të lexojë foton dhe të shkruajë automatikisht titullin/kategorinë. Më pas kliko dërgo.`)}
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-indigo-600 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`E lehtë dhe automatike`)}
-                  </p>
-                </div>
-              </div>
-              
+
+              <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <li className="bg-[var(--color-surface)] dark:bg-slate-800 p-5 border border-slate-200/60 dark:border-white/10 rounded-xl">
+                  <span aria-hidden="true" className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs mb-3">1</span>
+                  <h4 className="font-bold text-[var(--color-text)] dark:text-white text-sm mb-1.5">{dt(`Ngarko Dëshminë`)}</h4>
+                  <p className="text-sm text-neutral-700 dark:text-[var(--color-text-muted)] leading-relaxed">{dt(`Bëni një foto ose video të problemit (gropë në rrugë, ndotje mjedisore, shtyllë e dëmtuar) dhe ngarkojeni te kutia më lart.`)}</p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2">{dt(`Foto duhet të jetë e qartë`)}</p>
+                </li>
+                <li className="bg-[var(--color-surface)] dark:bg-slate-800 p-5 border border-slate-200/60 dark:border-white/10 rounded-xl">
+                  <span aria-hidden="true" className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs mb-3">2</span>
+                  <h4 className="font-bold text-[var(--color-text)] dark:text-white text-sm mb-1.5">{dt(`Vendodhja`)}</h4>
+                  <p className="text-sm text-neutral-700 dark:text-[var(--color-text-muted)] leading-relaxed">{dt(`Sistemi do të gjejë GPS tuaj automatikisht, ose mund të klikoni`)} <strong>{dt(`direkt mbi hartë`)}</strong> {dt(`për të vendosur pikën e saktë ku ndodhet problemi.`)}</p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2">{dt(`Kliko mbi Hartë për saktësi`)}</p>
+                </li>
+                <li className="bg-[var(--color-surface)] dark:bg-slate-800 p-5 border border-slate-200/60 dark:border-white/10 rounded-xl">
+                  <span aria-hidden="true" className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs mb-3">3</span>
+                  <h4 className="font-bold text-[var(--color-text)] dark:text-white text-sm mb-1.5">{dt(`Detajet & AI`)}</h4>
+                  <p className="text-sm text-neutral-700 dark:text-[var(--color-text-muted)] leading-relaxed">{dt(`Kliko`)} <strong>{dt(`"Krijim me AI"`)}</strong> {dt(`që inteligjenca jonë të lexojë foton dhe të shkruajë automatikisht titullin/kategorinë. Më pas kliko dërgo.`)}</p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2">{dt(`E lehtë dhe automatike`)}</p>
+                </li>
+              </ol>
+
               <div className="mt-6 bg-slate-900 border-l-4 border-indigo-600 p-4 flex gap-3 text-white items-start rounded-r-xl">
-                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                <div className="text-xs font-bold leading-relaxed space-y-1">
-                  <span className="text-[10px] text-rose-500 uppercase tracking-widest block font-extrabold">{dt(`Shënim për Sigurinë`)}</span>
-                  <p className="text-slate-200 font-medium font-sans">{dt(`ZëriYT është portal nga komuniteti, për komunitetin. Të gjitha të dhënat janë të sigurta dhe mund të zgjidhni të mbeteni anonim gjatë postimeve tuaja.`)}
-                  </p>
+                <AlertCircle aria-hidden="true" className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
+                <div className="text-sm leading-relaxed space-y-1">
+                  <span className="text-xs text-rose-200 block font-bold">{dt(`Shënim për Sigurinë`)}</span>
+                  <p className="text-slate-100">{dt(`Zëri i Qytetarëve është portal nga komuniteti, për komunitetin. Mund të zgjidhni të mbeteni anonim kur dërgoni një raport.`)}</p>
                 </div>
               </div>
             </div>
@@ -1060,104 +1335,188 @@ export default function ReportIssue() {
       )}
 
       {step === 2 && !isSubmitting && (
-        <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-right-8 duration-500 relative">
-          <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 md:px-4 py-1 text-xs md:text-xs font-bold tracking-wide border-b-4 border-l-4 border-slate-900 dark:border-slate-700 rounded-bl-xl rounded-tr-xl">{dt(`Nr: 02`)}
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          aria-labelledby="report-step2-title"
+          className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-right-8 duration-500 relative"
+        >
+          <div className="mb-6 md:mb-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b-2 border-slate-900 dark:border-white/20 pb-5">
+            <div className="w-full">
+              <button type="button" onClick={() => setStep(1)} className="mb-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-700 hover:text-indigo-600 dark:text-slate-200 md:mb-4">
+                <ArrowLeft aria-hidden="true" className="w-4 h-4" />{dt(`Kthehu prapa`)}
+              </button>
+              <h1 id="report-step2-title" ref={stepHeadingRef} tabIndex={-1} className="text-[26px] sm:text-[34px] font-bold text-[var(--color-text)] dark:text-white tracking-tight leading-tight outline-none">
+                {dt(`Hapi 2: Detajet e problemit`)}
+              </h1>
+              <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{dt('Fushat me * janë të detyrueshme.')}</p>
+            </div>
+            <div className="w-full md:w-auto">
+              <button
+                type="button"
+                onClick={analyzeWithAI}
+                disabled={isAnalyzing}
+                aria-describedby="ai-help"
+                className="flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-300 bg-[var(--color-surface)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] transition-colors hover:bg-slate-100 disabled:cursor-wait disabled:opacity-70 dark:border-white/20 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 md:w-auto"
+              >
+                {isAnalyzing ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Sparkles aria-hidden="true" className="h-4 w-4" />}
+                {isAnalyzing ? dt('Po përpunohet...') : dt('Krijim me AI')}
+              </button>
+            </div>
           </div>
 
-          <div className="mb-8 md:mb-12 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b-2 border-slate-900 pb-6 md:pb-8">
-            <div className="w-full">
-              <button type="button" onClick={() => setStep(1)} className="text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] hover:text-indigo-600 flex items-center gap-2 text-xs md:text-xs font-bold tracking-wide mb-4 md:mb-6 transition-colors">
-                 <ArrowLeft className="w-4 h-4" />{dt(`Kthehu prapa`)}
+          <p id="ai-help" className="mb-4 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+            {dt('“Krijim me AI” lexon foton e parë dhe sugjeron titullin, përshkrimin, kategorinë dhe urgjencën. Është vetëm ndihmë: i kontrolloni dhe i ndryshoni vetë, dhe raporti mund të dërgohet edhe pa të.')}
+          </p>
+          <div role="status" aria-live="polite" className={cn('mb-4 text-sm font-medium text-slate-800 dark:text-slate-100', !aiStatus && 'hidden')}>{aiStatus}</div>
+
+          {draftNotice && (
+            <div role="status" className="mb-6 flex flex-col gap-2 rounded-xl border border-indigo-300 bg-indigo-50 p-4 text-sm text-indigo-950 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-100 sm:flex-row sm:items-center sm:justify-between">
+              <p>{dt('Rikthyem tekstin e raportit që nisët në këtë skedë. Emri, telefoni dhe dëshmitë nuk ruhen kurrë.')}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  clearDraft();
+                  setTitle(''); setDescription(''); setCategory(''); setTopicCategory(''); setAddress('');
+                  setCoordinates(DEFAULT_CENTRE); setLocationSource('default'); setDraftNotice(false); setErrors({});
+                }}
+                className="min-h-11 shrink-0 rounded-lg border border-indigo-400 px-3 text-sm font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900"
+              >
+                {dt('Fshi draftin')}
               </button>
-              <h1 className="text-[26px] sm:text-[34px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-2  uppercase leading-none">{dt(`Specifikat e`)}<br className="hidden md:block" />{dt(`Rastit`)}<span className="text-indigo-600">.</span></h1>
             </div>
-            <button type="button" onClick={analyzeWithAI} className="flex items-center justify-center gap-2 text-xs md:text-xs uppercase font-bold tracking-widest bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 hover:bg-neutral-200 text-[var(--color-text)] dark:text-white px-4 md:px-5 py-2.5 md:py-3 border border-slate-200/60 dark:border-white/10 rounded-xl transition-colors whitespace-nowrap group w-full md:w-auto">
-               <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:text-indigo-600" /> {isAnalyzing ? 'Po përpunohet...' : 'Krijim me AI'}
-            </button>
-          </div>
+          )}
+
+          {Object.keys(errors).filter(key => errors[key]).length > 0 && (
+            <div role="alert" className="mb-6 rounded-xl border-l-4 border-rose-600 bg-rose-50 p-4 text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">
+              <p className="font-bold">{dt('Rregulloni këto fusha para se ta dërgoni raportin:')}</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                {FIELD_ORDER.filter(key => errors[key]).map(key => (
+                  <li key={key}>
+                    <a
+                      href={`#${FIELD_IDS[key]}`}
+                      onClick={event => {
+                        event.preventDefault();
+                        document.getElementById(FIELD_IDS[key])?.focus();
+                      }}
+                      className="underline underline-offset-2"
+                    >
+                      {errors[key]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="space-y-6 md:space-y-8">
             <div>
-              <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3">{dt(`Emërtimi i Çështjes`)}</label>
-              <input 
+              <label htmlFor="report-title" className={labelClass}>{dt(`Emërtimi i Çështjes`)}<RequiredMark /></label>
+              <input
+                {...fieldProps('title')}
                 required
-                type="text" 
+                type="text"
                 value={title}
-                onChange={(e) => { setTitle(e.target.value); if(errors.title) setErrors({...errors, title: ''}) }}
-                placeholder={dt(`Psh. Shkatërrimi i infrastrukturës urbane...`)} 
-                className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white placeholder:font-medium placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] text-sm md:text-base", errors.title ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
+                autoComplete="off"
+                onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors({ ...errors, title: '' }); }}
+                placeholder={dt(`Psh. Shkatërrimi i infrastrukturës urbane...`)}
+                className={cn(inputClass, errors.title ? 'border-rose-600' : 'border-neutral-300 focus:border-slate-900')}
               />
-              {errors.title && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.title}</p>}
+              <FieldError id="report-title-error" message={errors.title} />
             </div>
 
             <div>
-              <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3">{dt(`Raporti i Detajuar`)}</label>
-              <textarea 
+              <label htmlFor="report-description" className={labelClass}>{dt(`Raporti i Detajuar`)}<RequiredMark /></label>
+              <textarea
+                {...fieldProps('description')}
                 required
                 value={description}
-                onChange={(e) => { setDescription(e.target.value); if(errors.description) setErrors({...errors, description: ''}) }}
-                rows={5} 
-                className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors resize-none font-medium text-[var(--color-text)] dark:text-white placeholder:font-normal placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] font-serif italic text-sm md:text-base", errors.description ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
+                onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors({ ...errors, description: '' }); }}
+                rows={5}
+                className={cn(inputClass, 'resize-y', errors.description ? 'border-rose-600' : 'border-neutral-300 focus:border-slate-900')}
                 placeholder={dt(`Paraqisni me detaje natyrën e problemit...`)}
               />
-              {errors.description && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.description}</p>}
+              <FieldError id="report-description-error" message={errors.description} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 border border-slate-200/60 dark:border-white/10 rounded-xl">
+            <fieldset className="grid grid-cols-1 gap-4 rounded-xl border border-slate-200/60 bg-[var(--color-surface)] p-4 dark:border-white/10 dark:bg-slate-900/50 md:grid-cols-2 md:gap-8 md:p-8">
+              <legend className="sr-only">{dt('Klasifikimi i raportit')}</legend>
               <div>
-                <label htmlFor="report-topic-category" className="mb-2 block border-l-2 border-indigo-600 pl-3 text-xs font-bold tracking-wide text-[var(--color-text)] dark:text-white">
-                  {dt('Kategoria e raportimit')}
-                </label>
+                <label htmlFor="report-topic-category" className={labelClass}>{dt('Tema e problemit')}<RequiredMark /></label>
                 <select
-                  id="report-topic-category"
+                  {...fieldProps('topicCategory', 'report-topic-hint')}
                   required
                   value={topicCategory}
                   onChange={event => {
                     setTopicCategory(event.target.value);
                     if (errors.topicCategory) setErrors({ ...errors, topicCategory: '' });
                   }}
-                  className={cn(
-                    'w-full appearance-none rounded-xl border bg-[var(--color-surface)] px-4 py-3 text-sm font-semibold text-[var(--color-text)] outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 dark:text-white',
-                    errors.topicCategory ? 'border-indigo-600' : 'border-slate-200 dark:border-white/10'
-                  )}
+                  className={cn(inputClass, 'font-semibold', errors.topicCategory ? 'border-rose-600' : 'border-neutral-300')}
                 >
                   <option value="">{dt('Zgjidhni temën kryesore')}</option>
-                  {REPORT_TOPICS.map(topic => (
-                    <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>
+                  {REPORT_TOPIC_GROUPS.map(group => (
+                    <optgroup key={group.label} label={dt(group.label)}>
+                      {group.ids.map(id => (
+                        <option key={id} value={id}>{getReportTopicPlainLabel(id)}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
-                {errors.topicCategory && <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-indigo-600"><AlertCircle className="h-3 w-3" />{errors.topicCategory}</p>}
-                <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+                <FieldError id="report-topic-category-error" message={errors.topicCategory} />
+                <p id="report-topic-hint" className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                   {dt('Kjo temë ndihmon kërkimin, hartën dhe statistikat; zgjedhja e institucionit poshtë përcakton adresimin e raportit.')}
                 </p>
               </div>
-              <div className="relative" ref={categoryDropdownRef}>
-                <label className="flex items-center gap-2 text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-3">{dt(`Sektori / Ministria (Kërko Problemin)`)}
-                  {isAnalyzing && <span className="flex h-2 w-2 relative ml-2"><span className="animate-ping absolute inline-flex h-full w-full bg-indigo-600 opacity-75"></span><span className="relative inline-flex h-2 w-2 bg-indigo-600"></span></span>}
-                </label>
-                <div 
-                  className={cn(
-                    "w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold uppercase text-xs md:text-xs tracking-wider cursor-text flex items-center justify-between",
-                    isAnalyzing ? "border-indigo-600 text-indigo-600" : (errors.category ? "border-indigo-600 text-[var(--color-text)] dark:text-white" : "border-neutral-300 text-[var(--color-text)] dark:text-white")
-                  )}
-                  onClick={() => setIsCategoryDropdownOpen(true)}
-                >
+
+              <div className="relative" ref={categoryDropdownRef} onBlur={event => {
+                if (!categoryDropdownRef.current?.contains(event.relatedTarget as Node | null)) setIsCategoryDropdownOpen(false);
+              }}>
+                <label htmlFor="report-category" className={labelClass}>{dt('Institucioni që e merr raportin')}<RequiredMark /></label>
+                <div className="relative">
                   <input
+                    {...fieldProps('category', 'report-category-hint')}
+                    required
+                    role="combobox"
+                    aria-expanded={isCategoryDropdownOpen}
+                    aria-controls="report-category-list"
+                    aria-autocomplete="list"
                     type="text"
+                    autoComplete="off"
                     value={isCategoryDropdownOpen ? categorySearchTerm : (category ? dt(category) : '')}
+                    onFocus={() => setIsCategoryDropdownOpen(true)}
                     onChange={(e) => {
                       setCategorySearchTerm(e.target.value);
                       setIsCategoryDropdownOpen(true);
-                      if(errors.category) setErrors({...errors, category: ''});
+                      if (errors.category) setErrors({ ...errors, category: '' });
                     }}
-                    placeholder={(t as any)('report_step2_category_ph') + " ose kërko problemin (psh. rrugë, mbeturina)..."}
-                    className="w-full outline-none bg-transparent placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] placeholder:normal-case placeholder:font-normal"
+                    onKeyDown={event => {
+                      if (event.key === 'Escape') setIsCategoryDropdownOpen(false);
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        setIsCategoryDropdownOpen(true);
+                        setTimeout(() => document.querySelector<HTMLElement>('#report-category-list [role="option"]')?.focus(), 0);
+                      }
+                    }}
+                    placeholder={dt('Zgjidhni institucionin ose kërkoni problemin (p.sh. rrugë, mbeturina)...')}
+                    className={cn(inputClass, 'pr-10', errors.category ? 'border-rose-600' : 'border-neutral-300')}
                   />
-                  <ChevronRight className={cn("w-4 h-4 text-[var(--color-text-muted)] transition-transform", isCategoryDropdownOpen && "rotate-90")} />
+                  <ChevronRight aria-hidden="true" className={cn('pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)] transition-transform', isCategoryDropdownOpen && 'rotate-90')} />
                 </div>
-                
+
                 {isCategoryDropdownOpen && (
-                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/95 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 shadow-xl rounded-2xl overflow-hidden max-h-72 overflow-y-auto">
+                  <div
+                    id="report-category-list"
+                    role="listbox"
+                    aria-label={dt('Institucioni që e merr raportin')}
+                    onKeyDown={event => {
+                      const options = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'));
+                      const at = options.indexOf(document.activeElement as HTMLElement);
+                      if (event.key === 'ArrowDown') { event.preventDefault(); options[Math.min(options.length - 1, at + 1)]?.focus(); }
+                      if (event.key === 'ArrowUp') { event.preventDefault(); if (at <= 0) document.getElementById('report-category')?.focus(); else options[at - 1]?.focus(); }
+                      if (event.key === 'Escape') { setIsCategoryDropdownOpen(false); document.getElementById('report-category')?.focus(); }
+                    }}
+                    className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-slate-200/60 bg-[var(--color-surface)] shadow-xl dark:border-white/10 dark:bg-slate-900"
+                  >
                     {groups.map(group => {
                       const filteredInGroup = allCategories.filter(c => {
                         if ((c.group || 'Të tjera') !== group) return false;
@@ -1171,23 +1530,26 @@ export default function ReportIssue() {
                       if (filteredInGroup.length === 0) return null;
 
                       return (
-                        <div key={group}>
-                          <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] px-4 py-2 text-[10px] font-bold uppercase tracking-widest sticky top-0">{dt(group)}</div>
+                        <div key={group} role="group" aria-label={dt(group)}>
+                          <div aria-hidden="true" className="sticky top-0 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{dt(group)}</div>
                           {filteredInGroup.map(c => (
                             <button
                               key={'id' in c ? (c as any).id : c.name}
                               type="button"
+                              role="option"
+                              aria-selected={category === c.name}
                               onClick={() => {
                                 setCategory(c.name);
                                 setCategorySearchTerm('');
                                 setIsCategoryDropdownOpen(false);
-                                if(errors.category) setErrors({...errors, category: ''});
+                                if (errors.category) setErrors({ ...errors, category: '' });
+                                document.getElementById('report-category')?.focus();
                               }}
-                              className="w-full text-left px-4 py-3 hover:bg-indigo-600/10 border-b last:border-0 border-slate-100 dark:border-white/5 font-bold text-xs text-slate-700 dark:text-[var(--color-text-muted)] transition-colors"
+                              className="min-h-11 w-full border-b border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-800 last:border-0 hover:bg-indigo-600/10 focus-visible:bg-indigo-600/10 focus-visible:outline-none dark:border-white/5 dark:text-slate-100"
                             >
                               {dt(c.name)}
                               {(c as any).keywords && categorySearchTerm && (c as any).keywords.toLowerCase().includes(categorySearchTerm.toLowerCase()) && !dt(c.name).toLowerCase().includes(categorySearchTerm.toLowerCase()) && (
-                                <span className="block text-[10px] text-neutral-400 font-normal mt-0.5 normal-case">{dt(`Lidhet me kërkimin tuaj`)}</span>
+                                <span className="mt-0.5 block text-xs font-normal text-slate-600 dark:text-slate-300">{dt(`Lidhet me kërkimin tuaj`)}</span>
                               )}
                             </button>
                           ))}
@@ -1199,186 +1561,252 @@ export default function ReportIssue() {
                       const term = categorySearchTerm.toLowerCase();
                       return dt(c.name).toLowerCase().includes(term) || ((c as any).keywords && (c as any).keywords.toLowerCase().includes(term));
                     }).length === 0 && (
-                      <div className="px-4 py-6 text-center text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] text-sm font-medium">{dt(`Nuk u gjet asnjë sektor për këtë problem.`)}</div>
+                      <div className="px-4 py-6 text-center text-sm font-medium text-slate-700 dark:text-slate-200">{dt(`Nuk u gjet asnjë sektor për këtë problem.`)}</div>
                     )}
                   </div>
                 )}
-                {errors.category && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.category}</p>}
+                <FieldError id="report-category-error" message={errors.category} />
+                <p id="report-category-hint" className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  {dt('Kush e merr raportin për ta zgjidhur: komuna, ministria ose kompania. Nëse nuk jeni të sigurt, shkruani problemin në kërkim.')}
+                </p>
               </div>
-              
+
               <div>
-                <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-3">{dt(`Niveli i Rrezikshmërisë`)}</label>
-                <select 
+                <label htmlFor="report-urgency" className={labelClass}>{dt(`Niveli i Rrezikshmërisë`)}</label>
+                <select
+                  id="report-urgency"
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value as UrgentLevel)}
-                  className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all text-[var(--color-text)]"
+                  className={cn(inputClass, 'border-slate-200 dark:border-white/10')}
                 >
-                  <option value="E ulët">{dt(`SHKALLA I:`)} {dt('E ulët').toUpperCase()}</option>
-                  <option value="Mesatare">{dt(`SHKALLA II:`)} {dt('Mesatare').toUpperCase()}</option>
-                  <option value="E lartë">{dt(`SHKALLA III:`)} {dt('E lartë').toUpperCase()}</option>
-                  <option value="Kritike">{dt(`SHKALLA IV:`)} {dt('Kritike').toUpperCase()}</option>
+                  <option value="E ulët">{dt(`SHKALLA I:`)} {dt('E ulët')}</option>
+                  <option value="Mesatare">{dt(`SHKALLA II:`)} {dt('Mesatare')}</option>
+                  <option value="E lartë">{dt(`SHKALLA III:`)} {dt('E lartë')}</option>
+                  <option value="Kritike">{dt(`SHKALLA IV:`)} {dt('Kritike')}</option>
                 </select>
+                <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{dt('Në rrezik të menjëhershëm për jetën? Telefononi 112; ky formular nuk zëvendëson emergjencën.')}</p>
               </div>
-            </div>
+            </fieldset>
 
-            <div>
-              <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3">{dt(`Zona e Operimit (Komuna)`)}</label>
-              <select 
+            <fieldset>
+              <legend className={cn(labelClass, 'mb-3')}>{dt('Vendndodhja e problemit')}<RequiredMark /></legend>
+
+              <label htmlFor="report-municipality" className="mb-2 block text-sm font-semibold text-[var(--color-text)] dark:text-white">
+                {dt(`Zona e Operimit (Komuna)`)}<RequiredMark />
+              </label>
+              <select
+                {...fieldProps('municipality')}
+                required
                 value={municipality}
                 onChange={e => {
-                  setMunicipality(e.target.value);
-                  if(errors.municipality) setErrors({...errors, municipality: ''});
-                  if (MUNICIPALITY_COORDINATES[e.target.value]) {
-                    setCoordinates(MUNICIPALITY_COORDINATES[e.target.value]);
+                  const next = e.target.value;
+                  setMunicipality(next);
+                  if (errors.municipality) setErrors({ ...errors, municipality: '' });
+                  if (locationSource === 'default' || locationSource === 'municipality') {
+                    if (MUNICIPALITY_COORDINATES[next]) {
+                      setCoordinates(MUNICIPALITY_COORDINATES[next]);
+                      setLocationSource('municipality');
+                    }
+                  } else if (next) {
+                    // The pin the citizen placed is more precise than a municipality centre; keep it and say so.
+                    setGeoNotice(dt('Komuna u ndryshua, por pina mbeti aty ku e vendosët. Kontrolloni që komuna dhe pina përputhen.'));
                   }
                 }}
-                className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold mb-1 appearance-none uppercase text-xs md:text-xs tracking-wider text-[var(--color-text)] dark:text-white", errors.municipality ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
+                className={cn(inputClass, 'mb-1 font-semibold', errors.municipality ? 'border-rose-600' : 'border-neutral-300 focus:border-slate-900')}
               >
-                <option value="">{t('map_filter_city')}</option>
+                <option value="">{dt('Zgjidhni komunën')}</option>
                 {KOSOVO_MUNICIPALITIES.map(m => (
-                  <option key={m} value={m}>{m.toUpperCase()}</option>
+                  <option key={m} value={m}>{m}</option>
                 ))}
               </select>
-              {errors.municipality && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mb-4 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.municipality}</p>}
+              <FieldError id="report-municipality-error" message={errors.municipality} />
 
-              <div className="flex justify-between items-center mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3 relative">
-                  <div>
-                    <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide">{dt(`Koordinatat / Adresa`)}</label>
-                    <p className="text-[10px] text-indigo-600 mt-1 uppercase tracking-widest font-bold max-w-[200px] md:max-w-none">{dt(`Kliko tek GPS ose në hartë për të ndarë lokacionin saktësisht!`)}</p>
-                  </div>
-                  <button type="button" onClick={() => {
-                    const isAlerted = localStorage.getItem('gps_alerted');
-                    if (!isAlerted) {
-                       toast(dt("Sistemi kërkon qasje në GPS për të gjetur koordinatat tuaja të sakta."), { icon: '📍' });
-                       localStorage.setItem('gps_alerted', 'true');
+              <div className="mb-3 mt-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                  {dt('Klikoni në hartë për të vendosur pinën te problemi, ose përdorni GPS, ose shkruani adresën më poshtë.')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!localStorage.getItem('gps_alerted')) {
+                      toast(dt("Sistemi kërkon qasje në GPS për të gjetur koordinatat tuaja të sakta."), { icon: '📍' });
+                      localStorage.setItem('gps_alerted', 'true');
                     }
-
-                    if (navigator.geolocation) {
-                      setIsLocating(true);
-                      navigator.geolocation.getCurrentPosition(
-                        async (pos) => {
-                          const lat = pos.coords.latitude;
-                          const lng = pos.coords.longitude;
-                          setCoordinates([lat, lng]);
-                          try {
-                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-                            const data = await res.json();
-                            if (data && data.address) {
-                              const city = data.address.city || data.address.town || data.address.village || data.address.municipality;
-                              if (city) {
-                                const exactCommune = mapToKosovoMunicipality(city);
-                                if (exactCommune) {
-                                  setMunicipality(exactCommune);
-                                }
-                              }
-                              preventSearch.current = true; setAddress(data.display_name);
-                            } else {
-                              setAddress("Lokacioni juaj GPS (Live)");
+                    if (!navigator.geolocation) {
+                      setGeoNotice(dt('Shfletuesi juaj nuk suporton GPS. Klikoni në hartë ose shkruani adresën.'));
+                      return;
+                    }
+                    setIsLocating(true);
+                    setGeoNotice('');
+                    navigator.geolocation.getCurrentPosition(
+                      async (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        setCoordinates([lat, lng]);
+                        setLocationSource('gps');
+                        if (errors.location) setErrors({ ...errors, location: '' });
+                        try {
+                          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                          if (!res.ok) throw new Error(`reverse geocode ${res.status}`);
+                          const data = await res.json();
+                          if (data && data.address) {
+                            const city = data.address.city || data.address.town || data.address.village || data.address.municipality;
+                            if (city) {
+                              const exactCommune = mapToKosovoMunicipality(city);
+                              if (exactCommune) setMunicipality(exactCommune);
                             }
-                          } catch (e) {
-                            console.error('Reverse geocode error', e);
-                            setAddress("Lokacioni juaj GPS (Live)");
-                          } finally {
-                            setIsLocating(false);
+                            preventSearch.current = true;
+                            setAddress(data.display_name);
+                          } else {
+                            setGeoNotice(dt('Pozicioni u gjet, por adresa jo. Shkruani adresën ose përshkrimin e vendit.'));
                           }
-                        },
-                        (err) => {
-                          console.log(err);
+                        } catch (e) {
+                          console.error('Reverse geocode error', e);
+                          setGeoNotice(dt('Pozicioni u gjet, por adresa jo. Shkruani adresën ose përshkrimin e vendit.'));
+                        } finally {
                           setIsLocating(false);
-                          toast.error("Nuk mund të gjejmë lokacionin. Ju lutem kontrolloni nëse keni lejuar qasjen në GPS (Allow Location) në shfletuesin tuaj.");
-                        },
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                      );
-                    } else {
-                      toast.error(dt("Shfletuesi juaj nuk suporton GPS."));
-                    }
-                  }} className="px-3 py-1.5 md:py-2 bg-slate-900 text-white rounded-2xl text-xs md:text-sm font-bold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-sm dark:shadow-none active:scale-95 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed" disabled={isLocating}>
-                    {isLocating ? (
-                      <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />{dt(`Duke kërkuar...`)}</>
-                    ) : (
-                      <><MapPin className="w-3.5 h-3.5 md:w-4 md:h-4" />{dt(`Zbulo Lokacionin (Live)`)}</>
-                    )}
-                  </button>
-               </div>
-               <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] mb-2 font-medium">{dt(`Këshillë: Nëse jeni në kompjuter (Desktop) lokacioni mund të mos jetë 100% i saktë sepse llogaritet nga interneti. Mund ta`)} <b>{dt(`klikoni kudo në hartë`)}</b>{dt(`për të vendosur gjilpërën (pin) saktësisht te vendi ku ndodhet problemi.`)}
-               </p>
-              <div className="h-48 md:h-64 w-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 border-2 border-neutral-300 rounded-xl mb-4 relative z-0 overflow-hidden">
+                        }
+                      },
+                      (err) => {
+                        setIsLocating(false);
+                        setGeoNotice(
+                          err.code === 1
+                            ? dt('Qasja në vendndodhje u refuzua. Lejojeni te cilësimet e shfletuesit, ose klikoni në hartë dhe shkruani adresën.')
+                            : err.code === 3
+                              ? dt('Gjetja e vendndodhjes zgjati shumë. Provoni përsëri ose klikoni në hartë.')
+                              : dt('Vendndodhja nuk mund të gjendet. Klikoni në hartë ose shkruani adresën.'),
+                        );
+                      },
+                      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+                    );
+                  }}
+                  disabled={isLocating}
+                  className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-2xl bg-slate-900 px-4 text-sm font-bold text-white transition-colors hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isLocating ? (
+                    <><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />{dt(`Duke kërkuar...`)}</>
+                  ) : (
+                    <><MapPin aria-hidden="true" className="h-4 w-4" />{dt(`Zbulo Lokacionin (Live)`)}</>
+                  )}
+                </button>
+              </div>
+
+              <div role="status" aria-live="polite" className="mb-3 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100">
+                {locationSource === 'default' && dt('Harta tregon qendrën e Prishtinës si pikë fillestare. Nuk është ende vendndodhja e problemit.')}
+                {locationSource === 'municipality' && dt('Harta është në qendër të komunës së zgjedhur. Klikoni në hartë ose shkruani adresën për të shënuar vendin e saktë.')}
+                {locationSource === 'pin' && dt('Vendndodhja u shënua nga ju në hartë.')}
+                {locationSource === 'gps' && dt('Vendndodhja u zbulua nga GPS. Kontrolloni që pina është te problemi, jo te vendi ku gjendeni.')}
+                {locationSource === 'search' && dt('Vendndodhja u zgjodh nga adresa e kërkuar.')}
+                {geoNotice && <span className="mt-1 block font-semibold">{geoNotice}</span>}
+              </div>
+
+              <div
+                role="group"
+                aria-label={dt('Hartë për shënimin e vendndodhjes. Nëse nuk mund ta përdorni, shkruani adresën në fushën më poshtë.')}
+                className="relative z-0 mb-4 h-56 w-full overflow-hidden rounded-xl border-2 border-neutral-300 bg-[var(--color-surface)] dark:bg-slate-800 md:h-72"
+              >
                 <SafeMapContainer>
                   <MapContainer center={coordinates} zoom={13} scrollWheelZoom={true} className="w-full h-full" zoomControl={true}>
                     <TileLayer
-                      attribution='' 
+                      attribution='&copy; OpenStreetMap'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       className="map-tiles-dark"
                     />
-                    <LocationMarker position={coordinates} setPosition={setCoordinates} setAddress={setAddress} setMunicipality={setMunicipality} preventSearchRef={preventSearch} />
+                    <LocationMarker
+                      position={coordinates}
+                      setPosition={pos => { setCoordinates(pos); setLocationSource('pin'); setGeoNotice(''); if (errors.location) setErrors({ ...errors, location: '' }); }}
+                      setAddress={setAddress}
+                      setMunicipality={setMunicipality}
+                      preventSearchRef={preventSearch}
+                      onGeocodeError={() => setGeoNotice(dt('Pina u vendos, por adresa nuk u gjet. Shkruani adresën ose përshkrimin e vendit.'))}
+                    />
                   </MapContainer>
                 </SafeMapContainer>
               </div>
+
+              <label htmlFor="report-address" className="mb-2 block text-sm font-semibold text-[var(--color-text)] dark:text-white">
+                {dt('Adresa ose pika e referencës')}
+              </label>
               <div className="relative">
-                <input 
-                   type="text" 
-                   value={address}
-                   onChange={e => setAddress(e.target.value)}
-                   className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all text-[var(--color-text)]"
-                   placeholder={dt(`Identifikoni lokacionin me saktësi...`)}
+                <input
+                  {...fieldProps('location', 'report-address-hint')}
+                  type="text"
+                  value={address}
+                  autoComplete="street-address"
+                  onChange={e => { setAddress(e.target.value); if (errors.location) setErrors({ ...errors, location: '' }); }}
+                  className={cn(inputClass, errors.location ? 'border-rose-600' : 'border-slate-200 dark:border-white/10')}
+                  placeholder={dt(`Identifikoni lokacionin me saktësi...`)}
                 />
                 {isSearchingAddress && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <div aria-hidden="true" className="absolute right-4 top-1/2 -translate-y-1/2">
                     <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin"></div>
                   </div>
                 )}
                 {addressSuggestions.length > 0 && (
-                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/95 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 shadow-xl rounded-2xl overflow-hidden text-sm font-medium">
+                  <ul aria-label={dt('Sugjerime adresash')} className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-slate-200/60 bg-[var(--color-surface)] text-sm font-medium shadow-xl dark:border-white/10 dark:bg-slate-900">
                     {addressSuggestions.map((sug, i) => (
-                      <button 
-                        key={i} 
-                        type="button" 
-                        onClick={() => selectSuggestion(sug)}
-                        className="w-full text-left px-4 py-3 hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border-b last:border-0 border-slate-100 dark:border-white/5 flex items-start gap-2"
-                      >
-                        <MapPin className="w-4 h-4 text-[var(--color-text-muted)] mt-0.5 shrink-0" />
-                        <span className="text-slate-700 dark:text-[var(--color-text-muted)]">{sug.display_name}</span>
-                      </button>
+                      <li key={i}>
+                        <button
+                          type="button"
+                          onClick={() => selectSuggestion(sug)}
+                          className="flex min-h-11 w-full items-start gap-2 border-b border-slate-100 px-4 py-3 text-left last:border-0 hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:outline-none dark:border-white/5 dark:hover:bg-slate-800"
+                        >
+                          <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
+                          <span className="text-slate-800 dark:text-slate-100">{sug.display_name}</span>
+                        </button>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
               </div>
-            </div>
+              <p id="report-address-hint" className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">
+                {dt('Kjo fushë është alternativa e hartës: shkruani rrugën, lagjen ose një objekt pranë.')}
+              </p>
+              <FieldError id="report-address-error" message={errors.location} />
+            </fieldset>
 
-            <div className="flex flex-col gap-4 pt-6 md:pt-8 border-t-2 border-slate-900 mt-8 md:mt-10">
+            <div className="flex flex-col gap-4 pt-6 md:pt-8 border-t-2 border-slate-900 dark:border-white/20">
               {(!currentUser || currentUser?.role === 'guest') && !isAnonymous && (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 p-6 md:p-8 border border-slate-200/60 dark:border-white/10 rounded-xl bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 relative mt-4">
-                   <div className="absolute -top-4 left-4 md:left-6 px-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide py-1">{dt(`Identifikimi Subjektit`)}</div>
-                   <div>
-                     <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-2">{dt(`Emri dhe Mbiemri`)}</label>
-                     <input 
-                       required
-                       type="text" 
-                       value={guestName}
-                       onChange={(e) => { setGuestName(e.target.value); if(errors.guestName) setErrors({...errors, guestName: ''}) }}
-                       placeholder="..." 
-                       className={cn("w-full px-4 md:px-5 py-2.5 md:py-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white text-sm", errors.guestName ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
-                     />
-                     {errors.guestName && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestName}</p>}
-                   </div>
-                   <div>
-                     <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-2">{dt(`Kontakti`)}</label>
-                     <input 
-                       required
-                       type="tel" 
-                       value={guestPhone}
-                       onChange={(e) => { setGuestPhone(e.target.value); if(errors.guestPhone) setErrors({...errors, guestPhone: ''}) }}
-                       placeholder="+383..." 
-                       className={cn("w-full px-4 md:px-5 py-2.5 md:py-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white text-sm", errors.guestPhone ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
-                     />
-                     {errors.guestPhone && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestPhone}</p>}
-                   </div>
-                 </div>
+                <fieldset className="grid grid-cols-1 gap-4 rounded-xl border border-slate-200/60 bg-[var(--color-surface)] p-4 dark:border-white/10 dark:bg-slate-900/50 sm:grid-cols-2 md:gap-6 md:p-8">
+                  <legend className="px-2 text-sm font-bold text-[var(--color-text)] dark:text-white">{dt(`Identifikimi Subjektit`)}</legend>
+                  <div>
+                    <label htmlFor="report-guest-name" className={labelClass}>{dt(`Emri dhe Mbiemri`)}<RequiredMark /></label>
+                    <input
+                      {...fieldProps('guestName')}
+                      required
+                      type="text"
+                      autoComplete="name"
+                      value={guestName}
+                      onChange={(e) => { setGuestName(e.target.value); if (errors.guestName) setErrors({ ...errors, guestName: '' }); }}
+                      className={cn(inputClass, errors.guestName ? 'border-rose-600' : 'border-neutral-300 focus:border-slate-900')}
+                    />
+                    <FieldError id="report-guest-name-error" message={errors.guestName} />
+                  </div>
+                  <div>
+                    <label htmlFor="report-guest-phone" className={labelClass}>{dt(`Kontakti`)}<RequiredMark /></label>
+                    <input
+                      {...fieldProps('guestPhone', 'report-guest-phone-hint')}
+                      required
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={guestPhone}
+                      onChange={(e) => { setGuestPhone(e.target.value); if (errors.guestPhone) setErrors({ ...errors, guestPhone: '' }); }}
+                      placeholder="+383 44 123 456"
+                      className={cn(inputClass, errors.guestPhone ? 'border-rose-600' : 'border-neutral-300 focus:border-slate-900')}
+                    />
+                    <p id="report-guest-phone-hint" className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{dt('Format: +383 44 123 456')}</p>
+                    <FieldError id="report-guest-phone-error" message={errors.guestPhone} />
+                  </div>
+                </fieldset>
               )}
-              
-              <label className="flex items-center gap-4 cursor-pointer select-none bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 p-4 md:p-5 border-2 border-slate-200/60 dark:border-white/10 hover:border-slate-900 transition-colors mt-2 md:mt-4">
-                <input type="checkbox" checked={isAnonymous} onChange={e => setIsAnonymous(e.target.checked)} className="w-5 h-5 md:w-6 md:h-6 border border-slate-200/60 dark:border-white/10 rounded-xl text-[var(--color-text)] dark:text-white focus:ring-slate-900 transition-all rounded-xl" />
-                <span className="text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide">{dt(`Kërkoj statusin anonim në proces`)}</span>
+
+              <label className="flex min-h-11 cursor-pointer select-none items-start gap-4 border-2 border-slate-200/60 bg-[var(--color-surface)] p-4 transition-colors hover:border-slate-900 dark:border-white/10 dark:bg-slate-900/50 md:p-5">
+                <input type="checkbox" checked={isAnonymous} onChange={e => setIsAnonymous(e.target.checked)} aria-describedby="report-anon-hint" className="mt-0.5 h-6 w-6 shrink-0 rounded border border-slate-400 text-[var(--color-text)] focus:ring-slate-900" />
+                <span>
+                  <span className="block text-sm font-bold text-[var(--color-text)] dark:text-white">{dt(`Kërkoj statusin anonim në proces`)}</span>
+                  <span id="report-anon-hint" className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{dt('Në raport shfaqet “Qytetar Anonim” në vend të emrit tuaj.')}</span>
+                </span>
               </label>
 
               {currentUser?.email === 'reklama@admin.com' && (
@@ -1388,8 +1816,9 @@ export default function ReportIssue() {
                     <span className="text-xs md:text-xs font-bold text-blue-900 tracking-wide uppercase">{dt(`Posto si Reklamë (Sponsorizuar)`)}</span>
                   </label>
                   {isAd && (
-                    <input 
+                    <input
                       type="url"
+                      aria-label={dt('Linku i reklamës (opsional) - https://...')}
                       value={adLink}
                       onChange={e => setAdLink(e.target.value)}
                       placeholder={dt(`Linku i reklamës (opsional) - https://...`)}
@@ -1400,37 +1829,70 @@ export default function ReportIssue() {
               )}
             </div>
 
-            <div className="pt-6 md:pt-8">
-              <button 
+            {forensicsPrompt && aiInsights && (
+              <div role="alert" className="rounded-xl border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                <p className="font-bold">{dt('Analiza e fotos nuk mundi ta konfirmojë dëshminë')}</p>
+                <p className="mt-1 text-sm leading-relaxed">
+                  {dt('Kjo mund të ndodhë me foto të errëta, të paqarta ose pamje ekrani. Nuk e bllokon raportin: stafi e shqyrton çdo raport para publikimit dhe do ta shohë këtë shënim.')}
+                </p>
+                {aiInsights.forensicsReport && (
+                  <p className="mt-2 rounded bg-white/60 p-2 text-sm dark:bg-black/20">{String(aiInsights.forensicsReport).slice(0, 600)}</p>
+                )}
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => { setForensicsPrompt(false); setStep(1); }}
+                    className="min-h-11 rounded-lg border border-amber-700 px-4 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  >
+                    {dt('Ndrysho dëshminë')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { forensicsAcknowledged.current = true; setForensicsPrompt(false); void handleSubmit(); }}
+                    className="min-h-11 rounded-lg bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800"
+                  >
+                    {dt('Dërgo gjithsesi për shqyrtim')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {submitError && (
+              <div ref={submitErrorRef} tabIndex={-1} role="alert" className="flex items-start gap-3 rounded-xl border-l-4 border-rose-600 bg-rose-50 p-4 text-rose-900 outline-none dark:bg-rose-950/40 dark:text-rose-100">
+                <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+                <p className="text-sm font-semibold leading-relaxed">{submitError}</p>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-slate-900 text-white p-4 md:p-6 font-bold transition-colors tracking-wide text-xs md:text-sm border-2 border-transparent hover:border-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
+                aria-busy={isSubmitting}
+                className="flex min-h-14 w-full items-center justify-center gap-3 border-2 border-transparent bg-indigo-600 p-4 text-sm font-bold tracking-wide text-white transition-colors hover:border-slate-900 hover:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-70 md:p-6"
               >
                 {isSubmitting ? (
-                  <><Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />{dt(`PROCESIMI...`)}</>
+                  <><Loader2 aria-hidden="true" className="w-4 h-4 md:w-5 md:h-5 animate-spin" />{dt(`PROCESIMI...`)}</>
                 ) : (
-                  'PROTOKOLLO DHE PËRCELLO'
+                  dt('Dërgo raportin')
                 )}
               </button>
+              <p className="mt-3 text-center text-sm text-slate-600 dark:text-slate-300">
+                {dt('Pas dërgimit merrni një Track-ID. Raporti shqyrtohet nga stafi para se të bëhet publik.')}
+              </p>
             </div>
           </div>
         </form>
       )}
 
       {step === 2 && isSubmitting && (
-        <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-[28px] p-8 md:p-16 text-center animate-in zoom-in-95 duration-500 max-w-2xl mx-auto relative overflow-hidden flex flex-col items-center justify-center min-h-[420px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),transparent_35%),radial-gradient(circle_at_bottom,_rgba(244,63,94,0.12),transparent_40%)]" />
+        <div role="status" aria-live="polite" className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-[28px] p-8 md:p-16 text-center animate-in zoom-in-95 duration-500 max-w-2xl mx-auto relative overflow-hidden flex flex-col items-center justify-center min-h-[420px]">
           <div className="relative z-10">
-            <div className="w-24 h-24 bg-indigo-600/10 border-2 border-indigo-200 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+            <div aria-hidden="true" className="w-24 h-24 bg-indigo-600/10 border-2 border-indigo-200 rounded-full flex items-center justify-center mx-auto mb-8 relative">
               <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-              <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
             </div>
-            <h2 className="text-2xl md:text-3xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-4 uppercase">{dt(`Duke Procesuar`)}</h2>
-            <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto animate-pulse leading-relaxed">{dt(`Raporti juaj po dërgohet në sistem të sigurt. Verifikimi i lokacionit, kategorisë dhe sigurisë po bëhet në kohë reale...`)}</p>
-            <div className="mt-8 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-slate-500">
-              <span className="h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
-              <span>Secure workflow</span>
-            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4">{dt(`Duke Procesuar`)}</h2>
+            <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto leading-relaxed">{dt(`Raporti juaj po dërgohet në sistem të sigurt. Verifikimi i lokacionit, kategorisë dhe sigurisë po bëhet në kohë reale...`)}</p>
           </div>
         </div>
       )}
@@ -1443,10 +1905,10 @@ export default function ReportIssue() {
           <div className="w-20 h-20 md:w-28 md:h-28 bg-emerald-50 border-2 border-emerald-200 rounded-[28px] flex items-center justify-center mx-auto mb-6 md:mb-8 relative">
             <CheckCircle2 className="w-10 h-10 md:w-16 md:h-16 text-emerald-600 relative z-10" />
           </div>
-          <h1 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4">{dt(`Raportimi u pranua`)}<span className="text-indigo-600">.</span></h1>
+          <h1 ref={stepHeadingRef} tabIndex={-1} className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 outline-none">{dt(`Raportimi u pranua`)}<span className="text-indigo-600">.</span></h1>
           <p className="text-slate-600 dark:text-slate-200 font-medium text-sm md:text-base lg:text-lg mb-6 md:mb-8 font-serif italic max-w-md mx-auto">{dt(`Raportimi iu dërgua agjentëve dhe administratorëve për shqyrtim. Përdorni Track-ID për ta ndjekur statusin e tij në çdo moment.`)}</p>
           <div className="w-full mb-8 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 p-4 text-left shadow-inner">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-bold">{dt('Track-ID i raportimit')}</div>
+            <div className="text-xs text-slate-600 dark:text-slate-300 font-bold">{dt('Track-ID i raportimit')}</div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <code className="text-lg font-black tracking-wider text-slate-900 dark:text-white break-all">{submittedReportId}</code>
               <button
@@ -1459,7 +1921,7 @@ export default function ReportIssue() {
                     toast.error(dt('Kopjimi nuk u realizua. Shënojeni Track-ID me dorë.'));
                   }
                 }}
-                className="shrink-0 min-h-11 px-3 text-xs font-bold text-blue-600 hover:text-blue-700"
+                className="shrink-0 min-h-11 px-3 text-sm font-bold text-blue-700 hover:text-blue-800 dark:text-blue-300"
               >{dt('Kopjo')}</button>
             </div>
           </div>
@@ -1469,7 +1931,7 @@ export default function ReportIssue() {
             <ul className="mt-1 list-disc space-y-1 pl-5">
               <li>{dt('Statusi është “Në pritje”: raporti pret shqyrtimin. Nuk është ende publik.')}</li>
               <li>{dt('Pasi të aprovohet, dërgohet te institucioni përgjegjës dhe shfaqet në hartë dhe regjistër.')}</li>
-              <li>{dt('Ruajeni Track-ID: është mënyra e vetme për ta ndjekur raportin pa llogari.')}</li>
+              <li>{dt('Ruajeni Track-ID: është mënyra e vetme për ta ndjekur raportin pa llogari. Platforma nuk dërgon email konfirmimi.')}</li>
             </ul>
           </div>
 
@@ -1482,7 +1944,7 @@ export default function ReportIssue() {
           <div className="flex flex-col sm:flex-row gap-4">
             <button onClick={() => navigate(`/trackid?id=${encodeURIComponent(submittedReportId)}`)} className="flex-1 px-6 md:px-8 py-4 md:py-5 bg-slate-900 hover:bg-[#003865] text-white font-bold tracking-wide text-xs md:text-xs transition-colors border border-slate-200/60 dark:border-white/10 rounded-xl">{dt(`Ndiq raportimin`)}
             </button>
-            <button onClick={() => { setStep(1); setTitle(''); setDescription(''); setMediaItems([]); }} className="flex-1 px-6 md:px-8 py-4 md:py-5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[var(--color-text)] dark:text-white border border-slate-200/60 dark:border-white/10 rounded-xl font-bold tracking-wide text-xs md:text-xs transition-colors">{dt(`Rast i Ri`)}
+            <button onClick={startNewReport} className="flex-1 px-6 md:px-8 py-4 md:py-5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[var(--color-text)] dark:text-white border border-slate-200/60 dark:border-white/10 rounded-xl font-bold tracking-wide text-xs md:text-xs transition-colors">{dt(`Rast i Ri`)}
             </button>
           </div>
         </div>

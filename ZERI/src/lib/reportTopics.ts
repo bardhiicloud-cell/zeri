@@ -73,3 +73,34 @@ export function getReportTopicValueLabel(value: string) {
   if (topic) return `${topic.icon} ${getLocalizedReportTopicName(topic.label)}`;
   return value.startsWith('legacy:') ? value.slice('legacy:'.length) : value;
 }
+
+/**
+ * The 40 topics grouped for the report form. A single flat list of 40 emoji
+ * options is hard to scan with a keyboard or a screen reader; groups let a
+ * citizen narrow down first. Every topic belongs to exactly one group (tested).
+ */
+export const REPORT_TOPIC_GROUPS: ReadonlyArray<{ label: string; ids: readonly ReportTopicId[] }> = [
+  { label: 'Siguria dhe emergjencat', ids: ['polici-siguri', 'emergjenca'] },
+  {
+    label: 'Rrugë, ujë dhe qytet',
+    ids: ['rruge', 'transport', 'parking', 'infrastrukture', 'ndertim-banim', 'urbanizem', 'uje-kanalizim', 'mbeturina', 'mjedis', 'energji', 'telekomunikacion', 'pyje-natyre'],
+  },
+  {
+    label: 'Shërbime për qytetarët',
+    ids: ['arsim', 'shendetesi', 'mireqenie-sociale', 'femije-familje', 'gruaja', 'rinia', 'kulture-trashegimi', 'sport', 'diaspora'],
+  },
+  {
+    label: 'Institucione dhe qeverisje',
+    ids: ['politike', 'komuna', 'zgjedhje', 'qeveri', 'drejtesi', 'integrim-bota', 'teknologji-digjitalizim'],
+  },
+  {
+    label: 'Ekonomi dhe punë',
+    ids: ['ekonomi', 'punesim', 'biznes', 'tregti-cmime', 'financa-buxhet', 'tatime-dogana', 'bujqesi', 'blegtori', 'industri', 'shkence-inovacion'],
+  },
+];
+
+/** Localised topic name without the decorative emoji (used inside <option>). */
+export function getReportTopicPlainLabel(id: string): string {
+  const topic = TOPIC_BY_ID.get(id);
+  return topic ? getLocalizedReportTopicName(topic.label) : id;
+}

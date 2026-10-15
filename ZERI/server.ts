@@ -1957,6 +1957,33 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
   }
   const report = parsed.value;
 
+  // ── Retry of a submission that already succeeded ─────────────────────────
+  // The form generates the document id once per submission. If that document
+  // exists and is the caller's own, the earlier attempt stored it and only the
+  // response was lost: answer with the existing report instead of creating a
+  // second one or tripping the duplicate window below.
+  if (report.requestedReportId) {
+    try {
+      const existing = await db().collection('reports').doc(report.requestedReportId).get();
+      if (existing.exists) {
+        const data = existing.data() as { authorId?: string; trackingId?: string; status?: string } | undefined;
+        if (data?.authorId === actor.uid) {
+          return res.status(200).json({
+            id: existing.id,
+            trackingId: data.trackingId || '',
+            status: data.status || 'Pending Review',
+            alreadyStored: true,
+          } as any);
+        }
+        // Someone else's id: ignore the request and let the server pick one.
+        report.requestedReportId = '';
+      }
+    } catch (error: any) {
+      console.error('[REPORTS] idempotency check failed:', error?.message);
+      report.requestedReportId = '';
+    }
+  }
+
   // ── Duplicate-window check: same uid + same title within 10 minutes ──────
   try {
     const since = new Date(Date.now() - 10 * 60 * 1000);
@@ -2009,7 +2036,12 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
   });
 
   try {
-    const ref = await db().collection('reports').add(reportDoc);
+    const ref = report.requestedReportId
+      ? db().collection('reports').doc(report.requestedReportId)
+      : db().collection('reports').doc();
+    // create() fails if the id exists, so two concurrent identical requests
+    // cannot both succeed.
+    await ref.create(reportDoc);
 
     audit('report.create', req, { reportId: ref.id, trackId });
     void Promise.all([loadPriorityRules(db()), loadPool(db(), authAdmin()).catch(() => null)])

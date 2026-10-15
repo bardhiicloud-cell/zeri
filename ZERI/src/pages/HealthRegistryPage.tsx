@@ -600,7 +600,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   return (
                     <button key={cat.id} type="button" aria-pressed={selectedCategory === cat.id} onClick={() => setSelectedCategory(cat.id)} className="au-chip">
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span>{dt(cat.name)}</span>
-                      <span className="ml-1 rounded-full bg-black/10 px-1.5 text-[10px] font-black tabular-nums dark:bg-white/15">{categoryCounts[cat.id] ?? 0}</span>
+                      <span className="ml-1 rounded-full bg-black/10 px-1.5 text-xs font-black tabular-nums dark:bg-white/15">{categoryCounts[cat.id] ?? 0}</span>
                     </button>
                   );
                 })}
@@ -653,7 +653,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                         <h3 className={`text-sm font-black ${headerMeta ? headerMeta.accent : 'text-slate-900 dark:text-white'}`}>
                           {groupBy === 'category' ? dt(headerMeta!.name) : groupBy === 'urgency' ? dt(urgencyMeta(groupHeader.key).label) : groupHeader.key}
                         </h3>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black tabular-nums text-slate-600 dark:bg-zinc-800 dark:text-slate-300">{groupHeader.count}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black tabular-nums text-slate-600 dark:bg-zinc-800 dark:text-slate-300">{groupHeader.count}</span>
                         <span className="h-px flex-1 bg-slate-200 dark:bg-zinc-800" />
                       </div>
                     )}
@@ -669,7 +669,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           <div className="flex items-center gap-3">
                             <div className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl ${cMeta.tile}`} title={dt(cMeta.name)}>
                               <cMeta.icon className="h-4 w-4" aria-hidden="true" />
-                              <span className="mt-0.5 text-[8px] font-black leading-none">{cMeta.abbr}</span>
+                              <span className="mt-0.5 text-[11px] font-black leading-none">{cMeta.abbr}</span>
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5">
@@ -689,17 +689,17 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           </div>
 
                           <div className="flex shrink-0 flex-col items-end gap-1.5">
-                            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${uMeta.pill}`}>
+                            <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${uMeta.pill}`}>
                               {dt(uMeta.label)}
                             </span>
-                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${sMeta.pill}`}>{dt(sMeta.label)}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${sMeta.pill}`}>{dt(sMeta.label)}</span>
                           </div>
                         </div>
 
                         <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/45" aria-label={`Statusi i rastit ${c.trackingId || c.id}`}>
                           <div className="mb-2 flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Gjurmimi i rastit</span>
-                            <span className="font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</span>
+                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Gjurmimi i rastit</span>
+                            <span className="font-mono text-xs font-bold text-slate-500 dark:text-slate-400">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</span>
                           </div>
                           {c.status === 'rejected' ? (
                             <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-100 px-2 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
@@ -715,7 +715,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                               ].map((step) => (
                                 <div key={step.label} className="min-w-0">
                                   <div className={cn('mb-1 h-1.5 rounded-full', step.complete ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700')} />
-                                  <span className={cn('block truncate text-[9px] font-bold', step.complete ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500')}>{step.label}</span>
+                                  <span className={cn('block truncate text-[11px] font-bold', step.complete ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500')}>{step.label}</span>
                                 </div>
                               ))}
                             </div>
@@ -1004,7 +1004,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                             {hosp.name}
                           </h4>
                         </div>
-                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold rounded">
+                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold rounded">
                           {hosp.type}
                         </span>
                       </div>
@@ -1133,7 +1133,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <Building2 className="w-4 h-4 text-blue-500" />
                     {hospitalInfo.name}
                   </span>
-                  <span className="text-[10px] font-bold uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-bold uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                     {hospitalInfo.type}
                   </span>
                 </div>

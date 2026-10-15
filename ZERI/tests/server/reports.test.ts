@@ -102,6 +102,42 @@ describe('parseReportInput', () => {
     expect(parsed({}).requestedTrackingId).toBe('');
   });
 
+  it('accepts evidence as optional (PUB-UI-001): a report with no media is valid', () => {
+    expect(parsed({ media: [] }).media).toEqual([]);
+    expect(parseReportInput({ ...valid, media: undefined }).outcome).toBe('ok');
+  });
+
+  it('keeps audio and document evidence instead of coercing it to an image', () => {
+    const report = parsed({
+      media: [
+        { type: 'document', url: 'https://x.example/a.pdf', name: 'a.pdf', sizeBytes: 1200, mimeType: 'application/pdf' },
+        { type: 'audio', url: 'https://x.example/a.mp3' },
+        { type: 'bogus', url: 'https://x.example/b.jpg' },
+      ],
+    });
+    expect(report.media.map((item) => item.type)).toEqual(['document', 'audio', 'image']);
+    expect(report.media[0]).toMatchObject({ name: 'a.pdf', sizeBytes: 1200, mimeType: 'application/pdf' });
+    const doc = buildReportDocument(report, {
+      uid: 'u', nowMs: 1, trackingId: 'ZQ-1-ABC', createdAt: 't', eventSuffix: 'a',
+    }) as { images: string[] };
+    expect(doc.images).toEqual(['https://x.example/b.jpg']);
+  });
+
+  it('does not let invalid media entries use up the six slots', () => {
+    const media = [
+      ...Array.from({ length: 4 }, () => ({ type: 'image', url: 'http://insecure.example/x.jpg' })),
+      ...Array.from({ length: 6 }, (_, i) => ({ type: 'image', url: `https://ok.example/${i}.jpg` })),
+    ];
+    expect(parsed({ media }).media).toHaveLength(6);
+  });
+
+  it('accepts a client-generated Firestore id only when it is well formed', () => {
+    expect(parsed({ reportId: 'AbCdEfGhIjKlMnOpQrSt' }).requestedReportId).toBe('AbCdEfGhIjKlMnOpQrSt');
+    expect(parsed({ reportId: '../../users/x' }).requestedReportId).toBe('');
+    expect(parsed({ reportId: 'short' }).requestedReportId).toBe('');
+    expect(parsed({}).requestedReportId).toBe('');
+  });
+
   it('clamps client-relayed AI output', () => {
     const report = parsed({ aiCategoryScore: 1e9, aiRoutingReason: 'r'.repeat(5000), aiForensicsReport: 'f' });
     expect(report.ai.score).toBe(100);
