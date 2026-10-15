@@ -97,8 +97,10 @@ export default function Dashboard() {
   const activeMunicipality = isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : '';
   const heroMunicipality = activeMunicipality || 'Prishtinë';
   const fallbackHero = getMunicipalityHeroImage(heroMunicipality);
-  const heroImageDay = getMunicipalityPhoto(heroMunicipality, 'day') ?? fallbackHero;
-  const heroImageNight = getMunicipalityPhoto(heroMunicipality, 'night') ?? fallbackHero;
+  // "Gjithë Kosova" (no municipality selected) shows the national cover instead of a single city.
+  const isNationalScope = !activeMunicipality;
+  const heroImageDay = isNationalScope ? '/cover-city.jpg' : (getMunicipalityPhoto(heroMunicipality, 'day') ?? fallbackHero);
+  const heroImageNight = isNationalScope ? '/cover-city.jpg' : (getMunicipalityPhoto(heroMunicipality, 'night') ?? fallbackHero);
   const handleMunicipalityChange = (municipality: string) => {
     // The store setter persists; the page no longer writes localStorage itself.
     setUserMunicipality(municipality || ALL_SCOPE);
@@ -254,7 +256,14 @@ export default function Dashboard() {
             {/* Left Content */}
             <div className="max-w-2xl">
               <h1 className="luxury-hero-title text-3xl sm:text-4xl lg:text-[3.35rem] font-black text-white tracking-[-0.06em] leading-[0.92] mb-2 title-serif">
-                Zëri Qytetarëve {heroMunicipality}
+                {isNationalScope ? (
+                  <span className="flex items-center gap-3 sm:gap-4">
+                    <BrandMark className="h-12 w-12 sm:h-16 sm:w-16 lg:h-20 lg:w-20 drop-shadow-[0_0_24px_rgba(34,211,238,0.45)]" />
+                    <span>Zëri Qytetarëve<span className="mt-1 block text-sm sm:text-base font-semibold tracking-[0.18em] uppercase text-cyan-300">{dt('Gjithë Kosova')}</span></span>
+                  </span>
+                ) : (
+                  <>Zëri Qytetarëve {heroMunicipality}</>
+                )}
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-200/90 leading-snug mb-3 max-w-xl font-normal">
