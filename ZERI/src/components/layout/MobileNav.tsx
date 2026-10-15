@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, PlusCircle, Menu, X, ShieldAlert, UserRound,
   LogOut, Search, ChevronRight, ChevronDown, Sun, Moon, MapPin, Building2,
-  Plus, Film, Megaphone, Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake,
+  Plus, Film, Camera, Megaphone, Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake, Newspaper,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
@@ -45,13 +45,10 @@ import {
 /** Dock slots. Five fits a 360px device; six wraps. */
 const TABS = [
   { href: '/', label: 'Ballina', icon: Home },
-  { href: '/harta', label: 'Harta', icon: MapPin },
+  { href: '/forum', label: 'Debati Publik', icon: MessageSquare },
   { href: '/raporto', label: 'Raporto', icon: PlusCircle, primary: true },
-  { href: '/forum', label: 'Debati', icon: MessageSquare },
+  { href: '/lajme', label: 'Lajme', icon: Newspaper },
 ] as const;
-
-/** Replaces the debate tab in the dock while nobody is signed in. */
-const GUEST_TAB = { href: '/login', label: 'Hyr', icon: LogIn } as const;
 
 /** The quick-action rail inside the sheet: things a citizen does, not reads. */
 const QUICK_ACTIONS = [
@@ -64,7 +61,9 @@ const QUICK_ACTIONS = [
 /** What the centre "+" offers. Debate, reels and ads are handled by the forum page. */
 const CREATE_ACTIONS = [
   { id: 'report', label: 'Raporto një problem', hint: 'Dërgo foto dhe vendndodhje te komuna', icon: PlusCircle, tone: 'from-blue-500 to-blue-800' },
-  { id: 'post', label: 'Publiko në Debatin Publik', hint: 'Tekst, foto ose sondazh për komunitetin', icon: MessageSquare, tone: 'from-indigo-500 to-violet-700' },
+  { id: 'news', label: 'Raporto një lajm', hint: 'Dërgo lajm, foto ose video te redaksia', icon: Newspaper, tone: 'from-emerald-500 to-teal-700' },
+  { id: 'post', label: 'Postim në Debatin Publik', hint: 'Tekst, foto ose sondazh për komunitetin', icon: MessageSquare, tone: 'from-indigo-500 to-violet-700' },
+  { id: 'story', label: 'Debat Story', hint: 'Foto ose video që zhduket pas 24 orësh', icon: Camera, tone: 'from-fuchsia-500 to-purple-700' },
   { id: 'reel', label: 'Publiko Reel', hint: 'Video vertikale deri në 90 sekonda', icon: Film, tone: 'from-rose-500 to-pink-700' },
   { id: 'ad', label: 'Krijo Reklamë', hint: 'Promovo biznesin ose shërbimin tënd', icon: Megaphone, tone: 'from-amber-500 to-orange-600' },
 ] as const;
@@ -131,6 +130,10 @@ export function MobileNav() {
     setIsCreateOpen(false);
     if (id === 'report') {
       navigate('/raporto');
+      return;
+    }
+    if (id === 'news') {
+      navigate('/lajmero');
       return;
     }
     // Already in the forum: tell it directly. Otherwise it reads `?create=` on mount.
@@ -254,15 +257,8 @@ export function MobileNav() {
                 </button>
               </li>
 
-              {/*
-                The fourth slot is "Hyr" for visitors who are not signed in.
-                The dock is the only navigation that is always on screen on a
-                phone, and the sign-in button used to live in the desktop top
-                bar alone, so a guest on mobile had no visible way in. Signed-in
-                citizens get the debate tab back; for guests it stays one tap
-                away in the sheet.
-              */}
-              {(isGuest ? [GUEST_TAB] : TABS.slice(3)).map((tab) => (
+              {/* Sign-in lives at the top of the Menu sheet for visitors. */}
+              {TABS.slice(3).map((tab) => (
                 <li key={tab.href}>
                   <DockTab tab={tab} active={isActive(tab.href)} onClick={() => goTo(tab.href)} />
                 </li>

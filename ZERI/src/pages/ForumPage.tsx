@@ -689,7 +689,7 @@ export default function ForumPage() {
       textareaRef.current?.focus();
     }, 120);
   };
-  // The mobile dock's "+" sends citizens here with `?create=post|reel|ad` (or the
+  // The mobile dock's "+" sends citizens here with `?create=post|story|reel|ad` (or the
   // `zeri:forum-create` event when the forum is already open).
   const createFromDockRef = useRef<(kind: string) => void>(() => {});
   createFromDockRef.current = (kind: string) => {
@@ -698,6 +698,9 @@ export default function ForumPage() {
       setAdModalPostId(undefined);
       setAdModalPostContent(undefined);
       setIsAdRequestModalOpen(true);
+    } else if (kind === 'story') {
+      // Deferred so ForumStories has mounted and is listening on a fresh navigation.
+      window.setTimeout(() => handleCreateAction('story'), 450);
     } else if (kind === 'reel' || kind === 'post') {
       handleCreateAction(kind);
     }
