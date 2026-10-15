@@ -297,8 +297,7 @@ export default function KomunatPage() {
   const navigate = useNavigate();
   const reports = useStore((state) => state.reports || []);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [expandedMuni, setExpandedMuni] = useState<string | null>(null);
+    const [expandedMuni, setExpandedMuni] = useState<string | null>(null);
 
   // Add all other 18 municipalities dynamically if not present in detailed array
   const fullMunicipalitiesList = useMemo(() => {
@@ -339,11 +338,9 @@ export default function KomunatPage() {
       const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           item.region.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchRegion = selectedRegion === 'all' || item.region.toLowerCase().includes(selectedRegion.toLowerCase());
-
-      return matchSearch && matchRegion;
+      return matchSearch;
     });
-  }, [fullMunicipalitiesList, searchQuery, selectedRegion]);
+  }, [fullMunicipalitiesList, searchQuery]);
 
   // Calculate real reports per municipality
   const getReportCount = (muniName: string) => {
@@ -387,22 +384,6 @@ export default function KomunatPage() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-              {['all', 'Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 'Mitrovicë', 'Gjakovë'].map((reg) => (
-                <button
-                  key={reg}
-                  onClick={() => setSelectedRegion(reg)}
-                  className={cn(
-                    "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer",
-                    selectedRegion === reg
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  )}
-                >
-                  {reg === 'all' ? 'Të gjitha Rajonet' : reg}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -520,13 +501,15 @@ export default function KomunatPage() {
 
                 {/* Bottom Action Buttons */}
                 <div className="mx-5 mt-5 mb-5 pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => navigate(`/detailed-registry?komuna=${encodeURIComponent(muni.name)}`)}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Raportimet ({reportsCount})</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  {reportsCount > 0 ? (
+                    <button
+                      onClick={() => navigate(`/detailed-registry?komuna=${encodeURIComponent(muni.name)}`)}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{dt('Raportimet')} ({reportsCount})</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  ) : <span />}
 
                   <div className="flex items-center gap-2">
                     <button
@@ -538,7 +521,7 @@ export default function KomunatPage() {
                           : "border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                       )}
                     >
-                      {expandedMuni === muni.name ? 'Mbyll' : 'Detaje'}
+                      {expandedMuni === muni.name ? dt('Mbyll') : dt('Detaje')}
                     </button>
                     <button
                       onClick={() => navigate(`/raporto?komuna=${encodeURIComponent(muni.name)}`)}
