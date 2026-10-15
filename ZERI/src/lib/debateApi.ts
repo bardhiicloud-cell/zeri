@@ -131,7 +131,15 @@ export interface DebateStats {
 
 /* ------------------------------------------------------------ payers */
 
-export const getPaymentConfig = () => call<PaymentConfig>('/api/v1/payments/config');
+/** A missing or partial reply must never crash the pages that price ad packages. */
+export const getPaymentConfig = async (): Promise<PaymentConfig> => {
+  const raw = await call<Partial<PaymentConfig> | null>('/api/v1/payments/config');
+  return {
+    verificationPriceEur: typeof raw?.verificationPriceEur === 'number' ? raw.verificationPriceEur : null,
+    adPackagePrices: raw?.adPackagePrices && typeof raw.adPackagePrices === 'object' ? raw.adPackagePrices : {},
+    methods: { iban: Boolean(raw?.methods?.iban), paysera: Boolean(raw?.methods?.paysera) },
+  };
+};
 
 export const createPaymentOrder = (body: { kind: PaymentKind; packageId?: string; adRequestId?: string }) =>
   call<{ order: PaymentOrder; bank: BankDetails | null; payseraEnabled: boolean }>('/api/v1/payments/orders', { method: 'POST', body });

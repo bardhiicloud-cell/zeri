@@ -253,7 +253,7 @@ export default function PartnersPage() {
                 )}
                 <div className="au-sub text-[13px] font-semibold">{dt(pkg.name)}</div>
                 <div className="mt-1 text-[28px] font-semibold tabular-nums">
-                  {config?.adPackagePrices[pkg.id] !== undefined ? formatEur(config.adPackagePrices[pkg.id]) : <span className="text-lg">{dt('Çmimi sipas ofertës')}</span>}
+                  {config?.adPackagePrices?.[pkg.id] !== undefined ? formatEur(config.adPackagePrices?.[pkg.id]) : <span className="text-lg">{dt('Çmimi sipas ofertës')}</span>}
                 </div>
                 {pkg.reach && (
                   <div className="mt-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</div>

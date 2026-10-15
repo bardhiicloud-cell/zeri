@@ -381,12 +381,15 @@ export default function ForumPage() {
     if (Array.isArray(profileFollowing)) return profileFollowing;
     try {
       const saved = localStorage.getItem('followed_user_ids');
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch { return []; }
   });
   const [savedPostIds, setSavedPostIds] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('saved_forum_post_ids') || '[]'); }
-    catch { return []; }
+    try {
+      const parsed = JSON.parse(localStorage.getItem('saved_forum_post_ids') || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   /*
@@ -418,7 +421,7 @@ export default function ForumPage() {
       lastLoad = Date.now();
       try {
         const { people } = await fetchPeople();
-        if (!cancelled) setAllForumUsers(people);
+        if (!cancelled) setAllForumUsers(Array.isArray(people) ? people : []);
       } catch {
         if (!cancelled) setAllForumUsers([]);
       }
@@ -474,7 +477,7 @@ export default function ForumPage() {
 
   const forumNotifications = useStore((state) => state.notifications);
   const unreadForumCount = React.useMemo(
-    () => forumNotifications.filter((n) => isForumNotification(n, currentUser?.id) && !n.isRead).length,
+    () => (forumNotifications ?? []).filter((n) => isForumNotification(n, currentUser?.id) && !n.isRead).length,
     [forumNotifications, currentUser?.id]
   );
 
