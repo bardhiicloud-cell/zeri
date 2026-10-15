@@ -26,9 +26,11 @@ export function AuthShell({ title, subtitle, onBack, backLabel, children, footer
       {/* Brand panel */}
       <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden p-14 xl:p-20 border-r border-white/5">
         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(34,211,238,0.14),transparent_55%),radial-gradient(ellipse_at_80%_90%,rgba(37,99,235,0.22),transparent_55%)]" />
+        {/* Skyline only (the cover's own wordmark is cropped out so the logo never appears twice). */}
+        <img src="/cover-city.jpg" alt="" aria-hidden="true" className="absolute inset-x-0 bottom-0 h-44 w-full object-cover opacity-80" style={{ objectPosition: '60% 30%', filter: 'brightness(1.25) saturate(1.2)', WebkitMaskImage: 'linear-gradient(to top, black 30%, transparent)', maskImage: 'linear-gradient(to top, black 30%, transparent)' }} />
         <div aria-hidden="true" className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] [background-size:48px_48px]" />
         <div className="relative"><BrandLockup size="lg" /></div>
-        <div className="relative max-w-md">
+        <div className="relative max-w-md drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
           <div className="mb-6 h-px w-16 bg-gradient-to-r from-cyan-400 to-transparent" />
           <h2 className="text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
             {dt('Së bashku për një Kosovë më të mirë')}<span className="text-cyan-400">.</span>
