@@ -276,14 +276,13 @@ export default function DetailedRegistryPage() {
             <Link to="/trackid" className={heroSecondaryClass}><FileSearch className="h-4 w-4" aria-hidden="true" /> {dt('Gjej me Track ID')}</Link>
           </>
         }
-        stats={[
+        stats={visibleReports.length === 0 ? undefined : [
           { value: visibleReports.length.toLocaleString('sq-AL'), label: dt('Raportime publike') },
           { value: `${resolvedShare}%`, label: dt('Të zgjidhura') },
           { value: visibleReports.filter(report => report.status !== 'Resolved' && report.status !== 'Closed').length.toLocaleString('sq-AL'), label: dt('Në proces') },
           { value: String(municipalitiesCovered), label: dt('Komuna me raportime') },
         ]}
       />
-      <p className="-mt-3 px-1 text-[11px] text-slate-500 dark:text-slate-400">{dt('Përmbledhja bazohet në raportimet e ngarkuara aktualisht; përdor filtrat për të kufizuar rezultatet.')}</p>
 
       {/* Toolbar */}
       <section aria-label={dt('Kërkimi dhe filtrat')} className="space-y-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">

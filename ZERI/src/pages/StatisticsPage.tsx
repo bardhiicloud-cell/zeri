@@ -611,7 +611,7 @@ export default function StatisticsPage() {
               note: comparison.periodDays ? `Krahasuar me ${comparison.periodDays} ditët paraprake` : 'Zgjidh 7, 30 ose 90 ditë për krahasim',
               icon: comparison.change !== null && comparison.change < 0 ? ArrowDownRight : ArrowUpRight,
               color: comparison.change !== null && comparison.change < 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-violet-600 dark:text-violet-300' }
-          ].map((kpi, i) => (
+          ].filter((_, i) => stats.totalReports > 0 || i < 4).map((kpi, i) => (
             <motion.div 
               key={kpi.label} 
               initial={{ opacity: 0, y: 15 }} 

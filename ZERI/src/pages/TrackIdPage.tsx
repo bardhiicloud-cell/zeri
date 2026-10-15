@@ -131,10 +131,6 @@ export default function TrackIdPage() {
           icon={FileSearch}
           title={dt('Ndiq raportimin tënd, hap pas hapi')}
           subtitle={dt('Shkruaj Track ID-në që more kur dërgove raportimin. Do të shohësh statusin aktual, përgjigjet zyrtare të institucionit dhe historinë e plotë të veprimeve.')}
-          stats={[
-            { value: 'ZQ-…', label: dt('Format: ZQ-data-kod') },
-            { value: dt('Pa llogari'), label: dt('Mjafton Track ID') },
-          ]}
         />
 
         <form

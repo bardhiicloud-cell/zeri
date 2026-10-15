@@ -107,7 +107,7 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
   return (
     <section
       aria-label={dt('Njoftime Live')}
-      className={cn('flex min-h-[28rem] flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-900', className ?? 'max-h-[36rem]')}
+      className={cn('flex flex-col overflow-hidden', events.length > 0 && 'min-h-[28rem]', 'overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-900', className ?? 'max-h-[36rem]')}
     >
       {/* Masthead */}
       <header className="relative overflow-hidden bg-gradient-to-br from-[#0b2b57] via-[#0f3a75] to-[#1d4ed8] px-5 pb-5 pt-5 text-white">
@@ -149,7 +149,7 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
       {/* Timeline: scrolls inside the panel so the column runs the full height of the archive. */}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [scrollbar-width:thin]">
         {events.length === 0 ? (
-          <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 px-4 text-center">
+          <div className="flex h-full min-h-28 flex-col items-center justify-center gap-2 px-4 text-center">
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800">
               <Radio className="h-5 w-5" aria-hidden="true" />
             </span>
