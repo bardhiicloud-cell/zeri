@@ -5,9 +5,9 @@ import { useStore } from '../lib/store';
 import { UserPlus, ShieldAlert, Phone, ArrowLeft, Mail, Lock, User, Shield, CheckCircle2, Calendar } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
-import { auth, db, signInWithGoogle } from '../lib/firebase';
+import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
 import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider } from 'firebase/auth';
-import { PROFILE_SYNC_FAILED, profileSyncError, syncProfile } from '../lib/authSync';
+import { PROFILE_SYNC_FAILED, profileSyncError, syncOrCreateProfile } from '../lib/authSync';
 import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import {
@@ -145,6 +145,33 @@ export default function RegisterPage() {
    * the client. The user goes straight to verification-required state, which
    * this page treats as a successful signup.
    */
+  const finishGoogle = async (user: import('firebase/auth').User) => {
+    const sync = await syncOrCreateProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
+    if (!sync.ok) throw profileSyncError(sync);
+    register({
+      name: user.displayName || '',
+      email: user.email || '',
+      isVerified: true,
+      avatar: user.photoURL || '',
+    });
+    // Google has already verified the address — enter the app directly.
+    navigate('/');
+  };
+
+  // A redirect fallback lands back on this page; complete it here.
+  useEffect(() => {
+    let cancelled = false;
+    readGoogleRedirectResult()
+      .then(async (credential) => { if (credential && !cancelled) await finishGoogle(credential.user); })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err?.code === PROFILE_SYNC_FAILED) setError(err.message);
+        else if (err?.code && err.code !== 'auth/no-auth-event') setError(`Regjistrimi me Google dështoi (${err.code}). Provoni përsëri.`);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleGoogle = async () => {
     setError('');
     setLoading(true);
@@ -154,18 +181,7 @@ export default function RegisterPage() {
       const credential = await signInWithGoogle(provider);
       const user = credential.user;
       // Registration needs the server to create the profile; a failure is reported with its real cause.
-      const sync = await syncProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
-      if (!sync.ok) throw profileSyncError(sync);
-
-      register({
-        name: user.displayName || '',
-        email: user.email || '',
-        isVerified: true,
-        avatar: user.photoURL || '',
-      });
-      // Google has already verified the address — no email round-trip is
-      // needed, so skip the "check your inbox" screen and enter the app.
-      navigate('/');
+      await finishGoogle(user);
     } catch (err: any) {
       if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
         // The user closed the popup; not an error worth a banner.
