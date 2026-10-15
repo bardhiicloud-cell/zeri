@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, ArrowUpRight, FileText, MapPin, BarChart3, ScrollText, Landmark,
@@ -6,7 +6,7 @@ import {
   Phone, LifeBuoy, ListChecks, Info, Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { AuraPage, AuraHero, AuraStats, AuraSection, AuraNote, AuraEmpty, AuraOrbit } from '../components/aura/Aura';
+import { AuraPage, AuraHero, AuraStats, AuraSection, AuraNote, AuraOrbit } from '../components/aura/Aura';
 
 import { dt } from '@/src/lib/dt';
 
@@ -38,14 +38,7 @@ const MODULES: PlatformModule[] = [
 const FIELDS = ['Raportime', 'Transparencë', 'Institucione', 'Shërbime', 'Pjesëmarrje', 'Informim'];
 
 export default function ProjektetPage() {
-  const [query, setQuery] = useState('');
-  const [field, setField] = useState('all');
-
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return MODULES.filter(m => (field === 'all' || m.field === field) && (!q || `${m.title} ${m.description}`.toLowerCase().includes(q)));
-  }, [query, field]);
-  const countOf = (f: string) => MODULES.filter(m => m.field === f).length;
+  const results = MODULES;
 
   return (
     <AuraPage>
@@ -67,26 +60,8 @@ export default function ProjektetPage() {
         </p>
       </AuraNote>
 
-      <AuraSection id="modules" title={dt('Hap një modul')} action={<span className="au-sub text-[12px]" role="status">{results.length} {dt('nga')} {MODULES.length} {dt('module')}</span>}>
-        <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-          <div className="relative sm:w-72">
-            <label htmlFor="mod-search" className="sr-only">{dt('Kërko modul')}</label>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" aria-hidden="true" />
-            <input id="mod-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={dt('Kërkoni sipas emrit ose përshkrimit')} className="au-input !pl-9" />
-          </div>
-          <div className="au-rail min-w-0 flex-1" role="group" aria-label={dt('Fusha')}>
-            <button type="button" aria-pressed={field === 'all'} onClick={() => setField('all')} className="au-chip">{dt('Të gjitha fushat')} <span className="au-count">{MODULES.length}</span></button>
-            {FIELDS.map(f => (
-              <button key={f} type="button" aria-pressed={field === f} onClick={() => setField(f)} className="au-chip">{dt(f)} <span className="au-count">{countOf(f)}</span></button>
-            ))}
-          </div>
-        </div>
-
-        {results.length === 0 ? (
-          <AuraEmpty icon={Search} title={dt('Nuk u gjet asnjë modul')} text={dt('Provoni një kërkim tjetër ose zgjidhni “Të gjitha fushat”.')}
-            action={<button type="button" onClick={() => { setQuery(''); setField('all'); }} className="au-btn au-btn-primary">{dt('Pastro filtrat')}</button>} />
-        ) : (
-          <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+      <AuraSection id="modules" title={dt('Hap një modul')}>
+        <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {results.map(({ to, title, field: f, description, icon: Icon }) => (
               <li key={to}>
                 <Link to={to} className="au-tile au-tile-link flex h-full items-start gap-3 p-4">
@@ -102,8 +77,7 @@ export default function ProjektetPage() {
                 </Link>
               </li>
             ))}
-          </ul>
-        )}
+        </ul>
       </AuraSection>
     </AuraPage>
   );

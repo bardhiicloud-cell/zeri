@@ -8,7 +8,7 @@ import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
 import { getOrCreateGuestUser } from '../lib/session';
-import { PROFILE_SYNC_FAILED, profileSyncError, syncProfile } from '../lib/authSync';
+import { PROFILE_SYNC_FAILED, profileSyncError, syncOrCreateProfile } from '../lib/authSync';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { canAccessAdmin } from '../lib/adminPermissions';
@@ -37,19 +37,8 @@ export default function LoginPage() {
       .then(async (credential) => {
         if (!credential || cancelled) return;
         const user = credential.user;
-        const token = await user.getIdToken();
-        const response = await fetch('/api/v1/auth/sync', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: user.displayName || '',
-            avatar: user.photoURL || '',
-          }),
-        });
-        if (!response.ok) throw new Error('Backend sync failed');
+        const sync = await syncOrCreateProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
+        if (!sync.ok) throw profileSyncError(sync);
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.exists() ? userDoc.data() : {};
         login({
@@ -68,7 +57,9 @@ export default function LoginPage() {
         });
       })
       .catch((err) => {
-        if (!cancelled && err?.code && err.code !== 'auth/no-auth-event') {
+        if (!cancelled && err?.code === PROFILE_SYNC_FAILED) {
+          setError(err.message);
+        } else if (!cancelled && err?.code && err.code !== 'auth/no-auth-event') {
           console.error('[LOGIN] Google redirect sign-in failed:', err?.code, err?.message);
           setError(`Hyrja me Google dështoi (${err?.code}). Provoni përsëri.`);
         }
@@ -202,7 +193,7 @@ export default function LoginPage() {
       provider.setCustomParameters({ prompt: 'select_account' });
       const credential = await signInWithGoogle(provider);
       const user = credential.user;
-      const sync = await syncProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
+      const sync = await syncOrCreateProfile(user, { name: user.displayName || '', avatar: user.photoURL || '' });
 
       // The login effect below reads currentUser and routes: staff to /admin,
       // everyone else to /. If the document does not exist yet the sync call

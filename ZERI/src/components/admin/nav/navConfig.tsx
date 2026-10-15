@@ -72,6 +72,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'work', group: 'daily', icon: ClipboardCheck,
     nav: 'Detyrat', label: 'Detyrat', hint: 'Detyrat e mia nga raportet, ato që kërkojnë caktim dhe afatet',
     keywords: ['detyra', 'task', 'tasks', 'ngarkesa', 'workload', 'ekipi', 'afate', 'sla', 'caktim', 'radha', 'queue', 'kapaciteti'],
+    mergedInto: 'inbox',
   },
   {
     id: 'workflow', group: 'daily', icon: ListChecks,
@@ -82,6 +83,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'support', group: 'daily', icon: Headphones,
     nav: 'Qendra e mbështetjes', label: 'Kërkesat për Agjent', hint: 'Bisedat me qytetarë që kërkojnë ndihmë',
     keywords: ['chat', 'biseda', 'mesazhe', 'ndihmë', 'support', 'help', 'tiket'],
+    mergedInto: 'inbox',
   },
 
   // ── Citizen services ──────────────────────────────────────────────────────
@@ -94,6 +96,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'donations', group: 'services', icon: Heart,
     nav: 'Donacionet', label: 'Aprovimi i Donacioneve', hint: 'Kërkesat për fonde që presin vendim',
     keywords: ['donacion', 'fonde', 'ndihmë sociale', 'donations', 'solidaritet'],
+    mergedInto: 'workflow',
   },
   {
     id: 'debate', group: 'services', icon: Landmark,
@@ -104,6 +107,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'polls', group: 'services', icon: Vote,
     nav: 'Sondazhet & anketat', label: 'Sondazhet Publike', hint: 'Pyetësorët dhe rezultatet',
     keywords: ['sondazh', 'votim', 'polls', 'pyetësor'],
+    mergedInto: 'debate',
   },
   {
     id: 'forum', group: 'services', icon: MessageSquare,
@@ -128,6 +132,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'notifications', group: 'community', icon: BellRing,
     nav: 'Njoftimet', label: 'Komunikimi & Njoftimet', hint: 'Njoftime dhe thirrje drejt qytetarëve',
     keywords: ['njoftim', 'broadcast', 'alarm', 'emergjent', 'alert', 'notifications'],
+    mergedInto: 'news',
   },
   {
     id: 'videos', group: 'community', icon: Video,
@@ -151,6 +156,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'roles', group: 'team', icon: KeyRound,
     nav: 'Rolet & Lejet', label: 'Katalogu i Roleve & Lejeve', hint: 'Çka hap dhe çka nuk lejohet çdo rol',
     keywords: ['rbac', 'permissions', 'leje', 'rol', 'roles', 'qasje', 'access'],
+    mergedInto: 'agents',
   },
   {
     id: 'municipalities', group: 'team', icon: Building2,
@@ -161,6 +167,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'workfacts', group: 'team', icon: ClipboardCheck,
     nav: 'Të dhënat e komunave', label: 'Të Dhënat e Komunave', hint: 'Verifikimi i punimeve të raportuara nga komunat',
     keywords: ['punime', 'verifikim', 'work facts', 'fakte'],
+    mergedInto: 'municipalities',
   },
   {
     id: 'monitoring', group: 'team', icon: Activity,
@@ -195,6 +202,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'updates', group: 'team', icon: History,
     nav: 'Aktiviteti & auditimi', label: 'Aktiviteti i Stafit & Auditimi', hint: 'Çka ka bërë stafi së fundi',
     keywords: ['përditësime', 'historia', 'aktivitet', 'updates', 'log'],
+    mergedInto: 'security',
   },
 
   // ── System ─────────────────────────────────────────────────────────────────
@@ -202,6 +210,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: 'categories', group: 'system', icon: MapIcon,
     nav: 'Harta & GIS', label: 'Harta & GIS', hint: 'Ndarja gjeografike dhe rajonet',
     keywords: ['harta', 'gis', 'map', 'rajone', 'kategori', 'categories'],
+    mergedInto: 'settings',
   },
   {
     id: 'security', group: 'system', icon: ShieldCheck,

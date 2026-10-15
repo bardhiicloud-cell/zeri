@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Eye, ShieldCheck, Users, Clock, Cpu, Map as MapIcon, Database, Info } from 'lucide-react';
+import { ArrowRight, Eye, Users, Clock, Info } from 'lucide-react';
 import { MunicipalityShield } from '../components/MunicipalityShield';
 import { AuraPage, AuraHero, AuraStats, AuraSection, AuraOrbit } from '../components/aura/Aura';
 
@@ -21,12 +21,6 @@ export default function RrethProjektitPage() {
     { icon: Clock, t: 'Eliminimi i Burokracisë', d: 'Raportoni një problem të lagjes nga telefoni ose kompjuteri, me foto dhe vendndodhje, pa u paraqitur në sportel.' },
     { icon: Eye, t: 'Transparencë për raportet e aprovuara', d: 'Raportet e aprovuara shfaqen në regjistrin publik dhe në hartë, me status dhe historik veprimesh. Raportet në pritje, kontakti i qytetarit dhe shënimet e brendshme nuk publikohen.' },
     { icon: Users, t: 'Pjesëmarrje Qytetare', d: 'Sondazhet, komuniteti dhe laboratori i ideve i japin qytetarit hapësirë të shprehet. Platforma nuk garanton që një komunë ose institucion do t’i pranojë propozimet.' },
-  ];
-  const tech = [
-    { icon: Cpu, t: 'React & TypeScript', d: 'Aplikacion ueb me tipizim statik (TypeScript).' },
-    { icon: MapIcon, t: 'Leaflet & OpenStreetMap', d: 'Harta me të dhëna OpenStreetMap për vendndodhjen e raporteve.' },
-    { icon: Database, t: 'Firebase', d: 'Ruajtja e të dhënave dhe përditësimi i raporteve, sondazheve dhe njoftimeve.' },
-    { icon: ShieldCheck, t: 'Siguria & Privatësia', d: 'Raportin mund ta dërgoni me opsionin anonim; kontakti nuk shfaqet publikisht. Detajet te politika e privatësisë.' },
   ];
 
   return (
@@ -67,19 +61,6 @@ export default function RrethProjektitPage() {
             </li>
           ))}
         </ol>
-      </AuraSection>
-
-      <AuraSection id="tech" kicker={dt('Teknologjia')} title={dt('Arkitektura Teknike dhe Teknologjitë')}>
-        <p className="au-sub mb-3 text-[13px]">{dt('Teknologjitë kryesore që përdor platforma.')}</p>
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {tech.map(t => (
-            <div key={t.t} className="au-tile p-4">
-              <t.icon className="h-5 w-5 text-[var(--au-accent)]" aria-hidden="true" />
-              <h3 className="mt-2.5 text-[14px] font-semibold">{t.t}</h3>
-              <p className="au-sub mt-1 text-[12.5px] leading-relaxed">{dt(t.d)}</p>
-            </div>
-          ))}
-        </div>
       </AuraSection>
 
       <AuraSection id="coverage" kicker={dt('Shtrirja Gjeografike')} title={dt('Raportimi është i hapur për të 38 komunat')}

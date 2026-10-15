@@ -92,7 +92,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
       });
 
       // Ask for a payment code when this package has a price; otherwise the team follows up.
-      const priced = config?.adPackagePrices[selectedPackage] !== undefined && (config.methods.iban || config.methods.paysera);
+      const priced = config?.adPackagePrices?.[selectedPackage] !== undefined && (config.methods?.iban || config.methods?.paysera);
       if (priced) {
         try {
           const result = await createPaymentOrder({ kind: 'ad-package', packageId: selectedPackage, adRequestId: requestRef.id });
@@ -183,7 +183,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-sm text-slate-900 dark:text-white">{dt(pkg.name)}</span>
-                  <span className="text-sm font-black text-blue-600 dark:text-blue-400">{config?.adPackagePrices[pkg.id] !== undefined ? formatEur(config.adPackagePrices[pkg.id]) : ''}</span>
+                  <span className="text-sm font-black text-blue-600 dark:text-blue-400">{config?.adPackagePrices?.[pkg.id] !== undefined ? formatEur(config.adPackagePrices?.[pkg.id]) : ''}</span>
                 </div>
                 <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</p>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">{dt(pkg.desc)}</p>

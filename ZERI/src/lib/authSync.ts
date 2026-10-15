@@ -37,6 +37,38 @@ export async function syncProfile(user: Pick<User, 'getIdToken'>, body: Record<s
   }
 }
 
+/**
+ * Sync with the server; when the server cannot do it (no Admin credentials, 5xx, offline)
+ * fall back to creating the person's own profile from the browser. Firestore rules allow
+ * exactly that for a first sign-in as long as no privileged field (role, points, ...) is
+ * written, so the account is still a plain citizen. Returns ok when a profile exists.
+ */
+export async function syncOrCreateProfile(
+  user: Pick<User, 'getIdToken' | 'uid'>,
+  body: Record<string, unknown>,
+): Promise<SyncResult> {
+  const sync = await syncProfile(user, body);
+  if (sync.ok || sync.status === 400 || sync.status === 429) return sync;
+  try {
+    const [{ doc, getDoc, setDoc, serverTimestamp }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase'),
+    ]);
+    const ref = doc(db, 'users', user.uid);
+    if (!(await getDoc(ref)).exists()) {
+      await setDoc(ref, {
+        id: user.uid,
+        name: typeof body.name === 'string' ? body.name : '',
+        avatar: typeof body.avatar === 'string' ? body.avatar : '',
+        createdAt: serverTimestamp(),
+      });
+    }
+    return { ok: true, status: 200, serverMessage: '' };
+  } catch {
+    return sync;
+  }
+}
+
 /** What to tell the person, in plain Albanian, for a failed sync. Pure. */
 export function syncFailureMessage(result: SyncResult): string {
   const detail = result.serverMessage ? ` ${result.serverMessage}` : '';

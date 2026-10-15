@@ -412,7 +412,7 @@ export default function LajmePage() {
           subtitle={dt('Lajme nga redaksia, njoftime zyrtare nga komunat dhe përgjigje ndaj raportimeve të qytetarëve, të renditura sipas temës dhe komunës.')}
           actions={<>
             <Link to="/" className="au-btn au-btn-glass !h-9 !text-[13px]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te platforma')}</Link>
-            <Link to="/lajmero" className="au-btn au-btn-glass !h-9 !text-[13px]"><Megaphone className="h-4 w-4" aria-hidden="true" /> {dt('Raporto lajm')}</Link>
+            {allNews.length === 0 && <Link to="/lajmero" className="au-btn au-btn-glass !h-9 !text-[13px]"><Megaphone className="h-4 w-4" aria-hidden="true" /> {dt('Raporto lajm')}</Link>}
             <ThemeToggle />
           </>}
           aside={allNews.length > 0 ? (
@@ -424,8 +424,8 @@ export default function LajmePage() {
           ) : undefined}
         />
 
-        {/* Filter bar: stays on screen while the reader scrolls. */}
-        <div className="sticky top-16 z-20 rounded-2xl border border-slate-200 bg-white/90 px-3 pt-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
+        {/* Filter bar: stays on screen while the reader scrolls. Nothing to filter on an empty feed. */}
+        {allNews.length > 0 && <div className="sticky top-16 z-20 rounded-2xl border border-slate-200 bg-white/90 px-3 pt-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
             <div role="tablist" aria-label={dt('Lloji i publikimit')} className="flex shrink-0 rounded-xl bg-slate-100 p-1 dark:bg-white/10">
               {streamOptions.map(({ id, label, count }) => {
@@ -481,10 +481,11 @@ export default function LajmePage() {
           {/* Topics: plain tabs on a hairline, the active one underlined. */}
           <nav
             aria-label={dt('Kategoritë e publikimeve')}
-            className="-mx-3 mt-3 flex items-center overflow-x-auto border-t border-slate-100 px-3 [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 [&::-webkit-scrollbar]:hidden"
+            className="-mx-3 mt-3 flex items-center overflow-x-auto border-t border-slate-200 bg-slate-100/70 px-3 rounded-b-2xl [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 dark:bg-white/[0.04] [&::-webkit-scrollbar]:hidden"
           >
-            {categoryRail.filter((item) => item.kind !== 'stream').map((item) => {
+            {categoryRail.filter((item) => item.kind !== 'stream').map((item, index) => {
               const on = activeRailId === item.id;
+              const dash = ['bg-rose-500', 'bg-blue-500', 'bg-amber-500', 'bg-emerald-500', 'bg-violet-500', 'bg-cyan-500', 'bg-pink-500', 'bg-lime-500'][index % 8];
               return (
                 <button
                   key={item.id}
@@ -492,11 +493,13 @@ export default function LajmePage() {
                   onClick={() => selectRailItem(item)}
                   aria-pressed={on}
                   className={cn(
-                    'relative inline-flex shrink-0 items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors',
-                    on ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                    'relative inline-flex shrink-0 items-center gap-1.5 px-3 py-3 text-[14px] font-bold transition-colors',
+                    on ? 'text-slate-950 dark:text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'
                   )}
                 >
-                  {item.kind === 'local' && <MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
+                  {item.kind === 'local'
+                    ? <MapPin className="h-3.5 w-3.5 text-rose-500" aria-hidden="true" />
+                    : <span aria-hidden="true" className={cn('h-1 w-2.5 -skew-x-12 rounded-[1px]', dash)} />}
                   {dt(item.label)}
                   <span className="text-[11px] font-medium tabular-nums text-slate-400">{item.count}</span>
                   {on && (
@@ -560,7 +563,7 @@ export default function LajmePage() {
               )}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Newspaper strip: dateline, breaking ticker and a leaderboard slot. */}
         <div className="-mt-2 space-y-4">

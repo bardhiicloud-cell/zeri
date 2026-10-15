@@ -56,7 +56,7 @@ export function AuraHero({ tone = 'blue', eyebrow, icon: Icon, title, subtitle, 
     <header data-tone={tone} className="au-hero">
       <span aria-hidden="true" className="au-glow -right-10 -top-16 h-52 w-52" />
       <span aria-hidden="true" className="au-glow -bottom-20 left-10 h-40 w-40 opacity-30" />
-      <div className={cn('grid gap-3 p-4 sm:gap-6 sm:p-7', visual ? cn('grid-cols-[1fr_auto] items-center', aside && 'md:grid-cols-[1fr_auto_auto]') : aside && 'md:grid-cols-[1fr_auto] md:items-center')}>
+      <div className={cn('grid gap-3 p-4 sm:gap-6 sm:p-7', visual ? cn('lg:grid-cols-[1fr_auto] lg:items-center', aside && 'lg:grid-cols-[1fr_auto_auto]') : aside && 'md:grid-cols-[1fr_auto] md:items-center')}>
         <div className="min-w-0 max-w-2xl">
           <p className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/70">
             {live ? <span className="au-dot au-pulse text-emerald-300" aria-hidden="true" /> : Icon ? <Icon className="h-3.5 w-3.5" aria-hidden="true" /> : null}
@@ -66,8 +66,9 @@ export function AuraHero({ tone = 'blue', eyebrow, icon: Icon, title, subtitle, 
           {subtitle && <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-white/75 sm:text-[16px]">{subtitle}</p>}
           {actions && <div className="mt-4 flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-        {visual && <div className="flex justify-center">{visual}</div>}
-        {aside && <div className={cn('min-w-0 md:w-[15rem]', visual && 'col-span-2 md:col-span-1')}>{aside}</div>}
+        {/* The orbit is decorative: hidden on phones and tablets where it only pushes content down. */}
+        {visual && <div className="hidden justify-center lg:flex">{visual}</div>}
+        {aside && <div className={cn('min-w-0 md:w-[15rem]', visual && 'lg:col-span-1')}>{aside}</div>}
       </div>
     </header>
   );
