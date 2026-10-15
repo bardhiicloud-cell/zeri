@@ -356,7 +356,7 @@ export function DirectMessagesModal({
                 ))}
               </nav>
               <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-3">
-                <div className="mb-2 flex items-center gap-2 text-[11px] font-bold text-slate-300">
+                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-100">
                   <ShieldCheck className="h-3.5 w-3.5 text-blue-400" aria-hidden="true" />
                   {dt('Kush mund të më shkruajë')}
                 </div>
@@ -372,7 +372,7 @@ export function DirectMessagesModal({
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-[10px] leading-snug text-slate-500">
+                <p className="mt-2 text-[11px] leading-snug text-slate-400">
                   {privacy === 'everyone' ? dt('Të panjohurit shkojnë te Kërkesat.') : dt('Vetëm njerëzit që ndiqni.')}
                 </p>
               </div>
@@ -404,13 +404,13 @@ export function DirectMessagesModal({
               </div>
               <div className="p-3 border-b border-slate-800">
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Kërko bisedat..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -440,17 +440,17 @@ export function DirectMessagesModal({
 
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {loadingConv ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mb-2 text-blue-400" />
                     <span className="text-xs">Po ngarkohen bisedat...</span>
                   </div>
                 ) : shownConvs.length === 0 ? (
-                  <div className="text-center py-16 px-6 text-slate-500">
+                  <div className="text-center py-16 px-6 text-slate-400">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-blue-400">
                       <MessageSquare className="w-7 h-7" />
                     </div>
                     <p className="text-sm font-bold text-slate-200">{listTab === 'requests' ? dt('Nuk keni kërkesa mesazhesh') : dt('Nuk keni biseda active')}</p>
-                    <p className="text-[11px] mt-1 text-slate-500">
+                    <p className="text-[11px] mt-1 text-slate-400">
                       {listTab === 'requests'
                         ? dt('Mesazhet nga njerëz që nuk i ndiqni shfaqen këtu derisa t’i pranoni.')
                         : dt('Vizitoni një profil në forum dhe klikoni "Dërgo Mesazh" për të nisur bisedën.')}
@@ -504,7 +504,7 @@ export function DirectMessagesModal({
                             <div className="flex items-center justify-between mb-0.5">
                               <span className={`text-xs truncate ${unread > 0 ? 'font-black text-white' : 'font-semibold text-white'}`}>{partner?.name || 'Përdorues'}</span>
                               {conv.lastMessageAt && (
-                                <span className="text-[10px] text-slate-500">
+                                <span className="text-[10px] text-slate-400">
                                   {new Date(conv.lastMessageAt?.toMillis ? conv.lastMessageAt.toMillis() : Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               )}
@@ -619,7 +619,7 @@ export function DirectMessagesModal({
                   {/* Messages Scroll View */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/20">
                     {messages.length === 0 ? (
-                      <div className="text-center py-12 text-slate-500">
+                      <div className="text-center py-12 text-slate-400">
                         <Sparkles className="w-6 h-6 mx-auto mb-2 text-blue-400 opacity-60" />
                         <p className="text-xs">Biseda është e hapur. Shkruani mesazhin e parë për {otherUserData.name}!</p>
                       </div>
@@ -648,7 +648,7 @@ export function DirectMessagesModal({
                               )}
                               <p className="whitespace-pre-wrap break-words">{msg.text}</p>
                             </div>
-                            <span className="text-[10px] text-slate-500 mt-1 px-1">
+                            <span className="text-[10px] text-slate-400 mt-1 px-1">
                               {msg.createdAt?.toMillis
                                 ? new Date(msg.createdAt.toMillis()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                 : 'Tani'}
@@ -684,7 +684,7 @@ export function DirectMessagesModal({
                       value={newMessageText}
                       onChange={(e) => setNewMessageText(e.target.value)}
                       placeholder={`Shkruaj një mesazh për ${otherUserData.name}...`}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                     />
 
                     <button
@@ -708,7 +708,7 @@ export function DirectMessagesModal({
                   )}
                 </>
               ) : (
-                <div className="relative flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-500 overflow-hidden">
+                <div className="relative flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400 overflow-hidden">
                   <div className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/20 blur-[90px]" aria-hidden="true" />
                   <div className="relative p-6 bg-white/5 rounded-3xl border border-white/10 mb-5 text-blue-400 shadow-2xl backdrop-blur">
                     <MessageSquare className="w-12 h-12" />
