@@ -481,10 +481,11 @@ export default function LajmePage() {
           {/* Topics: plain tabs on a hairline, the active one underlined. */}
           <nav
             aria-label={dt('Kategoritë e publikimeve')}
-            className="-mx-3 mt-3 flex items-center overflow-x-auto border-t border-slate-100 px-3 [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 [&::-webkit-scrollbar]:hidden"
+            className="-mx-3 mt-3 flex items-center overflow-x-auto border-t border-slate-200 bg-slate-100/70 px-3 rounded-b-2xl [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 dark:bg-white/[0.04] [&::-webkit-scrollbar]:hidden"
           >
-            {categoryRail.filter((item) => item.kind !== 'stream').map((item) => {
+            {categoryRail.filter((item) => item.kind !== 'stream').map((item, index) => {
               const on = activeRailId === item.id;
+              const dash = ['bg-rose-500', 'bg-blue-500', 'bg-amber-500', 'bg-emerald-500', 'bg-violet-500', 'bg-cyan-500', 'bg-pink-500', 'bg-lime-500'][index % 8];
               return (
                 <button
                   key={item.id}
@@ -492,11 +493,13 @@ export default function LajmePage() {
                   onClick={() => selectRailItem(item)}
                   aria-pressed={on}
                   className={cn(
-                    'relative inline-flex shrink-0 items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors',
-                    on ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                    'relative inline-flex shrink-0 items-center gap-1.5 px-3 py-3 text-[14px] font-bold transition-colors',
+                    on ? 'text-slate-950 dark:text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'
                   )}
                 >
-                  {item.kind === 'local' && <MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
+                  {item.kind === 'local'
+                    ? <MapPin className="h-3.5 w-3.5 text-rose-500" aria-hidden="true" />
+                    : <span aria-hidden="true" className={cn('h-1 w-2.5 -skew-x-12 rounded-[1px]', dash)} />}
                   {dt(item.label)}
                   <span className="text-[11px] font-medium tabular-nums text-slate-400">{item.count}</span>
                   {on && (
