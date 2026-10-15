@@ -1,5 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { BrandMark } from '@/src/components/BrandLogo';
+import { NationalHero } from '@/src/components/NationalHero';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
@@ -97,10 +98,10 @@ export default function Dashboard() {
   const activeMunicipality = isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : '';
   const heroMunicipality = activeMunicipality || 'Prishtinë';
   const fallbackHero = getMunicipalityHeroImage(heroMunicipality);
-  // "Gjithë Kosova" (no municipality selected) shows the national cover instead of a single city.
+  // "Gjithë Kosova" (no municipality selected) gets the dedicated national hero.
   const isNationalScope = !activeMunicipality;
-  const heroImageDay = isNationalScope ? '/cover-city.jpg' : (getMunicipalityPhoto(heroMunicipality, 'day') ?? fallbackHero);
-  const heroImageNight = isNationalScope ? '/cover-city.jpg' : (getMunicipalityPhoto(heroMunicipality, 'night') ?? fallbackHero);
+  const heroImageDay = getMunicipalityPhoto(heroMunicipality, 'day') ?? fallbackHero;
+  const heroImageNight = getMunicipalityPhoto(heroMunicipality, 'night') ?? fallbackHero;
   const handleMunicipalityChange = (municipality: string) => {
     // The store setter persists; the page no longer writes localStorage itself.
     setUserMunicipality(municipality || ALL_SCOPE);
@@ -226,7 +227,12 @@ export default function Dashboard() {
           </button>
         </form>
 
-        {/* 2. HERO BANNER (100% IDENTICAL TO SCREENSHOT) */}
+        {isNationalScope ? (
+          <NationalHero
+            onReport={() => navigate('/raporto')}
+            onViewReports={() => document.getElementById('recent-reports-table')?.scrollIntoView({ behavior: 'smooth' })}
+          />
+        ) : (
         <div className="luxury-hero relative w-full min-h-[210px] sm:min-h-[230px] lg:min-h-[250px] rounded-[28px] overflow-hidden text-white flex flex-col justify-start p-4 sm:p-5 lg:p-6">
 
           {/* Municipality panorama with a deep navy overlay for readable content. */}
@@ -256,14 +262,7 @@ export default function Dashboard() {
             {/* Left Content */}
             <div className="max-w-2xl">
               <h1 className="luxury-hero-title text-3xl sm:text-4xl lg:text-[3.35rem] font-black text-white tracking-[-0.06em] leading-[0.92] mb-2 title-serif">
-                {isNationalScope ? (
-                  <span className="flex items-center gap-3 sm:gap-4">
-                    <BrandMark className="h-12 w-12 sm:h-16 sm:w-16 lg:h-20 lg:w-20 drop-shadow-[0_0_24px_rgba(34,211,238,0.45)]" />
-                    <span>Zëri Qytetarëve<span className="mt-1 block text-sm sm:text-base font-semibold tracking-[0.18em] uppercase text-cyan-300">{dt('Gjithë Kosova')}</span></span>
-                  </span>
-                ) : (
-                  <>Zëri Qytetarëve {heroMunicipality}</>
-                )}
+                Zëri Qytetarëve {heroMunicipality}
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-200/90 leading-snug mb-3 max-w-xl font-normal">
@@ -322,6 +321,7 @@ export default function Dashboard() {
           </div>
 
         </div>
+        )}
 
         {/* Primary actions replaced the four KPI counters: those numbers now live on /statistikat. */}
         <QuickAccessGrid />
