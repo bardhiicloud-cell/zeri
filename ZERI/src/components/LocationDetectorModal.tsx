@@ -160,18 +160,18 @@ export function LocationDetectorModal() {
           className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900 md:flex-row"
         >
           {/* Left Side: Presentation */}
-          <div className="relative flex max-h-40 shrink-0 flex-col justify-between overflow-hidden bg-(--color-brand-primary) p-5 text-white dark:bg-blue-700 md:max-h-none md:w-2/5 md:p-6">
+          <div className="relative flex shrink-0 flex-col justify-between overflow-hidden bg-(--color-brand-primary) p-4 text-white dark:bg-blue-700 md:w-2/5 md:p-6">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-900/20 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none" />
 
             <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-white/20">
+              <div className="hidden md:flex w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl items-center justify-center mb-6 shadow-inner border border-white/20">
                 <MapPin className="w-6 h-6 text-white" />
               </div>
-              <h2 id="location-dialog-title" className="text-2xl font-black tracking-tight mb-3">
+              <h2 id="location-dialog-title" className="text-xl md:text-2xl font-black tracking-tight mb-1.5 md:mb-3">
                 {dt("Zgjidhni Vendndodhjen")}
               </h2>
-              <p className="text-blue-100 font-medium text-sm leading-relaxed mb-6">
+              <p className="text-blue-100 font-medium text-xs md:text-sm leading-relaxed md:mb-6">
                 {dt("Përjetoni platformën në mënyrë të personalizuar. Duke zgjedhur komunën tuaj, ne do t'ju shfaqim njoftimet, debatet dhe informacionet më relevante për zonën tuaj.")}
               </p>
             </div>

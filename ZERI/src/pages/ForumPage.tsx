@@ -2452,7 +2452,7 @@ export default function ForumPage() {
                <a href="#" className="hover:underline transition-all">Reklamimi</a>
                <a href="#" className="hover:underline transition-all">Rreth Nesh</a>
                <a href="#" className="hover:underline transition-all">{dt('Aksesueshmëria')}</a>
-               <span className="w-full mt-1">© 2026 Platforma Raporto</span>
+               <span className="w-full mt-1">© 2026 Zëri Qytetarëve</span>
              </div>
           </div>
 

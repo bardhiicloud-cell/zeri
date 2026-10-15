@@ -34,6 +34,9 @@ export function AppLayout() {
   const { pathname } = useLocation();
   const isForumPage = pathname === '/forum';
   const isNewsPage = pathname === '/lajme' || pathname === '/lajmet';
+  // The house ad slot belongs on browsing pages only. Task pages (report, track, map, legal, contact, polls,
+  // statistics, which carry their own inline slot) stay free of it so a citizen's first screen is the task.
+  const showTopAd = ['/', '/komunat', '/projektet', '/sherbimet'].includes(pathname);
   const { language } = useLanguage();
   const currentUser = useStore((state) => state.currentUser);
 
@@ -193,7 +196,7 @@ export function AppLayout() {
           */}
           {!isForumPage && !isNewsPage && <BroadcastStrip placement="banner" />}
           {!isForumPage && !isNewsPage && <AnnouncementBanner />}
-          {!isForumPage && !isNewsPage && <AdBanner position="top" />}
+          {!isForumPage && !isNewsPage && showTopAd && <AdBanner position="top" />}
           <Outlet />
           <BroadcastPopup />
           {!isForumPage && !isNewsPage && <AppFooter />}

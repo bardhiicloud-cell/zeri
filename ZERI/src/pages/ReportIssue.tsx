@@ -919,7 +919,7 @@ export default function ReportIssue() {
           </div>
 
           <div className="mb-8 md:mb-12">
-            <h2 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 leading-[1.1]">{dt(`Hap`)}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
+            <h2 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4 leading-[1.1]">{dt(`Hap`)}{' '}<br className="sm:hidden" />{dt(`Procedurën`)}<span className="text-indigo-600">.</span>
             </h2>
             <p className="text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-sm md:max-w-md font-serif italic text-sm md:text-lg">{dt(`Paraqit një çështje që ndikon drejtpërdrejt në shoqëri ose proceset e lëvizjes.`)}</p>
           </div>

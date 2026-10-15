@@ -38,6 +38,12 @@ export async function fetchTransparency(filters: TransparencyFilters, signal?: A
   const response = await fetch(`/api/v1/public/transparency${query.size ? `?${query}` : ''}`, { signal });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Statistikat nuk u ngarkuan.');
+  // A host that answers /api with the SPA shell (200 + HTML) yields an empty object here; show the
+  // normal error state instead of letting the page crash on missing arrays.
+  const shaped = body as Partial<TransparencyData>;
+  if (!shaped.summary || !Array.isArray(shaped.monthly) || !Array.isArray(shaped.recentOutcomes) || !shaped.definitions) {
+    throw new Error('Statistikat nuk u ngarkuan. Provoni përsëri pas pak.');
+  }
   return body as TransparencyData;
 }
 

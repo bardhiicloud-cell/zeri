@@ -60,7 +60,9 @@ a.au-orbit-sat:hover, .au-orbit-sat:is(a):hover { background: rgba(255,255,255,.
 
 /* ── Tiles ────────────────────────────────────────────────────────────────── */
 .au-tile { background: var(--au-card); border: 1px solid var(--au-line); border-radius: 18px; }
-.au-tile-link { display: block; transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+/* display lives in the components layer so Tailwind utilities (flex, grid) on the same element can override it */
+@layer components { .au-tile-link { display: block; } }
+.au-tile-link { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
 .au-tile-link:hover { transform: translateY(-2px); box-shadow: var(--au-shadow); border-color: color-mix(in srgb, var(--au-accent) 35%, var(--au-line)); }
 .au-tile-link:focus-visible, .au-chip:focus-visible, .au-btn:focus-visible { outline: 2px solid var(--au-accent); outline-offset: 2px; }
 .au-ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--au-accent-soft); color: var(--au-accent); flex: none; }

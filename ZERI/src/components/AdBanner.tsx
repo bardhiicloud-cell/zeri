@@ -458,12 +458,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
           </div>
         ) : (
           /* Wide Horizontal View (Feed / Top) */
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10 w-full">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border border-slate-200/50 dark:border-white/5 flex items-center justify-center text-blue-500 shrink-0 shadow-sm">
+          <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 relative z-10 w-full">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="hidden sm:flex w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border border-slate-200/50 dark:border-white/5 flex items-center justify-center text-blue-500 shrink-0 shadow-sm">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/60 dark:bg-black/20 rounded border border-slate-200/50 dark:border-white/5 shadow-sm">
                     <span className="relative flex h-1.5 w-1.5">
@@ -479,18 +479,18 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                     </span>
                   )}
                 </div>
-                <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight mt-0.5">
+                <h4 className="line-clamp-2 text-[13px] sm:text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight mt-0.5">
                   {dt('Vendosni biznesin tuaj para qytetarëve të komunës suaj')}
                 </h4>
-                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600 dark:text-slate-300">{adSlogan}</p>
+                <p className="mt-1 hidden max-w-2xl text-xs sm:block leading-relaxed text-slate-600 dark:text-slate-300">{adSlogan}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setShowInquiryModal(true); }}
-                className="flex-1 sm:flex-none min-h-10 px-4 py-2 rounded-lg bg-blue-700 text-xs font-black text-white shadow-sm transition-colors hover:bg-blue-800"
+                className="min-h-10 whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg bg-blue-700 text-xs font-black text-white shadow-sm transition-colors hover:bg-blue-800"
               >
                 {dt('Kërko ofertë')}
               </button>
@@ -498,7 +498,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
 <a
                 href={`tel:${cleanPhone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 sm:flex-none min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
+                className="hidden sm:flex min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
               >
                 <Phone className="w-3.5 h-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">{contactPhone}</span>
@@ -511,7 +511,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 onClick={(e) => e.stopPropagation()}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 sm:flex-none min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
+                className="hidden sm:flex min-h-10 px-3.5 py-2 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
               >
                 <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{dt('WhatsApp')}</span>
