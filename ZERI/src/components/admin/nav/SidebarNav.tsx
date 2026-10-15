@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen, Search, Shield, X } from 'lucide-react';
+import { BrandMark } from '@/src/components/BrandLogo';
+import { ArrowLeft, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';
 import type { AdminSection } from '../../../lib/adminPermissions';
@@ -177,9 +178,7 @@ export function SidebarNav({
       {/* Brand */}
       <div className={cn('flex shrink-0 items-center border-b border-white/10 p-3', collapsed ? 'justify-center' : 'justify-between')}>
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 shadow-lg shadow-rose-500/25">
-            <Shield className="h-5 w-5 text-white" aria-hidden="true" />
-          </div>
+          <BrandMark className="h-9 w-9" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-lg font-bold leading-none tracking-wide text-white">

@@ -1,8 +1,9 @@
 import { dt } from '@/src/lib/dt';
+import { BrandMark } from '@/src/components/BrandLogo';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
-import { Shield, ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
@@ -270,12 +271,18 @@ export default function LoginPage() {
       {/* Left Pane - Visual & Brand context */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-end p-16 overflow-hidden">
         {/* Subtle background abstract shapes */}
+                <img src="/cover.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(59,130,246,0.15),transparent_50%)]"></div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cartographer.png')] opacity-20"></div>
 
         <div className="relative z-10 max-w-xl">
-           <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(37,99,235,0.3)] border border-blue-500/50">
-             <Shield className="w-8 h-8 text-white" />
+           <div className="mb-8 flex items-center gap-4">
+             <BrandMark className="h-20 w-20 drop-shadow-[0_0_24px_rgba(34,211,238,0.35)]" />
+             <div className="leading-none">
+               <div className="text-3xl font-black tracking-[0.12em] text-white">ZËRI</div>
+               <div className="mt-1 text-xs font-semibold tracking-[0.4em] text-cyan-300">QYTETARËVE</div>
+             </div>
            </div>
            <h1 className="text-5xl font-bold mb-6 title-serif tracking-tight leading-tight">{dt(`Sistemi Qendror`)} <br />{dt(`Zeri-Qytetarve`)}<span className="text-blue-500">.</span>
            </h1>
@@ -294,9 +301,7 @@ export default function LoginPage() {
 
           {/* Mobile Branding */}
           <div className="lg:hidden flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_40px_rgba(37,99,235,0.3)] border border-blue-500/50">
-               <Shield className="w-8 h-8 text-white" />
-            </div>
+            <BrandMark className="mb-4 h-20 w-20" />
             <h1 className="text-3xl font-bold mb-2 title-serif tracking-tight text-center leading-tight">{dt(`Sistemi Qendror`)} <br />{dt(`Zeri-Qytetarve`)}<span className="text-blue-500">.</span>
             </h1>
           </div>

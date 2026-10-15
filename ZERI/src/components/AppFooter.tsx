@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { BrandLogo } from '@/src/components/BrandLogo';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, FileText, Info, Mail, Phone, ExternalLink, Github, Heart } from 'lucide-react';
 import { CookiePreferencesButton } from './CookieConsentBanner';
@@ -62,17 +63,7 @@ export function AppFooter() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))]">
           <div>
             <Link to="/" className="inline-flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-(--color-brand-primary) text-sm font-black text-white">
-                Z
-              </span>
-              <span className="flex flex-col">
-                <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
-                  {dt('Zëri Qytetarëve')}
-                </span>
-                <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400">
-                  {dt('Republika e Kosovës')}
-                </span>
-              </span>
+              <BrandLogo markClassName="h-10 w-10" />
             </Link>
 
             <p className="mt-4 max-w-xs text-xs leading-relaxed text-slate-500 dark:text-slate-400">
