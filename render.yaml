@@ -1,0 +1,26 @@
+# Render Blueprint: the /api backend (server.ts) as a Docker web service, free plan, no card needed.
+# In Render: New → Blueprint → pick repo bardhiicloud-cell/zeri, branch main. It reads this file.
+services:
+  - type: web
+    name: zeri-api
+    runtime: docker
+    rootDir: ZERI
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLUSTER_WORKERS
+        value: "1"
+      - key: ALLOWED_ORIGINS
+        value: https://zeriqytetarve.com
+      - key: PUBLIC_APP_URL
+        value: https://zeriqytetarve.com
+      - key: FIREBASE_PROJECT_ID
+        value: gen-lang-client-0907710011
+      - key: VITE_FIREBASE_DATABASE_ID
+        value: ai-studio-ba83412d-22cf-4764-9885-a01600d542ae
+      # Paste the whole service-account JSON here in the Render dashboard (marked secret). Never commit it.
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
