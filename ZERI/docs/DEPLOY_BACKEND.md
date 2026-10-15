@@ -1,4 +1,16 @@
-# Deploying the backend (`/api`) so Google sign-in works on zeriqytetarve.com
+# Deploying the backend (`/api`) on Render (free, no card)
+
+1. render.com → sign in with GitHub → **New → Blueprint** → repo `bardhiicloud-cell/zeri`, branch `main`.
+   Render reads `render.yaml` (root `ZERI/Dockerfile`) and creates the service **zeri-api**.
+2. In the service's **Environment** tab, set `FIREBASE_SERVICE_ACCOUNT` to the full JSON of a
+   service-account key (Firebase Console → Project settings → Service accounts → Generate new
+   private key). Save; Render redeploys.
+3. Copy the service URL (`https://zeri-api.onrender.com`) and send it to me. I add the `/api/*`
+   redirect to `netlify.toml` and publish.
+
+Note: on the free plan the server sleeps after inactivity; the first request after a sleep can take ~30 s.
+
+---
 
 ## Easiest: Firebase App Hosting (uses your Firebase project and Gmail login)
 
