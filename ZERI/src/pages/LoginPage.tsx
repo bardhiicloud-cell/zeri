@@ -239,7 +239,7 @@ export default function LoginPage() {
       } else {
         console.error('[LOGIN] Google sign-in failed:', err?.code, err?.message);
         // Never "unknown": say what the browser was told.
-        setError(`Hyrja me Google dështoi (${err?.code || err?.message || 'pa përshkrim nga shfletuesi'}). Provoni përsëri.`);
+        setError(`Hyrja me Google dështoi (${[err?.name, err?.code, err?.message].filter(Boolean).join(' | ').slice(0, 200) || 'pa përshkrim nga shfletuesi'}). Provoni përsëri.`);
       }
     } finally {
       setLoading(false);

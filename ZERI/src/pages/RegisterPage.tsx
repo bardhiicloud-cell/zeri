@@ -196,7 +196,7 @@ export default function RegisterPage() {
         setError(err.message);
       } else {
         console.error('[REGISTER] Google sign-up failed:', err?.code, err?.message);
-        setError(`Regjistrimi me Google dështoi (${err?.code || err?.message || 'pa përshkrim nga shfletuesi'}). Provoni përsëri.`);
+        setError(`Regjistrimi me Google dështoi (${[err?.name, err?.code, err?.message].filter(Boolean).join(' | ').slice(0, 200) || 'pa përshkrim nga shfletuesi'}). Provoni përsëri.`);
       }
     } finally {
       setLoading(false);
