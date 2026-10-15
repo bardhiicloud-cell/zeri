@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import { BadgeCheck, Flag, Landmark, LayoutDashboard, Megaphone, MessageSquare, ShieldAlert } from 'lucide-react';
+import { BadgeCheck, BarChart3, Clapperboard, Flag, Landmark, LayoutDashboard, Megaphone, MessageSquare, ShieldAlert } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import { debateStats, formatEur } from '../../lib/debateApi';
 import { DebatePayments } from './DebatePayments';
 import { DebatePosts } from './DebatePosts';
 import { DebateModeration } from './DebateModeration';
+import { DebateContent } from './DebateContent';
+import { DebateReportInsights } from './DebateReportInsights';
 import { DebateAdCreator, DebateVerificationRequests } from './DebateAdCreatorAndRequests';
 import { DebateAds, DebateTicks } from './DebateAdsAndTicks';
 import { ErrorNote, Panel, Stat, btn, useLoad } from './ui';
 
-type Tab = 'overview' | 'moderation' | 'payments' | 'requests' | 'ticks' | 'ads' | 'posts';
+type Tab = 'overview' | 'moderation' | 'insights' | 'content' | 'payments' | 'requests' | 'ticks' | 'ads' | 'posts';
 
 const TABS: ReadonlyArray<{ id: Tab; label: string; icon: typeof Landmark }> = [
   { id: 'overview', label: 'Përmbledhje', icon: LayoutDashboard },
   { id: 'moderation', label: 'Moderimi', icon: ShieldAlert },
+  { id: 'insights', label: 'Analitika e raporteve', icon: BarChart3 },
+  { id: 'content', label: 'Stories & Reels', icon: Clapperboard },
   { id: 'payments', label: 'Pagesat', icon: Landmark },
   { id: 'requests', label: 'Kërkesat për tick', icon: BadgeCheck },
   { id: 'ticks', label: 'Verifikimet', icon: BadgeCheck },
@@ -86,6 +90,8 @@ export function DebateConsole() {
       )}
 
       {tab === 'moderation' && <DebateModeration onChanged={refreshStats} />}
+      {tab === 'insights' && <DebateReportInsights />}
+      {tab === 'content' && <DebateContent />}
       {tab === 'payments' && <DebatePayments onChanged={refreshStats} />}
       {tab === 'ticks' && <DebateTicks />}
       {tab === 'requests' && <DebateVerificationRequests />}

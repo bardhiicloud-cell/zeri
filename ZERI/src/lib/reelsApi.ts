@@ -2,6 +2,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { authHeaders } from './apiAuth';
 import { db } from './firebase';
 import { REELS_COLLECTION, extractHashtags, normalizeCaption } from './reels';
+import { copyToClipboard } from './share';
 
 /** Client for server/forumReels.ts plus the author's caption edit and link sharing. */
 
@@ -49,8 +50,11 @@ export async function updateReelCaption(reelId: string, raw: string): Promise<st
 export const reelShareUrl = (reelId: string, origin: string = window.location.origin) =>
   `${origin}/forum?reel=${encodeURIComponent(reelId)}`;
 
-/** Opens the system share sheet where there is one, otherwise copies the link. Returns what happened. */
-export async function shareReel(reelId: string, title: string): Promise<'shared' | 'copied' | 'failed'> {
+/**
+ * Opens the system share sheet where there is one, otherwise copies the link. Returns what happened:
+ * a closed share sheet is `dismissed` (not an error); `failed` means the link could not be copied either.
+ */
+export async function shareReel(reelId: string, title: string): Promise<'shared' | 'copied' | 'dismissed' | 'failed'> {
   const url = reelShareUrl(reelId);
   try {
     if (typeof navigator.share === 'function') {
@@ -58,14 +62,10 @@ export async function shareReel(reelId: string, title: string): Promise<'shared'
       return 'shared';
     }
   } catch (error) {
-    if ((error as Error)?.name === 'AbortError') return 'failed'; // the person closed the sheet
+    if ((error as Error)?.name === 'AbortError') return 'dismissed'; // the person closed the sheet
   }
-  try {
-    await navigator.clipboard.writeText(url);
-    return 'copied';
-  } catch {
-    return 'failed';
-  }
+  // Includes the textarea fallback for insecure origins and in-app browsers, where the async API is refused.
+  return (await copyToClipboard(url)) ? 'copied' : 'failed';
 }
 
 /** Reads `?reel=<id>` from a query string, or null. */
