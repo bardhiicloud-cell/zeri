@@ -511,9 +511,11 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             subtitle={dt('Një hapësirë e sigurt për të paraqitur nevoja shëndetësore, ndjekur kërkesat e tua dhe gjetur institucionin përkatës. Rastet dhe dokumentet mjekësore nuk janë publike.')}
             actions={<>
               <button onClick={() => setIsRegisterModalOpen(true)} className="au-btn au-btn-light"><Plus className="h-4 w-4" aria-hidden="true" /><span>{dt('Regjistro Rast / Kërko Ndihmë')}</span></button>
-              <button onClick={handleExportCSV} disabled={!currentUser || currentUser.role === 'guest' || cases.length === 0} className="au-btn au-btn-glass" title={dt('Shkarko evidencën në formatin CSV / Excel')}>
-                <Download className="h-4 w-4" aria-hidden="true" /><span>Shkarko CSV</span>
-              </button>
+              {currentUser && currentUser.role !== 'guest' && cases.length > 0 && (
+                <button onClick={handleExportCSV} className="au-btn au-btn-glass" title={dt('Shkarko evidencën në formatin CSV / Excel')}>
+                  <Download className="h-4 w-4" aria-hidden="true" /><span>{dt('Shkarko CSV')}</span>
+                </button>
+              )}
             </>}
           />
         </div>
@@ -542,7 +544,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
         </AuraNote>
 
         {/* Key figures: one strip instead of five cards */}
-        <dl className="au-tile grid grid-cols-2 divide-[var(--au-line)] sm:grid-cols-5 sm:divide-x" aria-label={dt('Të dhëna personale të mbrojtura')}>
+        {totalCount > 0 && <dl className="au-tile grid grid-cols-2 divide-[var(--au-line)] sm:grid-cols-5 sm:divide-x" aria-label={dt('Të dhëna personale të mbrojtura')}>
           {[
             { label: 'Rastet e mia', value: totalCount, note: dt('Të dhëna personale të mbrojtura') },
             { label: 'Kancer / Onkologji', value: cancerCount, note: dt('Vetëm nga rastet e tua') },
@@ -556,7 +558,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               <p className="au-sub truncate text-[11px]">{kpi.note}</p>
             </div>
           ))}
-        </dl>
+        </dl>}
 
         {/* View switcher */}
         <div className="au-rail" role="tablist" aria-label={dt('Pamjet e regjistrit shëndetësor')}>
@@ -577,8 +579,8 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
         {/* TAB 1: CASES FEED */}
         {activeTab === 'cases' && (
           <div className="space-y-6">
-            {/* Filters */}
-            <div className="space-y-2.5">
+            {/* Filters: only useful once there is something to filter. */}
+            {cases.length > 0 && <div className="space-y-2.5">
               <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                 <div className="relative">
                   <label htmlFor="hr-search" className="sr-only">{dt('Kërko me emër, diagnozë, komunë...')}</label>
@@ -605,7 +607,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   );
                 })}
               </div>
-            </div>
+            </div>}
 
             {displayedCases.length > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-2">

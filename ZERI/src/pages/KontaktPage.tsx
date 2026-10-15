@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Phone, Send, ShieldAlert, CheckCircle2, AlertTriangle, Loader2, Copy, Search, BookOpen, FileText,
-  ArrowDown, ArrowUpRight, Plus,
+  ArrowDown, ArrowUpRight,
 } from 'lucide-react';
 import { AuraPage, AuraHero, AuraSection, AuraNote, AuraOrbit } from '../components/aura/Aura';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
@@ -49,16 +49,8 @@ export default function KontaktPage() {
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const faqs = [
-    { q: 'Si ndjek statusin e raportit tim?', a: 'Çdo raport i dërguar merr një Track ID. Shkruajeni te faqja “Gjurmo raportin” për të parë statusin dhe historikun publik të veprimeve.', to: '/trackid', cta: 'Hap Track ID' },
-    { q: 'Kjo formë është për raportimin e problemeve?', a: 'Jo. Për një problem në qytet (rrugë, ndriçim, mbeturina) përdorni “Raporto problem”, që e dërgon rastin te institucioni përkatës. Kjo formë është për pyetje drejtuar ekipit të platformës.', to: '/raporto', cta: 'Raporto problem' },
-    { q: 'Kujt i drejtohem për emergjencë?', a: 'Për rrezik për jetën telefononi menjëherë 112 (emergjenca qendrore), 192 (Policia), 193 (zjarrfikësit) ose 194 (ndihma e shpejtë). Kjo platformë nuk është shërbim emergjent.' },
-    { q: 'Ku i gjej numrat e institucioneve?', a: 'Në regjistrin e numrave zyrtarë kombëtarë dhe komunalë.', to: '/kontakt-numrat', cta: 'Numrat e institucioneve' },
-    { q: 'Si trajtohen të dhënat e mia?', a: 'Emri dhe mesazhi ruhen për të shqyrtuar kërkesën tuaj. Emaili dhe telefoni janë opsionalë. Më shumë te politika e privatësisë.', to: '/privatesia', cta: 'Politika e privatësisë' },
-  ];
 
   const set = (k: Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [k]: e.target.value }));
@@ -174,18 +166,6 @@ export default function KontaktPage() {
       <section id="forma" aria-labelledby="form-title" className="scroll-mt-20 grid gap-4 lg:grid-cols-[18rem_1fr] lg:gap-6">
         <div className="space-y-4">
           <h2 id="form-title" className="text-[20px] font-semibold sm:text-[24px]">{dt('Dërgoni një mesazh')}</h2>
-          <ol className="space-y-3 text-[13px]">
-            {[
-              { t: 'Shkruani', d: 'Emri, subjekti dhe mesazhi janë të detyrueshëm.' },
-              { t: 'Ruhet', d: 'Mesazhi ruhet në sistemin e platformës dhe nuk publikohet.' },
-              { t: 'Lexohet', d: 'Ekipi e lexon manualisht. Nuk ka afat përgjigjeje të garantuar.' },
-            ].map((s, i) => (
-              <li key={s.t} className="flex gap-3">
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--au-accent-soft)] text-[12px] font-semibold text-[var(--au-accent)]">{i + 1}</span>
-                <span><strong className="block text-[14px]">{dt(s.t)}</strong><span className="au-sub">{dt(s.d)}</span></span>
-              </li>
-            ))}
-          </ol>
           <AuraNote icon={ShieldAlert}>
             {dt('Mesazhi ruhet në sistemin e platformës dhe nuk publikohet. Pa email ose telefon nuk mund t’ju përgjigjemi. Mos shkruani fjalëkalime, numra kartelash ose të dhëna shëndetësore.')}{' '}
             <Link to="/privatesia" className="font-semibold text-[var(--au-accent)] underline">{dt('Privatësia')}</Link>
@@ -269,30 +249,9 @@ export default function KontaktPage() {
         </div>
       </section>
 
-      <AuraSection id="faq-title" title={dt('Pyetje të shpeshta')}>
-        <div className="au-list">
-          {faqs.map((faq, i) => (
-            <div key={faq.q} className="px-4 sm:px-5">
-              <h3>
-                <button type="button" id={`faq-btn-${i}`} aria-expanded={openFaq === i} aria-controls={`faq-panel-${i}`} onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="flex min-h-12 w-full items-center justify-between gap-3 py-3 text-left text-[15px] font-medium">
-                  <span>{dt(faq.q)}</span>
-                  <Plus className={`h-4 w-4 shrink-0 transition-transform ${openFaq === i ? 'rotate-45 text-[var(--au-accent)]' : 'opacity-50'}`} aria-hidden="true" />
-                </button>
-              </h3>
-              {openFaq === i && (
-                <div id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-btn-${i}`} className="pb-4">
-                  <p className="au-sub text-[14px] leading-relaxed">{dt(faq.a)}</p>
-                  {faq.to && <Link to={faq.to} className="mt-2 inline-block text-[14px] font-semibold text-[var(--au-accent)]">{dt(faq.cta || 'Hap')} →</Link>}
-                </div>
-              )}
-            </div>
-          ))}
-          <Link to="/kontakt-numrat" className="flex items-center justify-between px-4 py-3.5 text-[14px] font-medium text-[var(--au-accent)] sm:px-5">
-            {dt('Hap regjistrin e numrave')} <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </AuraSection>
+      <p className="au-sub text-center text-[13px]">
+        {dt('Kërkoni udhëzime?')} <Link to="/ndihma" className="font-semibold text-[var(--au-accent)]">{dt('Hapni Qendrën e ndihmës')}</Link>
+      </p>
     </AuraPage>
   );
 }

@@ -177,9 +177,9 @@ const ITEMS_PER_PAGE = 6;
           subtitle={dt(`Fushata ndihme të miratuara nga administratori i platformës. Donacionet nuk kalojnë përmes kësaj faqeje: çdo fushatë të çon te faqja e saj e jashtme.`)}
           actions={<>
             <button type="button" onClick={() => setIsApplying(true)} className="au-btn au-btn-light"><PlusCircle className="h-4 w-4" aria-hidden="true" />{dt(`Aplikoni Për Rast Ndihme`)}</button>
-            <a href="#fushatat" className="au-btn au-btn-glass">{dt('Shiko fushatat')}</a>
+            {scopedCauses.length > 0 && <a href="#fushatat" className="au-btn au-btn-glass">{dt('Shiko fushatat')}</a>}
           </>}
-          aside={<AuraStats items={[{ value: scopedCauses.length, label: dt('Miratuar për publikim') }]} />}
+          aside={scopedCauses.length > 0 ? <AuraStats items={[{ value: scopedCauses.length, label: dt('Miratuar për publikim') }]} /> : undefined}
         />
       </div>
 

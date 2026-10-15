@@ -412,7 +412,7 @@ export default function LajmePage() {
           subtitle={dt('Lajme nga redaksia, njoftime zyrtare nga komunat dhe përgjigje ndaj raportimeve të qytetarëve, të renditura sipas temës dhe komunës.')}
           actions={<>
             <Link to="/" className="au-btn au-btn-glass !h-9 !text-[13px]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te platforma')}</Link>
-            <Link to="/lajmero" className="au-btn au-btn-glass !h-9 !text-[13px]"><Megaphone className="h-4 w-4" aria-hidden="true" /> {dt('Raporto lajm')}</Link>
+            {allNews.length === 0 && <Link to="/lajmero" className="au-btn au-btn-glass !h-9 !text-[13px]"><Megaphone className="h-4 w-4" aria-hidden="true" /> {dt('Raporto lajm')}</Link>}
             <ThemeToggle />
           </>}
           aside={allNews.length > 0 ? (
@@ -424,8 +424,8 @@ export default function LajmePage() {
           ) : undefined}
         />
 
-        {/* Filter bar: stays on screen while the reader scrolls. */}
-        <div className="sticky top-16 z-20 rounded-2xl border border-slate-200 bg-white/90 px-3 pt-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
+        {/* Filter bar: stays on screen while the reader scrolls. Nothing to filter on an empty feed. */}
+        {allNews.length > 0 && <div className="sticky top-16 z-20 rounded-2xl border border-slate-200 bg-white/90 px-3 pt-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
             <div role="tablist" aria-label={dt('Lloji i publikimit')} className="flex shrink-0 rounded-xl bg-slate-100 p-1 dark:bg-white/10">
               {streamOptions.map(({ id, label, count }) => {
@@ -563,7 +563,7 @@ export default function LajmePage() {
               )}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Newspaper strip: dateline, breaking ticker and a leaderboard slot. */}
         <div className="-mt-2 space-y-4">

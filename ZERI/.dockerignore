@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.env*
+!.env.example
+serviceAccountKey.json
+sa*.json
+*.log
+_*.err
+_shards
+qa
+tests
+backup_stale_js

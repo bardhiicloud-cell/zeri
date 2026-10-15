@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, Building2, ChevronDown, FileText, HeartPulse, LifeBuoy, MapPin,
+  AlertTriangle, ArrowRight, Building2, ChevronDown, FileText, HeartPulse, LifeBuoy,
   MessagesSquare, Phone, Search, ShieldCheck, Camera, UserRound, Wrench, HelpCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { REPORT_STATUS } from '../lib/reportStatus';
 import { MAX_UPLOAD_BYTES, formatBytes } from '../lib/firebase';
 import { cn } from '../lib/utils';
-import { AuraPage, AuraHero, AuraSection, AuraNote, AuraEmpty, AuraOrbit } from '../components/aura/Aura';
+import { AuraPage, AuraHero, AuraSection, AuraEmpty, AuraOrbit } from '../components/aura/Aura';
 
 import { dt } from '@/src/lib/dt';
 
@@ -30,8 +29,6 @@ interface Article {
   body?: string;
   link?: { to: string; label: string };
 }
-
-const CATEGORIES = ['Fillimi', 'Ndjekja e raportit', 'Foto dhe skedarë', 'Llogaria dhe privatësia', 'Shërbime dhe komuniteti', 'Probleme teknike'] as const;
 
 const reportLimit = formatBytes(MAX_UPLOAD_BYTES.reports);
 
@@ -125,42 +122,17 @@ const ARTICLES: Article[] = [
   },
 ];
 
-/** Questions the platform cannot answer yet. Shown to citizens so the gap is visible, not papered over. */
-const GAPS = [
-  'Sa kohë ka institucioni për t’iu përgjigjur një raporti.',
-  'Procedura zyrtare për ankesë kundër vendimit të një institucioni.',
-  'Afati i përgjigjes së ekipit të platformës për mesazhet e kontaktit.',
-];
-
-const STATUS_HELP: Record<string, string> = {
-  'Pending Review': 'Raporti u pranua dhe pret shqyrtimin nga ekipi i platformës.',
-  'Approved': 'U aprovua dhe u dërgua te institucioni përgjegjës. Tani është publik.',
-  'Assigned': 'Institucioni ia ka caktuar raportin një inspektori.',
-  'In Progress': 'Trajtimi ka filluar.',
-  'Resolved': 'Institucioni e shënoi si të zgjidhur.',
-  'Rejected': 'Raporti u refuzua. Arsyeja shënohet në detajet e gjurmimit.',
-  'Overdue': 'Afati i përgjigjes së institucionit ka kaluar.',
-  'Closed': 'Raporti është mbyllur.',
-};
-
 const norm = (s: string) => s.toLocaleLowerCase('sq-AL');
 
 export default function CitizenHelpCenterPage() {
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<string>('all');
   const [openId, setOpenId] = useState<string | null>('submit');
 
   const results = useMemo(() => {
     const q = norm(query.trim());
     return ARTICLES.filter(a =>
-      (category === 'all' || a.category === category) &&
       (!q || norm(`${a.title} ${a.body ?? ''} ${(a.steps ?? []).join(' ')}`).includes(q)));
-  }, [query, category]);
-
-  const PIPELINE: Array<keyof typeof STATUS_HELP> = ['Pending Review', 'Approved', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
-  const SIDE: Array<keyof typeof STATUS_HELP> = ['Rejected', 'Overdue'];
-  const statusLabelOf = (code: string) => REPORT_STATUS[code as keyof typeof REPORT_STATUS]?.label ?? code;
-  const [activeStatus, setActiveStatus] = useState<keyof typeof STATUS_HELP>('Pending Review');
+  }, [query]);
 
   return (
     <AuraPage>
@@ -171,7 +143,7 @@ export default function CitizenHelpCenterPage() {
         eyebrow={dt('Qendra e ndihmës')}
         icon={LifeBuoy}
         title={dt('Si mund t’ju ndihmojmë?')}
-        subtitle={dt('Udhëzime të shkurtra për raportimin, gjurmimin dhe përdorimin e platformës. Kërkoni një temë ose zgjidhni një kategori.')}
+        subtitle={dt('Udhëzime të shkurtra për raportimin, gjurmimin dhe përdorimin e platformës. Kërkoni një temë.')}
         actions={
           <div className="w-full max-w-lg">
             <label htmlFor="help-search" className="sr-only">{dt('Kërko në ndihmë')}</label>
@@ -199,17 +171,9 @@ export default function CitizenHelpCenterPage() {
 
       {/* Guides: one column list on the left, filters above. */}
       <AuraSection id="guides" title={dt('Artikujt')} action={<span className="au-sub text-[12px]" role="status">{results.length} {dt('artikuj')}</span>}>
-        <div className="au-rail mb-3" role="group" aria-label={dt('Filtro sipas kategorisë')}>
-          {['all', ...CATEGORIES].map(c => (
-            <button key={c} type="button" aria-pressed={category === c} onClick={() => setCategory(c)} className="au-chip">
-              {c === 'all' ? dt('Të gjitha') : dt(c)}
-            </button>
-          ))}
-        </div>
-
         {results.length === 0 ? (
           <AuraEmpty icon={Search} title={dt('Nuk u gjet asnjë artikull.')} text={dt('Provoni një fjalë tjetër ose na shkruani.')}
-            action={<div className="flex gap-2"><button type="button" onClick={() => { setQuery(''); setCategory('all'); }} className="au-btn au-btn-soft">{dt('Pastro kërkimin')}</button><Link to="/kontakt" className="au-btn au-btn-primary">{dt('Na shkruani')}</Link></div>} />
+            action={<div className="flex gap-2"><button type="button" onClick={() => setQuery('')} className="au-btn au-btn-soft">{dt('Pastro kërkimin')}</button><Link to="/kontakt" className="au-btn au-btn-primary">{dt('Na shkruani')}</Link></div>} />
         ) : (
           <div className="au-list">
             {results.map(a => {
@@ -247,53 +211,6 @@ export default function CitizenHelpCenterPage() {
         )}
       </AuraSection>
 
-      {/* Status: a six-step track and two exceptions */}
-      <AuraSection id="status-help" kicker={dt('Track-ID')} title={dt('Çfarë do të thotë statusi i raportit?')}>
-        <div className="au-tile p-4 sm:p-5">
-          <p className="au-sub mb-4 text-[13px]">{dt('Këto janë statuset e vërteta që përdor platforma te Track-ID.')}</p>
-          <div className="au-rail" role="tablist" aria-label={dt('Statuset')}>
-            {PIPELINE.map((code, i) => (
-              <button key={code} role="tab" type="button" aria-selected={activeStatus === code} onClick={() => setActiveStatus(code)} className="au-chip">
-                <span className="au-count !opacity-70">{i + 1}</span>{statusLabelOf(code)}
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 rounded-xl bg-[var(--au-card-2)] p-4" role="tabpanel" aria-live="polite">
-            <p className="text-[15px] font-semibold">{statusLabelOf(activeStatus)}</p>
-            <p className="au-sub mt-1 text-[14px] leading-relaxed">{dt(STATUS_HELP[activeStatus])}</p>
-          </div>
-          <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-            {SIDE.map(code => (
-              <div key={code} className="rounded-xl bg-rose-500/10 px-4 py-3">
-                <dt className="text-[13px] font-semibold text-rose-700 dark:text-rose-300">{statusLabelOf(code)}</dt>
-                <dd className="mt-0.5 text-[13px] text-rose-700/80 dark:text-rose-200/80">{dt(STATUS_HELP[code])}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </AuraSection>
-
-      <section aria-labelledby="gaps">
-        <AuraNote tone="warn" icon={HelpCircle}>
-          <p id="gaps" className="font-semibold">{dt('Çfarë nuk dimë ende të përgjigjemi')}</p>
-          <p className="mt-0.5 opacity-90">{dt('Këto përgjigje nuk janë të konfirmuara dhe nuk do t’i shpiktim. Do të shtohen kur të kemi burim zyrtar:')}</p>
-          <ul className="mt-1.5 list-disc space-y-0.5 pl-4">{GAPS.map(g => <li key={g}>{dt(g)}</li>)}</ul>
-        </AuraNote>
-      </section>
-
-      <nav aria-label={dt('Hyrje të shpejta')} className="grid gap-2.5 sm:grid-cols-3">
-        {[
-          { to: '/raporto', icon: FileText, label: 'Raporto problem' },
-          { to: '/trackid', icon: Search, label: 'Gjurmo raportin' },
-          { to: '/harta', icon: MapPin, label: 'Shiko hartën' },
-        ].map(({ to, icon: Icon, label }) => (
-          <Link key={to} to={to} className="au-tile au-tile-link flex items-center gap-3 p-3.5">
-            <span className="au-ico"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
-            <span className="flex-1 text-[14px] font-medium">{dt(label)}</span>
-            <ArrowRight className="h-4 w-4 opacity-40" aria-hidden="true" />
-          </Link>
-        ))}
-      </nav>
       <p className="au-sub text-center text-[13px]">{dt('Nuk e gjetët përgjigjen?')} <Link to="/kontakt" className="font-semibold text-[var(--au-accent)]">{dt('Na shkruani')}</Link></p>
     </AuraPage>
   );
