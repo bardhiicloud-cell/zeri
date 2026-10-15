@@ -1,5 +1,26 @@
 # Deploying the backend (`/api`) so Google sign-in works on zeriqytetarve.com
 
+## Easiest: Firebase App Hosting (uses your Firebase project and Gmail login)
+
+1. Firebase Console → Build → **App Hosting** → *Get started* → connect GitHub repo
+   `bardhiicloud-cell/zeri`, **root directory `ZERI`**, branch `main`.
+   Backend ID: `zeri-api`. Deploy.
+   (`apphosting.yaml` in `ZERI/` already sets the environment.)
+2. Create the secret once (terminal with the Firebase CLI, logged in with your Gmail):
+   ```
+   npm i -g firebase-tools
+   firebase login
+   firebase use gen-lang-client-0907710011
+   firebase apphosting:secrets:set firebase-service-account
+   ```
+   Paste the full JSON of a service-account key (Project settings → Service accounts →
+   Generate new private key). Then delete the downloaded file.
+3. When the deploy finishes, copy the backend URL App Hosting shows
+   (`https://zeri-api--<something>.hosted.app`) and send it to me.
+   I then add the `/api/*` redirect to `netlify.toml`.
+
+---
+
 Netlify hosts only the static site. `/api/v1/*` (profile sync after Google sign-in, reports,
 forum, payments, admin) is the Express server in `server.ts`. Until it is deployed, Google
 sign-in ends with "serveri ktheu gabim (404)".

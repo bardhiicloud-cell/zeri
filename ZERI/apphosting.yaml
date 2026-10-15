@@ -1,0 +1,25 @@
+# Firebase App Hosting: runs the /api backend (server.ts) on Cloud Run, same Google project as Firebase.
+# Secrets are NOT stored here. Create the service-account secret once with:
+#   firebase apphosting:secrets:set firebase-service-account
+# (paste the contents of the service-account JSON when asked; it is kept in Secret Manager.)
+runConfig:
+  minInstances: 0
+  maxInstances: 3
+  concurrency: 80
+  cpu: 1
+  memoryMiBytes: 1024
+env:
+  - variable: NODE_ENV
+    value: production
+  - variable: CLUSTER_WORKERS
+    value: "1"
+  - variable: ALLOWED_ORIGINS
+    value: https://zeriqytetarve.com
+  - variable: PUBLIC_APP_URL
+    value: https://zeriqytetarve.com
+  - variable: FIREBASE_PROJECT_ID
+    value: gen-lang-client-0907710011
+  - variable: VITE_FIREBASE_DATABASE_ID
+    value: ai-studio-ba83412d-22cf-4764-9885-a01600d542ae
+  - variable: FIREBASE_SERVICE_ACCOUNT
+    secret: firebase-service-account
