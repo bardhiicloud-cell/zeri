@@ -405,7 +405,8 @@ html.dark input:-webkit-autofill:focus {
       scroll-behavior: auto;
     }
 
-    *,
+    /* The news ticker is exempt: it has its own pause button, and this reset froze it on every device that reports reduced motion. */
+    *:not(.news-ticker-track),
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
@@ -727,13 +728,6 @@ html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569
 @media (hover: hover) { .news-ticker:hover .news-ticker-track { animation-play-state: paused; } }
 /* The ticker keeps moving under reduced motion too (many Windows setups report it); the pause button satisfies WCAG 2.2.2. */
 .news-ticker[data-paused='true'] .news-ticker-track { animation-play-state: paused; }
-/* The global reduced-motion reset (animation-duration: 0.01ms !important on *) froze the ticker on every Windows setup that reports it. A class beats * among !important rules, so the ticker restores its own timing; the pause button stays the opt-out. */
-@media (prefers-reduced-motion: reduce) {
-  .news-ticker .news-ticker-track {
-    animation-duration: var(--ticker-duration, 40s) !important;
-    animation-iteration-count: infinite !important;
-  }
-}
 
 .leaflet-tile-container img { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .leaflet-tile { box-shadow: 0 0 1px rgba(0, 0, 0, 0.05); }
