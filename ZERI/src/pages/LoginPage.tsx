@@ -6,7 +6,7 @@ import { useStore } from '../lib/store';
 import { ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
-import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
+import { auth, db, signInWithGoogle, readGoogleRedirectResult, getUserRole } from '../lib/firebase';
 import { getOrCreateGuestUser } from '../lib/session';
 import { PROFILE_SYNC_FAILED, profileSyncError, syncOrCreateProfile } from '../lib/authSync';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, GoogleAuthProvider } from 'firebase/auth';
@@ -45,7 +45,7 @@ export default function LoginPage() {
           id: user.uid,
           name: userData.name || user.displayName || '',
           email: user.email || '',
-          role: userData.role || 'citizen',
+          role: userData.role || (await getUserRole()) || 'citizen',
           points: userData.points || 0,
           badges: userData.badges || [],
           isVerified: true,
@@ -208,7 +208,7 @@ export default function LoginPage() {
         id: user.uid,
         name: userData.name || user.displayName || '',
         email: user.email || '',
-        role: userData.role || 'citizen',
+        role: userData.role || (await getUserRole()) || 'citizen',
         points: userData.points || 0,
         badges: userData.badges || [],
         isVerified: true,
