@@ -11,17 +11,29 @@ import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import toast from 'react-hot-toast';
 
 import { dt } from '@/src/lib/dt';
-import { PaymentInstructions } from './forum/PaymentInstructions';
-import { createPaymentOrder, formatEur, getPaymentConfig, type BankDetails, type PaymentConfig, type PaymentOrder } from '../lib/debateApi';
 /**
- * Shared with the public Partners & Advertising page so packages are defined
- * once. `price` and `reach` are deliberately empty: the owner sets them. While
- * a price is empty nothing is shown, and the request is confirmed by the team.
+ * The three advertising offers. There are no list prices: every offer is agreed
+ * with the team, so nothing here shows or collects a price. Shared with the public
+ * Partners & Advertising page so the offers are defined once.
  */
-export const AD_PACKAGES: ReadonlyArray<{ id: '1_week' | '2_weeks' | '1_month'; name: string; price: string; reach: string; desc: string }> = [
-  { id: '1_week', name: '1 Javë', price: '', reach: '', desc: 'Shfaqje në feed të qytetit dhe banner' },
-  { id: '2_weeks', name: '2 Javë', price: '', reach: '', desc: 'Prioritet në algoritëm + Top Pozicion' },
-  { id: '1_month', name: '1 Muaj', price: '', reach: '', desc: 'Mbulim i plotë në të gjithë Kosovën' },
+export type AdPackageId = 'komuna' | 'lajme' | 'gjithe_kosova';
+
+export const AD_PACKAGES: ReadonlyArray<{ id: AdPackageId; name: string; desc: string; points: readonly string[]; best?: boolean }> = [
+  {
+    id: 'komuna', name: 'Komunat',
+    desc: 'Reklama te qytetarët e komunës ose komunave që zgjidhni.',
+    points: ['Ballina e komunës së zgjedhur', 'Njoftimet dhe seksionet komunale', 'Synim i saktë lokal'],
+  },
+  {
+    id: 'lajme', name: 'Lajmet',
+    desc: 'Reklama në faqen e lajmeve, aty ku qytetarët lexojnë çdo ditë.',
+    points: ['Baneri në faqen e lajmeve', 'Brenda artikujve', 'Pamje në të gjithë Kosovën'],
+  },
+  {
+    id: 'gjithe_kosova', name: 'Gjithë Kosova + Komunat + Lajmet', best: true,
+    desc: 'Oferta më e plotë: një paketë që mbulon gjithçka.',
+    points: ['Lajmet dhe të gjitha 38 komunat', 'Ballina dhe pozicionet kryesore', 'Prioritet në shfaqje'],
+  },
 ];
 
 interface AdRequestModalProps {
@@ -40,19 +52,13 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
   const [contactPhone, setContactPhone] = useState('');
   const [contactEmail, setContactEmail] = useState(currentUser?.email || '');
   const [targetMunicipality, setTargetMunicipality] = useState('Të gjitha Komunat');
-  const [selectedPackage, setSelectedPackage] = useState<'1_week' | '2_weeks' | '1_month'>('1_week');
+  const [selectedPackage, setSelectedPackage] = useState<AdPackageId>('lajme');
   const [destinationUrl, setDestinationUrl] = useState('');
   const [adNotes, setAdNotes] = useState(initialPostContent ? `Promovim për postimin ID: ${initialPostId}` : '');
 
   const packages = AD_PACKAGES;
 
-  // Prices are set by the owner in the Debate admin console, not in code.
-  const [config, setConfig] = useState<PaymentConfig | null>(null);
-  const [payment, setPayment] = useState<{ order: PaymentOrder; bank: BankDetails | null; payseraEnabled: boolean } | null>(null);
-  useEffect(() => {
-    if (!isOpen || !auth.currentUser) return;
-    getPaymentConfig().then(setConfig).catch(() => setConfig(null));
-  }, [isOpen]);
+  const needsMunicipality = selectedPackage === 'komuna';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,16 +79,18 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
     setIsSubmitting(true);
     try {
       const selectedPkgObj = packages.find(p => p.id === selectedPackage);
-      const requestRef = await addDoc(collection(db, 'adRequests'), {
+      // News and nationwide offers always run everywhere; only the municipality offer needs a choice.
+      const municipality = needsMunicipality ? targetMunicipality : 'Të gjitha Komunat';
+      await addDoc(collection(db, 'adRequests'), {
         userId: uid,
         businessName: businessName.trim(),
         phone: contactPhone.trim(),
         contactPhone: contactPhone.trim(),
         contactEmail: contactEmail.trim(),
-        targetMunicipality,
+        targetMunicipality: municipality,
         packageId: selectedPackage,
-        packageName: selectedPkgObj?.name || '1 Javë',
-        packagePrice: selectedPkgObj?.price || '',
+        packageName: selectedPkgObj?.name || 'Lajmet',
+        packagePrice: '',
         destinationUrl: destinationUrl.trim(),
         adNotes: adNotes.trim(),
         postId: initialPostId || null,
@@ -91,19 +99,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
         createdAt: serverTimestamp()
       });
 
-      // Ask for a payment code when this package has a price; otherwise the team follows up.
-      const priced = config?.adPackagePrices?.[selectedPackage] !== undefined && (config.methods?.iban || config.methods?.paysera);
-      if (priced) {
-        try {
-          const result = await createPaymentOrder({ kind: 'ad-package', packageId: selectedPackage, adRequestId: requestRef.id });
-          setPayment(result);
-          toast.success(dt('Kërkesa u dërgua. Përfundoni pagesën me kodin më poshtë.'));
-          return;
-        } catch {
-          // The request itself is saved; fall through to the manual follow-up message.
-        }
-      }
-      toast.success(dt('Kërkesa u dërgua për shqyrtim. Administrata do t’ju kontaktojë për hapat e pagesës.'));
+      toast.success(dt('Kërkesa u dërgua për shqyrtim. Ekipi do t’ju kontaktojë për ofertën sipas marrëveshjes.'));
       onClose();
     } catch (err: any) {
       console.error(err);
@@ -114,22 +110,6 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
   };
 
   if (!isOpen) return null;
-
-  if (payment) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/60 backdrop-blur-xs sm:items-center sm:p-4">
-        <div className="max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-3xl dark:bg-zinc-900">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">{dt('Pagesa e reklamës')}</h3>
-            <button type="button" onClick={() => { setPayment(null); onClose(); }} aria-label={dt('Mbyll')} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800">
-              <X className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </div>
-          <PaymentInstructions order={payment.order} bank={payment.bank} payseraEnabled={payment.payseraEnabled} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -150,7 +130,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
                 {initialPostId ? dt('Promovo këtë Postim') : dt('Kërkesë për Reklamë në Platformë')}
               </h3>
               <p className="text-xs text-slate-500">
-                {dt('Arrij mijëra qytetarë në të gjitha komunat e Kosovës')}
+                {dt('Arrini qytetarët në komunat dhe lajmet e Kosovës')}
               </p>
             </div>
           </div>
@@ -169,7 +149,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
             {dt('Zgjedh Paketën e Reklamës:')}
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
             {packages.map(pkg => (
               <button
                 type="button"
@@ -181,12 +161,12 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
                     : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/40 hover:border-slate-300'
                 }`}
               >
-                <div className="flex justify-between items-center mb-1">
+                <div className="mb-1 flex items-start justify-between gap-2">
                   <span className="font-bold text-sm text-slate-900 dark:text-white">{dt(pkg.name)}</span>
-                  <span className="text-sm font-black text-blue-600 dark:text-blue-400">{config?.adPackagePrices?.[pkg.id] !== undefined ? formatEur(config.adPackagePrices?.[pkg.id]) : ''}</span>
+                  {pkg.best && <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-white">{dt('Oferta më e mirë')}</span>}
                 </div>
-                <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">{dt(pkg.desc)}</p>
+                <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{dt('Çmimi sipas marrëveshjes')}</p>
+                <p className="mt-1 text-[10px] leading-snug text-slate-500 dark:text-slate-400">{dt(pkg.desc)}</p>
               </button>
             ))}
           </div>
@@ -225,6 +205,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {needsMunicipality && (
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 {dt('Komuna e Synuar')}
@@ -234,12 +215,12 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
                 onChange={e => setTargetMunicipality(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500"
               >
-                <option value="Të gjitha Komunat">📍 {dt('Gjithë Kosova (Të gjitha Komunat)')}</option>
                 {KOSOVO_MUNICIPALITIES.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -256,7 +237,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
           </div>
 
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-relaxed text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
-            {dt('Pagesa nuk kryhet në këtë formular. Administrata shqyrton kërkesën dhe ju kontakton për konfirmim.')}
+            {dt('Çmimi caktohet sipas marrëveshjes. Asnjë pagesë nuk kryhet në këtë formular; ekipi shqyrton kërkesën dhe ju kontakton me ofertën.')}
           </div>
 
           <div>

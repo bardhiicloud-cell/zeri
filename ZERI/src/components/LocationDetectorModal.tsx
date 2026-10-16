@@ -172,7 +172,7 @@ export function LocationDetectorModal() {
                 {dt("Zgjidhni Vendndodhjen")}
               </h2>
               <p className="text-blue-100 font-medium text-xs md:text-sm leading-relaxed md:mb-6">
-                {dt("Përjetoni platformën në mënyrë të personalizuar. Duke zgjedhur komunën tuaj, ne do t'ju shfaqim njoftimet, debatet dhe informacionet më relevante për zonën tuaj.")}
+                {dt("Përjetoni platformën në mënyrë të personalizuar. Duke zgjedhur komunën tuaj, ne do t'ju shfaqim njoftimet dhe informacionet më relevante për zonën tuaj.")}
               </p>
             </div>
 

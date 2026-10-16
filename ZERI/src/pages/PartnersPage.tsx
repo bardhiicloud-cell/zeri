@@ -8,7 +8,6 @@ import {
 import { dt } from '@/src/lib/dt';
 import { AuraHero, AuraStats, AuraOrbit } from '../components/aura/Aura';
 import { useStore } from '../lib/store';
-import { formatEur, getPaymentConfig, type PaymentConfig } from '../lib/debateApi';
 import { AdRequestModal, AD_PACKAGES } from '../components/AdRequestModal';
 import { AD_POSITION_SPECS, AD_MAX_BYTES, formatMb } from '../lib/adSpecs';
 import { LANGUAGE_OPTIONS } from '../lib/languageConstants';
@@ -55,7 +54,7 @@ const FACTS = [
 
 const STEPS = [
   { icon: Send, title: 'Dërgoni kërkesën', desc: 'Zgjidhni paketën, komunën dhe na lini kontaktin.' },
-  { icon: BadgeCheck, title: 'Konfirmimi', desc: 'Ekipi ju kontakton për ofertën dhe konfirmimin e pagesës.' },
+  { icon: BadgeCheck, title: 'Konfirmimi', desc: 'Ekipi ju kontakton për ofertën dhe marrëveshjen e çmimit.' },
   { icon: Upload, title: 'Kreativi', desc: 'Dërgoni foton, GIF-in ose videon sipas specifikimeve më poshtë.' },
   { icon: Rocket, title: 'Publikimi', desc: 'Fushata shfaqet në pozicionet dhe komunat e zgjedhura.' },
 ] as const;
@@ -74,12 +73,6 @@ export default function PartnersPage() {
   const ads = useStore((state) => state.ads);
   const incrementAdClick = useStore((state) => state.incrementAdClick);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Package prices are set by the owner in the Debate admin console.
-  const [config, setConfig] = useState<PaymentConfig | null>(null);
-  useEffect(() => {
-    getPaymentConfig().then(setConfig).catch(() => setConfig(null));
-  }, []);
-
   // No invented fallbacks: a contact the owner has not set is simply not shown.
   const phone = realContactOrEmpty(systemSettings?.adContactPhone);
   const email = realContactOrEmpty(systemSettings?.adContactEmail);
@@ -237,35 +230,38 @@ export default function PartnersPage() {
           <h2 id="packages-heading" className={`${sectionTitle} mt-1`}>
             {dt('Paketat e reklamimit')}
           </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            {dt('Pagesa nuk kryhet në këtë faqe. Administrata shqyrton kërkesën dhe ju kontakton për konfirmim.')}
+          <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
+            {dt('Tri oferta të thjeshta: komunat, lajmet, ose gjithçka në një paketë. Çmimi caktohet sipas marrëveshjes. Asnjë pagesë nuk kryhet në këtë faqe; ekipi ju kontakton me ofertën.')}
           </p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {AD_PACKAGES.map((pkg, index) => (
+            {AD_PACKAGES.map((pkg) => (
               <div
                 key={pkg.id}
-                className={`au-tile relative flex flex-col p-5 ${index === 1 ? '!border-[var(--au-accent)] ring-1 ring-[var(--au-accent)]' : ''}`}
+                className={`au-tile relative flex flex-col p-5 ${pkg.best ? '!border-[var(--au-accent)] ring-1 ring-[var(--au-accent)]' : ''}`}
               >
-                {index === 1 && (
+                {pkg.best && (
                   <span className="absolute -top-2.5 right-4 rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white rtl:left-4 rtl:right-auto">
-                    {dt('Më i zgjedhuri')}
+                    {dt('Oferta më e mirë')}
                   </span>
                 )}
-                <div className="au-sub text-[13px] font-semibold">{dt(pkg.name)}</div>
-                <div className="mt-1 text-[28px] font-semibold tabular-nums">
-                  {config?.adPackagePrices?.[pkg.id] !== undefined ? formatEur(config.adPackagePrices?.[pkg.id]) : <span className="text-lg">{dt('Çmimi sipas ofertës')}</span>}
-                </div>
-                {pkg.reach && (
-                  <div className="mt-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</div>
-                )}
-                <p className="au-sub mt-2 flex-1 text-[13px]">{dt(pkg.desc)}</p>
+                <div className="text-lg font-black leading-snug">{dt(pkg.name)}</div>
+                <div className="mt-1 text-sm font-bold text-emerald-600 dark:text-emerald-400">{dt('Çmimi sipas marrëveshjes')}</div>
+                <p className="au-sub mt-2 text-[13px]">{dt(pkg.desc)}</p>
+                <ul className="mt-3 flex-1 space-y-1.5">
+                  {pkg.points.map((point) => (
+                    <li key={point} className="flex items-start gap-2 text-[13px]">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                      <span>{dt(point)}</span>
+                    </li>
+                  ))}
+                </ul>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className={index === 1 ? 'au-btn au-btn-primary mt-4' : 'au-btn au-btn-dark mt-4'}
+                  className={pkg.best ? 'au-btn au-btn-primary mt-4' : 'au-btn au-btn-dark mt-4'}
                 >
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                  {dt('Zgjidh paketën')}
+                  <Send className="h-4 w-4" aria-hidden="true" />
+                  {dt('Kërko ofertë')}
                 </button>
               </div>
             ))}

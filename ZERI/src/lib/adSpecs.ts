@@ -53,14 +53,14 @@ export const AD_POSITION_SPECS: Record<string, AdPositionSpec> = {
   },
   feed: {
     label: 'Mes kartave në rrjedhë',
-    where: 'Në rrjedhën e postimeve dhe rezultateve',
+    where: 'Mes kartave të rezultateve dhe përmbajtjes',
     display: { w: 760, h: 96 },
     ideal: { w: 1520, h: 192 },
     min: { w: 760, h: 96 },
   },
   sidebar: {
     label: 'Kolona anësore',
-    where: 'Kolona anësore në desktop (forum, lajme, sondazhe)',
+    where: 'Kolona anësore në desktop (lajme, sondazhe)',
     display: { w: 320, h: 200 },
     ideal: { w: 640, h: 400 },
     min: { w: 320, h: 200 },

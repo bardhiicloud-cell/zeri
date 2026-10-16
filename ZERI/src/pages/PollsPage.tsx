@@ -238,7 +238,7 @@ export default function PollsPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">{dt('Prioritetet e qytetit')}</p>
-              <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white md:text-2xl">{dt('Debate të hapura dhe vendimmarrje me ndikim të drejtpërdrejtë')}</h2>
+              <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white md:text-2xl">{dt('Sondazhe të hapura dhe vendimmarrje me ndikim të drejtpërdrejtë')}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {leadingPriorities.length > 0 ? leadingPriorities.map((item) => (

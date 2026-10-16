@@ -9,3 +9,6 @@ Debati publik (`/forum`, postimet, reels, stories, mesazhet, ndjekjet) mbetet **
 
 ## Punë që i bën vetë pronari (jo kodi)
 Kutitë postare (`privatisi@`, `abuzim@`, `privacy@`), DNS/HTTPS dhe Authorized domains te Firebase, vendosja e rregullave të Firestore (`docs/ADMIN_SECURITY_REMEDIATION.md` §5), testi i kapacitetit në staging, instalimi në Android/iOS, Lighthouse dhe Search Console.
+
+## Reklamimi: vetëm tri oferta, pa çmime (vendim i pronarit, 2026-10-16)
+Faqja Partnerët dhe forma "Kërko ofertë" kanë vetëm tri oferta: **Komunat**, **Lajmet** dhe **Gjithë Kosova + Komunat + Lajmet** (oferta më e mirë). Nuk shfaqen çmime dhe nuk krijohet pagesë në faqe: çmimi caktohet sipas marrëveshjes. Asnjë ofertë nuk përmend Debatin publik. Burimi i vetëm: `AD_PACKAGES` te `src/components/AdRequestModal.tsx`.

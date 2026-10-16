@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
               <div>
                 <h3 className="text-sm font-black text-(--color-brand-primary)">a) {dt('Të dhënat e llogarisë dhe profilit')}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  {dt('Emri, adresa elektronike, numri i telefonit, fotografia e profilit dhe roli juaj në platformë. Kur postoni në Debatin Publik ose në Reels, ruajtemi edhe përmbajtja e mesazhit, kohët e botimit, reagimet dhe lidhjet tuaja me përmbajtjen. Mesazhet mund të postohen në mënyrë anonime, në të cilën rast nuk ruhet asnjë identifikues.')}
+                  {dt('Emri, adresa elektronike, numri i telefonit, fotografia e profilit dhe roli juaj në platformë.')}
                 </p>
               </div>
               <div>
@@ -81,13 +81,7 @@ export default function PrivacyPolicyPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-sm font-black text-(--color-brand-primary)">d) {dt('Mediat në Reels')}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  {dt('Videot, fotografitë, audiosit dhe tekstet që ngarkoni janë pjesë e përmbajtjes publike të forumit. Ato shfaqen me emrin ose anonimisht sipas zgjedhjes suaj dhe mund të fshihen nga një moderator kur shkaktojnë dhunim të rregullave të platformës ose të ligjit.')}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-(--color-brand-primary)">e) {dt('Të dhënat teknike')}</h3>
+                <h3 className="text-sm font-black text-(--color-brand-primary)">d) {dt('Të dhënat teknike')}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                   {dt('Adresa IP (e maskuar nëse lejohet analitika), tipi i shfletuesit dhe pajisja, dhe regjistri i aktivitetit. Këto përdoren vetëm për sigurinë, zbërthjen e gabimeve dhe matjen e përdorimit.')}
                 </p>
@@ -185,8 +179,7 @@ export default function PrivacyPolicyPage() {
                   {[
                     [dt('Raportet e qytetarëve'), dt('Deri në 5 vjet pas mbylljes'), dt('Interesi publik dhe transparenca')],
                     [dt('Profili dhe të dhënat e llogarisë'), dt('Deri në 2 vjet pas mbylljes së llogarisë'), dt('Përkujtim i pjesëmarrjes')],
-                    [dt('Mesazhet dhe Reels'), dt('Derisa ekzistojnë, ose 2 vjet pas fshirjes'), dt('Debat publik dhe moderimi')],
-                    [dt('Të dhënat shëndetësore'), dt('5 vjet pas largimit të regjistrit'), dt('Kërkesa ligjore dhe shëndetësore')],
+                                        [dt('Të dhënat shëndetësore'), dt('5 vjet pas largimit të regjistrit'), dt('Kërkesa ligjore dhe shëndetësore')],
                     [dt('Pëlqimet për Cookies'), dt('12 muaj pas vendimit'), dt('Kërkesa e provueshmërisë së pëlqimit')],
                     [dt('Të dhënat analitike'), dt('14 muaj'), dt('Matja anonime e përdorimit')],
                     [dt('Regjistrat e sigurisë'), dt('6 muaj'), dt('Parandalimi i abuzimit')],
@@ -235,7 +228,7 @@ export default function PrivacyPolicyPage() {
             <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
               <p className="text-sm font-black text-blue-900 dark:text-blue-200">{dt('Si ta bëni kërkesën "të harrohem"?')}</p>
               <p className="mt-1 text-sm leading-relaxed text-blue-800/80 dark:text-blue-200/80">
-                {dt("Hyni në panelin e profilit, zgjidhni \"Fshi llogarinë time\", ose dërgoni një kërkesë me email. Fshirja heq llogarinë, të dhënat e profilit, mesazhet, raportet dhe Reels-et tuaja, si nga databaza ashtu edhe nga skedarët e ruajtur. Për ruajtje të detyrueshme ligjore (si regjistrat e shëndetësorisë), ato anonimizohen në vend që të fshihen.")}
+                {dt("Hyni në panelin e profilit, zgjidhni \"Fshi llogarinë time\", ose dërgoni një kërkesë me email. Fshirja heq llogarinë, të dhënat e profilit, raportet tuaja, si nga databaza ashtu edhe nga skedarët e ruajtur. Për ruajtje të detyrueshme ligjore (si regjistrat e shëndetësorisë), ato anonimizohen në vend që të fshihen.")}
               </p>
               <Link
                 to="/kontakt"

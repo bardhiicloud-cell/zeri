@@ -84,7 +84,7 @@ const ARTICLES: Article[] = [
   },
   {
     id: 'account', category: 'Llogaria dhe privatësia', title: 'Më duhet llogari?', icon: UserRound,
-    body: 'Raportimi mund të vazhdojë edhe si mysafir kur faqja e ofron. Komuniteti (forumi) kërkon hyrje. Me llogari mund të merrni njoftime për ndryshimin e statusit.',
+    body: 'Raportimi mund të vazhdojë edhe si mysafir kur faqja e ofron. Me llogari mund të merrni njoftime për ndryshimin e statusit.',
     link: { to: '/login', label: 'Hyr ose regjistrohu' },
   },
   {

@@ -22,7 +22,7 @@ import {
 import { CheckCircle2 as CheckIcon, X as XIcon } from 'lucide-react';
 
 export default function RegisterPage() {
-  usePageMeta('Regjistrohu', 'Krijo llogari qytetari në Zëri Qytetarëve — raporto probleme, ndiq përgjigjet dhe merr pjesë në debat.');
+  usePageMeta('Regjistrohu', 'Krijo llogari qytetari në Zëri Qytetarëve — raporto probleme, ndiq përgjigjet dhe merr pjesë në sondazhe.');
   const navigate = useNavigate();
   const { t } = useLanguage();
   const register = useStore(state => state.register);

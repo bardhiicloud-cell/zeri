@@ -15,7 +15,6 @@ const KNOWLEDGE = [
   { words: ['anonim', 'emri im', 'privatësi'], answer: 'Mund të raportosh pa publikuar emrin. Të dhënat e kontaktit nuk duhet të shfaqen publikisht; ato përdoren vetëm për komunikim administrativ kur është e nevojshme.' },
   { words: ['shëndet', 'regjistri shëndetësor', 'mjek'], answer: 'Për raste shëndetësore përdor opsionin anonim kur nuk dëshiron publikimin e identitetit. Emri dhe telefoni duhet të jenë të kufizuar vetëm për stafin e autorizuar.' },
   { words: ['sondazh', 'vot'], answer: 'Te Sondazhet mund të shohësh pyetjet aktive dhe të votosh një herë nga llogaria jote. Rezultatet paraqiten në mënyrë të përmbledhur.' },
-  { words: ['debat', 'forum', 'koment'], answer: 'Debati Publik është hapësira për biseda qytetare sipas komunës dhe temës. Respekto rregullat e komunitetit dhe raporto përmbajtjen e dëmshme.' },
   { words: ['institucion', 'ministri', 'drejtori'], answer: 'Kategoria dhe vendndodhja ndihmojnë sistemin të caktojë institucionin përgjegjës. Nëse nuk je i sigurt, përshkruaje problemin sa më qartë.' },
   { words: ['numra', 'emergjenc', 'polici'], answer: 'Për emergjencë të menjëhershme përdor 112; për Policinë 192. Për çështje jo emergjente përdor “Numrat & Institucionet” ose krijo raportim.' },
   { words: ['donacion', 'ndihmë'], answer: 'Te Ndihma & Donacione shfaqen rastet e verifikuara dhe kategoritë e mbështetjes. Jep përparësi rasteve urgjente dhe verifiko informacionin para çdo kontributi.' },
@@ -29,7 +28,7 @@ function reply(text: string, canRequestAgent: boolean) {
   if (value.includes('/agent') || value.includes('agjent') || value.includes('njeri real')) return canRequestAgent
     ? 'Kërkesa për mbështetje njerëzore mund të krijohet nga profili yt i regjistruar. Hap Qendrën e Ndihmës dhe dërgo kërkesën me detajet e çështjes.'
     : 'Mbështetja me agjent është e disponueshme vetëm për përdoruesit e regjistruar. Mund të vazhdosh këtu me pyetje rreth platformës ose të krijosh një llogari.';
-  return KNOWLEDGE.find(item => item.words.some(word => value.includes(word)))?.answer ?? 'Mund të të ndihmoj për raportime, Track ID, hartën, privatësinë, sondazhet, debatet, lajmet, donacionet dhe përdorimin e faqes.';
+  return KNOWLEDGE.find(item => item.words.some(word => value.includes(word)))?.answer ?? 'Mund të të ndihmoj për raportime, Track ID, hartën, privatësinë, sondazhet, lajmet, donacionet dhe përdorimin e faqes.';
 }
 
 export function AIAssistantWidget() {

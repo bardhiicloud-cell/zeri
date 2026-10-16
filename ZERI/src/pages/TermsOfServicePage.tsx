@@ -24,7 +24,7 @@ const CLAUSES: Clause[] = [
     n: '1',
     title: 'Pranimi i kushteve dhe zbatueshmëria',
     body: [
-      'Këto Kushte të Përdorimit ("Kushtet") rregullojnë qasimin në Platformën Zëri Qytetarëve ("Platforma"), të përfshira faqja e internetit, aplikacionet mobile, harta e raporteve, regjistri qytetar, forumi publik, sondazhet dhe çdo shërbim tjetër i lidhur ("Shërbimet").',
+      'Këto Kushte të Përdorimit ("Kushtet") rregullojnë qasimin në Platformën Zëri Qytetarëve ("Platforma"), të përfshira faqja e internetit, aplikacionet mobile, harta e raporteve, regjistri qytetar, sondazhet dhe çdo shërbim tjetër i lidhur ("Shërbimet").',
       'Përdorimi i Shërbimeve nga ana juaj përbën pranim të plotë të këtyre Kushteve. Nëse nuk pajtoheni, duhet të mos i përdorni Shërbimet. Përdorimi i vazhdueshëm pasi të njoftoheni për një ndryshim material do të konsiderohet si pranim i ri.',
       'Kushtet zbatohen ndaj çdo përdorues, pavarësisht nëse identifikoheni apo jo. Kur postoni në mënyrë anonime, Platforma nuk e di identitetin tuaj, por obligimet tuaja ligjore ndikohen njësoj.',
     ],
