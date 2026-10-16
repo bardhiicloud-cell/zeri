@@ -127,45 +127,60 @@ function Landmarks({ body, accent, win, rim, night }: { body: string; accent: st
         <rect x="1347" y={GROUND - 372} width="2" height="72" />
       </g>
       <circle cx="1348" cy={GROUND - 376} r="3.2" fill={accent} />
-      {/* Mosque: one clear central landmark. Main dome, two half domes, two slender minarets with
-          balconies and pencil caps, each topped by a centred crescent on a short stem. Same artwork day and
-          night; the rim keeps it legible in the dark. Heights are kept low enough that the crescents stay
-          clear of the hero headline and copy. */}
+      {/* Ottoman-style mosque, drawn after the classic profile: a large central dome on a drum, flanked by two
+          half domes and two small corner domes (the stepped, pyramid-like silhouette), with two pencil minarets
+          (square base, round shaft, one balcony, conical cap). Dome and minarets end in the traditional alem:
+          a short pole with a ball, topped by an upward-opening crescent. Same artwork day and night; the rim
+          keeps it legible in the dark. Heights stay low enough to clear the hero headline and copy. */}
       <defs>
         <mask id={maskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="20" height="20">
           <circle cx="0" cy="0" r="6" fill="#fff" />
           <circle cx="0" cy="-2.6" r="5" fill="#000" />
         </mask>
       </defs>
-      <g fill={body} stroke={rim} strokeWidth={rim === 'none' ? 0 : 1}>
-        <rect x="968" y={GROUND - 92} width="144" height="92" />
-        <path d={`M988 ${GROUND - 92} A52 52 0 0 1 1092 ${GROUND - 92} Z`} />
-        <path d={`M970 ${GROUND - 92} A19 19 0 0 1 1008 ${GROUND - 92} Z`} />
-        <path d={`M1072 ${GROUND - 92} A19 19 0 0 1 1110 ${GROUND - 92} Z`} />
-        <rect x="1038.5" y={GROUND - 158} width="3" height="14" />
-        {[948, 1132].map((mx) => (
+      <g fill={body} stroke={rim} strokeWidth={rim === 'none' ? 0 : 1} strokeLinejoin="round">
+        {/* prayer hall */}
+        <rect x="940" y={GROUND - 66} width="200" height="66" />
+        {/* corner domes */}
+        <path d={`M940 ${GROUND - 66} A15 15 0 0 1 970 ${GROUND - 66} Z`} />
+        <path d={`M1110 ${GROUND - 66} A15 15 0 0 1 1140 ${GROUND - 66} Z`} />
+        {/* half domes */}
+        <path d={`M968 ${GROUND - 66} A34 34 0 0 1 1036 ${GROUND - 66} Z`} />
+        <path d={`M1044 ${GROUND - 66} A34 34 0 0 1 1112 ${GROUND - 66} Z`} />
+        {/* drum and central dome */}
+        <rect x="992" y={GROUND - 92} width="96" height="30" />
+        <path d={`M990 ${GROUND - 92} A50 50 0 0 1 1090 ${GROUND - 92} Z`} />
+        {/* alem of the dome: pole and ball */}
+        <rect x="1039" y={GROUND - 156} width="2" height="16" />
+        <circle cx="1040" cy={GROUND - 154} r="2.6" />
+        {[922, 1158].map((mx) => (
           <g key={mx}>
-            <rect x={mx - 5} y={GROUND - 186} width="10" height={186} />
-            <rect x={mx - 9} y={GROUND - 166} width="18" height="5" rx="1" />
-            <rect x={mx - 3.5} y={GROUND - 208} width="7" height="24" />
-            <path d={`M${mx - 6} ${GROUND - 208} L${mx} ${GROUND - 244} L${mx + 6} ${GROUND - 208} Z`} />
-            <rect x={mx - 0.8} y={GROUND - 252} width="1.6" height="10" />
+            <rect x={mx - 8} y={GROUND - 36} width="16" height="36" />
+            <rect x={mx - 4.5} y={GROUND - 170} width="9" height="136" />
+            <rect x={mx - 9.5} y={GROUND - 156} width="19" height="5" rx="1" />
+            <rect x={mx - 3.4} y={GROUND - 196} width="6.8" height="28" />
+            <path d={`M${mx - 6} ${GROUND - 196} L${mx} ${GROUND - 232} L${mx + 6} ${GROUND - 196} Z`} />
+            <rect x={mx - 0.8} y={GROUND - 242} width="1.6" height="12" />
+            <circle cx={mx} cy={GROUND - 240} r="2" />
           </g>
         ))}
       </g>
-      {/* Lit arched windows */}
+      {/* Drum windows and arched prayer-hall windows */}
       <g fill={win} opacity={night ? 0.95 : 0.8}>
-        {Array.from({ length: 7 }, (_, i) => (
-          <path key={i} d={`M${982 + i * 19} ${GROUND - 12} v-22 a4.5 4.5 0 0 1 9 0 v22 Z`} />
+        {[1002, 1016, 1030, 1044, 1058, 1072].map((x) => (
+          <path key={x} d={`M${x} ${GROUND - 66} v-12 a3 3 0 0 1 6 0 v12 Z`} />
+        ))}
+        {Array.from({ length: 8 }, (_, i) => (
+          <path key={i} d={`M${954 + i * 21} ${GROUND - 8} v-20 a4.5 4.5 0 0 1 9 0 v20 Z`} />
         ))}
       </g>
-      {/* Crescents: centred on the axis of the dome and each minaret, sitting directly on the finial */}
+      {/* Crescents sit on the poles of the dome and minarets, centred on their axes */}
       <g fill={accent}>
-        <g transform={`translate(1040 ${GROUND - 166}) scale(1.15)`}>
+        <g transform={`translate(1040 ${GROUND - 166}) scale(1.1)`}>
           <circle cx="0" cy="0" r="6" mask={`url(#${maskId})`} />
         </g>
-        {[948, 1132].map((mx) => (
-          <g key={mx} transform={`translate(${mx} ${GROUND - 258}) scale(0.95)`}>
+        {[922, 1158].map((mx) => (
+          <g key={mx} transform={`translate(${mx} ${GROUND - 250}) scale(0.95)`}>
             <circle cx="0" cy="0" r="6" mask={`url(#${maskId})`} />
           </g>
         ))}
