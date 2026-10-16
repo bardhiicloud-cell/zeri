@@ -6,7 +6,7 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import type { Auth } from 'firebase-admin/auth';
 import { registerWorkItemRoutes } from '../../server/workItemRoutes';
-import { CONFIG, NOTIFICATIONS, PROFILES, WORK, createWorkItem, validateCreate, type ProfileDoc, type WorkItemDoc } from '../../server/workItems';
+import { CONFIG, NOTIFICATIONS, PROFILES, WORK, createWorkItem, validateCreate, type ProfileDoc } from '../../server/workItems';
 
 /**
  * The work-item HTTP routes against the Firestore emulator, as each kind of account sees them.

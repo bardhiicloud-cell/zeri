@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import { fetchWithTimeout, isJsonResponse } from '../lib/timeouts';
+import { saveGuestReportHistory } from '../lib/session';
 import { BackLink } from '../components/BackLink';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Copy, ImagePlus, Loader2, Megaphone, ShieldCheck, X } from 'lucide-react';
@@ -72,17 +74,19 @@ export default function LajmeroPage() {
     setFields({});
     try {
       const token = await auth.currentUser?.getIdToken().catch(() => null);
-      const response = await fetch('/api/v1/public/news-tips', {
+      const response = await fetchWithTimeout('/api/v1/public/news-tips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ ...form, media: media.map(m => m.url) }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
+      }, 40000);
+      const body = isJsonResponse(response) ? await response.json().catch(() => ({})) : {};
+      if (!response.ok || !(body as { reference?: string }).reference) {
         setFields((body as { fields?: Record<string, string> }).fields ?? {});
         throw new Error(String((body as { error?: string }).error ?? dt('Lajmi nuk u dërgua. Provoni përsëri.')));
       }
-      setReference(String((body as { reference: string }).reference));
+      const issued = String((body as { reference: string }).reference);
+      saveGuestReportHistory({ id: issued, trackingId: issued, title: form.title, status: 'submitted', createdAt: new Date().toISOString() });
+      setReference(issued);
     } catch (e) {
       setError((e as Error).message || dt('Pa lidhje me serverin. Provoni përsëri.'));
     } finally {

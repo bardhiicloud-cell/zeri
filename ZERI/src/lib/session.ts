@@ -55,7 +55,9 @@ export function getOrCreateGuestUser(): User {
 export function createTrackingId(prefix: string, sourceId?: string): string {
   const normalizedPrefix = prefix.toUpperCase().replace(/[^A-Z0-9-]/g, '');
   const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const source = (sourceId || `${Date.now()}${Math.random().toString(36).slice(2, 8)}`).replace(/[^A-Z0-9]/g, '').toUpperCase();
+  // Upper-case first: Firestore ids are mixed case, and filtering before upper-casing
+  // dropped every lower-case letter, leaving a short and collision-prone suffix.
+  const source = (sourceId || `${Date.now()}${Math.random().toString(36).slice(2, 8)}`).toUpperCase().replace(/[^A-Z0-9]/g, '');
   const suffix = source.slice(0, 12) || '000000000000';
   return `${normalizedPrefix}-${dateStamp}-${suffix}`;
 }

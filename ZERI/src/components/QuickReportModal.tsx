@@ -5,6 +5,8 @@ import { X, Plus, Camera, MapPin, Loader2, Send } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { uploadFileToStorage } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
+import { fetchWithTimeout, isJsonResponse } from '../lib/timeouts';
+import { saveGuestReportHistory } from '../lib/session';
 import { isSpecificScope } from '../lib/municipalityScope';
 import { useNavigate } from 'react-router-dom';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
@@ -56,7 +58,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
        * button only ever ended in an error. It also auto-created a public reel
        * from the unreviewed text, which was the same bypass by another route.
        */
-      const response = await fetch('/api/v1/reports', {
+      const response = await fetchWithTimeout('/api/v1/reports', {
         method: 'POST',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
@@ -70,14 +72,29 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
           isAnonymous: false,
           authorName: currentUser.name,
         }),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null) as { error?: string } | null;
-        throw new Error(body?.error || 'Pati një gabim gjatë dërgimit.');
+      }, 35000);
+      // Success means a stored report with a Track ID, nothing less: a static host
+      // without the /api forward answers 200 with HTML.
+      const body = isJsonResponse(response)
+        ? await response.json().catch(() => null) as { id?: string; trackingId?: string; error?: string } | null
+        : null;
+      if (!response.ok || !body?.trackingId) {
+        throw new Error(body?.error || 'Raportimi nuk u ruajt dhe nuk u krijua Track ID. Provoni përsëri ose përdorni formularin e plotë të raportimit.');
       }
-      const created = await response.json() as { trackingId?: string };
+      const trackingId = body.trackingId;
+      saveGuestReportHistory({
+        id: body.id || trackingId,
+        trackingId,
+        title,
+        description,
+        category,
+        topicCategory,
+        status: 'Pending Review',
+        municipality,
+        createdAt: new Date().toISOString(),
+      });
 
-      alert(`Raportimi u dërgua me sukses!${created.trackingId ? ` Track ID: ${created.trackingId}` : ''}`);
+      alert(`Raportimi u dërgua me sukses! Track ID: ${trackingId}\nRuajeni për ta ndjekur statusin.`);
       onClose();
       // Reset form
       setTitle('');
@@ -85,7 +102,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
       setImageFile(null);
       setCategory('Infrastrukturë');
       setTopicCategory('');
-      navigate('/');
+      navigate(`/trackid?id=${encodeURIComponent(trackingId)}`);
     } catch (error) {
       console.error(error);
       alert(error instanceof Error && error.message ? error.message : "Pati një gabim gjatë dërgimit.");

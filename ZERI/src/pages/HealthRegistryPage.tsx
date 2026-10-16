@@ -21,6 +21,9 @@ import { MedicineShortages } from '../components/health/MedicineShortages';
 import { HealthCaseWizard, type HealthFormState } from '../components/health/HealthCaseWizard';
 import { CATEGORY_META, URGENCY_META, categoryMeta, statusMeta, urgencyMeta } from '../lib/healthCategories';
 import toast from 'react-hot-toast';
+import { withTimeout } from '../lib/timeouts';
+import { saveGuestReportHistory } from '../lib/session';
+import { TrackIdIssuedModal } from '../components/TrackIdIssuedModal';
 
 import { HealthCase } from '../types';
 export type { HealthCase };
@@ -49,6 +52,7 @@ export default function HealthRegistryPage() {
   // Modals
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [issuedTrackingId, setIssuedTrackingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'cases' | 'municipalStats' | 'hospitalDirectory' | 'shortages'>('cases');
 
   // Hospital notification modal
@@ -279,7 +283,10 @@ export default function HealthRegistryPage() {
       const isAnonymousCase = form.isAnonymous;
       const firebaseUser = auth.currentUser;
       const canStorePrivateExtras = Boolean(firebaseUser && !firebaseUser.isAnonymous && !isAnonymousCase);
-      const trackingId = `HC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      // HC-<time>-<4 random>: the random part comes from the platform CSPRNG and is
+      // always four symbols (Math.random().toString(36) could come out shorter).
+      const randomPart = Array.from(crypto.getRandomValues(new Uint8Array(4)), b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
+      const trackingId = `HC-${Date.now().toString(36).toUpperCase()}-${randomPart}`;
       const newCaseData: Omit<HealthCase, 'id'> = {
         trackingId,
         ...(firebaseUser ? { authorId: firebaseUser.uid } : {}),
@@ -316,16 +323,26 @@ export default function HealthRegistryPage() {
         consentToProcessing: true,
       };
 
-      const docRef = await addDoc(collection(db, 'healthRegistry'), {
+      // Bounded: on a dead link the write never settles and the button spun forever.
+      const docRef = await withTimeout(addDoc(collection(db, 'healthRegistry'), {
         ...newCaseData,
         healthCondition: diagnosis
-      });
+      }), 30000, 'Serveri nuk u përgjigj në kohë. Kontrolloni lidhjen dhe provoni përsëri.');
       
       if (currentUser && currentUser.role !== 'guest') {
         setCases(prev => [{ id: docRef.id, ...newCaseData }, ...prev]);
       }
 
-      toast.success(`Kërkesa u ruajt dhe pret verifikimin. Kodi i rastit: ${trackingId}. Ruajeni; rasti nuk është publik.`, { duration: 9000 });
+      saveGuestReportHistory({
+        id: docRef.id,
+        trackingId,
+        title: `Rast shëndetësor: ${form.category}`,
+        category: form.category,
+        status: 'pending',
+        municipality: form.municipality,
+        createdAt: newCaseData.createdAt,
+      });
+      setIssuedTrackingId(trackingId);
       setIsRegisterModalOpen(false);
       setForm({
         fullName: '',
@@ -500,6 +517,12 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
 
   return (
     <div className="au-page min-h-screen pb-20">
+      <TrackIdIssuedModal
+        trackingId={issuedTrackingId}
+        title={dt('Rasti u regjistrua')}
+        note={dt('Kërkesa pret verifikimin nga stafi i autorizuar. Rasti nuk është publik; me këtë kod ndiqni fazën e tij.')}
+        onClose={() => setIssuedTrackingId(null)}
+      />
       <div className="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-8">
         <div className="mx-auto max-w-6xl">
           <AuraHero

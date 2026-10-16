@@ -1,9 +1,12 @@
-import type { PublicTrackView } from '../../server/trackLookup';
+import { collection, getDocsFromServer, limit, query, where } from 'firebase/firestore';
+import { buildPublicTrackView, type PublicTrackView } from '../../server/trackView';
+import { db } from './firebase';
+import { fetchWithTimeout, isJsonResponse, withTimeout } from './timeouts';
 
 export type { PublicTrackView };
 export type {
   PublicMedia, PublicOfficialResponse, PublicTimelineEvent, ResolutionState,
-} from '../../server/trackLookup';
+} from '../../server/trackView';
 
 /** Same shape the server accepts (server/trackLookup.ts); checked here to save a request. */
 export const TRACKING_ID_PATTERN = /^[A-Z0-9][A-Z0-9-]{7,39}$/;
@@ -21,8 +24,31 @@ export class TrackLookupError extends Error {
 }
 
 /**
+ * Used only when the API cannot be reached at all (network failure, timeout, a
+ * static host answering with HTML, a 502/503/504). The reports rule already lets
+ * anyone read a report, so this reveals nothing new, and the answer goes through
+ * the same allow-list the server applies (server/trackView.ts): the page shows the
+ * same fields either way. A real server answer (404, 429, ...) is never bypassed.
+ */
+async function lookupDirect(trackingId: string): Promise<PublicTrackView> {
+  let view: PublicTrackView | null = null;
+  try {
+    const snap = await withTimeout(
+      getDocsFromServer(query(collection(db, 'reports'), where('trackingId', '==', trackingId), limit(1))),
+      15000,
+      'timeout',
+    );
+    view = snap.empty ? null : buildPublicTrackView(snap.docs[0].data());
+  } catch {
+    throw new TrackLookupError('network', 'Nuk u lidhëm me serverin. Kontrolloni internetin dhe provoni përsëri.');
+  }
+  if (!view) throw new TrackLookupError('not_found', 'Nuk u gjet asnjë raportim me këtë Track ID.');
+  return view;
+}
+
+/**
  * Looks a report up by Track ID through the server, which decides what is public.
- * The browser never reads the report document itself.
+ * Only when the server is unreachable does it fall back to `lookupDirect`.
  */
 export async function lookupTrackingId(rawId: string, signal?: AbortSignal): Promise<PublicTrackView> {
   const trackingId = normalizeTrackingId(rawId);
@@ -32,14 +58,19 @@ export async function lookupTrackingId(rawId: string, signal?: AbortSignal): Pro
 
   let response: Response;
   try {
-    response = await fetch(`/api/v1/public/track/${encodeURIComponent(trackingId)}`, {
+    response = await fetchWithTimeout(`/api/v1/public/track/${encodeURIComponent(trackingId)}`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
       signal,
-    });
+    }, 20000);
   } catch (error) {
     if ((error as { name?: string })?.name === 'AbortError') throw error;
-    throw new TrackLookupError('network', 'Nuk u lidhëm me serverin. Kontrolloni internetin dhe provoni përsëri.');
+    return lookupDirect(trackingId);
+  }
+
+  // No API behind this host (HTML answer) or the API is down: read it directly.
+  if (!isJsonResponse(response) || [502, 503, 504].includes(response.status)) {
+    return lookupDirect(trackingId);
   }
 
   if (response.ok) {

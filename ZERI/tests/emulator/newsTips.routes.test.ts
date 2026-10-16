@@ -80,6 +80,13 @@ describe('submitting and following', () => {
     expect(JSON.stringify(donation.json)).not.toContain('Sekret');
     expect((await call('GET', '/api/v1/public/submission-status?ref=HC-ABCD1234')).json).toMatchObject({ kind: 'health', stage: 'U verifikua' });
   });
+
+  it('finds a health case by the two-part code the registry form issues', async () => {
+    await db.collection('healthRegistry').doc('h2').set({ trackingId: 'HC-MGT3XYZ1-AB12', status: 'pending', createdAt: '2026-10-01T10:00:00Z', fullName: 'Sekret' });
+    const found = await call('GET', '/api/v1/public/submission-status?ref=hc-mgt3xyz1-ab12');
+    expect(found.json).toMatchObject({ kind: 'health', reference: 'HC-MGT3XYZ1-AB12' });
+    expect(JSON.stringify(found.json)).not.toContain('Sekret');
+  });
 });
 
 describe('the newsroom', () => {
