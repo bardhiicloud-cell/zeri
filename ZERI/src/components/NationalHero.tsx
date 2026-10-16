@@ -50,7 +50,7 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
             </div>
           </div>
 
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-700 dark:text-slate-300 sm:text-[15px]">
+          <p className="mt-4 max-w-xl lg:max-w-[27rem] text-sm leading-relaxed text-slate-700 dark:text-slate-300 sm:text-[15px]">
             {dt('Raportoni probleme, merrni pjesë në vendimmarrje dhe ndihmoni në përmirësimin e shërbimeve në komunën tuaj.')}
           </p>
 

@@ -106,6 +106,7 @@ const FLAG_STARS = Array.from({ length: 6 }, (_, i) => {
 });
 
 function Landmarks({ body, accent, win, rim, night }: { body: string; accent: string; win: string; rim: string; night: boolean }) {
+  const maskId = `crescent-mask-${night ? 'night' : 'day'}`;
   return (
     // Enlarged and nudged left so the landmarks read beside the info chips, not behind them.
     <g transform={`translate(-380 ${-0.2 * GROUND}) scale(1.2)`}>
@@ -127,19 +128,28 @@ function Landmarks({ body, accent, win, rim, night }: { body: string; accent: st
       </g>
       <circle cx="1348" cy={GROUND - 376} r="3.2" fill={accent} />
       {/* Mosque: one clear central landmark. Main dome, two half domes, two slender minarets with
-          balconies, pencil caps and crescents. Same artwork day and night; the rim keeps it legible in the dark. */}
+          balconies and pencil caps, each topped by a centred crescent on a short stem. Same artwork day and
+          night; the rim keeps it legible in the dark. Heights are kept low enough that the crescents stay
+          clear of the hero headline and copy. */}
+      <defs>
+        <mask id={maskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="20" height="20">
+          <circle cx="0" cy="0" r="6" fill="#fff" />
+          <circle cx="0" cy="-2.6" r="5" fill="#000" />
+        </mask>
+      </defs>
       <g fill={body} stroke={rim} strokeWidth={rim === 'none' ? 0 : 1}>
-        <rect x="968" y={GROUND - 104} width="144" height="104" />
-        <path d={`M984 ${GROUND - 104} A56 56 0 0 1 1096 ${GROUND - 104} Z`} />
-        <path d={`M970 ${GROUND - 104} A19 19 0 0 1 1008 ${GROUND - 104} Z`} />
-        <path d={`M1072 ${GROUND - 104} A19 19 0 0 1 1110 ${GROUND - 104} Z`} />
-        <rect x="1038" y={GROUND - 176} width="4" height="20" />
+        <rect x="968" y={GROUND - 92} width="144" height="92" />
+        <path d={`M988 ${GROUND - 92} A52 52 0 0 1 1092 ${GROUND - 92} Z`} />
+        <path d={`M970 ${GROUND - 92} A19 19 0 0 1 1008 ${GROUND - 92} Z`} />
+        <path d={`M1072 ${GROUND - 92} A19 19 0 0 1 1110 ${GROUND - 92} Z`} />
+        <rect x="1038.5" y={GROUND - 158} width="3" height="14" />
         {[948, 1132].map((mx) => (
           <g key={mx}>
-            <rect x={mx - 5} y={GROUND - 214} width="10" height={214} />
-            <rect x={mx - 9} y={GROUND - 190} width="18" height="5" rx="1" />
-            <rect x={mx - 3.5} y={GROUND - 236} width="7" height="24" />
-            <path d={`M${mx - 6} ${GROUND - 236} L${mx} ${GROUND - 274} L${mx + 6} ${GROUND - 236} Z`} />
+            <rect x={mx - 5} y={GROUND - 186} width="10" height={186} />
+            <rect x={mx - 9} y={GROUND - 166} width="18" height="5" rx="1" />
+            <rect x={mx - 3.5} y={GROUND - 208} width="7" height="24" />
+            <path d={`M${mx - 6} ${GROUND - 208} L${mx} ${GROUND - 244} L${mx + 6} ${GROUND - 208} Z`} />
+            <rect x={mx - 0.8} y={GROUND - 252} width="1.6" height="10" />
           </g>
         ))}
       </g>
@@ -149,11 +159,15 @@ function Landmarks({ body, accent, win, rim, night }: { body: string; accent: st
           <path key={i} d={`M${982 + i * 19} ${GROUND - 12} v-22 a4.5 4.5 0 0 1 9 0 v22 Z`} />
         ))}
       </g>
-      {/* Crescents */}
-      <g fill="none" stroke={accent} strokeWidth="2.2" strokeLinecap="round">
-        <path d={`M1044 ${GROUND - 186} a6.5 6.5 0 1 1 -1.5 -12`} />
+      {/* Crescents: centred on the axis of the dome and each minaret, sitting directly on the finial */}
+      <g fill={accent}>
+        <g transform={`translate(1040 ${GROUND - 166}) scale(1.15)`}>
+          <circle cx="0" cy="0" r="6" mask={`url(#${maskId})`} />
+        </g>
         {[948, 1132].map((mx) => (
-          <path key={mx} d={`M${mx + 3.4} ${GROUND - 282} a4.6 4.6 0 1 1 -1 -8`} strokeWidth="1.8" />
+          <g key={mx} transform={`translate(${mx} ${GROUND - 258}) scale(0.95)`}>
+            <circle cx="0" cy="0" r="6" mask={`url(#${maskId})`} />
+          </g>
         ))}
       </g>
     </g>
