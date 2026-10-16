@@ -221,6 +221,10 @@ describe('the full lifecycle on the database', () => {
     expect(closed.description).toBe(COMPLETE.description);
     expect(await openTasks('r1')).toEqual([]);
 
+    // U mbyll is final: a closed report cannot be reopened.
+    res = await act('boss', 'r1', { action: 'reopen_report', reason: 'Qytetari kundërshton rezultatin.' });
+    expect(res.status).toBe(409);
+
     // Every transition is on the record: previous, new, who, when, text.
     const history = (await events('r1')).sort((a, b) => a.atMs - b.atMs);
     const moves = history.filter(e => e.from !== e.to).map(e => `${e.fromStatus}>${e.toStatus}:${e.actorUid}`);
@@ -268,6 +272,26 @@ describe('rejection and queues', () => {
     expect(pending.body.items.map((r: any) => r.id)).toEqual(['b']);
     const rejectedQueue = await get('boss', '/api/v1/workflow/reports?queue=rejected');
     expect(rejectedQueue.body.items[0].rejectionReason).toBe('Dublikatë e raportit tjetër.');
+  });
+
+  it('a wrongly refused report can be reopened by the superadmin only, with a reason, and returns to review', async () => {
+    await seedReport('a');
+    await sync('a');
+    expect((await act('appr', 'a', { action: 'reject_report', reason: 'Dublikatë e raportit tjetër.' })).status).toBe(200);
+
+    expect((await act('appr', 'a', { action: 'reopen_report', reason: 'Refuzimi ishte i gabuar.' })).status).toBe(403);
+    expect((await act('boss', 'a', { action: 'reopen_report', reason: '' })).status).toBe(400);
+    expect(await statusOf('a')).toBe('Rejected');
+
+    const res = await act('boss', 'a', { action: 'reopen_report', reason: 'Refuzimi ishte i gabuar.' });
+    expect(res.status).toBe(200);
+    const reopened = (await db.collection('reports').doc('a').get()).data() as any;
+    expect(reopened.status).toBe('Pending Review');
+    expect(reopened.rejectionReason).toBeUndefined();
+    expect(reopened.workflow.reopenReason).toBe('Refuzimi ishte i gabuar.');
+    expect((await openTasks('a')).map(t => t.kind)).toEqual(['review']);
+    const pending = await get('boss', '/api/v1/workflow/reports?queue=pending');
+    expect(pending.body.items.map((r: any) => r.id)).toEqual(['a']);
   });
 });
 

@@ -495,6 +495,7 @@ export async function executeReportAction(deps: Pick<ReportWorkflowDeps, 'db' | 
         break;
       }
       case 'approve_closure': completedKinds.add('close'); break;
+      case 'reopen_report': break;
       case 'start_process': break;
       default: break;
     }
@@ -590,6 +591,13 @@ export async function executeReportAction(deps: Pick<ReportWorkflowDeps, 'db' | 
         Object.assign(patch, {
           closedAt: nowIso, closedBy: actor.uid, finalOutcome: decision.text,
           'workflow.closedBy': actor.uid, 'workflow.closedByName': actorName, 'workflow.closedAtMs': nowMs, 'workflow.outcome': decision.text,
+        });
+        break;
+      case 'reopen_report':
+        Object.assign(patch, {
+          'workflow.reopenedBy': actor.uid, 'workflow.reopenedAtMs': nowMs, 'workflow.reopenReason': decision.text,
+          resolutionClaimed: false, awaitingInfo: false, assigneeUids: [], assignedMunicipalities: [],
+          closedAt: FieldValue.delete(), resolvedAt: FieldValue.delete(), rejectedAt: FieldValue.delete(), rejectionReason: FieldValue.delete(),
         });
         break;
       default: break;

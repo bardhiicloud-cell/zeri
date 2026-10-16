@@ -182,7 +182,8 @@ export type ReportAction =
   | 'submit_resolution'
   | 'return_to_work'
   | 'approve_resolution'
-  | 'approve_closure';
+  | 'approve_closure'
+  | 'reopen_report';
 
 export interface ActionDef {
   action: ReportAction;
@@ -230,6 +231,12 @@ export const ACTIONS: Record<ReportAction, ActionDef> = {
     action: 'approve_closure', label: 'Aprovo mbylljen', from: ['resolved'], to: 'closed',
     requires: { field: 'note', min: MIN_REASON, prompt: 'Rezultati përfundimtar' }, owner: 'Superadmini', tone: 'primary',
   },
+  // A resolved or refused report can come back (a disputed resolution, a wrong refusal). U mbyll stays final.
+  // It returns to the review queue, never straight into work, and the reason is on the record.
+  reopen_report: {
+    action: 'reopen_report', label: 'Rihap raportimin', from: ['resolved', 'rejected'], to: 'pending',
+    requires: { field: 'reason', min: MIN_REASON, prompt: 'Pse rihapet raportimi' }, owner: 'Superadmini', tone: 'neutral',
+  },
 };
 
 export const ALL_ACTIONS = Object.keys(ACTIONS) as ReportAction[];
@@ -258,6 +265,7 @@ const OWNERS: Record<ReportAction, ReadonlyArray<WorkflowRole | 'assignee' | 'ap
   return_to_work: ['superadmin'],
   approve_resolution: ['superadmin'],
   approve_closure: ['superadmin'],
+  reopen_report: ['superadmin'],
 };
 
 /* ------------------------------------------------------------------ */

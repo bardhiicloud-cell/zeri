@@ -257,7 +257,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
   if (activeAd) {
     const adTargetUrl = typeof activeAd.targetUrl === 'string' ? activeAd.targetUrl.trim() : '';
     const isClickable = activeAd.mediaType !== 'html' && Boolean(adTargetUrl);
-    const showMedia = !mediaFailed;
+    const showMedia = !mediaFailed && Boolean(activeAd.mediaUrl);
 
     return (
       <div

@@ -34,3 +34,23 @@ Kontrolli u bë në kod dhe në mjedis lokal me emulatorë (Auth, Firestore, Sto
 
 ## Verdikt
 Kodi është në gjendje të mirë (tsc, 1.7k+ teste, build), por **nuk mund të deklarohet 100% gati**: mungon verifikimi në prodhim, vendosja e rregullave të sigurisë dhe provat e kapacitetit. Rekomandim: deploy në staging, ekzekutoni listën më lart, pastaj publikoni.
+
+---
+
+## Përditësim (raundi i dytë) — çka u mbyll në kod
+| Çështja | Statusi |
+|---|---|
+| Rihapja e raporteve | **U shtua** veprimi `reopen_report` (vetëm superadmin, me arsye ≥5 shenja): nga *U zgjidh* ose *U refuzua* kthehet te *Në pritje*, krijon sërish detyrën e shqyrtimit, pastron fushat e mbylljes/refuzimit dhe shfaqet në timeline-n publik të Track ID. *U mbyll* mbetet përfundimtare (rregulli ekzistues). 2 teste njësi + 1 emulator + provë API (refuzim → rihapje → timeline publik) |
+| Aprovimi pa foto | provuar: serveri e bllokon (`INCOMPLETE`) |
+| `NetworkStatus` | teksti i pavërtetë “sinkronizohet automatikisht” u zëvendësua me tekst të vërtetë (sq/en/sr): dërgimi dhe Track ID kërkojnë lidhje, asgjë nuk dërgohet offline |
+| `src=""` | **gjetur dhe riparuar** te `AdBanner.tsx` (reklamë pa media); paralajmërimi u zhduk |
+| Lajmet dhe Shëndeti në telefon | u provuan me të dhëna testuese: lajmet (13 publikime, filtra, kërkim) dhe regjistri shëndetësor ngarkojnë pa gabime |
+
+## Çka NUK mund të bëhet nga ky sandbox (hapa për ju, në rend)
+1. **DNS/HTTPS:** `zeriqytetarve.com` drejt Firebase App Hosting; kontrolloni `curl -I https://zeriqytetarve.com/manifest.webmanifest` (200, `application/manifest+json`) dhe `/sw.js` (`Cache-Control: no-cache`).
+2. **Firebase Console → Authentication → Authorized domains:** shtoni `zeriqytetarve.com` (kërkohet nga hyrja me Google). `ALLOWED_ORIGINS` dhe `PUBLIC_APP_URL` janë tashmë të saktë te `apphosting.yaml`.
+3. **Rregullat e Firestore:** vendosni sipas `ADMIN_SECURITY_REMEDIATION.md` §5 (claims → server+ueb → verifikim → rregulla). Vendimi mbetet i juaji; asgjë nuk u vendos nga unë.
+4. **Pagesat:** vendosni IBAN-in te cilësimet e pagesave të Debatit dhe, nëse e doni Paysera, variablat e tij; pa to serveri kthen “Pagesat nuk janë konfiguruar”. Donacionet publike janë kauza me lidhje të jashtme, jo pagesa në platformë.
+5. **Kuti postare** `privatisi@`, `abuzim@`, `privacy@` në domenin e ri.
+6. **Kapaciteti:** testi real kërkon staging; `CAPACITY_TEST_REPORT.md` thotë se matja aktuale është vetëm shtresa e aplikacionit.
+7. **Pas deploy:** instalim real në Android Chrome dhe iOS Safari, Lighthouse PWA, Search Console (dërgoni sitemap-in e ri).

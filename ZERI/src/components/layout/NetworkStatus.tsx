@@ -22,9 +22,9 @@ export function NetworkStatus() {
   if (isOnline) return null;
 
   const getMessage = () => {
-    if (language === 'en') return 'You are offline. Your reports will sync automatically when the connection is restored.';
-    if (language === 'sr') return 'Van mreže ste. Vaši izveštaji će se automatski sinhronizovati kada se veza uspostavi.';
-    return 'Ju jeni jashtë linje. Raportimet tuaja do të sinkronizohen automatikisht kur të rikthehet lidhja.';
+    if (language === 'en') return 'You are offline. Sending a report or looking up a Track ID needs a connection; nothing is sent until it returns, so keep the form open and try again.';
+    if (language === 'sr') return 'Van mreže ste. Slanje prijave i provera Track ID-a zahtevaju vezu; ništa se ne šalje dok se ne vrati, pa ostavite formular otvoren i pokušajte ponovo.';
+    return 'Ju jeni jashtë linje. Dërgimi i raportit dhe kërkimi me Track ID kërkojnë lidhje; asgjë nuk dërgohet derisa të kthehet, prandaj mbajeni formularin hapur dhe provoni përsëri.';
   };
 
   return (

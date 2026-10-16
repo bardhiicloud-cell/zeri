@@ -33,6 +33,21 @@ const muni = (status: AssignmentFacts['status'] = 'active'): AssignmentFacts => 
 const decide = (actor: ReportActor, r: ReportFacts, action: string, extra: Record<string, unknown> = {}) =>
   decideReportAction({ actor, report: r, request: { action, ...extra } });
 
+describe('reopening', () => {
+  it('lets only the superadmin send a resolved or refused report back to review, with a reason', () => {
+    expect(decide(SUPER, report('Resolved'), 'reopen_report', { reason: '' })).toMatchObject({ outcome: 'deny', code: 'TEXT_REQUIRED' });
+    expect(decide(SUPER, report('Resolved'), 'reopen_report', { reason: 'Qytetari dërgoi prova të reja.' })).toMatchObject({ outcome: 'allow', to: 'pending' });
+    expect(decide(SUPER, report('Rejected'), 'reopen_report', { reason: 'Refuzimi ishte i gabuar.' })).toMatchObject({ outcome: 'allow', to: 'pending' });
+    expect(decide(MANAGER, report('Resolved'), 'reopen_report', { reason: 'Qytetari dërgoi prova të reja.' })).toMatchObject({ outcome: 'deny', code: 'WRONG_ROLE' });
+    expect(decide(AGENT, report('Rejected'), 'reopen_report', { reason: 'Refuzimi ishte i gabuar.' })).toMatchObject({ outcome: 'deny' });
+  });
+  it('does not apply to reports that are open or closed', () => {
+    for (const status of ['Pending Review', 'Approved', 'Assigned', 'In Progress', 'Closed']) {
+      expect(decide(SUPER, report(status), 'reopen_report', { reason: 'arsye e mjaftueshme' }).outcome).toBe('deny');
+    }
+  });
+});
+
 describe('the six stages', () => {
   it('are exactly the six statuses, in order, with rejected apart', () => {
     expect(REPORT_STAGES.map(s => QUEUE_TEXT[s].label)).toEqual(['Në pritje', 'U aprovua', 'I caktuar', 'Në proces', 'U zgjidh', 'U mbyll']);
