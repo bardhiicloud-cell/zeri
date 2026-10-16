@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, PlusCircle, Menu, X, ShieldAlert, UserRound,
   LogOut, Search, ChevronRight, ChevronDown, Sun, Moon, MapPin, Building2,
-  Plus, Film, Camera, Megaphone, Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake, Newspaper,
+  Plus, Film, Camera, Megaphone, Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake, Newspaper, Globe,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
@@ -16,6 +16,8 @@ import { canAccessAdmin } from '../../lib/adminPermissions';
 import { useThemePreference } from '../../lib/themePreference';
 import { MunicipalitySwitcher } from './MunicipalitySwitcher.tsx';
 import { ResponseNotificationsBell } from '../NewNewsBadge';
+import { LANGUAGE_OPTIONS } from '../../lib/languageConstants';
+import { useLanguageSwitch } from '../../lib/LanguageUrlSync';
 import {
   ALL_SCOPE,
   isSpecificScope,
@@ -95,6 +97,10 @@ export function MobileNav() {
   const isGuest = !currentUser || currentUser.role === 'guest';
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isScopeExpanded, setIsScopeExpanded] = useState(false);
+  const [isLanguageExpanded, setIsLanguageExpanded] = useState(false);
+  // Same URL-aware switch as the desktop top bar, so the visitor stays on the page they are reading.
+  const { language, switchLanguage } = useLanguageSwitch();
+  const currentLanguage = LANGUAGE_OPTIONS.find((l) => l.code === language) ?? LANGUAGE_OPTIONS[0];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const isActive = (path: string) =>
@@ -494,6 +500,61 @@ export function MobileNav() {
                       <div className="rounded-xl border border-slate-200/80 bg-white px-1 pb-1 dark:border-white/10 dark:bg-slate-900/70">
                         <MunicipalitySwitcher inline />
                       </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Language picker: sits directly under the municipality selector, same row pattern. */}
+                <section aria-labelledby="mobile-language-heading" className="mb-4 -mt-2">
+                  <button
+                    id="mobile-language-heading"
+                    type="button"
+                    aria-expanded={isLanguageExpanded}
+                    onClick={() => setIsLanguageExpanded((expanded) => !expanded)}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-3.5 text-left transition-colors hover:border-blue-300 dark:border-white/10 dark:bg-slate-800/60"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                      <Globe className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                        {dt('Gjuha')}
+                      </span>
+                      <span className="block truncate text-sm font-bold text-slate-800 dark:text-slate-100">
+                        <span aria-hidden="true">{currentLanguage.flag}</span> {currentLanguage.fullName}
+                      </span>
+                    </span>
+                    <ChevronDown className={cn('h-4 w-4 shrink-0 text-slate-400 transition-transform', isLanguageExpanded && 'rotate-180')} aria-hidden="true" />
+                  </button>
+
+                  {isLanguageExpanded && (
+                    <div
+                      role="radiogroup"
+                      aria-label={dt('Gjuha')}
+                      className="mt-2 grid max-h-64 grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200/80 bg-slate-50 p-2 dark:border-white/10 dark:bg-slate-800/40"
+                    >
+                      {LANGUAGE_OPTIONS.map((lang) => (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          role="radio"
+                          aria-checked={language === lang.code}
+                          onClick={() => {
+                            switchLanguage(lang.code);
+                            setIsLanguageExpanded(false);
+                          }}
+                          className={cn(
+                            'flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-left text-xs font-bold transition-colors',
+                            language === lang.code
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-slate-700 hover:bg-blue-50 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800'
+                          )}
+                        >
+                          <span aria-hidden="true">{lang.flag}</span>
+                          <span className="flex-1 truncate">{lang.fullName}</span>
+                          {language === lang.code && <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </section>
