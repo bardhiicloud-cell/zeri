@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchWithTimeout, isJsonResponse } from '../lib/timeouts';
 import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -34,7 +35,8 @@ const DESCRIPTION_PREVIEW = 520;
 
 /** Donations (DN-), health cases (HC-) and news tips (LJ-) share the Track-ID: the public sees the stage only. */
 interface SectorStatus { kind: 'news' | 'donation' | 'health'; reference: string; stage: string; rejected: boolean; updatedAt: string | null; createdAt: string | null }
-const SECTOR_PREFIX = /^(LJ|DN|HC)-[A-Z0-9]{4,12}$/;
+// Health cases carry two parts (HC-<time>-<random>); the old one-part pattern sent them to the report lookup.
+const SECTOR_PREFIX = /^(LJ|DN|HC)-[A-Z0-9]{4,12}(-[A-Z0-9]{2,8})?$/;
 const SECTOR_LABEL: Record<SectorStatus['kind'], string> = { news: 'Lajmi i dërguar', donation: 'Kërkesa për donacion', health: 'Rasti në regjistrin shëndetësor' };
 
 function SectorCard({ status }: { status: SectorStatus }) {
@@ -80,7 +82,8 @@ export default function TrackIdPage() {
       abortRef.current?.abort();
       setPhase({ kind: 'loading' });
       try {
-        const response = await fetch(`/api/v1/public/submission-status?ref=${encodeURIComponent(trackingId)}`);
+        const response = await fetchWithTimeout(`/api/v1/public/submission-status?ref=${encodeURIComponent(trackingId)}`, { cache: 'no-store' }, 20000);
+        if (!isJsonResponse(response)) throw new TrackLookupError('network', 'Shërbimi i ndjekjes nuk është i arritshëm tani. Provoni përsëri pas pak.');
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new TrackLookupError(response.status === 404 ? 'not_found' : 'server', String((body as { error?: string }).error ?? 'Kërkimi nuk u krye.'));
         setPhase({ kind: 'sector', status: body as SectorStatus });

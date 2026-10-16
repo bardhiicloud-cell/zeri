@@ -55,10 +55,16 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm run test:rules
+      # Needs the Auth emulator too (staff accounts sign in), so it has its own emulator run.
+      - run: npm run test:workflow
 
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
+    # gitleaks lists the PR's commits through the API; without pull-requests: read it gets 403 on every PR.
+    permissions:
+      contents: read
+      pull-requests: read
     defaults:
       run:
         working-directory: .

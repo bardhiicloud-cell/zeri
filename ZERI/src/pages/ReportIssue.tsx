@@ -23,7 +23,8 @@ import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
 import { signInAnonymously } from 'firebase/auth';
-import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDocFromServer, collection, serverTimestamp } from 'firebase/firestore';
+import { fetchWithTimeout, isJsonResponse, withTimeout } from '../lib/timeouts';
 import { createTrackingId, getOrCreateGuestUser, saveGuestReportHistory } from '../lib/session';
 
 /**
@@ -38,7 +39,8 @@ import { createTrackingId, getOrCreateGuestUser, saveGuestReportHistory } from '
 async function ensureReportSession(): Promise<string | null> {
   if (auth.currentUser?.uid) return auth.currentUser.uid;
   try {
-    const credential = await signInAnonymously(auth);
+    // Bounded: a blocked App Check token or a dead link left this pending forever.
+    const credential = await withTimeout(signInAnonymously(auth), 15000, 'Sesioni nuk u krijua në kohë.');
     return credential.user.uid;
   } catch {
     const guestUser = getOrCreateGuestUser();
@@ -292,6 +294,14 @@ export default function ReportIssue() {
   const [submittedReportId, setSubmittedReportId] = useState('');
   const startTime = useRef(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /** What the processing screen says is happening right now. */
+  const [submitStage, setSubmitStage] = useState('');
+  /**
+   * One report id per attempt *series*: a retry after a timeout reuses it, so the
+   * server (clientReportId) and the direct write both land on the same document
+   * instead of creating a duplicate when the first try did reach the database.
+   */
+  const pendingReportIdRef = useRef<string | null>(null);
 
   if (isBanned) {
     return (
@@ -637,7 +647,9 @@ export default function ReportIssue() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitStage(dt('Duke verifikuar sesionin...'));
     const timeSpentMs = Date.now() - startTime.current;
     
     try {
@@ -656,7 +668,8 @@ export default function ReportIssue() {
 
       // The report id is generated up front so media lands under
       // reports/{uid}/{reportId}/... which the Storage rules accept.
-      const reportRef = doc(collection(db, 'reports'));
+      if (!pendingReportIdRef.current) pendingReportIdRef.current = doc(collection(db, 'reports')).id;
+      const reportRef = doc(db, 'reports', pendingReportIdRef.current);
 
       // No automatic gate: nothing here decides whether a report is accepted. Photos,
       // videos and text are kept as sent; a person on the admin side reviews the report
@@ -727,16 +740,23 @@ export default function ReportIssue() {
           });
         }
         setSubmittedReportId(finalTrackingId);
+        pendingReportIdRef.current = null;
         if (currentUser) addPoints(10);
         localStorage.removeItem('reportDraft');
         setStep(3);
       };
 
+      if (mediaItems.length > 0) {
+        setSubmitStage(dt(`Duke ngarkuar ${mediaItems.length} foto/video/dokument...`));
+      }
+      let uploadedCount = 0;
       const uploadResults = await Promise.allSettled(
         mediaItems.map(async (media) => {
           // One retry: a flaky mobile link is the usual reason a photo or video fails.
           const send = () => uploadFileToStorage(media.file, 'reports', { userId: authorUid, scope: reportRef.id });
           const downloadUrl = await send().catch(() => send());
+          uploadedCount += 1;
+          setSubmitStage(dt(`U ngarkuan ${uploadedCount} nga ${mediaItems.length} fajlla...`));
           return {
             url: downloadUrl,
             type: media.type,
@@ -773,10 +793,15 @@ export default function ReportIssue() {
        * server is unreachable — the security rules still bound what that write
        * may contain, and the citizen's report is never lost either way.
        */
+      setSubmitStage(dt('Duke ruajtur raportin dhe duke krijuar Track ID...'));
+      let serverRefusal: string | null = null;
       try {
-        const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+        const token = auth.currentUser
+          ? await withTimeout(auth.currentUser.getIdToken(), 15000, 'Tokeni i sesionit nuk u mor në kohë.')
+          : null;
         if (token) {
-          const response = await fetch('/api/v1/reports', {
+          // 35 s: a backend on a free plan can need ~30 s to wake up.
+          const response = await fetchWithTimeout('/api/v1/reports', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -798,44 +823,55 @@ export default function ReportIssue() {
               aiRoutingReason: reportData.aiRoutingReason,
               aiForensicsReport: reportData.aiForensicsReport,
             }),
-          });
+          }, 35000);
 
-          if (response.ok) {
-            const created = await response.json();
-            const serverTrackingId = created.trackingId;
-            reportData.trackingId = serverTrackingId;
-            reportData.id = created.id;
+          // Only a JSON answer is the API: a static host without the /api forward
+          // answers 200 with index.html, which is not a stored report.
+          const body = isJsonResponse(response)
+            ? await response.json().catch(() => null) as { id?: string; trackingId?: string; error?: string } | null
+            : null;
 
-            addReport({ ...reportData, id: created.id } as any);
-            confirmSubmission(serverTrackingId, created.id);
+          if (response.ok && body?.trackingId && body?.id) {
+            reportData.trackingId = body.trackingId;
+            reportData.id = body.id;
+            addReport({ ...reportData, id: body.id } as any);
+            confirmSubmission(body.trackingId, body.id);
             return;
           }
-          // A 409/429 carries a citizen-facing reason; surface it rather than
-          // silently degrading to the direct write the server just refused.
-          if (response.status === 409 || response.status === 429) {
-            const body = await response.json().catch(() => null) as { error?: string } | null;
-            throw new Error(body?.error || 'Raportimi u refuzua nga serveri.');
+          // The server read the report and refused it (validation, duplicate, rate):
+          // say why instead of writing around a decision it just made.
+          if (body && [400, 409, 413, 422, 429].includes(response.status)) {
+            serverRefusal = body.error || 'Raportimi u refuzua nga serveri.';
           }
-          // Any other server failure falls through to the direct write below.
+          // Any other answer (5xx, HTML, no API) falls through to the direct write.
         }
       } catch (error) {
-        // Only a deliberate refusal (duplicate/rate) should stop the flow; a
-        // network failure falls through to the direct-write fallback.
-        if (error instanceof Error && (error.message.includes('refuzua') || error.message.includes('Shumë raportime'))) {
-          toast.error(error.message, { duration: 7000 });
-          return;
-          }
         console.warn('Server path unavailable; falling back to direct Firestore write.', error);
       }
+      if (serverRefusal) {
+        toast.error(serverRefusal, { duration: 8000 });
+        return;
+      }
 
+      // Server unreachable: the only case the browser has to mint an id itself.
+      reportData.trackingId = createTrackingId('ZQ', reportRef.id);
       try {
-        // Server unreachable: the only case the browser has to mint an id itself.
-        reportData.trackingId = createTrackingId('ZQ', reportRef.id);
-        await setDoc(reportRef, {
+        // A Firestore write settles only when the server acknowledges it, which on a
+        // dead link is never. Bound it, then ask the server whether it landed anyway.
+        await withTimeout(setDoc(reportRef, {
           ...reportData,
           createdAt: serverTimestamp() // native firebase timestamp
-        });
+        }), 30000, 'Ruajtja zgjati shumë.');
       } catch (e) {
+        const landed = await withTimeout(getDocFromServer(reportRef), 10000, 'timeout')
+          .then(snap => snap.exists() ? (snap.data() as { trackingId?: string }) : null)
+          .catch(() => null);
+        if (landed) {
+          reportData.trackingId = landed.trackingId || reportData.trackingId;
+          addReport({ ...reportData, id: reportRef.id });
+          confirmSubmission(reportData.trackingId, reportRef.id);
+          return;
+        }
         // The report was not stored anywhere the municipality or platform can
         // see. Saying otherwise (the old "saved locally" success toast and Track
         // ID) left citizens waiting on a complaint that did not exist. Keep the
@@ -860,6 +896,7 @@ export default function ReportIssue() {
       toast.error(appError.message || 'Ka ndodhur një gabim gjatë procesimit të të dhënave, provoni përsëri.');
     } finally {
       setIsSubmitting(false);
+      setSubmitStage('');
     }
   };
 
@@ -1404,7 +1441,11 @@ export default function ReportIssue() {
               <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
             </div>
             <h2 className="text-2xl md:text-3xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-4 uppercase">{dt(`Duke Procesuar`)}</h2>
-            <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto animate-pulse leading-relaxed">{dt(`Raporti juaj po dërgohet në sistem të sigurt. Verifikimi i lokacionit, kategorisë dhe sigurisë po bëhet në kohë reale...`)}</p>
+            <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto leading-relaxed">{dt(`Raporti juaj po dërgohet në sistem të sigurt. Verifikimi i lokacionit, kategorisë dhe sigurisë po bëhet në kohë reale...`)}</p>
+            {submitStage && (
+              <p role="status" aria-live="polite" className="mt-5 text-sm font-bold text-indigo-700 dark:text-indigo-300">{submitStage}</p>
+            )}
+            <p className="mt-3 text-xs text-slate-500 max-w-md mx-auto">{dt('Mos e mbyllni faqen. Nëse lidhja dështon, forma ruhet dhe merrni mesazh për ta provuar përsëri.')}</p>
             <div className="mt-8 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-slate-500">
               <span className="h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
               <span>Secure workflow</span>

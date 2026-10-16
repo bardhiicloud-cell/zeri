@@ -1,4 +1,5 @@
 import { auth } from './firebase';
+import { fetchWithTimeout, isJsonResponse } from './timeouts';
 
 export interface PublicSubmitResult {
   ok: boolean;
@@ -27,8 +28,9 @@ export async function postPublic(path: string, body: Record<string, unknown>): P
     } catch {
       // Anonymous submission is fine.
     }
-    const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body) });
-    const data = await res.json().catch(() => ({}));
+    const res = await fetchWithTimeout(path, { method: 'POST', headers, body: JSON.stringify(body) }, 40000);
+    // A static host without the /api forward answers 200 with HTML: that is not a stored submission.
+    const data = isJsonResponse(res) ? await res.json().catch(() => ({})) : {};
     if (res.ok && data?.ok === true) {
       return { ok: true, status: res.status, reference: data.reference ?? null, error: null, fields: {} };
     }

@@ -5,6 +5,8 @@ import { dt } from '@/src/lib/dt';
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { postPublic } from '../lib/publicSubmit';
+import { saveGuestReportHistory } from '../lib/session';
+import { TrackIdIssuedModal } from '../components/TrackIdIssuedModal';
 import { useStore, DonationCause } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Heart, Globe, X, PlusCircle, Activity, Home, Utensils, Shirt, Grid, ChevronLeft, ChevronRight, ChevronDown, Layers, HeartPulse } from 'lucide-react';
@@ -31,6 +33,7 @@ export default function DonationsPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [issuedReference, setIssuedReference] = useState<string | null>(null);
   const [applyErrors, setApplyErrors] = useState<Record<string, string>>({});
 
   // Escape closes the open campaign dialog.
@@ -148,7 +151,19 @@ const ITEMS_PER_PAGE = 6;
       toast.error(result.error || dt('Aplikimi nuk u dërgua. Provoni përsëri.'));
       return;
     }
-    toast.success(`${dt('Aplikimi u ruajt. Referenca')}: ${result.reference}. ${dt('Publikohet vetëm pasi ta miratojë administratori.')}`, { duration: 8000 });
+    if (result.reference) {
+      saveGuestReportHistory({
+        id: result.reference,
+        trackingId: result.reference,
+        title: newApplication.title.trim().slice(0, 160),
+        category: newApplication.category,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+      setIssuedReference(result.reference);
+    } else {
+      toast.success(dt('Aplikimi u ruajt. Publikohet vetëm pasi ta miratojë administratori.'), { duration: 8000 });
+    }
     setIsApplying(false);
     setNewApplication({ title: '', description: '', category: 'shtepi', mediaType: 'image', mediaUrl: '', donationUrl: '' });
   };
@@ -161,6 +176,12 @@ const ITEMS_PER_PAGE = 6;
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="au-page mx-auto min-h-screen max-w-6xl px-3 pb-32 pt-3 sm:px-6 md:pb-20 lg:px-8"
     >
+      <TrackIdIssuedModal
+        trackingId={issuedReference}
+        title={dt('Aplikimi u ruajt')}
+        note={dt('Publikohet vetëm pasi ta miratojë administratori. Me këtë kod ndiqni fazën e aplikimit.')}
+        onClose={() => setIssuedReference(null)}
+      />
 
       {/* Inline Ad Banner */}
       <div className="mb-6">

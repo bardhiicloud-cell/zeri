@@ -141,9 +141,12 @@ const iso = (value: unknown): string | null => {
 };
 
 /** Public: the stage label only. Never the text, the sender or the staff notes. */
+/** LJ-/DN- references are one part; health cases are `HC-<time>-<random>` (HealthRegistryPage). */
+export const SUBMISSION_REFERENCE_PATTERN = /^(LJ|DN|HC)-[A-Z0-9]{4,12}(-[A-Z0-9]{2,8})?$/;
+
 export async function lookupSubmission(db: Firestore, refRaw: string): Promise<SubmissionStatus | null> {
   const ref = refRaw.trim().toUpperCase();
-  if (!/^(LJ|DN|HC)-[A-Z0-9]{4,12}$/.test(ref)) return null;
+  if (!SUBMISSION_REFERENCE_PATTERN.test(ref)) return null;
   const prefix = ref.slice(0, 2);
   if (prefix === 'LJ') {
     const snap = await db.collection('newsTips').where('reference', '==', ref).limit(1).get();
