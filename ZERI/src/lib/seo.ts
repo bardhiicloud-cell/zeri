@@ -54,7 +54,7 @@ export const SEO_LOCALES: Record<SupportedLanguageCode, SeoLocale> = {
 };
 
 /** Production origin, used to build absolute canonical and hreflang URLs. */
-export const SITE_ORIGIN = 'https://zeriqytetare.republiks';
+export const SITE_ORIGIN = 'https://zeriqytetarve.com';
 
 /**
  * Split a pathname into its language and the page beneath it.

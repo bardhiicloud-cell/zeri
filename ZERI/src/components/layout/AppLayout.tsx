@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { InstallAppBanner } from '../InstallAppPrompt';
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -199,6 +200,7 @@ export function AppLayout() {
           {!isForumPage && !isNewsPage && showTopAd && <AdBanner position="top" />}
           <Outlet />
           <BroadcastPopup />
+          <InstallAppBanner />
           {!isForumPage && !isNewsPage && <AppFooter />}
         </div>
       </main>

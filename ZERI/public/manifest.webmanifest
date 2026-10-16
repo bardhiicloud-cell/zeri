@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Zëri Qytetarëve",
+  "short_name": "Zëri",
+  "description": "Platforma kombëtare e angazhimit qytetar të Republikës së Kosovës: raportoni, ndiqni, vendosni.",
+  "lang": "sq",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#050b18",
+  "theme_color": "#0a1a3a",
+  "categories": ["government", "news", "social"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Raporto një problem", "short_name": "Raporto", "url": "/raporto?source=shortcut", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Ndiq raportimin (Track ID)", "short_name": "Track ID", "url": "/trackid?source=shortcut", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Harta e raportimeve", "short_name": "Harta", "url": "/harta?source=shortcut", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

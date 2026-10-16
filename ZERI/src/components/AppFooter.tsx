@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck, FileText, Info, Mail, Phone, ExternalLink, Github, Heart } from 'lucide-react';
 import { CookiePreferencesButton } from './CookieConsentBanner';
 import { SOCIAL_LINKS } from './SocialIcons';
+import { InstallAppButton } from './InstallAppPrompt';
 
 const COLUMNS = [
   {
@@ -85,6 +86,8 @@ export function AppFooter() {
                 {dt('Numrat e institucioneve')}
               </Link>
             </div>
+
+            <InstallAppButton />
 
             {/*
               Official social profiles.

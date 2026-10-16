@@ -963,7 +963,7 @@ const SITEMAP_LOCALES: Array<{ tag: string; prefix: string }> = [
   { tag: 'nl-NL', prefix: 'nl' },
 ];
 
-const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://zeriqytetare.republiks';
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://zeriqytetarve.com';
 
 app.get('/sitemap.xml', (_req, res) => {
   const urls: string[] = [];

@@ -38,7 +38,7 @@ export const SEO_LOCALES = {
 };
 
 /** Production origin for canonical and hreflang URLs. */
-export const SITE_ORIGIN = 'https://zeriqytetare.republiks';
+export const SITE_ORIGIN = 'https://zeriqytetarve.com';
 
 /** Split `/en/sherbimet` into `{ language: 'en', pagePath: '/sherbimet' }`. */
 export function parseLocalePath(pathname) {

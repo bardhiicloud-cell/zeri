@@ -9,4 +9,4 @@ Disallow: /register
 Disallow: /trackid?id=
 
 # SEO
-Sitemap: https://zeriqytetare.republiks/sitemap.xml
+Sitemap: https://zeriqytetarve.com/sitemap.xml
