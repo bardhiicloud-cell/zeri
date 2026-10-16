@@ -22,13 +22,13 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
       {/* ── Day scene ── */}
       <div aria-hidden="true" className="absolute inset-0 -z-10 dark:hidden">
         <HeroScene variant="day" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.75)_60%,transparent_92%)] sm:bg-[linear-gradient(90deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.72)_34%,transparent_52%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.75)_60%,transparent_92%)] sm:bg-[linear-gradient(90deg,rgba(255,255,255,0.93)_0px,rgba(255,255,255,0.72)_360px,transparent_540px)]" />
       </div>
 
       {/* ── Night scene ── */}
       <div aria-hidden="true" className="absolute inset-0 -z-10 hidden dark:block">
         <HeroScene variant="night" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.88)_0%,rgba(2,6,23,0.7)_60%,transparent_92%)] sm:bg-[linear-gradient(90deg,rgba(2,6,23,0.88)_0%,rgba(2,6,23,0.66)_34%,transparent_54%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.88)_0%,rgba(2,6,23,0.7)_60%,transparent_92%)] sm:bg-[linear-gradient(90deg,rgba(2,6,23,0.88)_0px,rgba(2,6,23,0.66)_360px,transparent_540px)]" />
       </div>
 
       <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between lg:p-9">
