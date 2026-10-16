@@ -25,6 +25,14 @@ async function reportStoreFailure(message: string, error: unknown): Promise<void
   }
 }
 
+/** A donation change the database refused: say so, and leave the list as the database has it. */
+function notifyDonationWriteFailed(error: unknown): void {
+  const denied = (error as { code?: string })?.code === 'permission-denied';
+  void reportStoreFailure(denied
+    ? 'Ndryshimi i donacionit nuk u ruajt: llogaria juaj nuk ka të drejtën e administratorit në bazën e të dhënave (claim "admin"). Kërkojeni te superadministratori.'
+    : 'Ndryshimi i donacionit nuk u ruajt. Kontrolloni lidhjen dhe provoni përsëri.', error);
+}
+
 export const DEMO_CITIZEN_USER: User = {
   id: 'demo-bardh',
   name: 'Bardh Qytetar',
@@ -1015,7 +1023,9 @@ export const useStore = create<AppState>()(
             createdAt: new Date().toISOString()
           });
         } catch (e) {
-          console.error("Firebase error adding donation cause:", e);
+          // Showing it in the list anyway made a refused save look done until the next reload.
+          notifyDonationWriteFailed(e);
+          return;
         }
         set(s => ({
           donationCauses: [newCause, ...s.donationCauses]
@@ -1028,7 +1038,8 @@ export const useStore = create<AppState>()(
           const { doc, updateDoc } = await import('firebase/firestore');
           await updateDoc(doc(db, 'donationCauses', id), updates);
         } catch (e) {
-          console.error("Firebase error updating donation cause:", e);
+          notifyDonationWriteFailed(e);
+          return;
         }
         set(s => ({
           donationCauses: s.donationCauses.map(d => d.id === id ? { ...d, ...updates } : d)
@@ -1041,7 +1052,8 @@ export const useStore = create<AppState>()(
           const { doc, deleteDoc } = await import('firebase/firestore');
           await deleteDoc(doc(db, 'donationCauses', id));
         } catch (e) {
-          console.error("Firebase error deleting donation cause:", e);
+          notifyDonationWriteFailed(e);
+          return;
         }
         set(s => ({
           donationCauses: s.donationCauses.filter(d => d.id !== id)

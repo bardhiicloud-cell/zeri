@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchWithTimeout, isJsonResponse } from '../lib/timeouts';
+import { apiReady } from '../lib/apiAvailability';
+import { lookupDonationDirect } from '../lib/directSubmissions';
 import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -82,6 +84,18 @@ export default function TrackIdPage() {
       abortRef.current?.abort();
       setPhase({ kind: 'loading' });
       try {
+        // News, donations and health cases are read only by the server; say so at once when it is not there.
+        if (!(await apiReady())) {
+          // Donation records are public by rule, so their stage can be read directly.
+          if (trackingId.startsWith('DN-')) {
+            const found = await lookupDonationDirect(trackingId).catch(() => { throw new TrackLookupError('network', 'Kërkimi nuk u krye. Kontrolloni lidhjen dhe provoni përsëri.'); });
+            if (!found) throw new TrackLookupError('not_found', 'Nuk u gjet asnjë dërgesë me këtë kod.');
+            setPhase({ kind: 'sector', status: found });
+            return;
+          }
+          // News tips and health cases are private: only the server may read them.
+          throw new TrackLookupError('network', 'Kodi juaj është i ruajtur. Ndjekja e fazës së lajmeve dhe rasteve shëndetësore hapet kur serveri i platformës të jetë aktiv; provoni përsëri më vonë.');
+        }
         const response = await fetchWithTimeout(`/api/v1/public/submission-status?ref=${encodeURIComponent(trackingId)}`, { cache: 'no-store' }, 20000);
         if (!isJsonResponse(response)) throw new TrackLookupError('network', 'Shërbimi i ndjekjes nuk është i arritshëm tani. Provoni përsëri pas pak.');
         const body = await response.json().catch(() => ({}));

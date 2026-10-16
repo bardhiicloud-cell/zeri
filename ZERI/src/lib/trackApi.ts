@@ -2,6 +2,7 @@ import { collection, getDocsFromServer, limit, query, where } from 'firebase/fir
 import { buildPublicTrackView, type PublicTrackView } from '../../server/trackView';
 import { db } from './firebase';
 import { fetchWithTimeout, isJsonResponse, withTimeout } from './timeouts';
+import { apiReady, markApiUnavailable } from './apiAvailability';
 
 export type { PublicTrackView };
 export type {
@@ -24,11 +25,11 @@ export class TrackLookupError extends Error {
 }
 
 /**
- * Used only when the API cannot be reached at all (network failure, timeout, a
- * static host answering with HTML, a 502/503/504). The reports rule already lets
- * anyone read a report, so this reveals nothing new, and the answer goes through
- * the same allow-list the server applies (server/trackView.ts): the page shows the
- * same fields either way. A real server answer (404, 429, ...) is never bypassed.
+ * Used whenever the API cannot answer for certain: no API on this host, a server
+ * without its data source, a timeout or any server error. The reports rule already
+ * lets anyone read a report, so this reveals nothing new, and the answer goes
+ * through the same allow-list the server applies (server/trackView.ts): the page
+ * shows the same fields either way. Only a rate limit (429) is never bypassed.
  */
 async function lookupDirect(trackingId: string): Promise<PublicTrackView> {
   let view: PublicTrackView | null = null;
@@ -56,38 +57,36 @@ export async function lookupTrackingId(rawId: string, signal?: AbortSignal): Pro
     throw new TrackLookupError('invalid', 'Track ID duhet të ketë 8 deri 40 shenja: shkronja, shifra ose viza (p.sh. ZQ-20260101-ABC123).');
   }
 
+  // No usable API (static host, no service account, asleep): go straight to Firestore.
+  if (!(await apiReady())) return lookupDirect(trackingId);
+
   let response: Response;
   try {
     response = await fetchWithTimeout(`/api/v1/public/track/${encodeURIComponent(trackingId)}`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
       signal,
-    }, 20000);
+    }, 10000);
   } catch (error) {
     if ((error as { name?: string })?.name === 'AbortError') throw error;
+    markApiUnavailable();
     return lookupDirect(trackingId);
   }
 
-  // No API behind this host (HTML answer) or the API is down: read it directly.
-  if (!isJsonResponse(response) || [502, 503, 504].includes(response.status)) {
+  if (!isJsonResponse(response)) {
+    markApiUnavailable();
     return lookupDirect(trackingId);
   }
+  const body = (await response.json().catch(() => ({}))) as { report?: PublicTrackView; error?: string; retryAfter?: number };
 
-  if (response.ok) {
-    const body = (await response.json()) as { report?: PublicTrackView };
-    if (!body.report) throw new TrackLookupError('server', 'Përgjigja e serverit ishte e pavlefshme.');
-    return body.report;
-  }
-
-  const body = (await response.json().catch(() => ({}))) as { error?: string; retryAfter?: number };
-  if (response.status === 404) {
-    throw new TrackLookupError('not_found', body.error || 'Nuk u gjet asnjë raportim me këtë Track ID.');
-  }
+  if (response.ok && body.report) return body.report;
   if (response.status === 429) {
     const wait = Number(body.retryAfter ?? response.headers.get('Retry-After') ?? 0) || undefined;
     throw new TrackLookupError('rate_limited', body.error || 'Shumë kërkime. Provoni përsëri pas pak.', wait);
   }
-  throw new TrackLookupError('server', body.error || 'Kërkimi nuk u krye. Provoni përsëri.');
+  // A 404, a 5xx or a malformed answer: the report may still exist (a server pointed at
+  // another database, a failing query). One direct read settles it for the citizen.
+  return lookupDirect(trackingId);
 }
 
 export type StepState = 'done' | 'current' | 'upcoming' | 'rejected';
