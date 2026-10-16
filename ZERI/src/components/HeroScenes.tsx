@@ -133,9 +133,9 @@ function Landmarks({ body, accent, win, rim, night }: { body: string; accent: st
           a short pole with a ball, topped by an upward-opening crescent. Same artwork day and night; the rim
           keeps it legible in the dark. Heights stay low enough to clear the hero headline and copy. */}
       <defs>
-        <mask id={maskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="20" height="20">
-          <circle cx="0" cy="0" r="6" fill="#fff" />
-          <circle cx="0" cy="-2.6" r="5" fill="#000" />
+        <mask id={maskId} maskUnits="userSpaceOnUse" x="-14" y="-14" width="28" height="28">
+          <circle cx="0" cy="0" r="10" fill="#fff" />
+          <circle cx="0" cy="-4.2" r="8.3" fill="#000" />
         </mask>
       </defs>
       <g fill={body} stroke={rim} strokeWidth={rim === 'none' ? 0 : 1} strokeLinejoin="round">
@@ -174,14 +174,16 @@ function Landmarks({ body, accent, win, rim, night }: { body: string; accent: st
           <path key={i} d={`M${954 + i * 21} ${GROUND - 8} v-20 a4.5 4.5 0 0 1 9 0 v20 Z`} />
         ))}
       </g>
-      {/* Crescents sit on the poles of the dome and minarets, centred on their axes */}
+      {/* The Islamic crescent and star (☪), upright as a finial: crescent opening upward, star in its cup */}
       <g fill={accent}>
-        <g transform={`translate(1040 ${GROUND - 166}) scale(1.1)`}>
-          <circle cx="0" cy="0" r="6" mask={`url(#${maskId})`} />
+        <g transform={`translate(1040 ${GROUND - 170}) scale(1.35)`}>
+          <circle cx="0" cy="0" r="10" mask={`url(#${maskId})`} />
+          <polygon points="0.00,-3.70 0.88,-1.21 3.52,-1.14 1.43,0.46 2.17,2.99 0.00,1.50 -2.17,2.99 -1.43,0.46 -3.52,-1.14 -0.88,-1.21" transform="translate(0 -4.4)" />
         </g>
         {[922, 1158].map((mx) => (
-          <g key={mx} transform={`translate(${mx} ${GROUND - 250}) scale(0.95)`}>
-            <circle cx="0" cy="0" r="6" mask={`url(#${maskId})`} />
+          <g key={mx} transform={`translate(${mx} ${GROUND - 255}) scale(1.1)`}>
+            <circle cx="0" cy="0" r="10" mask={`url(#${maskId})`} />
+            <polygon points="0.00,-3.70 0.88,-1.21 3.52,-1.14 1.43,0.46 2.17,2.99 0.00,1.50 -2.17,2.99 -1.43,0.46 -3.52,-1.14 -0.88,-1.21" transform="translate(0 -4.4)" />
           </g>
         ))}
       </g>
