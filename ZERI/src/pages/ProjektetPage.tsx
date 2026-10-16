@@ -29,7 +29,6 @@ const MODULES: PlatformModule[] = [
   { to: '/sherbimet', title: 'Shërbimet publike', field: 'Shërbime', description: 'Udhëzues për shërbime publike dhe lidhje te portalet zyrtare.', icon: Building },
   { to: '/shendetesia', title: 'Regjistri shëndetësor', field: 'Shërbime', description: 'Rastet shëndetësore që kanë nevojë për mbështetje, me të dhëna të kufizuara.', icon: HeartPulse },
   { to: '/donacion', title: 'Fushata ndihme', field: 'Shërbime', description: 'Fushata të miratuara nga administratori; donacionet bëhen në faqe të jashtme.', icon: HeartHandshake },
-  { to: '/forum', title: 'Komuniteti', field: 'Pjesëmarrje', description: 'Diskutime dhe postime të qytetarëve (kërkon hyrje).', icon: MessagesSquare },
   { to: '/sondazhet', title: 'Sondazhet', field: 'Pjesëmarrje', description: 'Votoni në sondazhe publike.', icon: Vote },
   { to: '/Idea', title: 'Laboratori i ideve', field: 'Pjesëmarrje', description: 'Dërgoni një ide për përmirësimin e platformës.', icon: Lightbulb },
   { to: '/lajme', title: 'Lajme', field: 'Informim', description: 'Lajme dhe njoftime të publikuara në platformë.', icon: Newspaper },

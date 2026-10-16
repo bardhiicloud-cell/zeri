@@ -41,7 +41,7 @@ export default function DebateAdminPage() {
     <div className="min-h-dvh bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-white/10 dark:bg-slate-900/95">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-          <button type="button" onClick={() => navigate('/forum')} aria-label={dt('Kthehu te Debati')} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
+          <button type="button" onClick={() => navigate('/admin')} aria-label={dt('Kthehu te Debati')} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="min-w-0 flex-1">

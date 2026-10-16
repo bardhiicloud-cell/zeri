@@ -93,13 +93,12 @@ const ARTICLES: Article[] = [
     link: { to: '/sherbimet', label: 'Hap shërbimet' },
   },
   {
-    id: 'forum', category: 'Shërbime dhe komuniteti', title: 'Si marr pjesë në komunitet dhe sondazhe?', icon: MessagesSquare,
+    id: 'forum', category: 'Shërbime dhe komuniteti', title: 'Si marr pjesë në sondazhe dhe ide?', icon: MessagesSquare,
     steps: [
-      'Hyni në llogari, pastaj hapni “Komuniteti” për të parë dhe shkruar postime.',
       'Sondazhet publike hapen te “Sondazhet”.',
       'Ideja për përmirësimin e platformës dërgohet te “Laboratori i ideve” (nuk është raport zyrtar).',
     ],
-    link: { to: '/forum', label: 'Hap komunitetin' },
+    link: { to: '/sondazhet', label: 'Hap sondazhet' },
   },
   {
     id: 'health', category: 'Shërbime dhe komuniteti', title: 'Regjistri shëndetësor: kush i shikon të dhënat?', icon: HeartPulse,

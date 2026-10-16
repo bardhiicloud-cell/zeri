@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, PlusCircle, Menu, X, ShieldAlert, UserRound,
   LogOut, Search, ChevronRight, ChevronDown, Sun, Moon, MapPin, Building2,
-  Plus, Film, Camera, Megaphone, Check, Compass, Lightbulb, Vote, Wallet, MessageSquare, Sparkles, LogIn, Handshake, Newspaper, Globe,
+  Plus, Check, Compass, Lightbulb, Vote, Wallet, Sparkles, LogIn, Handshake, Newspaper, Globe,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
@@ -47,7 +47,7 @@ import {
 /** Dock slots. Five fits a 360px device; six wraps. */
 const TABS = [
   { href: '/', label: 'Ballina', icon: Home },
-  { href: '/forum', label: 'Debati Publik', icon: MessageSquare },
+  { href: '/harta', label: 'Harta', icon: MapPin },
   { href: '/raporto', label: 'Raporto', icon: PlusCircle, primary: true },
   { href: '/lajme', label: 'Lajme', icon: Newspaper },
 ] as const;
@@ -60,14 +60,14 @@ const QUICK_ACTIONS = [
   { href: '/donacion', label: 'Ndihmo', hint: 'Donacione', icon: Wallet, tone: 'from-emerald-600 to-teal-700' },
 ] as const;
 
-/** What the centre "+" offers. Debate, reels and ads are handled by the forum page. */
+/** What the centre "+" offers: everything a citizen can send or look up in one tap. */
 const CREATE_ACTIONS = [
-  { id: 'report', label: 'Raporto një problem', hint: 'Dërgo foto dhe vendndodhje te komuna', icon: PlusCircle, tone: 'from-blue-500 to-blue-800' },
-  { id: 'news', label: 'Raporto një lajm', hint: 'Dërgo lajm, foto ose video te redaksia', icon: Newspaper, tone: 'from-emerald-500 to-teal-700' },
-  { id: 'post', label: 'Postim në Debatin Publik', hint: 'Tekst, foto ose sondazh për komunitetin', icon: MessageSquare, tone: 'from-indigo-500 to-violet-700' },
-  { id: 'story', label: 'Debat Story', hint: 'Foto ose video që zhduket pas 24 orësh', icon: Camera, tone: 'from-fuchsia-500 to-purple-700' },
-  { id: 'reel', label: 'Publiko Reel', hint: 'Video vertikale deri në 90 sekonda', icon: Film, tone: 'from-rose-500 to-pink-700' },
-  { id: 'ad', label: 'Krijo Reklamë', hint: 'Promovo biznesin ose shërbimin tënd', icon: Megaphone, tone: 'from-amber-500 to-orange-600' },
+  { id: 'report', label: 'Raporto një problem', hint: 'Dërgo foto dhe vendndodhje te komuna', icon: PlusCircle, tone: 'from-blue-500 to-blue-800', href: '/raporto' },
+  { id: 'track', label: 'Gjej raportin tim', hint: 'Ndiq rastin me Track ID', icon: Search, tone: 'from-sky-500 to-cyan-700', href: '/trackid' },
+  { id: 'news', label: 'Raporto një lajm', hint: 'Dërgo lajm, foto ose video te redaksia', icon: Newspaper, tone: 'from-emerald-500 to-teal-700', href: '/lajmero' },
+  { id: 'idea', label: 'Propozo një ide', hint: 'Banka e ideve për përmirësimin e komunës', icon: Lightbulb, tone: 'from-amber-500 to-orange-600', href: '/Idea' },
+  { id: 'poll', label: 'Voto në sondazhe', hint: 'Shpreh mendimin për çështje publike', icon: Vote, tone: 'from-rose-500 to-pink-700', href: '/sondazhet' },
+  { id: 'help', label: 'Ndihmë dhe donacione', hint: 'Raste sociale dhe fonde', icon: Wallet, tone: 'from-indigo-500 to-violet-700', href: '/donacion' },
 ] as const;
 
 /** Municipalities surfaced as one-tap chips before the full 38-name picker. */
@@ -76,7 +76,7 @@ const SCOPE_SHORTCUTS = ['Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 
 /** Module groups, mirroring the desktop sidebar's vocabulary. */
 const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
   { id: 'primary', title: 'Kryesore', hrefs: ['/', '/raporto', '/harta', '/detailed-registry', '/lajme'] },
-  { id: 'participate', title: 'Pjesëmarrja qytetare', hrefs: ['/Idea', '/sondazhet', '/forum', '/projektet'] },
+  { id: 'participate', title: 'Pjesëmarrja qytetare', hrefs: ['/Idea', '/sondazhet', '/projektet'] },
   {
     id: 'services',
     title: 'Shërbime & transparencë',
@@ -132,22 +132,9 @@ export function MobileNav() {
     setIsCreateOpen(false);
   };
 
-  const startCreate = (id: (typeof CREATE_ACTIONS)[number]['id']) => {
+  const startCreate = (href: string) => {
     setIsCreateOpen(false);
-    if (id === 'report') {
-      navigate('/raporto');
-      return;
-    }
-    if (id === 'news') {
-      navigate('/lajmero');
-      return;
-    }
-    // Already in the forum: tell it directly. Otherwise it reads `?create=` on mount.
-    if (location.pathname.startsWith('/forum')) {
-      window.dispatchEvent(new CustomEvent('zeri:forum-create', { detail: id }));
-    } else {
-      navigate(`/forum?create=${id}`);
-    }
+    navigate(href);
   };
 
   // Leaving the page by any route closes the menu.
@@ -320,7 +307,7 @@ export function MobileNav() {
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={() => startCreate(action.id)}
+                      onClick={() => startCreate(action.href)}
                       className="group flex w-full items-center gap-3.5 rounded-2xl border border-white/60 bg-white/92 p-3 text-left shadow-[0_16px_40px_-18px_rgba(15,23,42,0.55)] backdrop-blur-xl transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-slate-900/90"
                     >
                       <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br text-white shadow-sm', action.tone)}>

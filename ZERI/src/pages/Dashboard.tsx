@@ -621,18 +621,18 @@ export default function Dashboard() {
 
                 {/* 3. Debate publike */}
                 <Link 
-                  to="/forum"
+                  to="/trackid"
                   className="group flex min-h-[130px] flex-col justify-between rounded-[18px] border border-slate-100 bg-slate-50/80 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50 dark:border-white/5 dark:bg-slate-800/60 dark:hover:border-indigo-500/40 dark:hover:bg-slate-800"
                 >
                   <div>
                     <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300">
-                      <MessageCircle className="w-4 h-4" />
+                      <Search className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white">
-                      Debate publike
+                      {dt('Gjej raportin tim')}
                     </h4>
                     <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      {dt('Diskuto, propozo dhe kontribuo në tema me interes.')}
+                      {dt('Ndiq statusin e rastit me Track ID.')}
                     </p>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 transition-all group-hover:gap-1.5">

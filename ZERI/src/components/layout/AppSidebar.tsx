@@ -58,7 +58,7 @@ const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
     // "Buxhetimi me pjesëmarrje" (/buxheti) is intentionally NOT listed here: the
     // page was never routed, so the entry was a dead link in the sidebar. Remove
     // the route and the link together — never re-add one without the other.
-    hrefs: ['/idea', '/sondazhet', '/forum'],
+    hrefs: ['/idea', '/sondazhet'],
   },
   {
     id: 'services',

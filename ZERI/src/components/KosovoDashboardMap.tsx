@@ -457,7 +457,7 @@ export function KosovoDashboardMap({
         </div>
 
          {/* Right Sub-Column: Authentic Leaflet Map Container */}
-         <div className="md:col-span-8 lg:col-span-9 relative h-[340px] sm:h-[380px] lg:h-[400px] bg-slate-200 dark:bg-[#0c162c] overflow-hidden leaflet-host">
+         <div className="md:col-span-8 lg:col-span-9 relative isolate h-[340px] sm:h-[380px] lg:h-[400px] bg-slate-200 dark:bg-[#0c162c] overflow-hidden leaflet-host">
 
           {/* Top-Left Zoom Controls */}
           <div className="absolute top-3 left-3 z-[1000] flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-white/10 overflow-hidden">

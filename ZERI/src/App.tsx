@@ -26,7 +26,6 @@ const VerificationRequestPage = React.lazy(() => import('./pages/VerificationReq
 const CitizenHelpCenterPage = React.lazy(() => import('./pages/CitizenHelpCenterPage.tsx'));
 const ReportIssue = React.lazy(() => import('./pages/ReportIssue'));
 const MapPage = React.lazy(() => import('./pages/MapPage.tsx'));
-const ForumPage = React.lazy(() => import('./pages/ForumPage.tsx'));
 const ContactNumbersPage = React.lazy(() => import('./pages/ContactNumbersPage'));
 const DonationsPage = React.lazy(() => import('./pages/DonationsPage.tsx'));
 const PollsPage = React.lazy(() => import('./pages/PollsPage.tsx'));
@@ -59,7 +58,6 @@ import { canAccessAdmin } from './lib/adminPermissions';
 import { LanguageProvider } from './lib/LanguageContext';
 import { LanguageUrlSync } from './lib/LanguageUrlSync';
 import { SeoHead } from './lib/SeoHead';
-import { GuestGuard } from './components/GuestGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 import { GlobalAlert } from './components/GlobalAlert';
@@ -134,7 +132,6 @@ function AnalyticsTracker({ enabled }: { enabled: boolean }) {
  */
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Ballina',
-  '/forum': 'Debati Publik',
   '/detailed-registry': 'Regjistri i Raporteve',
   '/regjistri': 'Regjistri i Raporteve',
   '/registry': 'Regjistri i Raporteve',
@@ -863,7 +860,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
+              <Route path="/forum" element={<Navigate to="/" replace />} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="/trackid" element={<TrackIdPage />} />
               <Route path="/lajmero" element={<LajmeroPage />} />
@@ -913,7 +910,7 @@ export default function App() {
             */}
             <Route path="/:lang" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
-              <Route path="forum" element={<GuestGuard><ForumPage /></GuestGuard>} />
+              <Route path="forum" element={<Navigate to="/" replace />} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="trackid" element={<TrackIdPage />} />
               <Route path="lajmero" element={<LajmeroPage />} />
