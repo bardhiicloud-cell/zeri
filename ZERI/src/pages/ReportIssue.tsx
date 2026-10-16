@@ -283,8 +283,6 @@ export default function ReportIssue() {
   const isBanned = bannedIPs.includes(currentIP);
 
   const addReport = useStore(state => state.addReport);
-  const upvoteReport = useStore(state => state.upvoteReport);
-  const reports = useStore(state => state.reports);
   const currentUser = useStore(state => state.currentUser);
   const addPoints = useStore(state => state.addPoints);
   const categories = useStore(state => state.categories);
@@ -632,63 +630,9 @@ export default function ReportIssue() {
       // reports/{uid}/{reportId}/... which the Storage rules accept.
       const reportRef = doc(collection(db, 'reports'));
 
-      // Check if Forensics found an issue during AI Analyze step earlier
-      if (aiInsights && aiInsights.authenticityScore < 40) {
-        toast.error(dt(`Sistemi Forenzik AI bllokoi raportin: ${aiInsights.forensicsReport}`));
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 2. Anti-Spam / Duplication Geofencing & AI Duplicate Text Merger
-      const getDistanceInM = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * (Math.PI / 180);
-        const dLon = (lon2 - lon1) * (Math.PI / 180);
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                  Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c * 1000;
-      };
-
-      // Find active reports in a 50m radius to send to AI
-      const nearbyReports = reports.filter(r => 
-        r.status !== 'Resolved' && r.status !== 'Rejected' && r.location?.lat && r.location?.lng &&
-        getDistanceInM(coordinates[0], coordinates[1], r.location.lat, r.location.lng) <= 50
-      );
-
-      if (nearbyReports.length > 0) {
-         try {
-           const dupRes = await fetch('/api/detect-duplicate', {
-             method: 'POST',
-             headers: await authHeaders({ 'Content-Type': 'application/json' }),
-             body: JSON.stringify({
-               newReport: { title, description, imageUrl: mediaItems[0]?.url },
-               existingReports: nearbyReports
-             })
-           });
-           const dupData = await dupRes.json();
-           if (dupData.is_duplicate && dupData.duplicate_of_id) {
-              /*
-               * The model only suggests a duplicate. It used to decide on its own:
-               * the citizen's report was thrown away and replaced by a "support"
-               * vote, with no way to say "no, mine is different". Now they choose.
-               */
-              const supportExisting = window.confirm(
-                dt('Duket se ky problem është raportuar tashmë pranë vendndodhjes suaj. Dëshironi ta mbështesni raportimin ekzistues? Shtypni "Anulo" për ta dërguar raportin tuaj gjithsesi.')
-              );
-              if (supportExisting) {
-                upvoteReport(dupData.duplicate_of_id);
-                setIsSubmitting(false);
-                navigate(`/detailed-registry?report=${dupData.duplicate_of_id}`);
-                toast.success(dt(`Faleminderit! E mbështetët raportimin ekzistues.`), { duration: 6000 });
-                return;
-              }
-           }
-         } catch(e) {
-           console.error("Gabim në AI merger", e);
-         }
-      }
+      // No automatic gate: nothing here decides whether a report is accepted. Photos,
+      // videos and text are kept as sent; a person on the admin side reviews the report
+      // (status 'Pending Review') and the citizen gets the Track ID straight away.
 
       // Simulate AI Moderation for Text
       const { validateReportByAI } = await import('../lib/moderation');
