@@ -180,6 +180,24 @@ export const SECTION_GUIDES: Record<string, SectionGuide> = {
       'Shiriti i njoftimeve mundësohet vetëm për kategorinë "Njoftim Zyrtar".',
     ],
   },
+  heritage: {
+    purpose: 'Arkivi i Kosovës dhe Historia e UÇK-së: artikuj, ngjarje, biografi, dokumente, burime dhe historiku i korrigjimeve.',
+    steps: [
+      'Hap "Shënimet" dhe shtyp "Shënim i ri", ose "Importo përmbajtjen fillestare" për të marrë tekstet e gatshme si drafte.',
+      'Plotëso shqip dhe anglisht, zgjidh seksionin, statusin e provës dhe lidh burimet nga "Burimet".',
+      'Çdo shifër shtohet te "Pohimet" me burim dhe datën për të cilën vlen.',
+      'Dërgoje në rishikim; një person tjetër e aprovon dhe e verifikon duke kontrolluar burimet.',
+      'Vetëm administratori e publikon. Për një gabim në një shënim të publikuar përdor "Korrigjim" (shfaqet publikisht).',
+    ],
+    rules: [
+      'Asnjë shënim nuk publikohet pa burim, pa verifikim nga një person i dytë dhe pa titull e përmbledhje në anglisht.',
+      'Pretendimet e pavërtetuara gjyqësisht shënohen "Pretendim" dhe e thonë këtë në tekst; vlen prezumimi i pafajësisë.',
+      'Dhuna seksuale: pa emra, foto ose detaje grafike; dëshmi vetëm me pëlqim të shkruar.',
+      'Fotot kërkojnë kredi, licencë dhe konfirmim privatësie; "e panjohur" bllokon publikimin.',
+      'Çdo ndryshim ruan një version dhe një rresht në regjistrin e auditimit.',
+    ],
+    next: [{ id: 'news', why: 'për lajmet e përditshme' }],
+  },
   notifications: {
     purpose: 'Njoftimet dhe thirrjet emergjente drejt qytetarëve të një komune ose të gjithë vendit.',
     steps: [

@@ -84,6 +84,7 @@ import { publishDueScheduled, registerScheduledPostRoutes } from './server/sched
 import { registerStoryRoutes } from './server/storyViews';
 import { registerPaymentRoutes } from './server/paymentRoutes';
 import { registerDebateAdminRoutes } from './server/debateAdmin';
+import { registerHeritageRoutes } from './server/heritage';
 import { registerDebateInsightsRoutes } from './server/debateInsights';
 import { buildRoleClaims } from './server/roleClaims';
 import { VoteError, castVote } from './server/polls';
@@ -2175,6 +2176,14 @@ registerForumReelRoutes(app, {
 registerPaymentRoutes(app, { requireAuth, requireDebateSection: requireSection('debate'), db, audit });
 registerDebateAdminRoutes(app, { requireAuth, requireDebateSection: requireSection('debate'), db, audit });
 registerDebateInsightsRoutes(app, { requireAuth, requireDebateSection: requireSection('debate'), db, audit });
+registerHeritageRoutes(app, {
+  db,
+  requireAuth,
+  requireHeritage: requireSection('heritage'),
+  audit,
+  resolveRole: (req) => resolveActorRole(req.user),
+  permissions: (req) => actingUser(req).permissions,
+});
 
 registerAdminReportRoutes(app, {
   requireAuth,

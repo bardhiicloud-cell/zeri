@@ -1,6 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import { BrandMark } from '@/src/components/BrandLogo';
 import { NationalHero } from '@/src/components/NationalHero';
+import { HeritageHomeBand } from '@/src/components/heritage/HomeBand';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
@@ -322,6 +323,9 @@ export default function Dashboard() {
 
         </div>
         )}
+
+        {/* Kosovo identity & history archive and the KLA archive: directly under the reporting hero. */}
+        <HeritageHomeBand />
 
         {/* Primary actions replaced the four KPI counters: those numbers now live on /statistikat. */}
         <QuickAccessGrid />

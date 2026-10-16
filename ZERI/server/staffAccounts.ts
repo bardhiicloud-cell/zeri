@@ -30,7 +30,7 @@ const WORKING_ROLES = new Set(['agent', 'approver', 'responder', 'dispatcher', '
 export const ALLOWED_SECTIONS = new Set([
   'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users', 'forum',
   'polls', 'agents', 'municipalities', 'monitoring', 'monitorim', 'agentpanel', 'komunapanel', 'moderim',
-  'support', 'chat', 'ads', 'notifications', 'news', 'debate',
+  'support', 'chat', 'ads', 'notifications', 'news', 'heritage', 'debate',
   'categories', 'security', 'settings',
 ]);
 
