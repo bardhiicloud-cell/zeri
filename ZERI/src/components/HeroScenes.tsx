@@ -135,6 +135,28 @@ function Landmarks({ body, accent, win }: { body: string; accent: string; win: s
         <rect x="1111" y={GROUND - 200} width="2" height="22" />
       </g>
       <path d={`M1057 ${GROUND - 282} v12 M1051 ${GROUND - 276} h12`} stroke={accent} strokeWidth="1.6" />
+      {/* Mosque beside the cathedral: central dome, half domes and two minarets */}
+      <g fill={body}>
+        <rect x="900" y={GROUND - 84} width="108" height="84" />
+        <path d={`M916 ${GROUND - 84} A34 34 0 0 1 984 ${GROUND - 84} Z`} />
+        <path d={`M902 ${GROUND - 84} A14 14 0 0 1 930 ${GROUND - 84} Z`} />
+        <path d={`M970 ${GROUND - 84} A14 14 0 0 1 998 ${GROUND - 84} Z`} />
+        <rect x="948" y={GROUND - 126} width="2" height="10" />
+        {[886, 1010].map((mx) => (
+          <g key={mx}>
+            <rect x={mx} y={GROUND - 200} width="10" height="200" />
+            <rect x={mx - 3} y={GROUND - 170} width="16" height="4" />
+            <path d={`M${mx - 1} ${GROUND - 200} L${mx + 5} ${GROUND - 226} L${mx + 11} ${GROUND - 200} Z`} />
+          </g>
+        ))}
+      </g>
+      <path
+        d={`M955 ${GROUND - 130} a6 6 0 1 0 -2 -9 a4.6 4.6 0 1 1 2 9 Z`}
+        fill={accent}
+      />
+      {[891, 1015].map((mx) => (
+        <circle key={mx} cx={mx} cy={GROUND - 230} r="1.8" fill={accent} />
+      ))}
     </g>
   );
 }
