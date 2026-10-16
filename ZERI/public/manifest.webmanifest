@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Zëri Qytetarëve",
+  "short_name": "Zëri",
+  "description": "Raportoni çështje, ndiqni zgjidhjen me Track ID, lexoni lajmet dhe merrni pjesë në vendimmarrjen komunale të Kosovës.",
+  "lang": "sq",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0A192F",
+  "theme_color": "#F0F7FF",
+  "categories": ["news", "government", "social"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Raporto një problem", "short_name": "Raporto", "url": "/raporto?source=shortcut", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Ndiq me Track ID", "short_name": "Track ID", "url": "/trackid?source=shortcut", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Lajmet", "short_name": "Lajme", "url": "/lajme?source=shortcut", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

@@ -963,7 +963,7 @@ const SITEMAP_LOCALES: Array<{ tag: string; prefix: string }> = [
   { tag: 'nl-NL', prefix: 'nl' },
 ];
 
-const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://zeriqytetare.republiks';
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://zeriqytetarve.com';
 
 app.get('/sitemap.xml', (_req, res) => {
   const urls: string[] = [];
@@ -1331,7 +1331,7 @@ app.delete('/api/v1/profile', requireAuth, async (req, res) => {
       console.error('[GDPR] Erasure incomplete:', failed.map((step) => `${step.name}: ${step.error}`).join('; '));
       audit('gdpr.deletion.failed', req, { uid, failedSteps: failed.map((step) => step.name) });
       return res.status(500).json({
-        error: 'Fshirja nuk përfundoi. Llogaria juaj është ruajtur; provoni përsëri ose kontaktoni privacy@zeriqytetare.republiks.',
+        error: 'Fshirja nuk përfundoi. Llogaria juaj është ruajtur; provoni përsëri ose kontaktoni privacy@zeriqytetarve.com.',
         failedSteps: failed.map((step) => step.name),
       });
     }
@@ -1350,7 +1350,7 @@ app.delete('/api/v1/profile', requireAuth, async (req, res) => {
     });
   } catch (error: any) {
     console.error('[GDPR] Erasure failed:', error?.message);
-    return res.status(500).json({ error: 'Erasure failed. Please contact privacy@zeriqytetare.republiks for assistance.' });
+    return res.status(500).json({ error: 'Erasure failed. Please contact privacy@zeriqytetarve.com for assistance.' });
   }
 });
 
@@ -2806,7 +2806,8 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
         const normalized = filePath.replace(/\\/g, '/');
         if (normalized.includes('/assets/') || normalized.includes('/fonts/')) {
           res.setHeader('Cache-Control', immutableMaxAge);
-        } else if (normalized.endsWith('/index.html')) {
+        } else if (normalized.endsWith('/index.html') || normalized.endsWith('/sw.js') || normalized.endsWith('/manifest.webmanifest') || normalized.endsWith('/offline.html')) {
+          // The service worker and manifest must never be served stale, or an install/update is pinned to an old build.
           res.setHeader('Cache-Control', revalidate);
         }
       }

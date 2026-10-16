@@ -290,7 +290,7 @@ export default function PrivacyPolicyPage() {
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                 <p className="text-sm font-black text-slate-800 dark:text-white">{dt('Kontrolluesi: Platforma ZERI')}</p>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{dt('Email:')}{' '}
-                  <a href="mailto:privatisi@zeriqytetare.republiks" className="font-bold text-blue-600 dark:text-blue-400">privatisi@zeriqytetare.republiks</a>
+                  <a href="mailto:privatisi@zeriqytetarve.com" className="font-bold text-blue-600 dark:text-blue-400">privatisi@zeriqytetarve.com</a>
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">

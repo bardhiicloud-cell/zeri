@@ -78,7 +78,7 @@ const CLAUSES: Clause[] = [
     body: [
       'Përpunimi i të dhënave tuaja personale rregullohet në shkallë të veçantë nga Politika e Privatësisë, e cila përbën pjesë integrale të këtyre Kushteve. Ju lutemi lexojeni atë para se të vazhdoni.',
       'Bazat ligjore të përpunimit janë: pëlqimi juaj për Cookies analitike, marketingu dhe gjurmimin e lokacionit; interesi publik për trajtimin e raporteve të qytetarëve; dhe interesi legjitim për masat e sigurisë dhe parandalimin e abuzimit.',
-      'Ju keni të drejtë të informimit, të korrigjimit, të fshirjes, të kufizimit të përpunimit, të kundërshtimit dhe të portabilitetit. Të drejtat ushtrohen duke kontaktuar privatisi@zeriqytetare.republiks.',
+      'Ju keni të drejtë të informimit, të korrigjimit, të fshirjes, të kufizimit të përpunimit, të kundërshtimit dhe të portabilitetit. Të drejtat ushtrohen duke kontaktuar privatisi@zeriqytetarve.com.',
       'Mund ta ndryshoni çdo herë vendimin tuaj për Cookies dhe gjurmim në panelin e privatësisë, pa asnjë penalizim. Nëse nuk pajtoheni, Platforma vazhdon të funksionojë, por funksionet e bazuara në pëlqim nuk do të aktivizohen.',
     ],
     note: {
@@ -136,7 +136,7 @@ const CLAUSES: Clause[] = [
     n: '12',
     title: 'Kontakti dhe zgjidhja e mosmarrëveshjeve',
     body: [
-      'Për pyetje, ankesë ose kërkesë në lidhje me këto Kushte: privatisi@zeriqytetare.republiks. Për raportim të abuzimit: abuzim@zeriqytetare.republiks.',
+      'Për pyetje, ankesë ose kërkesë në lidhje me këto Kushte: privatisi@zeriqytetarve.com. Për raportim të abuzimit: abuzim@zeriqytetarve.com.',
       'Shpresojmë ta zgjidhim çdo ankesë me bisedë. Nëse nuk arrijmë marrëveshje, ke të drejtë t\'i drejtohesh Agjencisë për Informim dhe Privatësi, ose të parashtrosh çështje te gjykata kompetente e Kosovës.',
       'Këto Kushte rregullohen sipas ligjit të Republikës së Kosovës, duke pasur parasysh dispozitat e detyrueshme mbi konsumin.',
     ],

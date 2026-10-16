@@ -830,7 +830,7 @@ async function startServer() {
         }
         catch (error) {
             console.error('[GDPR] Erasure failed:', error?.message);
-            res.status(500).json({ error: 'Erasure failed. Please contact privacy@zeriqytetare.republiks for assistance.' });
+            res.status(500).json({ error: 'Erasure failed. Please contact privacy@zeriqytetarve.com for assistance.' });
         }
     });
     // --- ADMIN API ---
