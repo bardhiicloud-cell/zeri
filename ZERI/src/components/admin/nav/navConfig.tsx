@@ -129,6 +129,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     keywords: ['artikuj', 'artikull', 'botim', 'news', 'redaktim', 'editorial'],
   },
   {
+    id: 'heritage', group: 'community', icon: Landmark,
+    nav: 'Arkivi i Kosovës', label: 'Arkivi i Kosovës & Historia e UÇK-së', hint: 'Artikuj, kronologji, burime, rishikim dhe publikim',
+    keywords: ['historia', 'kosova', 'uçk', 'uck', 'arkiv', 'heritage', 'kronologji', 'burime', 'citime', 'trashëgimi', 'pavarësia', 'fsk', 'timeline'],
+  },
+  {
     id: 'notifications', group: 'community', icon: BellRing,
     nav: 'Njoftimet', label: 'Komunikimi & Njoftimet', hint: 'Njoftime dhe thirrje drejt qytetarëve',
     keywords: ['njoftim', 'broadcast', 'alarm', 'emergjent', 'alert', 'notifications'],

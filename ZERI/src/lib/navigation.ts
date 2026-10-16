@@ -3,7 +3,7 @@ import {
   MapPin, Newspaper, Lightbulb, Vote, BarChart3, Wallet,
   Megaphone, Phone, Building2, Briefcase, Info, HeartPulse,
   Bot, ShieldAlert, ShieldCheck, MessageSquare, Radio,
-  PlusCircle, FileText, Handshake,
+  PlusCircle, FileText, Handshake, Landmark, BookOpen, Flag, ScrollText,
 } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from './constants';
 
@@ -55,6 +55,19 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
       { label: 'Gjej Raportin Tim', href: '/trackid', icon: FileText, hint: 'Ndjek rastin me Track ID' },
       { label: 'Banka e Ideve', href: '/Idea', icon: Lightbulb, hint: 'Propozimet dhe idetë e qytetarëve' },
       { label: 'Sondazhe & Votime', href: '/sondazhet', icon: Vote, hint: 'Pjesëmarrja në vendimmarrje' },
+    ],
+  },
+  {
+    // The Kosovo identity & history archive (/kosova) and the KLA archive. They live in the menu, not
+    // in the bottom dock, which keeps its five slots; the homepage band is the main doorway.
+    id: 'kosova',
+    label: 'Kosova & Historia',
+    icon: Landmark,
+    items: [
+      { label: 'Kosova', href: '/kosova', icon: Landmark, hint: 'Një popull, një histori, një e ardhme' },
+      { label: 'Historia e Kosovës', href: '/kosova/historia', icon: BookOpen, hint: 'Kronologji e burimëzuar' },
+      { label: 'Pavarësia e Kosovës', href: '/kosova/pavaresia', icon: Flag, hint: '17 shkurt 2008 dhe ndërtimi i shtetit' },
+      { label: 'Historia e UÇK-së', href: '/historia-e-uck', icon: ScrollText, hint: 'Arkiv historik me burime e data' },
     ],
   },
   {
@@ -154,3 +167,17 @@ export const ALL_MUNICIPALITIES = KOSOVO_MUNICIPALITIES;
 
 /** Flat lookup, used by the search results. */
 export const ALL_SIDEBAR_LINKS: NavLink[] = SIDEBAR_GROUPS.flatMap((group) => group.items);
+
+/**
+ * Whether `href` should show as the current page for `pathname`.
+ *
+ * Prefix matching alone lights two rows on /kosova/historia (the hub and the chapter), so the hub
+ * entry is active only on pages that have no row of their own.
+ */
+export function isNavActive(href: string, pathname: string): boolean {
+  if (href === '/') return pathname === '/';
+  if (href === '/kosova') {
+    return pathname === '/kosova' || (pathname.startsWith('/kosova/') && !ALL_SIDEBAR_LINKS.some((l) => l.href !== '/kosova' && l.href.startsWith('/kosova/') && pathname.startsWith(l.href)));
+  }
+  return pathname.startsWith(href);
+}

@@ -15,7 +15,7 @@ describe('superadmin navigation', () => {
     ]);
     expect(groups[0].items[0].id).toBe('dashboard');
     expect(groups[1].items.map(item => item.id)).toEqual(['health', 'debate']);
-    expect(groups[2].items.map(item => item.id)).toEqual(['news', 'ads']);
+    expect(groups[2].items.map(item => item.id)).toEqual(['news', 'heritage', 'ads']);
     expect(groups[4].items.map(item => item.id)).toEqual(['security', 'settings']);
   });
 

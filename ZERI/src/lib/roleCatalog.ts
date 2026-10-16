@@ -66,7 +66,7 @@ export const SECTION_ORDER: readonly AdminSection[] = [
   'users', 'forum', 'polls',
   'agents', 'municipalities', 'monitoring',
   'monitorim', 'agentpanel', 'komunapanel', 'moderim', 'roles',
-  'support', 'ads', 'videos', 'notifications', 'news', 'debate',
+  'support', 'ads', 'videos', 'notifications', 'news', 'heritage', 'debate',
   'categories', 'security', 'settings',
 ];
 
@@ -98,6 +98,7 @@ export const SECTION_LABELS: Record<AdminSection, string> = {
   videos: 'Menaxhimi i Videove',
   notifications: 'Komunikimi & Njoftimet',
   news: 'Menaxhimi i Lajmeve',
+  heritage: 'Arkivi i Kosovës & Historia e UÇK-së',
   categories: 'Harta & GIS',
   security: 'Siguria dhe Auditimi',
   settings: 'Konfigurimet e Sistemit',

@@ -56,6 +56,7 @@ const SECTION_LABELS: Array<[AdminSection, string]> = [
   ['support', 'Kërkesat për Agjent'],
   ['polls', 'Sondazhet'],
   ['news', 'Lajmet'],
+  ['heritage', 'Arkivi i Kosovës'],
   ['ads', 'Reklamat'],
   ['notifications', 'Njoftimet'],
   ['categories', 'Harta & GIS'],

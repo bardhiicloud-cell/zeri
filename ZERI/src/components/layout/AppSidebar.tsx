@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
-import { ALL_SIDEBAR_LINKS, LEGAL_NAV, TOP_NAV_HREFS, type NavLink } from '../../lib/navigation';
+import { ALL_SIDEBAR_LINKS, LEGAL_NAV, TOP_NAV_HREFS, isNavActive, type NavLink } from '../../lib/navigation';
 import { SOCIAL_LINKS } from '../SocialIcons';
 import { canAccessAdmin } from '../../lib/adminPermissions';
 import { MunicipalitySwitcher } from './MunicipalitySwitcher';
@@ -53,6 +53,11 @@ const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
     hrefs: ['/', '/raporto', '/harta', '/detailed-registry', '/trackid'],
   },
   {
+    id: 'kosova',
+    title: 'Kosova & Historia',
+    hrefs: ['/kosova', '/kosova/historia', '/kosova/pavaresia', '/historia-e-uck'],
+  },
+  {
     id: 'participate',
     title: 'Pjesëmarrja qytetare',
     // "Buxhetimi me pjesëmarrje" (/buxheti) is intentionally NOT listed here: the
@@ -78,8 +83,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const logout = useStore((state) => state.logout);
   const [collapsed, setCollapsed] = useState(false);
 
-  const isActive = (path: string) =>
-    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+  const isActive = (path: string) => isNavActive(path, location.pathname);
 
   const grouped: Group[] = GROUP_SPECS.map((spec) => ({
     id: spec.id,

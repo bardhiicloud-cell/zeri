@@ -43,6 +43,10 @@ const RrethProjektitPage = React.lazy(() => import('./pages/RrethProjektitPage')
 const TermsOfServicePage = React.lazy(() => import('./pages/TermsOfServicePage'));
 const PrivacyPolicyPage = React.lazy(() => import('./pages/PrivacyPolicyPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const KosovaHubPage = React.lazy(() => import('./pages/heritage/KosovaHubPage'));
+const KosovaSectionPage = React.lazy(() => import('./pages/heritage/KosovaSectionPage'));
+const HeritageEntryPage = React.lazy(() => import('./pages/heritage/HeritageEntryPage'));
+const UckArchivePage = React.lazy(() => import('./pages/heritage/UckArchivePage'));
 const AdminPanel = React.lazy(() => import('./pages/AdminPanel.tsx'));
 const ModerationCenterPage = React.lazy(() => import('./pages/ModerationCenterPage.tsx'));
 const MunicipalityPanelPage = React.lazy(() => import('./pages/MunicipalityPanelPage.tsx'));
@@ -165,6 +169,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/politika-e-cookies': 'Politika e Privatësisë',
   '/donacion': 'Ndihma & Donacione',
   '/partneret': 'Partnerët & Reklama',
+  '/kosova': 'Kosova — një popull, një histori, një e ardhme',
+  '/historia-e-uck': 'Historia e UÇK-së',
   '/login': 'Hyrja',
   '/register': 'Regjistrohu',
   // Staff places. Without these the browser tab said "Page not found" on a page that was found.
@@ -201,7 +207,8 @@ export function RouteTitle() {
   // without its language prefix, otherwise every prefixed URL got "not found".
   const { pagePath } = parseLocalePath(pathname);
   const key = pagePath.length > 1 ? pagePath.replace(/\/+$/, '') : pagePath;
-  const title = ROUTE_TITLES[key];
+  // Chapters and entries of the Kosovo archives set their own, more specific title; this is the fallback.
+  const title = ROUTE_TITLES[key] ?? (key.startsWith('/kosova/') ? ROUTE_TITLES['/kosova'] : key.startsWith('/historia-e-uck/') ? ROUTE_TITLES['/historia-e-uck'] : undefined);
   usePageMeta(dt(title ?? 'Faqja nuk u gjet', language));
   return null;
 }
@@ -896,6 +903,12 @@ export default function App() {
               <Route path="/politika-e-cookies" element={<PrivacyPolicyPage />} />
               <Route path="/donacion" element={<DonationsPage />} />
               <Route path="/partneret" element={<PartnersPage />} />
+              <Route path="/kosova" element={<KosovaHubPage />} />
+              <Route path="/kosova/:section" element={<KosovaSectionPage />} />
+              <Route path="/kosova/:section/:id" element={<HeritageEntryPage />} />
+              <Route path="/historia-e-uck" element={<UckArchivePage />} />
+              <Route path="/historia-e-uck/:section" element={<UckArchivePage />} />
+              <Route path="/historia-e-uck/:section/:id" element={<HeritageEntryPage />} />
             </Route>
             {}
             {/*
@@ -939,6 +952,12 @@ export default function App() {
               <Route path="privatesia" element={<PrivacyPolicyPage />} />
               <Route path="donacion" element={<DonationsPage />} />
               <Route path="partneret" element={<PartnersPage />} />
+              <Route path="kosova" element={<KosovaHubPage />} />
+              <Route path="kosova/:section" element={<KosovaSectionPage />} />
+              <Route path="kosova/:section/:id" element={<HeritageEntryPage />} />
+              <Route path="historia-e-uck" element={<UckArchivePage />} />
+              <Route path="historia-e-uck/:section" element={<UckArchivePage />} />
+              <Route path="historia-e-uck/:section/:id" element={<HeritageEntryPage />} />
               {/* The same aliases the unprefixed table accepts, so a shared /en/terms link resolves. */}
               <Route path="terms" element={<TermsOfServicePage />} />
               <Route path="politika-e-priveritetit" element={<PrivacyPolicyPage />} />
