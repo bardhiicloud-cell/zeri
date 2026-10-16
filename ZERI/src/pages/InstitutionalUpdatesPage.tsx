@@ -1,3 +1,4 @@
+import { BackLink } from '../components/BackLink';
 import React, { useState } from 'react';
 import { 
   Building2, Calendar, MapPin, Search, ArrowRight, Share2, 
@@ -162,13 +163,7 @@ export default function InstitutionalUpdatesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           
           <div className="flex items-center gap-3 mb-4">
-            <button 
-              onClick={() => navigate('/')} 
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-white flex items-center gap-2 text-xs font-bold"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{dt('Kthehu te Ballina')}</span>
-            </button>
+            <BackLink to="/" label="Platforma" />
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-bold rounded-full">
               <Building2 className="w-3.5 h-3.5" />
               <span>Transparenca Institucionale</span>

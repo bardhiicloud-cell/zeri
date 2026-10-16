@@ -1,3 +1,4 @@
+import { BackLink } from '../components/BackLink';
 import { dt } from '@/src/lib/dt';
 import { AuraHero, AuraOrbit } from '../components/aura/Aura';
 import React from 'react';
@@ -148,13 +149,7 @@ export default function TermsOfServicePage() {
   return (
     <div className="page-shell w-full px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-4xl">
-        <Link
-          to="/"
-          className="mb-8 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          {dt('Kthehu në Ballinë')}
-        </Link>
+        <BackLink to="/" label="Platforma" className="mb-8" />
 
         <div className="mb-6">
           <AuraHero tone="slate" eyebrow={dt('Dokument ligjor')} icon={Scale} visual={<AuraOrbit core={Scale} />}
