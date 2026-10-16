@@ -7,7 +7,7 @@ import { cn } from '@/src/lib/utils';
 const POINTS = [
   { icon: Megaphone, title: 'Raporto', text: 'Dërgo çdo problem te institucioni përgjegjës.' },
   { icon: MapPinned, title: 'Ndiq', text: 'Shiko statusin e raportit deri në zgjidhje.' },
-  { icon: ShieldCheck, title: 'Vendos', text: 'Voto në sondazhe dhe merr pjesë në debat.' },
+  { icon: ShieldCheck, title: 'Vendos', text: 'Voto në sondazhe dhe merr pjesë në vendimmarrje.' },
 ];
 
 interface AuthShellProps {

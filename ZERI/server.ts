@@ -76,6 +76,7 @@ import { registerForumPostRoutes, notifyPostAction } from './server/forumPosts';
 import { registerAdRoutes } from './server/adTracking';
 import { registerForumReelRoutes } from './server/forumReels';
 import { registerForumFeedRoutes } from './server/forumFeed';
+import { debateGate } from './server/debateGate';
 import { registerForumPeopleRoutes } from './server/forumPeople';
 import { registerForumReportRoutes } from './server/forumReports';
 import { registerModerationRoutes, startSuspensionSweep } from './server/moderationCases';
@@ -2150,6 +2151,8 @@ registerInstitutionMailRoutes(app, {
 registerReportClassificationRoutes(app, { requireAuth, db, actingUser, audit });
 registerWorkItemRoutes(app, { requireAuth, db, authAdmin, actingUser, audit });
 registerReportWorkflowRoutes(app, { requireAuth, db, authAdmin, actingUser, audit, logEditorialEvent });
+// The public Debate is closed until the owner reopens it (server/debateGate.ts); staff tooling is exempt.
+app.use(debateGate());
 registerForumSocialRoutes(app, { requireAuth, requireUsersSection: requireSection('users'), db, audit });
 registerForumAnalyticsRoutes(app, { requireAuth, db });
 registerDirectMessageRoutes(app, { requireAuth, db });

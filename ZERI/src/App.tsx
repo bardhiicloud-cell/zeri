@@ -14,6 +14,7 @@ import { setRuntimeLanguage, rescanRuntimeTranslation } from './lib/runtimeTrans
 import { useLanguage } from './lib/LanguageContext';
 import { Toaster } from 'react-hot-toast';
 import FloatingSupportBot from './components/FloatingSupportBot';
+import { DEBATE_PUBLIC_ENABLED } from './lib/featureFlags';
 import { AppLayout } from './components/layout/AppLayout.tsx';
 import { AppFooter } from './components/AppFooter';
 import CookieConsentBanner, { CookiePreferencesButton } from './components/CookieConsentBanner.tsx';
@@ -871,8 +872,8 @@ export default function App() {
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="/trackid" element={<TrackIdPage />} />
               <Route path="/lajmero" element={<LajmeroPage />} />
-              <Route path="/moderimi-im" element={<MyModerationPage />} />
-              <Route path="/verifikimi" element={<VerificationRequestPage />} />
+              <Route path="/moderimi-im" element={DEBATE_PUBLIC_ENABLED ? <MyModerationPage /> : <Navigate to="/" replace />} />
+              <Route path="/verifikimi" element={DEBATE_PUBLIC_ENABLED ? <VerificationRequestPage /> : <Navigate to="/" replace />} />
               <Route path="/ndihma" element={<CitizenHelpCenterPage />} />
               <Route path="/regjistri" element={<DetailedRegistryPage />} />
               <Route path="/registry" element={<DetailedRegistryPage />} />
@@ -927,8 +928,8 @@ export default function App() {
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="trackid" element={<TrackIdPage />} />
               <Route path="lajmero" element={<LajmeroPage />} />
-              <Route path="moderimi-im" element={<MyModerationPage />} />
-              <Route path="verifikimi" element={<VerificationRequestPage />} />
+              <Route path="moderimi-im" element={DEBATE_PUBLIC_ENABLED ? <MyModerationPage /> : <Navigate to="/" replace />} />
+              <Route path="verifikimi" element={DEBATE_PUBLIC_ENABLED ? <VerificationRequestPage /> : <Navigate to="/" replace />} />
               <Route path="ndihma" element={<CitizenHelpCenterPage />} />
               <Route path="regjistri" element={<DetailedRegistryPage />} />
               <Route path="registry" element={<DetailedRegistryPage />} />

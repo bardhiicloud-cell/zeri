@@ -54,3 +54,6 @@ Kodi është në gjendje të mirë (tsc, 1.7k+ teste, build), por **nuk mund të
 5. **Kuti postare** `privatisi@`, `abuzim@`, `privacy@` në domenin e ri.
 6. **Kapaciteti:** testi real kërkon staging; `CAPACITY_TEST_REPORT.md` thotë se matja aktuale është vetëm shtresa e aplikacionit.
 7. **Pas deploy:** instalim real në Android Chrome dhe iOS Safari, Lighthouse PWA, Search Console (dërgoni sitemap-in e ri).
+
+## Debati publik i fshehur (vendim i pronarit, 2026-10-16)
+Rregulli u memorizua në `ZERI/CLAUDE.md` dhe në kod: flamuri `DEBATE_PUBLIC_ENABLED` (ueb: `src/lib/featureFlags.ts`; server: `server/debateGate.ts`, i fikur si parazgjedhje). Rezultati: `/forum`, `/moderimi-im` dhe `/verifikimi` ridrejtohen te Ballina; `/forum` hiqet nga sitemap dhe bllokohet te robots; endpoint-et e qytetarit `/api/v1/forum/*` kthejnë 404 (`DEBATE_CLOSED`); paneli i stafit (`/debatwp`), moderimi dhe radhët e raportimeve mbeten të hapura. 4 teste të reja. Mbetet i pandryshuar: paketat e reklamave që quhen “Debati Publik” te Partnerët/Kërko ofertë (çmimet i vendos pronari te paneli i debatit) dhe disa fjali të përgjithshme te Politika e Privatësisë, që përmendin debatin — kërkojnë vendim për përmbajtjen.

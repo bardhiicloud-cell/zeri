@@ -3,6 +3,7 @@ Allow: /
 
 # Private/admin surfaces must never be crawled
 Disallow: /admin
+Disallow: /forum
 Disallow: /api/
 Disallow: /login
 Disallow: /register
