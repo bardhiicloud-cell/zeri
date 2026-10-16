@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { BackLink } from '../components/BackLink';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Copy, ImagePlus, Loader2, Megaphone, ShieldCheck, X } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
@@ -113,6 +114,7 @@ export default function LajmeroPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
+      <BackLink to="/lajme" label="Lajmet" className="mb-5" />
       <header className="mb-6 flex items-start gap-3">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-700 text-white"><Megaphone className="h-6 w-6" aria-hidden="true" /></span>
         <div>

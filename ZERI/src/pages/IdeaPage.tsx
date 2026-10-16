@@ -1,3 +1,4 @@
+import { BackLink } from '../components/BackLink';
 import React, { useState } from 'react';
 import { ArrowDown, ArrowLeft, CheckCircle2, Lightbulb, Send, Loader2, Target, Users, MapPinned } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -80,9 +81,7 @@ export default function IdeaPage() {
 
   return (
     <AuraPage>
-      <button type="button" onClick={() => navigate(-1)} className="-mb-3 inline-flex h-9 items-center gap-1.5 text-[13px] font-medium text-[var(--au-sub)] hover:text-[var(--au-text)]">
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te Shërbimet')}
-      </button>
+      <BackLink to="/" label="Platforma" className="-mb-3 self-start" />
 
       <AuraHero
         visual={<AuraOrbit core={Lightbulb} />}

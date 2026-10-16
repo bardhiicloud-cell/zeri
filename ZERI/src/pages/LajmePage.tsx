@@ -20,7 +20,8 @@ import { ShareSheet } from '../components/ShareSheet.tsx';
 import toast from 'react-hot-toast';
 import { useStore, type AdCampaign } from '../lib/store';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
-import { NEWS_CATEGORIES } from '../lib/newsCategories';
+import { NEWS_CATEGORIES, EXTERNAL_CATEGORIES, PLATFORM_CATEGORIES, originOfCategory, type NewsOrigin } from '../lib/newsCategories';
+import { BackLink } from '../components/BackLink';
 import { DEMO_NEWS } from '../lib/demoNews';
 import { layoutNews } from '../lib/newsPlacement';
 import { HTML_LANG_TAGS, readStoredLanguage } from '../lib/languageConstants';
@@ -91,6 +92,7 @@ export default function LajmePage() {
   const [tickerPaused, setTickerPaused] = useState(false);
   const [selectedStream, setSelectedStream] = useState<'all' | 'news' | 'notices'>('all');
   const [selectedTopic, setSelectedTopic] = useState('all');
+  const [selectedOrigin, setSelectedOrigin] = useState<NewsOrigin>('all');
   const [archivePage, setArchivePage] = useState(1);
   /**
    * `linked` is the editorial value that was missing entirely: a reader can ask
@@ -187,6 +189,7 @@ export default function LajmePage() {
         || (selectedStream === 'news' && !isOfficialNotice)
         || (selectedStream === 'notices' && isOfficialNotice);
       const matchTopic = selectedTopic === 'all' || item.category === selectedTopic;
+      const matchOrigin = selectedOrigin === 'all' || originOfCategory(item.category) === selectedOrigin;
       const query = searchQuery.toLowerCase();
       const matchSearch = !query ||
                           item.title.toLowerCase().includes(query) ||
@@ -198,9 +201,9 @@ export default function LajmePage() {
         resolutionFilter === 'all' ||
         (resolutionFilter === 'resolved' && answerStatus === 'resolved') ||
         (resolutionFilter === 'unresolved' && answerStatus === 'unresolved');
-      return matchStream && matchTopic && matchSearch && matchScope && matchResolution;
+      return matchStream && matchTopic && matchOrigin && matchSearch && matchScope && matchResolution;
     });
-  }, [allNews, searchQuery, selectedStream, selectedTopic, scopeToMine, mineMunicipality, resolutionFilter, answerStatusFor]);
+  }, [allNews, searchQuery, selectedStream, selectedTopic, selectedOrigin, scopeToMine, mineMunicipality, resolutionFilter, answerStatusFor]);
 
   const handleShare = (item: NewsArticle) => {
     setSharingArticle(item);
@@ -282,7 +285,7 @@ export default function LajmePage() {
       kind: 'local' as const,
     },
     ...categoryOptions
-      .filter((category) => category !== 'Njoftim Zyrtar')
+      .filter((category) => selectedOrigin === 'all' || originOfCategory(category) === selectedOrigin)
       .map((category) => ({
         id: `topic:${category}`,
         label: category,
@@ -310,8 +313,9 @@ export default function LajmePage() {
       setSelectedStream(item.id.replace('stream:', '') as typeof selectedStream);
       setSelectedTopic('all');
     } else {
-      setSelectedTopic(item.id.replace('topic:', ''));
-      setSelectedStream('news');
+      const topic = item.id.replace('topic:', '');
+      setSelectedTopic(topic);
+      setSelectedStream(topic === 'Njoftim Zyrtar' ? 'all' : 'news');
     }
   };
 
@@ -327,6 +331,7 @@ export default function LajmePage() {
   const clearNewsFilters = () => {
     setSelectedStream('all');
     setSelectedTopic('all');
+    setSelectedOrigin('all');
     setResolutionFilter('all');
     setSearchQuery('');
     setScopeToMine(false);
@@ -411,7 +416,7 @@ export default function LajmePage() {
           title={dt('Lajmet kryesore')}
           subtitle={dt('Lajme nga redaksia, njoftime zyrtare nga komunat dhe përgjigje ndaj raportimeve të qytetarëve, të renditura sipas temës dhe komunës.')}
           actions={<>
-            <Link to="/" className="au-btn au-btn-glass !h-9 !text-[13px]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te platforma')}</Link>
+            <BackLink to="/" label="Platforma" />
             {allNews.length === 0 && <Link to="/lajmero" className="au-btn au-btn-glass !h-9 !text-[13px]"><Megaphone className="h-4 w-4" aria-hidden="true" /> {dt('Raporto lajm')}</Link>}
             <ThemeToggle />
           </>}
@@ -478,52 +483,88 @@ export default function LajmePage() {
             </Link>
           </div>
 
-          {/* Topics: plain tabs on a hairline, the active one underlined. */}
-          <nav
-            aria-label={dt('Kategoritë e publikimeve')}
-            className="-mx-3 mt-3 flex items-center overflow-x-auto border-t border-slate-200 bg-slate-100/70 px-3 rounded-b-2xl [-ms-overflow-style:none] [scrollbar-width:none] dark:border-white/10 dark:bg-white/[0.04] [&::-webkit-scrollbar]:hidden"
-          >
-            {categoryRail.filter((item) => item.kind !== 'stream').map((item, index) => {
-              const on = activeRailId === item.id;
-              const dash = ['bg-rose-500', 'bg-blue-500', 'bg-amber-500', 'bg-emerald-500', 'bg-violet-500', 'bg-cyan-500', 'bg-pink-500', 'bg-lime-500'][index % 8];
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => selectRailItem(item)}
-                  aria-pressed={on}
-                  className={cn(
-                    'relative inline-flex shrink-0 items-center gap-1.5 px-3 py-3 text-[14px] font-bold transition-colors',
-                    on ? 'text-slate-950 dark:text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'
-                  )}
-                >
-                  {item.kind === 'local'
-                    ? <MapPin className="h-3.5 w-3.5 text-rose-500" aria-hidden="true" />
-                    : <span aria-hidden="true" className={cn('h-1 w-2.5 -skew-x-12 rounded-[1px]', dash)} />}
-                  {dt(item.label)}
-                  <span className="text-[11px] font-medium tabular-nums text-slate-400">{item.count}</span>
-                  {on && (
-                    <motion.span
-                      layoutId="news-topic-underline"
-                      aria-hidden="true"
-                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-blue-600"
-                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setShowAdvancedFilters((open) => !open)}
-              aria-expanded={showAdvancedFilters}
-              className="ml-auto inline-flex shrink-0 items-center gap-1.5 px-3 py-3 text-[13px] font-semibold text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+          {/* Origin + categories: a glass segmented control, then clean pill chips. */}
+          <div className="-mx-3 mt-3 rounded-b-2xl border-t border-slate-200/70 bg-slate-50/60 px-3 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="flex items-center gap-2">
+              <div role="tablist" aria-label={dt('Burimi i lajmit')} className="flex min-w-0 flex-1 rounded-full sm:flex-none bg-slate-200/60 p-1 dark:bg-white/10">
+                {([
+                  { id: 'all', label: 'Të gjitha' },
+                  { id: 'platform', label: 'Në platformë' },
+                  { id: 'external', label: 'Jashtë platformës' },
+                ] as const).map((option) => {
+                  const on = selectedOrigin === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={on}
+                      onClick={() => {
+                        setSelectedOrigin(option.id);
+                        setSelectedTopic('all');
+                        setScopeToMine(false);
+                      }}
+                      className={cn(
+                        'relative flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-[12px] font-semibold transition-colors sm:flex-none sm:px-3.5 sm:text-[13px]',
+                        on ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                      )}
+                    >
+                      {on && (
+                        <motion.span
+                          layoutId="news-origin-pill"
+                          aria-hidden="true"
+                          className="absolute inset-0 rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.15)] dark:bg-slate-700"
+                          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                        />
+                      )}
+                      <span className="relative">{dt(option.label)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFilters((open) => !open)}
+                aria-expanded={showAdvancedFilters}
+                aria-label={dt('Filtra')} className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-200/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">{dt('Filtra')}</span>
+                {resolutionFilter !== 'all' && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-label={dt('Filtra aktivë')} />}
+              </button>
+            </div>
+
+            <nav
+              aria-label={dt('Kategoritë e publikimeve')}
+              className="-mx-3 mt-3 flex items-center gap-2 overflow-x-auto px-3 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-              {dt('Filtra')}
-              {resolutionFilter !== 'all' && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-label={dt('Filtra aktivë')} />}
-            </button>
-          </nav>
+              {categoryRail.filter((item) => item.kind !== 'stream').map((item) => {
+                const on = activeRailId === item.id;
+                const isExternal = item.kind === 'topic' && (EXTERNAL_CATEGORIES as readonly string[]).includes(item.label);
+                const isPlatform = item.kind === 'topic' && (PLATFORM_CATEGORIES as readonly string[]).includes(item.label);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectRailItem(item)}
+                    aria-pressed={on}
+                    className={cn(
+                      'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-all active:scale-[0.97]',
+                      on
+                        ? 'border-slate-900 bg-slate-900 text-white shadow-sm dark:border-white dark:bg-white dark:text-slate-900'
+                        : 'border-slate-200 bg-white/80 text-slate-600 backdrop-blur hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white'
+                    )}
+                  >
+                    {item.kind === 'local' && <MapPin className={cn('h-3.5 w-3.5', on ? '' : 'text-rose-500')} aria-hidden="true" />}
+                    {isPlatform && <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full', on ? 'bg-white dark:bg-slate-900' : 'bg-blue-500')} />}
+                    {isExternal && <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full', on ? 'bg-white dark:bg-slate-900' : 'bg-amber-500')} />}
+                    {dt(item.label)}
+                    <span className={cn('text-[11px] font-medium tabular-nums', on ? 'opacity-70' : 'text-slate-400')}>{item.count}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
           {showAdvancedFilters && (
             <div className="-mx-3 flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/70 px-3 py-3 dark:border-white/10 dark:bg-white/[0.03]">
@@ -995,7 +1036,7 @@ export default function LajmePage() {
                   ? dt('Provoni të hiqni filtrat ose të kërkoni një temë tjetër.')
                   : dt('Publikimet zyrtare shfaqen këtu pasi redaksia e Zërit të Qytetarëve t’i publikojë.')}
             </p>
-            {(resolutionFilter !== 'all' || selectedStream !== 'all' || selectedTopic !== 'all' || searchQuery || scopeToMine) && (
+            {(resolutionFilter !== 'all' || selectedStream !== 'all' || selectedTopic !== 'all' || selectedOrigin !== 'all' || searchQuery || scopeToMine) && (
               <button
                 type="button"
                 onClick={clearNewsFilters}
@@ -1084,9 +1125,7 @@ export default function LajmePage() {
                 <div className="flex items-center gap-2">
                   <span className="hidden text-[11px] font-bold tabular-nums text-slate-400 sm:inline">{readProgress}%</span>
                   <button type="button" onClick={() => handleShare(activeArticle)} aria-label={dt('Më shumë mënyra shpërndarjeje')} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200"><Share2 className="h-4 w-4" aria-hidden="true" /></button>
-                  <button type="button" onClick={closeArticle} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-900 px-3.5 text-xs font-black text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
-                    <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te lajmet')}
-                  </button>
+                  <BackLink onClick={closeArticle} label="Lajmet" />
                 </div>
               </div>
             </header>
@@ -1192,9 +1231,7 @@ export default function LajmePage() {
                   </section>
 
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-white/10">
-                    <button type="button" onClick={closeArticle} className="inline-flex items-center gap-2 text-xs font-black text-blue-700 transition hover:text-blue-900 dark:text-blue-300">
-                      <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {dt('Kthehu te të gjitha lajmet')}
-                    </button>
+                    <BackLink onClick={closeArticle} label="Të gjitha lajmet" />
                     <button type="button" onClick={copyArticleLink} className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:text-slate-300">
                       <Copy className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Kopjo lidhjen')}
                     </button>
