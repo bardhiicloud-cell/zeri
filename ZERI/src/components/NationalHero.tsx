@@ -10,7 +10,7 @@ const CHIPS = [
 
 /**
  * Hero shown on Ballina when the scope is "Gjithë Kosova".
- * Night: the official night skyline photo. Day: a bright sky with a drawn skyline (public/skyline-day.svg).
+ * Day and night draw the same skyline (public/skyline-day.svg, skyline-night.svg), so both read as one scene.
  */
 export function NationalHero({ onReport, onViewReports }: { onReport: () => void; onViewReports: () => void }) {
   return (
@@ -24,17 +24,16 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
         <div className="absolute left-[8%] top-10 h-6 w-40 rounded-full bg-white/70 blur-md" />
         <div className="absolute left-[38%] top-20 h-5 w-52 rounded-full bg-white/60 blur-md" />
         <div className="absolute right-[22%] top-12 h-5 w-36 rounded-full bg-white/60 blur-md" />
-        <img src="/skyline-day.svg" alt="" className="absolute inset-x-0 bottom-0 h-[55%] w-full object-cover object-bottom" />
+        <img src="/skyline-day.svg" alt="" className="absolute inset-x-0 bottom-0 h-[68%] w-full object-cover object-bottom" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.88)_0%,rgba(255,255,255,0.55)_42%,transparent_72%)]" />
       </div>
 
-      {/* ── Night scene ── */}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 hidden dark:block bg-[#050b18]">
-        <img src="/cover-city.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-[60%_bottom] opacity-95" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,24,0.94)_0%,rgba(5,11,24,0.72)_40%,rgba(5,11,24,0.15)_78%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(5,11,24,0.55)_0%,transparent_40%)]" />
-        <div className="absolute -left-20 top-0 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:44px_44px]" />
+      {/* ── Night scene: the same skyline as the day scene, drawn in a night palette ── */}
+      <div aria-hidden="true" className="absolute inset-0 -z-10 hidden dark:block bg-[linear-gradient(180deg,#030814_0%,#0a1a3a_62%,#16386b_100%)]">
+        <div className="absolute right-[26%] top-6 hidden h-14 w-14 sm:block rounded-full bg-[radial-gradient(circle,#fff6d6_0%,#fff6d6_35%,rgba(255,246,214,0.25)_60%,transparent_72%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[radial-gradient(ellipse_at_58%_100%,rgba(250,190,90,0.16),transparent_65%)]" />
+        <img src="/skyline-night.svg" alt="" className="absolute inset-x-0 bottom-0 h-[68%] w-full object-cover object-bottom" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,8,20,0.9)_0%,rgba(3,8,20,0.6)_40%,transparent_72%)]" />
       </div>
 
       <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between lg:p-9">
