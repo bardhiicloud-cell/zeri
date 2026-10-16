@@ -1,12 +1,43 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import {execSync} from 'node:child_process';
+import {defineConfig, loadEnv, type Plugin} from 'vite';
+
+/**
+ * Writes /version.json into the build: the commit and time it was built from.
+ * Opening https://<site>/version.json answers "which version is live?" without
+ * guessing from behaviour. Never contains configuration or secrets.
+ */
+function buildVersion(): Plugin {
+  const git = (cmd: string) => {
+    try {
+      return execSync(cmd, {stdio: ['ignore', 'pipe', 'ignore']}).toString().trim();
+    } catch {
+      return 'unknown';
+    }
+  };
+  return {
+    name: 'zeri-build-version',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify({
+          commit: git('git rev-parse --short HEAD'),
+          commitDate: git('git log -1 --format=%cI'),
+          builtAt: new Date().toISOString(),
+        }, null, 2),
+      });
+    },
+  };
+}
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), buildVersion()],
     resolve: {
       // The tree carries stale compiled `.js` twins beside most `.tsx`/`.ts`
       // sources. Vite's default extension order resolves `.js` BEFORE `.tsx`,

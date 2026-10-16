@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
-import { fetchWithTimeout, isJsonResponse } from '../lib/timeouts';
+import { submitNewsTip } from '../lib/directSubmissions';
 import { saveGuestReportHistory } from '../lib/session';
 import { BackLink } from '../components/BackLink';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Copy, ImagePlus, Loader2, Megaphone, ShieldCheck, X } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
-import { auth } from '../lib/firebase';
 
 /**
  * "Lajmëro": a citizen sends a news tip (corruption, propaganda, anything of public interest)
@@ -73,18 +72,13 @@ export default function LajmeroPage() {
     setError('');
     setFields({});
     try {
-      const token = await auth.currentUser?.getIdToken().catch(() => null);
-      const response = await fetchWithTimeout('/api/v1/public/news-tips', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ ...form, media: media.map(m => m.url) }),
-      }, 40000);
-      const body = isJsonResponse(response) ? await response.json().catch(() => ({})) : {};
-      if (!response.ok || !(body as { reference?: string }).reference) {
-        setFields((body as { fields?: Record<string, string> }).fields ?? {});
-        throw new Error(String((body as { error?: string }).error ?? dt('Lajmi nuk u dërgua. Provoni përsëri.')));
+      // Server when it is usable, otherwise straight to Firestore with the same checks.
+      const result = await submitNewsTip({ ...form, media: media.map(m => m.url) });
+      if (!result.ok || !result.reference) {
+        setFields(result.fields);
+        throw new Error(result.error || dt('Lajmi nuk u dërgua. Provoni përsëri.'));
       }
-      const issued = String((body as { reference: string }).reference);
+      const issued = result.reference;
       saveGuestReportHistory({ id: issued, trackingId: issued, title: form.title, status: 'submitted', createdAt: new Date().toISOString() });
       setReference(issued);
     } catch (e) {

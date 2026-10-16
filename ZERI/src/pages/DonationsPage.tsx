@@ -4,7 +4,7 @@ import { Badge } from '../components/ui/Badge';
 import { dt } from '@/src/lib/dt';
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { postPublic } from '../lib/publicSubmit';
+import { submitDonationApplication } from '../lib/directSubmissions';
 import { saveGuestReportHistory } from '../lib/session';
 import { TrackIdIssuedModal } from '../components/TrackIdIssuedModal';
 import { useStore, DonationCause } from '../lib/store';
@@ -144,7 +144,8 @@ const ITEMS_PER_PAGE = 6;
     setSubmitting(true);
     // Through the server: the browser is not allowed to create donation causes, so the
     // old direct write failed for every citizen.
-    const result = await postPublic('/api/v1/public/donation-applications', newApplication);
+    // Server when it is usable, otherwise straight to Firestore with the same checks.
+    const result = await submitDonationApplication(newApplication);
     setSubmitting(false);
     if (!result.ok) {
       setApplyErrors(result.fields);

@@ -22,31 +22,12 @@ import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
-import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc, getDocFromServer, collection, serverTimestamp } from 'firebase/firestore';
 import { fetchWithTimeout, isJsonResponse, withTimeout } from '../lib/timeouts';
-import { createTrackingId, getOrCreateGuestUser, saveGuestReportHistory } from '../lib/session';
+import { apiReady, markApiUnavailable } from '../lib/apiAvailability';
+import { createTrackingId, saveGuestReportHistory } from '../lib/session';
+import { ensureReportSession } from '../lib/reportSession';
 
-/**
- * Guarantees an authenticated Firebase session before a report is written.
- *
- * The `reports` rule requires `authorId == request.auth.uid`, so a report can
- * only be persisted when a real uid exists. Signed-in citizens already have
- * one; visitors are upgraded to an anonymous account when the project allows
- * it. Returning `null` means no write can succeed, and the caller must tell
- * the citizen instead of showing a Track ID for a report that was never saved.
- */
-async function ensureReportSession(): Promise<string | null> {
-  if (auth.currentUser?.uid) return auth.currentUser.uid;
-  try {
-    // Bounded: a blocked App Check token or a dead link left this pending forever.
-    const credential = await withTimeout(signInAnonymously(auth), 15000, 'Sesioni nuk u krijua në kohë.');
-    return credential.user.uid;
-  } catch {
-    const guestUser = getOrCreateGuestUser();
-    return guestUser.id;
-  }
-}
 
 import { validations, runValidations } from '../lib/validations';
 import { handleFirebaseError } from '../lib/errorHandler';
@@ -302,6 +283,14 @@ export default function ReportIssue() {
    * instead of creating a duplicate when the first try did reach the database.
    */
   const pendingReportIdRef = useRef<string | null>(null);
+
+  // Warm up while the citizen fills the form: the anonymous session (its uid owns
+  // the report and its media) and the check whether /api is usable. Pressing
+  // "Protokollo" then only uploads and saves, with nothing left to wait for.
+  useEffect(() => {
+    void ensureReportSession();
+    void apiReady();
+  }, []);
 
   if (isBanned) {
     return (
@@ -799,8 +788,9 @@ export default function ReportIssue() {
         const token = auth.currentUser
           ? await withTimeout(auth.currentUser.getIdToken(), 15000, 'Tokeni i sesionit nuk u mor në kohë.')
           : null;
-        if (token) {
-          // 35 s: a backend on a free plan can need ~30 s to wake up.
+        // Only a server that can store the report is worth waiting for; otherwise the
+        // report goes straight to Firestore below, which is what makes the Track ID fast.
+        if (token && await apiReady()) {
           const response = await fetchWithTimeout('/api/v1/reports', {
             method: 'POST',
             headers: {
@@ -823,7 +813,7 @@ export default function ReportIssue() {
               aiRoutingReason: reportData.aiRoutingReason,
               aiForensicsReport: reportData.aiForensicsReport,
             }),
-          }, 35000);
+          }, 20000);
 
           // Only a JSON answer is the API: a static host without the /api forward
           // answers 200 with index.html, which is not a stored report.
@@ -844,8 +834,10 @@ export default function ReportIssue() {
             serverRefusal = body.error || 'Raportimi u refuzua nga serveri.';
           }
           // Any other answer (5xx, HTML, no API) falls through to the direct write.
+          if (!serverRefusal) markApiUnavailable();
         }
       } catch (error) {
+        markApiUnavailable();
         console.warn('Server path unavailable; falling back to direct Firestore write.', error);
       }
       if (serverRefusal) {

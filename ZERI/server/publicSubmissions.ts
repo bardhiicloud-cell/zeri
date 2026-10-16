@@ -53,42 +53,11 @@ export function validateFeedback(body: unknown): Result<{ rating: number; feedba
 /* Donation applications                                                       */
 /* -------------------------------------------------------------------------- */
 
-export const DONATION_CATEGORIES = ['semundje', 'shtepi', 'ushqim', 'veshmbathje', 'tjera'] as const;
-/** The JSON body ceiling is 1 MB, so the embedded media has to leave room for the text fields. */
-export const DONATION_MEDIA_MAX_CHARS = 880_000;
-const MEDIA_DATA_URI = /^data:(image\/(?:jpeg|png|webp)|video\/(?:mp4|webm));base64,[A-Za-z0-9+/=]+$/;
+export {
+  DONATION_CATEGORIES, DONATION_MEDIA_MAX_CHARS, validateDonationApplication, type DonationApplicationInput,
+} from './submissionValidation';
+import { validateDonationApplication } from './submissionValidation';
 
-export interface DonationApplicationInput {
-  title: string; description: string; category: string;
-  mediaType: 'image' | 'video'; mediaUrl: string; donationUrl: string;
-}
-
-export function validateDonationApplication(body: unknown): Result<DonationApplicationInput> {
-  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
-  const title = clean(b.title, 140);
-  const description = clean(b.description, 3000);
-  const category = clean(b.category, 20);
-  const donationUrlRaw = clean(b.donationUrl, 500);
-  const mediaUrl = typeof b.mediaUrl === 'string' ? b.mediaUrl.trim() : '';
-  const errors: Record<string, string> = {};
-  if (title.length < 5) errors.title = 'Titulli duhet të ketë të paktën 5 shkronja.';
-  if (description.length < 20) errors.description = 'Përshkrimi duhet të ketë të paktën 20 shkronja.';
-  if (!(DONATION_CATEGORIES as readonly string[]).includes(category)) errors.category = 'Zgjidhni një kategori.';
-  let donationUrl = '';
-  if (donationUrlRaw) {
-    try {
-      const u = new URL(donationUrlRaw);
-      if (u.protocol !== 'https:' && u.protocol !== 'http:') throw new Error('protocol');
-      donationUrl = u.toString();
-    } catch {
-      errors.donationUrl = 'Lidhja duhet të fillojë me https://';
-    }
-  }
-  const media = MEDIA_DATA_URI.exec(mediaUrl);
-  if (!media || mediaUrl.length > DONATION_MEDIA_MAX_CHARS) errors.mediaUrl = 'Shtoni një foto (JPG, PNG, WebP) ose video të shkurtër (MP4, WebM) brenda kufirit të madhësisë.';
-  if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, value: { title, description, category, mediaType: media![1].startsWith('video') ? 'video' : 'image', mediaUrl, donationUrl } };
-}
 
 export interface SubmissionDeps extends ContactDeps {
   /** Verified uid when the request carries a valid sign-in token, else null. Never trusts the body. */

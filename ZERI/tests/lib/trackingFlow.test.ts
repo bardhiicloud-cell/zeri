@@ -84,3 +84,13 @@ describe('shared public view', () => {
     expect(JSON.stringify(view)).not.toMatch(/secret-uid|Emri|Rr\. 1/);
   });
 });
+
+describe('mintReference (browser path for LJ-/DN-)', () => {
+  it('has the shape the server lookup and the rules accept', async () => {
+    const { mintReference } = await import('../../src/lib/directSubmissions');
+    for (let i = 0; i < 50; i++) {
+      expect(mintReference('LJ')).toMatch(/^LJ-[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/);
+      expect(SUBMISSION_REFERENCE_PATTERN.test(mintReference('DN'))).toBe(true);
+    }
+  });
+});

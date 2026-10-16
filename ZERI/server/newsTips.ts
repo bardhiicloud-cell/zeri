@@ -21,9 +21,7 @@ import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { createIpRateLimiter } from './security';
 import { mayUseSection } from './policy';
-import { clean } from './contactMessages';
 
-export const TIP_CATEGORIES = ['korrupsion', 'antipropagande', 'politike', 'ekonomi', 'siguri', 'mjedis', 'shoqeri', 'tjera'] as const;
 export const TIP_CATEGORY_LABEL: Record<string, string> = {
   korrupsion: 'Korrupsion', antipropagande: 'Antipropagandë', politike: 'Politikë', ekonomi: 'Ekonomi', siguri: 'Siguri',
   mjedis: 'Mjedis', shoqeri: 'Shoqëri', tjera: 'Tjera',
@@ -35,54 +33,11 @@ export const TIP_STAGE_LABEL: Record<TipStage, string> = {
   submitted: 'Në pritje', accepted: 'U pranua', in_editing: 'Në përpunim', published: 'U publikua', rejected: 'U refuzua',
 };
 
-/** The body ceiling is 1 MB, so the embedded media has to leave room for the text. */
-export const TIP_MEDIA_MAX_CHARS = 700_000;
-export const TIP_MEDIA_MAX_ITEMS = 3;
-const MEDIA_DATA_URI = /^data:(image\/(?:jpeg|png|webp)|video\/(?:mp4|webm));base64,[A-Za-z0-9+/=]+$/;
+export {
+  TIP_CATEGORIES, TIP_MEDIA_MAX_CHARS, TIP_MEDIA_MAX_ITEMS, validateTip, type TipInput,
+} from './submissionValidation';
+import { validateTip } from './submissionValidation';
 
-export interface TipInput {
-  title: string; body: string; category: string; municipality: string; place: string;
-  anonymous: boolean; contactName: string; contactEmail: string; contactPhone: string;
-  media: Array<{ type: 'image' | 'video'; url: string }>;
-}
-
-type Result<T> = { ok: true; value: T } | { ok: false; errors: Record<string, string> };
-
-export function validateTip(body: unknown): Result<TipInput> {
-  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
-  const errors: Record<string, string> = {};
-  const title = clean(b.title, 160);
-  const text = clean(b.body, 6000);
-  const category = clean(b.category, 30);
-  const anonymous = b.anonymous === true;
-  const contactEmail = anonymous ? '' : clean(b.contactEmail, 160);
-  const rawMedia = Array.isArray(b.media) ? b.media : [];
-  if (title.length < 8) errors.title = 'Titulli duhet të ketë të paktën 8 shkronja.';
-  if (text.length < 40) errors.body = 'Shkruani çfarë dini (të paktën 40 shkronja): kush, çfarë, ku dhe kur.';
-  if (!(TIP_CATEGORIES as readonly string[]).includes(category)) errors.category = 'Zgjidhni një kategori.';
-  if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contactEmail)) errors.contactEmail = 'Emaili nuk është i vlefshëm.';
-  if (rawMedia.length > TIP_MEDIA_MAX_ITEMS) errors.media = `Maksimumi ${TIP_MEDIA_MAX_ITEMS} foto ose video.`;
-  const media: TipInput['media'] = [];
-  let total = 0;
-  for (const item of rawMedia.slice(0, TIP_MEDIA_MAX_ITEMS)) {
-    const url = typeof item === 'string' ? item : typeof (item as { url?: unknown })?.url === 'string' ? (item as { url: string }).url : '';
-    const match = MEDIA_DATA_URI.exec(url.trim());
-    total += url.length;
-    if (!match) { errors.media = 'Lejohen vetëm foto JPG, PNG, WebP ose video MP4, WebM.'; break; }
-    media.push({ type: match[1].startsWith('video') ? 'video' : 'image', url: url.trim() });
-  }
-  if (total > TIP_MEDIA_MAX_CHARS) errors.media = 'Fotot dhe videoja janë shumë të mëdha; zvogëloni ose dërgoni më pak.';
-  if (Object.keys(errors).length) return { ok: false, errors };
-  return {
-    ok: true,
-    value: {
-      title, body: text, category, anonymous,
-      municipality: clean(b.municipality, 80), place: clean(b.place, 200),
-      contactName: anonymous ? '' : clean(b.contactName, 120), contactEmail, contactPhone: anonymous ? '' : clean(b.contactPhone, 40),
-      media,
-    },
-  };
-}
 
 /* ------------------------------------------------------------------ */
 /* The decision                                                        */
