@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTrackingId, reserveTrackingId } from '../../server/trackingIds';
+import { formatTrackingId, reserveReference, reserveTrackingId } from '../../server/trackingIds';
 
 function fakeDb(taken: Set<string>) {
   return {
@@ -24,6 +24,19 @@ describe('reserveTrackingId', () => {
     const seq = ['aaaaaaaa', 'bbbbbbbb'];
     const id = await reserveTrackingId(fakeDb(taken), { prefix: 'ZQ', kind: 'report', ownerUid: 'u', nowMs: now, randomHex: () => seq.shift()! });
     expect(id.endsWith('BBBBBBBB')).toBe(true);
+    expect(taken.size).toBe(2);
+  });
+});
+
+describe('reserveReference', () => {
+  it('mints PREFIX-8 symbols and skips one that is already taken', async () => {
+    const taken = new Set<string>();
+    let first = true;
+    const rb = (n: number) => { const a = new Uint8Array(n); a.fill(first ? 0 : 7); first = false; return a; };
+    taken.add('LJ-AAAAAAAA');
+    const id = await reserveReference(fakeDb(taken), { prefix: 'LJ', kind: 'news', ownerUid: null, randomBytes: rb });
+    expect(id).toMatch(/^LJ-[A-Z2-9]{8}$/);
+    expect(id).not.toBe('LJ-AAAAAAAA');
     expect(taken.size).toBe(2);
   });
 });

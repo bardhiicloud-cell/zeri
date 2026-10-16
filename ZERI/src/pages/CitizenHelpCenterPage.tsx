@@ -71,7 +71,7 @@ const ARTICLES: Article[] = [
   {
     id: 'media', category: 'Foto dhe skedarë', title: 'Si i shtoj foto ose video?', icon: Camera,
     steps: [
-      `Te forma e raportit përdorni kutinë e ngarkimit. Mund të shtoni deri në 12 skedarë.`,
+      `Te forma e raportit përdorni kutinë e ngarkimit. Mund të shtoni deri në 10 foto dhe 3 video (secila deri në 30 sekonda).`,
       `Çdo foto ose video mund të jetë deri në ${reportLimit}.`,
       'Formate: foto, video, audio, PDF, DOC/DOCX dhe TXT.',
       'Një skedar shfaqet si i ngarkuar vetëm pasi ngarkimi të ketë përfunduar; nëse dështon, hiqeni dhe provoni përsëri.',

@@ -908,7 +908,7 @@ export default function ReportIssue() {
                    <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900" />
                  </div>
                  <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
-                 <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, PDF, DOC, MP3 · deri në 12 skedarë · max ${formatBytes(MAX_UPLOAD_BYTES.reports)} secili`)}</span>
+                 <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
                  <span className="text-[10px] md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
                  <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                </div>

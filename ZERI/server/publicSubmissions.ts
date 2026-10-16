@@ -1,4 +1,6 @@
 import type { Express, Request, Response } from 'express';
+import { randomBytes } from 'node:crypto';
+import { reserveReference } from './trackingIds';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createIpRateLimiter } from './security';
 import { clean, type ContactDeps } from './contactMessages';
@@ -107,7 +109,7 @@ export function registerPublicSubmissionRoutes(app: Express, deps: SubmissionDep
     try {
       const uid = deps.optionalUid ? await deps.optionalUid(req).catch(() => null) : null;
       const ref = deps.db().collection(collection).doc();
-      const reference = `${prefix}-${ref.id.slice(0, 8).toUpperCase()}`;
+      const reference = await reserveReference(deps.db(), { prefix, kind: collection, ownerUid: uid, randomBytes });
       await ref.set({ status: 'submitted', ...data, reference, authorId: uid, createdAt: FieldValue.serverTimestamp() });
       return res.status(201).json({ ok: true, reference });
     } catch (error: any) {

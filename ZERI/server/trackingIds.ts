@@ -43,3 +43,34 @@ export async function reserveTrackingId(
   }
   throw new Error('Could not reserve a unique tracking id.');
 }
+
+const REFERENCE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+/**
+ * Short public references (`LJ-`, `DN-`, `ID-`, `SH-` + 8 symbols) for submissions that are
+ * not reports. Same guarantee as `reserveTrackingId`: reserved with `create()` in the one
+ * registry before the record is written, so it is minted once and never shared.
+ */
+export async function reserveReference(
+  db: Firestore,
+  options: { prefix: string; kind: string; ownerUid: string | null; randomBytes: (n: number) => Uint8Array }
+): Promise<string> {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const bytes = options.randomBytes(8);
+    let body = '';
+    for (const byte of bytes) body += REFERENCE_ALPHABET[byte % REFERENCE_ALPHABET.length];
+    const id = `${options.prefix}-${body}`;
+    try {
+      await db.collection(TRACKING_REGISTRY).doc(id).create({
+        kind: options.kind,
+        ownerUid: options.ownerUid,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      return id;
+    } catch (error) {
+      if (isAlreadyExists(error)) continue;
+      throw error;
+    }
+  }
+  throw new Error('Could not reserve a unique reference.');
+}

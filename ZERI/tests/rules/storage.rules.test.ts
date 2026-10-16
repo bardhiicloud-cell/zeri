@@ -65,6 +65,13 @@ describe('reports/{uid}/{scope}/{file} — citizen media', () => {
     );
   });
 
+  it('accepts an iPhone .mov and a ~30 s video up to 50 MB, but not a larger one', async () => {
+    const storage = asUser(A);
+    await assertSucceeds(uploadBytes(ref(storage, `reports/${A}/r1/iphone.mov`), bytes(20 * MB), { contentType: 'video/quicktime' }));
+    await assertSucceeds(uploadBytes(ref(storage, `reports/${A}/r1/long.mp4`), bytes(40 * MB), { contentType: 'video/mp4' }));
+    await assertFails(uploadBytes(ref(storage, `reports/${A}/r1/huge.mp4`), bytes(50 * MB + 1), { contentType: 'video/mp4' }));
+  });
+
   it("rejects writing into someone else's prefix, and unauthenticated writes", async () => {
     await assertFails(uploadBytes(ref(asUser(B), `reports/${A}/r1/a.png`), bytes(), { contentType: 'image/png' }));
     await assertFails(uploadBytes(ref(anonymousVisitor(), `reports/${A}/r1/a.png`), bytes(), { contentType: 'image/png' }));
