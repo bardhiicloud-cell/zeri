@@ -47,6 +47,7 @@ const AdminHealthRegistry = lazy(() => import('../components/admin/AdminHealthRe
 const AdminForum = lazy(() => import('../components/admin/AdminForum.tsx'));
 const AdminPolls = lazy(() => import('../components/admin/AdminPolls.tsx'));
 const AdminNews = lazy(() => import('../components/admin/AdminNews.tsx'));
+const AdminHeritage = lazy(() => import('../components/admin/AdminHeritage.tsx'));
 import { SupportRequestAlert } from '../components/admin/SupportRequestAlert';
 const ReportTasksPanel = lazy(() => import('../components/admin/workflow/ReportTasksPanel.tsx'));
 const ReportsSection = lazy(() => import('../components/admin/workflow/ReportsSection.tsx'));
@@ -473,6 +474,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
               {activeTab === 'support' && (<><SupportOverview /><AdminSupportChats openChatId={linkParams.open} /></>)}
               {activeTab === 'polls' && <AdminPolls />}
               {activeTab === 'news' && <AdminNews />}
+              {activeTab === 'heritage' && <AdminHeritage />}
               {activeTab === 'work' && <ReportTasksPanel />}
               {activeTab === 'workflow' && <WorkflowCenter />}
               {activeTab === 'security' && <AdminSecurity />}

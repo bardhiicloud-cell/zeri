@@ -86,6 +86,8 @@ export type AdminSection =
   | 'support'
   | 'polls'
   | 'news'
+  /** The Kosovo identity & history archive (/kosova, /historia-e-uck): articles, timelines, sources, workflow. */
+  | 'heritage'
   | 'security'
   | 'settings'
   | 'categories';
@@ -101,7 +103,7 @@ export const FULL_ACCESS: readonly AdminSection[] = [
   'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users',
   'agents', 'municipalities', 'monitoring', 'monitorim', 'agentpanel', 'komunapanel', 'moderim',
   'roles',
-  'ads', 'videos', 'notifications', 'forum', 'debate', 'support', 'polls', 'news', 'security', 'settings', 'categories',
+  'ads', 'videos', 'notifications', 'forum', 'debate', 'support', 'polls', 'news', 'heritage', 'security', 'settings', 'categories',
 ];
 
 /**
@@ -123,7 +125,7 @@ export const BY_ROLE: Partial<Record<UserRole, readonly AdminSection[]>> = {
   adsadmin: ['dashboard', 'ads', 'videos', 'notifications'],
 
   // Editorial: publishes news and moderates the public debate.
-  newsadmin: ['dashboard', 'notifications', 'news', 'videos', 'forum', 'polls'],
+  newsadmin: ['dashboard', 'notifications', 'news', 'heritage', 'videos', 'forum', 'polls'],
 
   // Public debate: owns the debate's payments, verification ticks, ads and post moderation.
   // Deliberately no reports, users, health or platform settings.

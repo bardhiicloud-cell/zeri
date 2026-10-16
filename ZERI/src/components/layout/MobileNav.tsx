@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { useGlobalSearch } from './GlobalSearch';
-import { ALL_SIDEBAR_LINKS, LEGAL_NAV } from '../../lib/navigation';
+import { ALL_SIDEBAR_LINKS, LEGAL_NAV, isNavActive } from '../../lib/navigation';
 import { SOCIAL_LINKS } from '../SocialIcons';
 import { canAccessAdmin } from '../../lib/adminPermissions';
 import { useThemePreference } from '../../lib/themePreference';
@@ -76,6 +76,7 @@ const SCOPE_SHORTCUTS = ['Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 
 /** Module groups, mirroring the desktop sidebar's vocabulary. */
 const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
   { id: 'primary', title: 'Kryesore', hrefs: ['/', '/raporto', '/harta', '/detailed-registry', '/lajme'] },
+  { id: 'kosova', title: 'Kosova & Historia', hrefs: ['/kosova', '/kosova/historia', '/kosova/pavaresia', '/historia-e-uck'] },
   { id: 'participate', title: 'Pjesëmarrja qytetare', hrefs: ['/Idea', '/sondazhet', '/projektet'] },
   {
     id: 'services',
@@ -103,8 +104,7 @@ export function MobileNav() {
   const currentLanguage = LANGUAGE_OPTIONS.find((l) => l.code === language) ?? LANGUAGE_OPTIONS[0];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const isActive = (path: string) =>
-    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+  const isActive = (path: string) => isNavActive(path, location.pathname);
 
   const scoped = isSpecificScope(userMunicipality);
   const activeScope = scoped ? scopeKey(userMunicipality) : ALL_SCOPE;

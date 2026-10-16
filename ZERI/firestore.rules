@@ -319,6 +319,29 @@ service cloud.firestore {
       }
     }
 
+    // ──────────────────────────────────────────────
+    // Kosovo identity & history archive (server/heritage.ts)
+    // ──────────────────────────────────────────────
+    // Readers get published entries from GET /api/public/heritage and staff work through
+    // /api/v1/admin/heritage/*, both with the Admin SDK, which ignores these rules. Closing the
+    // collections to browsers means the editorial workflow (review, four-eyes approval, fact-check
+    // gate, revisions, audit log) cannot be bypassed by writing a document directly.
+    match /heritageEntries/{entryId} {
+      allow read, write: if false;
+      match /revisions/{revisionId} {
+        allow read, write: if false;
+      }
+    }
+    match /heritageSources/{sourceId} {
+      allow read, write: if false;
+    }
+    match /heritageSettings/{docId} {
+      allow read, write: if false;
+    }
+    match /heritageLog/{logId} {
+      allow read, write: if false;
+    }
+
     // Published news is public; drafts and editorial writes are restricted.
     match /newsArticles/{articleId} {
       allow read: if resource.data.published == true ||
