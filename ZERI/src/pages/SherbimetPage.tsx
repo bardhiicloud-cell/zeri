@@ -188,9 +188,9 @@ const PLATFORM_SERVICES: ServiceItem[] = [
     requirements: ['Kategori e saktë', 'Përshkrim i qartë', 'Komuna e problemit'], isOnline: false
   },
   {
-    id: 'platform-community', to: '/forum', category: 'Pjesëmarrje qytetare', title: 'Debat publik dhe sondazhe', department: 'Zëri Qytetarëve',
-    description: 'Merr pjesë në diskutime dhe sondazhe publike.',
-    requirements: ['Hyrje në llogari (komuniteti)', 'Respektimi i rregullave të komunitetit'], isOnline: false
+    id: 'platform-community', to: '/sondazhet', category: 'Pjesëmarrje qytetare', title: 'Sondazhe publike', department: 'Zëri Qytetarëve',
+    description: 'Votoni në sondazhe publike dhe jepni mendimin tuaj.',
+    requirements: ['Hyrje në llogari për të votuar'], isOnline: false
   },
   {
     id: 'platform-alerts', to: '/komunat', category: 'Njoftime lokale', title: 'Njoftime sipas komunës', department: 'Zëri Qytetarëve',

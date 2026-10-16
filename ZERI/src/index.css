@@ -843,3 +843,8 @@ html:not(.dark) :where(.text-slate-400, .text-gray-400):not(.luxury-hero *, [cla
 html:not(.dark) :where(.text-slate-500, .text-gray-500):not(.luxury-hero *, [class*="bg-slate-9"] *, [class*="bg-[#0"] *, [class*="from-slate-9"] *, [class*="bg-gradient"] *) {
   color: #526075;
 }
+
+/* Ballina hero: gentle star twinkle */
+@keyframes hero-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.hero-twinkle { animation: hero-twinkle 4.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hero-twinkle { animation: none; } }

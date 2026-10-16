@@ -11,7 +11,7 @@ describe('ideas and feedback', () => {
     const app = express();
     app.use(express.json());
     registerPublicSubmissionRoutes(app, {
-      db: (() => ({ collection: (c: string) => ({ doc: () => ({ id: 'zz11yy22xx', set: async (d: any) => { rows[c].push(d); } }) }) })) as any,
+      db: (() => ({ collection: (c: string) => ({ doc: () => ({ id: 'zz11yy22xx', set: async (d: any) => { rows[c].push(d); }, create: async () => {} }) }) })) as any,
       limiter: (_q, _s, n) => n(),
       optionalUid: async req => (req.headers.authorization === 'Bearer good' ? 'uid-1' : null),
     });
@@ -33,7 +33,7 @@ describe('ideas and feedback', () => {
   it('stores an idea and takes the author from the verified token only', async () => {
     const res = await post('/api/v1/public/ideas', { ...idea, authorId: 'spoofed' }, { authorization: 'Bearer good' });
     expect(res.status).toBe(201);
-    expect((await res.json()).reference).toBe('ID-ZZ11YY22');
+    expect((await res.json()).reference).toMatch(/^ID-[A-Z0-9]{8}$/);
     expect(rows.platformIdeas[0].authorId).toBe('uid-1');
     const anon = await post('/api/v1/public/ideas', idea);
     expect(anon.status).toBe(201);

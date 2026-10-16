@@ -15,6 +15,8 @@
  *
  * Staff only for the queue (news section); the sender's contact is private to staff.
  */
+import { randomBytes } from 'node:crypto';
+import { reserveReference } from './trackingIds';
 import type { Express, Request, RequestHandler, Response } from 'express';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { createIpRateLimiter } from './security';
@@ -177,13 +179,6 @@ export interface NewsTipDeps {
   limiter?: RequestHandler;
 }
 
-const randomRef = () => {
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  let out = '';
-  for (let i = 0; i < 8; i += 1) out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return `LJ-${out}`;
-};
-
 export function registerNewsTipRoutes(app: Express, deps: NewsTipDeps): void {
   const limiter = deps.limiter ?? createIpRateLimiter({ windowMs: 60 * 60_000, max: 5, floodFactor: 2, banMs: 30 * 60_000, message: 'Keni dërguar shumë lajme. Provoni përsëri pas pak.', code: 'TIP_RATE_LIMIT' });
   const lookupLimiter = createIpRateLimiter({ windowMs: 60_000, max: 30, floodFactor: 2, banMs: 10 * 60_000, message: 'Shumë kërkesa. Provoni pas pak.', code: 'LOOKUP_RATE_LIMIT' });
@@ -195,12 +190,7 @@ export function registerNewsTipRoutes(app: Express, deps: NewsTipDeps): void {
     try {
       const uid = deps.optionalUid ? await deps.optionalUid(req).catch(() => null) : null;
       const db = deps.db();
-      let reference = randomRef();
-      for (let i = 0; i < 4; i += 1) {
-        const taken = await db.collection('newsTips').where('reference', '==', reference).limit(1).get();
-        if (taken.empty) break;
-        reference = randomRef();
-      }
+      const reference = await reserveReference(db, { prefix: 'LJ', kind: 'news', ownerUid: uid, randomBytes });
       const ref = db.collection('newsTips').doc();
       await ref.set({ ...parsed.value, reference, status: 'submitted', authorId: uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
       return res.status(201).json({ ok: true, reference });

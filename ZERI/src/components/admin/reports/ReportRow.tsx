@@ -6,6 +6,7 @@ import type { Report } from '../../../types';
 import { statusMeta, TONE_CLASSES } from '../../../lib/reportStatus';
 import { dueInfo } from '../../../lib/reportQueue';
 import { AgeText } from '../dashboard/DashboardParts';
+import { trackingIdOf } from "../../../lib/trackingId";
 import { RowMenu, type RowMenuItem } from './RowMenu';
 
 /**
@@ -52,7 +53,7 @@ export function ReportRow({
 }: ReportRowProps) {
   const meta = statusMeta(report.status);
   const due = dueInfo(dueAt, report.status, now);
-  const code = report.trackingId || `ZQ-${report.id.substring(0, 8).toUpperCase()}`;
+  const code = trackingIdOf(report);
   const municipality = report.location?.municipality;
   const isUrgent = report.urgency === 'Kritike' || report.urgency === 'E lartë';
 

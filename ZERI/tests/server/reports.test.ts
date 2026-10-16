@@ -69,7 +69,7 @@ describe('parseReportInput', () => {
     expect(parsed({ topicCategory: 'x'.repeat(41) }).topicCategory).toBe('');
   });
 
-  it('keeps only https media, at most six, and never emits an undefined path', () => {
+  it('keeps only https media, at most thirteen (10 photos + 3 videos), and never emits an undefined path', () => {
     const report = parsed({
       media: [
         { type: 'image', url: 'https://ok.example/1.jpg' },
@@ -85,8 +85,8 @@ describe('parseReportInput', () => {
     expect(report.media[1].path).toBe('reports/u/r/2.mp4');
     expect(report.media[1].type).toBe('video');
 
-    const many = parsed({ media: Array.from({ length: 10 }, (_, i) => ({ url: `https://x.example/${i}.jpg` })) });
-    expect(many.media.length).toBe(6);
+    const many = parsed({ media: Array.from({ length: 20 }, (_, i) => ({ url: `https://x.example/${i}.jpg` })) });
+    expect(many.media.length).toBe(13);
   });
 
   it('masks the name of an anonymous report whatever the client sent', () => {
@@ -185,5 +185,13 @@ describe('generateTrackingId', () => {
 
   it('is unique for different random parts', () => {
     expect(generateTrackingId(1, 'aaaa')).not.toBe(generateTrackingId(1, 'bbbb'));
+  });
+});
+
+describe('clientReportId', () => {
+  it('keeps a well-formed Firestore auto id and drops anything else', () => {
+    expect(parsed({ clientReportId: 'aB3dE5gH7jK9mN1pQ3sT' }).clientReportId).toBe('aB3dE5gH7jK9mN1pQ3sT');
+    expect(parsed({ clientReportId: '../../x' }).clientReportId).toBe('');
+    expect(parsed({}).clientReportId).toBe('');
   });
 });

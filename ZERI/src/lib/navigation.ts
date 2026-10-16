@@ -81,7 +81,6 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     label: 'Komuniteti',
     icon: MessageSquare,
     items: [
-      { label: 'Debati Publik', href: '/forum', icon: MessageSquare, hint: 'Bisedo me qytetarët' },
       { label: 'Projektet Qytetare', href: '/projektet', icon: Briefcase, hint: 'Nisma dhe projekte komunitare' },
     ],
   },

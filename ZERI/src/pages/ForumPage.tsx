@@ -43,6 +43,8 @@ import { PostOwnerMenu } from '../components/forum/PostOwnerMenu';
 import { LoadMore } from '../components/forum/LoadMore';
 import { fetchPeople, followApi, unfollowApi } from '../lib/forumPeopleApi';
 import { useForumFeed } from '../lib/useForumFeed';
+import { postDateLabel } from '../lib/postDate';
+import { buildForumPost } from '../lib/forumPostPayload';
 import { reelIdFromSearch } from '../lib/reelsApi';
 import { PostEditSheet } from '../components/forum/PostEditSheet';
 import { SponsoredPostBar } from '../components/forum/SponsoredPostBar';
@@ -641,12 +643,12 @@ export default function ForumPage() {
    */
   const [sharingPost, setSharingPost] = useState<Post | null>(null);
   const [activeTab, setActiveTab] = useState<'feed' | 'profile' | 'explore' | 'notifications'>('feed');
+  const [reelsOpen, setReelsOpen] = useState(false);
   // The mobile tab is derived from what is on screen, so it can never disagree with it.
-  const activeMobileNav: 'home' | 'explore' | 'notifications' | 'messages' | 'profile' =
-    isDMModalOpen ? 'messages' : activeTab === 'explore' ? 'explore' : activeTab === 'notifications' ? 'notifications' : activeTab === 'profile' ? 'profile' : 'home';
+  const activeMobileNav: 'home' | 'explore' | 'reels' | 'notifications' | 'messages' | 'profile' =
+    isDMModalOpen ? 'messages' : reelsOpen ? 'reels' : activeTab === 'explore' ? 'explore' : activeTab === 'notifications' ? 'notifications' : activeTab === 'profile' ? 'profile' : 'home';
   const [composeOpen, setComposeOpen] = useState(false);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
-  const [reelsOpen, setReelsOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
   // Editing and the author's own deleted posts (restorable for 30 days).
   const [editingPost, setEditingPost] = useState<{ id: string; content: string } | null>(null);
@@ -853,35 +855,10 @@ export default function ForumPage() {
         }
       }
 
-      const created = await addDoc(collection(db, 'forumPosts'), {
-        isHidden: false,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        authorAvatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=0D8ABC&color=fff`,
-        authorRole: currentUser.role,
-        authorBadge: currentUser.points > 100 ? 'Përfaqësues Lagjeje' : 'Qytetar i Verifikuar',
-        content: newPostContent,
-        hashtags: extractHashtags(newPostContent).slice(0, 10),
-        category: selectedCategory,
-        neighborhood: selectedNeighborhood,
-        poll: pollData,
-        imageUrl,
-        imageUrls,
-        /*
-         * Post visibility. `followersOnly` hides the post from anyone who does
-         * not follow the author — the rule the feed and profile enforce at read
-         * time, not a hard Firestore filter (the collection stays readable by
-         * the rules for track-id style lookups; enforcement is client-side
-         * like every other social surface here).
-         */
-        visibility: followersOnly ? 'followers' : 'public',
-        isAd: isAdsAdmin && isAdPost,
-        adLink: isAdsAdmin && isAdPost ? adLink : null,
-        likes: [],
-        comments: [],
-        reactions: {},
-        createdAt: serverTimestamp()
-      });
+      const created = await addDoc(collection(db, 'forumPosts'), buildForumPost({
+        author: currentUser, content: newPostContent, category: selectedCategory, neighborhood: selectedNeighborhood,
+        poll: pollData, imageUrls, followersOnly, asAd: isAdsAdmin && isAdPost, adLink,
+      }));
       void notifyPublishedApi(created.id, resolveMentionUids(newPostContent));
       setComposeOpen(false);
 
@@ -1417,10 +1394,10 @@ export default function ForumPage() {
                    active: activeTab === 'feed' && feedTab === 'forYou',
                    onClick: () => { setActiveTab('feed'); setFeedTab('forYou'); },
                  },
-                 {
+                 ...(showReels ? [] : [{
                    key: 'explore', label: 'Eksploro', icon: Search, active: activeTab === 'explore',
                    onClick: () => setActiveTab('explore'),
-                 },
+                 }]),
                  ...(showReels ? [{
                    key: 'reels', label: 'Reels', icon: Film, active: reelsOpen,
                    onClick: () => openReels(),
@@ -1894,7 +1871,7 @@ export default function ForumPage() {
                       </span>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                      {new Date(post.createdAt).toLocaleDateString('sq-AL', { month: 'short', day: 'numeric' })}
+                      {postDateLabel(post.createdAt)}
                     </span>
                   </div>
 
@@ -2465,7 +2442,9 @@ export default function ForumPage() {
       >
         {([
           { id: 'home', label: 'Ballina', icon: Home, onClick: () => { setActiveTab('feed'); setFeedTab('forYou'); setIsDMModalOpen(false); document.querySelector('.forum-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }); } },
-          { id: 'explore', label: 'Eksploro', icon: Search, onClick: () => setActiveTab('explore') },
+          showReels
+            ? { id: 'reels', label: 'Reels', icon: Film, onClick: () => { setIsDMModalOpen(false); openReels(); } }
+            : { id: 'explore', label: 'Eksploro', icon: Search, onClick: () => setActiveTab('explore') },
         ] as const).map(({ id, label, icon: Icon, onClick }) => (
           <button key={id} type="button" onClick={onClick} aria-label={dt(label)} aria-current={activeMobileNav === id ? 'page' : undefined}
             className={`flex min-h-12 items-center justify-center rounded-xl transition-colors ${activeMobileNav === id ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>

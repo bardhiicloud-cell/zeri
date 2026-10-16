@@ -6,6 +6,7 @@ import type { Report } from '../../types';
 import { cn } from '../../lib/utils';
 import { getReportTopic } from '../../lib/reportTopics';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../../lib/reportStatus';
+import { trackingIdOf } from '../../lib/trackingId';
 
 interface RegistryCardProps {
   report: Report;
@@ -14,7 +15,7 @@ interface RegistryCardProps {
   onShare: (event: React.MouseEvent, title: string, id: string) => void;
 }
 
-export const trackingIdOf = (report: Report) => report.trackingId || `ZQ-${report.id.substring(0, 8).toUpperCase()}`;
+export { trackingIdOf };
 
 /** The first photo or video of a report, whichever field it lives in. */
 export function reportCover(report: Report): { url: string; type: 'image' | 'video' } | null {

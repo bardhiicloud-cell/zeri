@@ -20,7 +20,7 @@ import { Badge } from '../components/ui/Badge';
 import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constants';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
-import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, formatBytes } from '../lib/firebase';
+import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -283,8 +283,6 @@ export default function ReportIssue() {
   const isBanned = bannedIPs.includes(currentIP);
 
   const addReport = useStore(state => state.addReport);
-  const upvoteReport = useStore(state => state.upvoteReport);
-  const reports = useStore(state => state.reports);
   const currentUser = useStore(state => state.currentUser);
   const addPoints = useStore(state => state.addPoints);
   const categories = useStore(state => state.categories);
@@ -545,31 +543,59 @@ export default function ReportIssue() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach((file: File) => {
-        // Matches the deployed Storage rules for reports/, which cap every
-        // object at 10 MB. Accepting more here only produced a failed upload.
-        if (file.size > MAX_UPLOAD_BYTES.reports) {
-          toast.error(
-            dt(`Fajlli "${file.name}" është ${(file.size / 1024 / 1024).toFixed(1)}MB. Kufiri për çdo foto ose video është ${formatBytes(MAX_UPLOAD_BYTES.reports)}.`)
-          );
-          return;
-        }
-        const mime = file.type || '';
-        const type: 'image' | 'video' | 'audio' | 'document' =
-          mime.startsWith('video/') ? 'video'
-          : mime.startsWith('audio/') ? 'audio'
-          : mime.startsWith('image/') ? 'image'
-          : 'document';
-        const url = type === 'image' || type === 'video' ? URL.createObjectURL(file) : '';
-        setMediaItems(prev => [...prev, { file, url, type }].slice(0, 12));
-        setMediaError(false);
-      });
-    }
+  /** Length of a video in seconds, read from its metadata; null when the browser cannot read it. */
+  const videoSeconds = (url: string) => new Promise<number | null>((resolve) => {
+    const probe = document.createElement('video');
+    const done = (value: number | null) => { probe.removeAttribute('src'); probe.load(); resolve(value); };
+    probe.preload = 'metadata';
+    probe.onloadedmetadata = () => done(Number.isFinite(probe.duration) ? probe.duration : null);
+    probe.onerror = () => done(null);
+    setTimeout(() => done(null), 5000);
+    probe.src = url;
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     // Allow re-selecting the same file after a validation error.
     e.target.value = '';
+    const limits = REPORT_MEDIA_LIMITS;
+    let images = mediaItems.filter(m => m.type === 'image').length;
+    let videos = mediaItems.filter(m => m.type === 'video').length;
+    for (const file of files) {
+      const mime = file.type || '';
+      const type: 'image' | 'video' | 'audio' | 'document' =
+        mime.startsWith('video/') ? 'video'
+        : mime.startsWith('audio/') ? 'audio'
+        : mime.startsWith('image/') ? 'image'
+        : 'document';
+      if (type === 'image' && images >= limits.images) {
+        toast.error(dt(`Maksimumi është ${limits.images} foto.`));
+        continue;
+      }
+      if (type === 'video' && videos >= limits.videos) {
+        toast.error(dt(`Maksimumi është ${limits.videos} video.`));
+        continue;
+      }
+      const cap = type === 'video' ? MAX_REPORT_VIDEO_BYTES : MAX_UPLOAD_BYTES.reports;
+      if (file.size > cap) {
+        toast.error(dt(`Fajlli "${file.name}" është ${(file.size / 1024 / 1024).toFixed(1)}MB. Kufiri është ${formatBytes(cap)}.`));
+        continue;
+      }
+      const url = type === 'image' || type === 'video' ? URL.createObjectURL(file) : '';
+      if (type === 'video') {
+        const seconds = await videoSeconds(url);
+        if (seconds !== null && seconds > limits.videoSeconds + 0.5) {
+          URL.revokeObjectURL(url);
+          toast.error(dt(`Videoja "${file.name}" zgjat ${Math.round(seconds)} sekonda. Maksimumi është ${limits.videoSeconds} sekonda.`));
+          continue;
+        }
+        videos++;
+      } else if (type === 'image') {
+        images++;
+      }
+      setMediaItems(prev => [...prev, { file, url, type }].slice(0, 16));
+      setMediaError(false);
+    }
   };
 
   const removeMedia = (index: number) => {
@@ -631,65 +657,10 @@ export default function ReportIssue() {
       // The report id is generated up front so media lands under
       // reports/{uid}/{reportId}/... which the Storage rules accept.
       const reportRef = doc(collection(db, 'reports'));
-      const trackingId = createTrackingId('ZQ', reportRef.id);
 
-      // Check if Forensics found an issue during AI Analyze step earlier
-      if (aiInsights && aiInsights.authenticityScore < 40) {
-        toast.error(dt(`Sistemi Forenzik AI bllokoi raportin: ${aiInsights.forensicsReport}`));
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 2. Anti-Spam / Duplication Geofencing & AI Duplicate Text Merger
-      const getDistanceInM = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * (Math.PI / 180);
-        const dLon = (lon2 - lon1) * (Math.PI / 180);
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                  Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c * 1000;
-      };
-
-      // Find active reports in a 50m radius to send to AI
-      const nearbyReports = reports.filter(r => 
-        r.status !== 'Resolved' && r.status !== 'Rejected' && r.location?.lat && r.location?.lng &&
-        getDistanceInM(coordinates[0], coordinates[1], r.location.lat, r.location.lng) <= 50
-      );
-
-      if (nearbyReports.length > 0) {
-         try {
-           const dupRes = await fetch('/api/detect-duplicate', {
-             method: 'POST',
-             headers: await authHeaders({ 'Content-Type': 'application/json' }),
-             body: JSON.stringify({
-               newReport: { title, description, imageUrl: mediaItems[0]?.url },
-               existingReports: nearbyReports
-             })
-           });
-           const dupData = await dupRes.json();
-           if (dupData.is_duplicate && dupData.duplicate_of_id) {
-              /*
-               * The model only suggests a duplicate. It used to decide on its own:
-               * the citizen's report was thrown away and replaced by a "support"
-               * vote, with no way to say "no, mine is different". Now they choose.
-               */
-              const supportExisting = window.confirm(
-                dt('Duket se ky problem është raportuar tashmë pranë vendndodhjes suaj. Dëshironi ta mbështesni raportimin ekzistues? Shtypni "Anulo" për ta dërguar raportin tuaj gjithsesi.')
-              );
-              if (supportExisting) {
-                upvoteReport(dupData.duplicate_of_id);
-                setIsSubmitting(false);
-                navigate(`/detailed-registry?report=${dupData.duplicate_of_id}`);
-                toast.success(dt(`Faleminderit! E mbështetët raportimin ekzistues.`), { duration: 6000 });
-                return;
-              }
-           }
-         } catch(e) {
-           console.error("Gabim në AI merger", e);
-         }
-      }
+      // No automatic gate: nothing here decides whether a report is accepted. Photos,
+      // videos and text are kept as sent; a person on the admin side reviews the report
+      // (status 'Pending Review') and the citizen gets the Track ID straight away.
 
       // Simulate AI Moderation for Text
       const { validateReportByAI } = await import('../lib/moderation');
@@ -734,7 +705,6 @@ export default function ReportIssue() {
       }
 
       reportData.id = reportRef.id;
-      reportData.trackingId = trackingId;
 
       /**
        * Everything that tells the citizen "your report exists" lives here and is
@@ -764,10 +734,9 @@ export default function ReportIssue() {
 
       const uploadResults = await Promise.allSettled(
         mediaItems.map(async (media) => {
-          const downloadUrl = await uploadFileToStorage(media.file, 'reports', {
-            userId: authorUid,
-            scope: reportRef.id,
-          });
+          // One retry: a flaky mobile link is the usual reason a photo or video fails.
+          const send = () => uploadFileToStorage(media.file, 'reports', { userId: authorUid, scope: reportRef.id });
+          const downloadUrl = await send().catch(() => send());
           return {
             url: downloadUrl,
             type: media.type,
@@ -782,10 +751,15 @@ export default function ReportIssue() {
       if (failedUploads.length > 0) {
         const firstReason = (failedUploads[0] as PromiseRejectedResult).reason;
         const reasonText = firstReason instanceof Error ? firstReason.message : 'Gabim i panjohur gjatë ngarkimit.';
-        toast.error(
-          `${failedUploads.length} nga ${mediaItems.length} dëshmi nuk u ngarkuan dhe raporti do të ruhet pa to. Arsyeja: ${reasonText}`,
-          { duration: 8000 }
+        console.warn('Media upload failed:', reasonText);
+        // Never drop the citizen's evidence silently: they choose to send without it or retry.
+        const sendWithout = window.confirm(
+          dt(`${failedUploads.length} nga ${mediaItems.length} foto/video nuk u ngarkuan (${reasonText}). Shtypni "OK" për ta dërguar raportin pa to, ose "Anulo" për të provuar përsëri (të dhënat ruhen).`)
         );
+        if (!sendWithout) {
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       reportData.images = uploadedMedia.filter(m => m.type === 'image').map(m => m.url);
@@ -818,7 +792,8 @@ export default function ReportIssue() {
               media: reportData.media,
               isAnonymous: reportData.isAnonymous === true,
               authorName: reportData.authorName ?? '',
-              trackingId: reportData.trackingId,
+              // The server mints the Track ID; the report id only makes a retry idempotent.
+              clientReportId: reportRef.id,
               aiCategoryScore: reportData.aiCategoryScore,
               aiRoutingReason: reportData.aiRoutingReason,
               aiForensicsReport: reportData.aiForensicsReport,
@@ -827,7 +802,7 @@ export default function ReportIssue() {
 
           if (response.ok) {
             const created = await response.json();
-            const serverTrackingId = created.trackingId || reportData.trackingId;
+            const serverTrackingId = created.trackingId;
             reportData.trackingId = serverTrackingId;
             reportData.id = created.id;
 
@@ -854,6 +829,8 @@ export default function ReportIssue() {
       }
 
       try {
+        // Server unreachable: the only case the browser has to mint an id itself.
+        reportData.trackingId = createTrackingId('ZQ', reportRef.id);
         await setDoc(reportRef, {
           ...reportData,
           createdAt: serverTimestamp() // native firebase timestamp
@@ -931,7 +908,8 @@ export default function ReportIssue() {
                    <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900" />
                  </div>
                  <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
-                 <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, PDF, DOC, MP3 · deri në 12 skedarë · max ${formatBytes(MAX_UPLOAD_BYTES.reports)} secili`)}</span>
+                 <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
+                 <span className="text-[10px] md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
                  <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                </div>
 

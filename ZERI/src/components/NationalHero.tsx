@@ -1,6 +1,7 @@
 import { PenSquare, FileText, Users, Building2, Heart } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { BrandMark } from '@/src/components/BrandLogo';
+import { HeroScene } from '@/src/components/HeroScenes';
 
 const CHIPS = [
   { icon: Users, label: 'Qytetarët raportojnë', tone: 'text-blue-600 bg-blue-500/15 dark:text-blue-300' },
@@ -10,7 +11,7 @@ const CHIPS = [
 
 /**
  * Hero shown on Ballina when the scope is "Gjithë Kosova".
- * Day and night draw the same skyline (public/skyline-day.svg, skyline-night.svg), so both read as one scene.
+ * Day and night are both illustrated SVG scenes (HeroScenes.tsx).
  */
 export function NationalHero({ onReport, onViewReports }: { onReport: () => void; onViewReports: () => void }) {
   return (
@@ -19,21 +20,15 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
       className="relative isolate w-full overflow-hidden rounded-[28px] border border-sky-200/70 dark:border-white/10 shadow-[0_20px_60px_-30px_rgba(30,64,175,0.45)] dark:shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)]"
     >
       {/* ── Day scene ── */}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 dark:hidden bg-[linear-gradient(180deg,#e6f2ff_0%,#cfe5ff_55%,#f3f9ff_100%)]">
-        <div className="absolute -right-10 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(255,236,179,0.95)_0%,rgba(255,236,179,0.35)_45%,transparent_70%)]" />
-        <div className="absolute left-[8%] top-10 h-6 w-40 rounded-full bg-white/70 blur-md" />
-        <div className="absolute left-[38%] top-20 h-5 w-52 rounded-full bg-white/60 blur-md" />
-        <div className="absolute right-[22%] top-12 h-5 w-36 rounded-full bg-white/60 blur-md" />
-        <img src="/skyline-day.svg" alt="" className="absolute inset-x-0 bottom-0 h-[68%] w-full object-cover object-bottom" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.88)_0%,rgba(255,255,255,0.55)_42%,transparent_72%)]" />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 dark:hidden">
+        <HeroScene variant="day" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.75)_60%,transparent_92%)] sm:bg-[linear-gradient(90deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.72)_34%,transparent_52%)]" />
       </div>
 
-      {/* ── Night scene: the same skyline as the day scene, drawn in a night palette ── */}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 hidden dark:block bg-[linear-gradient(180deg,#030814_0%,#0a1a3a_62%,#16386b_100%)]">
-        <div className="absolute right-[26%] top-6 hidden h-14 w-14 sm:block rounded-full bg-[radial-gradient(circle,#fff6d6_0%,#fff6d6_35%,rgba(255,246,214,0.25)_60%,transparent_72%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[radial-gradient(ellipse_at_58%_100%,rgba(250,190,90,0.16),transparent_65%)]" />
-        <img src="/skyline-night.svg" alt="" className="absolute inset-x-0 bottom-0 h-[68%] w-full object-cover object-bottom" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,8,20,0.9)_0%,rgba(3,8,20,0.6)_40%,transparent_72%)]" />
+      {/* ── Night scene ── */}
+      <div aria-hidden="true" className="absolute inset-0 -z-10 hidden dark:block">
+        <HeroScene variant="night" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.88)_0%,rgba(2,6,23,0.7)_60%,transparent_92%)] sm:bg-[linear-gradient(90deg,rgba(2,6,23,0.88)_0%,rgba(2,6,23,0.66)_34%,transparent_54%)]" />
       </div>
 
       <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between lg:p-9">
@@ -44,9 +39,9 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
           </span>
 
           <div className="mt-4 flex items-center gap-4 sm:gap-5">
-            <BrandMark className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 drop-shadow-[0_6px_18px_rgba(14,116,244,0.35)] dark:drop-shadow-[0_0_26px_rgba(34,211,238,0.5)]" />
+            <BrandMark className="h-14 w-14 sm:h-20 sm:w-20 lg:h-24 lg:w-24 drop-shadow-[0_6px_18px_rgba(14,116,244,0.35)] dark:drop-shadow-[0_0_26px_rgba(34,211,238,0.5)]" />
             <div className="min-w-0">
-              <h1 id="national-hero-title" className="text-3xl font-black leading-[0.95] tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-[3.4rem]">
+              <h1 id="national-hero-title" className="text-[1.7rem] font-black leading-[0.95] tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-[3.4rem]">
                 Zëri <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent dark:from-cyan-300 dark:to-blue-400">Qytetarëve</span>
               </h1>
               <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.32em] text-sky-700 dark:text-cyan-300 sm:text-xs">

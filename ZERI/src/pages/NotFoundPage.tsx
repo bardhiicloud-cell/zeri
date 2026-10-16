@@ -18,7 +18,7 @@ export default function NotFoundPage() {
     { to: '/', label: 'Ballina', icon: Home, hint: 'Numrat e ditës dhe aktiviteti' },
     { to: '/raporto', label: 'Raporto një problem', icon: FileText, hint: 'Njofti institucionin përgjegjës' },
     { to: '/harta', label: 'Harta e raporteve', icon: MapPin, hint: 'Shiko çfarë po ndodh rreth teje' },
-    { to: '/forum', label: 'Debati Publik', icon: MessageSquare, hint: 'Bisedo me qytetarët' },
+    { to: '/trackid', label: 'Gjej raportin tim', icon: MessageSquare, hint: 'Ndiq rastin me Track ID' },
   ];
 
   return (

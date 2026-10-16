@@ -71,7 +71,7 @@ const ARTICLES: Article[] = [
   {
     id: 'media', category: 'Foto dhe skedarë', title: 'Si i shtoj foto ose video?', icon: Camera,
     steps: [
-      `Te forma e raportit përdorni kutinë e ngarkimit. Mund të shtoni deri në 12 skedarë.`,
+      `Te forma e raportit përdorni kutinë e ngarkimit. Mund të shtoni deri në 10 foto dhe 3 video (secila deri në 30 sekonda).`,
       `Çdo foto ose video mund të jetë deri në ${reportLimit}.`,
       'Formate: foto, video, audio, PDF, DOC/DOCX dhe TXT.',
       'Një skedar shfaqet si i ngarkuar vetëm pasi ngarkimi të ketë përfunduar; nëse dështon, hiqeni dhe provoni përsëri.',
@@ -93,13 +93,12 @@ const ARTICLES: Article[] = [
     link: { to: '/sherbimet', label: 'Hap shërbimet' },
   },
   {
-    id: 'forum', category: 'Shërbime dhe komuniteti', title: 'Si marr pjesë në komunitet dhe sondazhe?', icon: MessagesSquare,
+    id: 'forum', category: 'Shërbime dhe komuniteti', title: 'Si marr pjesë në sondazhe dhe ide?', icon: MessagesSquare,
     steps: [
-      'Hyni në llogari, pastaj hapni “Komuniteti” për të parë dhe shkruar postime.',
       'Sondazhet publike hapen te “Sondazhet”.',
       'Ideja për përmirësimin e platformës dërgohet te “Laboratori i ideve” (nuk është raport zyrtar).',
     ],
-    link: { to: '/forum', label: 'Hap komunitetin' },
+    link: { to: '/sondazhet', label: 'Hap sondazhet' },
   },
   {
     id: 'health', category: 'Shërbime dhe komuniteti', title: 'Regjistri shëndetësor: kush i shikon të dhënat?', icon: HeartPulse,
