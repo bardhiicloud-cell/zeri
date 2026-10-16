@@ -55,6 +55,8 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm run test:rules
+      # Needs the Auth emulator too (staff accounts sign in), so it has its own emulator run.
+      - run: npm run test:workflow
 
   secrets:
     name: Secret scan

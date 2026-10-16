@@ -74,7 +74,8 @@ describe('accepting', () => {
     expect(['ana', 'blerim', 'cena']).toContain(after.assignedTo);
     expect(after.messages.at(-1).content).toContain('e pranoi bisedën');
     expect(await events()).toEqual(['accept']);
-  });
+    // Three contending transactions retry with backoff; on a shared CI runner that outlasts the 5 s default.
+  }, 30_000);
 
   it('after accepting, only that agent may write; the others are told it does not exist', async () => {
     await post('ana', 'c1/accept');
