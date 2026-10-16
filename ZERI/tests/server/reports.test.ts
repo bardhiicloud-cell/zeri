@@ -85,8 +85,8 @@ describe('parseReportInput', () => {
     expect(report.media[1].path).toBe('reports/u/r/2.mp4');
     expect(report.media[1].type).toBe('video');
 
-    const many = parsed({ media: Array.from({ length: 10 }, (_, i) => ({ url: `https://x.example/${i}.jpg` })) });
-    expect(many.media.length).toBe(6);
+    const many = parsed({ media: Array.from({ length: 20 }, (_, i) => ({ url: `https://x.example/${i}.jpg` })) });
+    expect(many.media.length).toBe(13);
   });
 
   it('masks the name of an anonymous report whatever the client sent', () => {
