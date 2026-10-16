@@ -92,7 +92,7 @@ export function parseReportInput(body: unknown): ParseResult {
 
   // Media URLs are Storage download URLs - accept only https.
   type RawMedia = { type?: unknown; url?: unknown; path?: unknown };
-  const media: ReportMedia[] = (Array.isArray(input.media) ? (input.media as RawMedia[]).slice(0, 6) : [])
+  const media: ReportMedia[] = (Array.isArray(input.media) ? (input.media as RawMedia[]).slice(0, 13) : [])
     .filter((item) => item && typeof item.url === 'string' && item.url.startsWith('https://'))
     .map((item) => ({
       type: item.type === 'video' ? ('video' as const) : ('image' as const),

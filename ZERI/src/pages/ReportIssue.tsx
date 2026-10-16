@@ -20,7 +20,7 @@ import { Badge } from '../components/ui/Badge';
 import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constants';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
-import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, formatBytes } from '../lib/firebase';
+import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -543,31 +543,59 @@ export default function ReportIssue() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach((file: File) => {
-        // Matches the deployed Storage rules for reports/, which cap every
-        // object at 10 MB. Accepting more here only produced a failed upload.
-        if (file.size > MAX_UPLOAD_BYTES.reports) {
-          toast.error(
-            dt(`Fajlli "${file.name}" është ${(file.size / 1024 / 1024).toFixed(1)}MB. Kufiri për çdo foto ose video është ${formatBytes(MAX_UPLOAD_BYTES.reports)}.`)
-          );
-          return;
-        }
-        const mime = file.type || '';
-        const type: 'image' | 'video' | 'audio' | 'document' =
-          mime.startsWith('video/') ? 'video'
-          : mime.startsWith('audio/') ? 'audio'
-          : mime.startsWith('image/') ? 'image'
-          : 'document';
-        const url = type === 'image' || type === 'video' ? URL.createObjectURL(file) : '';
-        setMediaItems(prev => [...prev, { file, url, type }].slice(0, 12));
-        setMediaError(false);
-      });
-    }
+  /** Length of a video in seconds, read from its metadata; null when the browser cannot read it. */
+  const videoSeconds = (url: string) => new Promise<number | null>((resolve) => {
+    const probe = document.createElement('video');
+    const done = (value: number | null) => { probe.removeAttribute('src'); probe.load(); resolve(value); };
+    probe.preload = 'metadata';
+    probe.onloadedmetadata = () => done(Number.isFinite(probe.duration) ? probe.duration : null);
+    probe.onerror = () => done(null);
+    setTimeout(() => done(null), 5000);
+    probe.src = url;
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     // Allow re-selecting the same file after a validation error.
     e.target.value = '';
+    const limits = REPORT_MEDIA_LIMITS;
+    let images = mediaItems.filter(m => m.type === 'image').length;
+    let videos = mediaItems.filter(m => m.type === 'video').length;
+    for (const file of files) {
+      const mime = file.type || '';
+      const type: 'image' | 'video' | 'audio' | 'document' =
+        mime.startsWith('video/') ? 'video'
+        : mime.startsWith('audio/') ? 'audio'
+        : mime.startsWith('image/') ? 'image'
+        : 'document';
+      if (type === 'image' && images >= limits.images) {
+        toast.error(dt(`Maksimumi është ${limits.images} foto.`));
+        continue;
+      }
+      if (type === 'video' && videos >= limits.videos) {
+        toast.error(dt(`Maksimumi është ${limits.videos} video.`));
+        continue;
+      }
+      const cap = type === 'video' ? MAX_REPORT_VIDEO_BYTES : MAX_UPLOAD_BYTES.reports;
+      if (file.size > cap) {
+        toast.error(dt(`Fajlli "${file.name}" është ${(file.size / 1024 / 1024).toFixed(1)}MB. Kufiri është ${formatBytes(cap)}.`));
+        continue;
+      }
+      const url = type === 'image' || type === 'video' ? URL.createObjectURL(file) : '';
+      if (type === 'video') {
+        const seconds = await videoSeconds(url);
+        if (seconds !== null && seconds > limits.videoSeconds + 0.5) {
+          URL.revokeObjectURL(url);
+          toast.error(dt(`Videoja "${file.name}" zgjat ${Math.round(seconds)} sekonda. Maksimumi është ${limits.videoSeconds} sekonda.`));
+          continue;
+        }
+        videos++;
+      } else if (type === 'image') {
+        images++;
+      }
+      setMediaItems(prev => [...prev, { file, url, type }].slice(0, 16));
+      setMediaError(false);
+    }
   };
 
   const removeMedia = (index: number) => {
@@ -881,6 +909,7 @@ export default function ReportIssue() {
                  </div>
                  <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
                  <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, PDF, DOC, MP3 · deri në 12 skedarë · max ${formatBytes(MAX_UPLOAD_BYTES.reports)} secili`)}</span>
+                 <span className="text-[10px] md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
                  <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                </div>
 

@@ -69,7 +69,7 @@ describe('parseReportInput', () => {
     expect(parsed({ topicCategory: 'x'.repeat(41) }).topicCategory).toBe('');
   });
 
-  it('keeps only https media, at most six, and never emits an undefined path', () => {
+  it('keeps only https media, at most thirteen (10 photos + 3 videos), and never emits an undefined path', () => {
     const report = parsed({
       media: [
         { type: 'image', url: 'https://ok.example/1.jpg' },

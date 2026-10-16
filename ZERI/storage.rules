@@ -17,7 +17,7 @@ service firebase.storage {
     }
 
     function isVideo() {
-      return request.resource.contentType.matches('video/(mp4|webm)');
+      return request.resource.contentType.matches('video/(mp4|webm|quicktime)');
     }
 
     function isAudio() {
@@ -44,8 +44,9 @@ service firebase.storage {
       // so size/type conditions raise an error and the owner could never remove
       // their own upload. Create/update and delete are therefore separate.
       allow create, update: if isOwner(userId)
-                            && request.resource.size < 15 * 1024 * 1024  // 15 MB max
-                            && (isImage() || isVideo() || isAudio() || isDocument());
+                            && ((isVideo() && request.resource.size < 50 * 1024 * 1024)  // ~30 s of phone video
+                                || (request.resource.size < 15 * 1024 * 1024  // 15 MB max for everything else
+                                    && (isImage() || isAudio() || isDocument())));
       allow delete: if isOwner(userId);
     }
 

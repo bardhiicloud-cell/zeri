@@ -100,7 +100,8 @@ const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif'
 ]);
 const ALLOWED_VIDEO_TYPES = new Set([
-  'video/mp4', 'video/webm'
+  // video/quicktime is what an iPhone records (.mov).
+  'video/mp4', 'video/webm', 'video/quicktime'
 ]);
 /**
  * Documents and audio are accepted as report evidence ("mos humb asnjë
@@ -137,6 +138,11 @@ export const MAX_UPLOAD_BYTES: Record<UploadKind, number> = {
   /** Direct-message images share the health limit: private, small media. */
   forum_dms: 5 * 1024 * 1024,
 };
+
+/** A 30-second phone video is far larger than a photo, so videos get their own cap. */
+export const MAX_REPORT_VIDEO_BYTES = 50 * 1024 * 1024;
+/** Report evidence limits shown to the citizen. */
+export const REPORT_MEDIA_LIMITS = { images: 10, videos: 3, videoSeconds: 30 } as const;
 
 export const formatBytes = (bytes: number): string =>
   `${Math.round(bytes / (1024 * 1024))}MB`;
@@ -240,7 +246,7 @@ export const uploadFileToStorage = async (
     );
   }
 
-  const maxBytes = MAX_UPLOAD_BYTES[kind];
+  const maxBytes = kind === 'reports' && isVideo ? MAX_REPORT_VIDEO_BYTES : MAX_UPLOAD_BYTES[kind];
   if (file.size > maxBytes) {
     throw new Error(`Fajlli "${file.name}" është ${(file.size / 1024 / 1024).toFixed(1)}MB dhe tejkalon kufirin prej ${formatBytes(maxBytes)}.`);
   }
