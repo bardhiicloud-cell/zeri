@@ -5,8 +5,10 @@
 2. In the service's **Environment** tab, set `FIREBASE_SERVICE_ACCOUNT` to the full JSON of a
    service-account key (Firebase Console → Project settings → Service accounts → Generate new
    private key). Save; Render redeploys.
-3. Copy the service URL (`https://zeri-api.onrender.com`) and send it to me. I add the `/api/*`
-   redirect to `netlify.toml` and publish.
+3. Copy the service URL (`https://zeri-api.onrender.com`) and send it to me. Firebase Hosting
+   can only rewrite `/api/*` to a Cloud Run service or a Cloud Function in the same project, not to
+   an outside URL, so a Render backend is called cross-origin (the server's `ALLOWED_ORIGINS`
+   already lists zeriqytetarve.com). Cloud Run (below) is the simpler fit.
 
 Note: on the free plan the server sleeps after inactivity; the first request after a sleep can take ~30 s.
 
@@ -29,16 +31,16 @@ Note: on the free plan the server sleeps after inactivity; the first request aft
    Generate new private key). Then delete the downloaded file.
 3. When the deploy finishes, copy the backend URL App Hosting shows
    (`https://zeri-api--<something>.hosted.app`) and send it to me.
-   I then add the `/api/*` redirect to `netlify.toml`.
+   I then add the `/api/**` rewrite to `firebase.json` (see "Connect Firebase Hosting").
 
 ---
 
-Netlify hosts only the static site. `/api/v1/*` (profile sync after Google sign-in, reports,
+Firebase Hosting serves only the static site. `/api/v1/*` (profile sync after Google sign-in, reports,
 forum, payments, admin) is the Express server in `server.ts`. Until it is deployed, Google
 sign-in ends with "serveri ktheu gabim (404)".
 
 The server runs on **Google Cloud Run** in the same Google project as Firebase
-(`gen-lang-client-0907710011`). Netlify then forwards `/api/*` to it, so the browser still
+(`gen-lang-client-0907710011`). Firebase Hosting then forwards `/api/**` to it, so the browser still
 talks to zeriqytetarve.com only (no CORS surprises).
 
 ## One-time setup (Google Cloud Shell or any machine with `gcloud`)
@@ -72,19 +74,16 @@ Copy the service URL it prints (`https://zeri-api-xxxxx-ew.a.run.app`).
 Add any other variables the server needs from `.env.example` (mail, Paysera, Gemini...) with
 `--set-env-vars` / `--set-secrets`; real secrets go to Secret Manager.
 
-## Connect Netlify
+## Connect Firebase Hosting
 
-In `netlify.toml` (repo root and `ZERI/`), add **above** the `/*` rule:
+In `ZERI/firebase.json`, under `hosting.rewrites`, add this **before** the `**` → `/index.html` rule
+(the service must exist first, or `firebase deploy` refuses the config):
 
 ```
-[[redirects]]
-  from = "/api/*"
-  to = "https://zeri-api-xxxxx-ew.a.run.app/api/:splat"
-  status = 200
-  force = true
+{ "source": "/api/**", "run": { "serviceId": "zeri-api", "region": "europe-west1" } },
 ```
 
-Push to `main`; Netlify redeploys. Then in Firebase Console → Authentication → Settings →
+Push to `main`; the "Deploy to Firebase Hosting" workflow publishes it. Then in Firebase Console → Authentication → Settings →
 Authorized domains, make sure `zeriqytetarve.com` is listed (needed for the Google pop-up).
 
 ## Check
