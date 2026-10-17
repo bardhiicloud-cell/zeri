@@ -94,4 +94,4 @@ Skenariet 1–15 si në spec, në `tests/workflow/` (unit) + `tests/emulator/wor
 
 ## Kufizime të jashtme
 - Vendosja në prodhim (claims, rregulla, backfill mbi DB reale) kërkon konfirmim; backfill është idempotent dhe i kthyeshëm.
-- Netlify (SPA vetëm) nuk mund të strehojë Express+Admin; serveri kërkohet ndryshe (Cloud Run/Functions) — ndryshim arkitekturor që vendoset më vete.
+- Hostimi statik (Firebase Hosting, SPA vetëm) nuk mund të strehojë Express+Admin; serveri kërkohet ndryshe (Cloud Run/Functions) — ndryshim arkitekturor që vendoset më vete.

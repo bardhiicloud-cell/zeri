@@ -3,7 +3,7 @@ import { fetchWithTimeout, isJsonResponse } from './timeouts';
 /**
  * Whether the `/api` server is reachable *and* can read and write Firestore.
  *
- * A static host (Firebase Hosting, Netlify) without the `/api` forward answers
+ * A static host (Firebase Hosting) without the `/api` rewrite answers
  * every path with `index.html`; a server without its service account answers
  * but cannot store anything; a sleeping free-plan server answers after ~30 s.
  * In all three cases the citizen's report and Track ID lookup go straight to

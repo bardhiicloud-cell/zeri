@@ -6,9 +6,8 @@ import { useLocation } from 'react-router-dom';
  *
  * Two things made this unreliable before:
  *
- *  1. `behavior: 'instant'` is not a valid `ScrollBehavior`, so the intent was
- *     ambiguous and TypeScript rejected it. `'auto'` is the correct instant
- *     value; `'smooth'` is the animated one.
+ *  1. The scroll must be instant. `'instant'` is the only value that is: `'auto'`
+ *     defers to the CSS `scroll-behavior`, which is `smooth` on this site.
  *  2. Pages like the Forum and the Map scroll an inner div rather than the
  *     window. Resetting only `window` left the reader halfway down a thread
  *     after following a link, so the query has to cover every scrollable
@@ -18,9 +17,13 @@ export default function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // A route change is a jump, not a gesture, so it must not animate — and a
-    // citizen who asked for reduced motion must never be animated at all.
-    const behavior: ScrollBehavior = 'auto';
+    // A route change is a jump, not a gesture, so it must not animate. 'auto' is
+    // NOT instant: it means "whatever CSS says", and index.css sets
+    // `html { scroll-behavior: smooth }`. So every navigation opened the new page
+    // at the old offset (often the footer) and then slid it up to the top. On
+    // iOS that slide runs while Safari's toolbar grows back, which is when the
+    // fixed bottom dock was seen floating mid-screen. 'instant' ignores the CSS.
+    const behavior: ScrollBehavior = 'instant';
 
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior });

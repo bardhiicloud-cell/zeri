@@ -1,0 +1,66 @@
+name: Deploy to Firebase Hosting
+
+# Builds ZERI/ and publishes it to Firebase Hosting (zeriqytetarve.com), the same as
+#   cd ZERI && vite build && firebase deploy --only hosting --project gen-lang-client-0907710011
+# but from GitHub, so a deploy needs no computer.
+#
+# Runs on every push to main that changes the app, and on demand (Actions → this
+# workflow → Run workflow). Needs one repository secret, FIREBASE_SERVICE_ACCOUNT:
+# the full JSON of a service-account key (Firebase Console → Project settings →
+# Service accounts → Generate new private key). Without it the job stops with a
+# message instead of failing.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ZERI/**'
+      - '.github/workflows/deploy-hosting.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy hosting
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ZERI
+    env:
+      HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - name: Check the deploy key
+        if: env.HAS_KEY != 'true'
+        working-directory: .
+        run: |
+          echo "::warning::FIREBASE_SERVICE_ACCOUNT is not set: nothing was deployed. Add it under Settings → Secrets and variables → Actions."
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ZERI/package-lock.json
+      - if: env.HAS_KEY == 'true'
+        run: npm ci
+      # Full history is not needed: version.json takes the commit from the checkout.
+      - if: env.HAS_KEY == 'true'
+        run: node node_modules/vite/bin/vite.js build
+      - name: Deploy
+        if: env.HAS_KEY == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: gen-lang-client-0907710011
+          entryPoint: ZERI
+          channelId: live
+      - name: Show the deployed version
+        if: env.HAS_KEY == 'true'
+        run: cat dist/version.json

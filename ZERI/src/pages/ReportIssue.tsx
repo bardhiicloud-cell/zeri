@@ -292,6 +292,19 @@ export default function ReportIssue() {
     void apiReady();
   }, []);
 
+  // Each step starts at its top. The "next" and "send" buttons sit at the bottom of a
+  // long form, so the next screen used to appear with the reader left far down it.
+  const topRef = useRef<HTMLDivElement | null>(null);
+  const firstStepRender = useRef(true);
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    topRef.current?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' });
+  }, [step, isSubmitting]);
+
   if (isBanned) {
     return (
       <div className="max-w-md mx-auto my-12 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-indigo-600 rounded-[2rem] p-8 text-center space-y-6 shadow-xl animate-fade-in">
@@ -635,7 +648,16 @@ export default function ReportIssue() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      // The errors print next to their fields, far above this button on a phone:
+      // without this the press looked like it did nothing at all.
+      toast.error(dt('Plotësoni fushat e shënuara më lart.'));
+      window.setTimeout(() => {
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        document.querySelector('[data-field-error]')?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'center' });
+      }, 60);
+      return;
+    }
     if (isSubmitting) return;
     setIsSubmitting(true);
     setSubmitStage(dt('Duke verifikuar sesionin...'));
@@ -899,7 +921,8 @@ export default function ReportIssue() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-4xl mx-auto pt-6 pb-32 md:py-12 px-4 sm:px-6 lg:px-8"
+      ref={topRef}
+      className="max-w-4xl mx-auto pt-6 pb-32 md:py-12 px-4 sm:px-6 lg:px-8 scroll-mt-20"
     >
       
       {/* STEPS INDICATOR */}
@@ -1094,7 +1117,7 @@ export default function ReportIssue() {
                 placeholder={dt(`Psh. Shkatërrimi i infrastrukturës urbane...`)} 
                 className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white placeholder:font-medium placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] text-sm md:text-base", errors.title ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
               />
-              {errors.title && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.title}</p>}
+              {errors.title && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.title}</p>}
             </div>
 
             <div>
@@ -1107,7 +1130,7 @@ export default function ReportIssue() {
                 className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors resize-none font-medium text-[var(--color-text)] dark:text-white placeholder:font-normal placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] font-serif italic text-sm md:text-base", errors.description ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
                 placeholder={dt(`Paraqisni me detaje natyrën e problemit...`)}
               />
-              {errors.description && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.description}</p>}
+              {errors.description && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.description}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 border border-slate-200/60 dark:border-white/10 rounded-xl">
@@ -1133,7 +1156,7 @@ export default function ReportIssue() {
                     <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>
                   ))}
                 </select>
-                {errors.topicCategory && <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-indigo-600"><AlertCircle className="h-3 w-3" />{errors.topicCategory}</p>}
+                {errors.topicCategory && <p data-field-error className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-indigo-600"><AlertCircle className="h-3 w-3" />{errors.topicCategory}</p>}
                 <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
                   {dt('Kjo temë ndihmon kërkimin, hartën dhe statistikat; zgjedhja e institucionit poshtë përcakton adresimin e raportit.')}
                 </p>
@@ -1210,7 +1233,7 @@ export default function ReportIssue() {
                     )}
                   </div>
                 )}
-                {errors.category && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.category}</p>}
+                {errors.category && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.category}</p>}
               </div>
               
               <div>
@@ -1246,7 +1269,7 @@ export default function ReportIssue() {
                   <option key={m} value={m}>{m.toUpperCase()}</option>
                 ))}
               </select>
-              {errors.municipality && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mb-4 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.municipality}</p>}
+              {errors.municipality && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mb-4 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.municipality}</p>}
 
               <div className="flex justify-between items-center mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3 relative">
                   <div>
@@ -1366,7 +1389,7 @@ export default function ReportIssue() {
                        placeholder="..." 
                        className={cn("w-full px-4 md:px-5 py-2.5 md:py-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white text-sm", errors.guestName ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
                      />
-                     {errors.guestName && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestName}</p>}
+                     {errors.guestName && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestName}</p>}
                    </div>
                    <div>
                      <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-2">{dt(`Kontakti`)}</label>
@@ -1378,7 +1401,7 @@ export default function ReportIssue() {
                        placeholder="+383..." 
                        className={cn("w-full px-4 md:px-5 py-2.5 md:py-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white text-sm", errors.guestPhone ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
                      />
-                     {errors.guestPhone && <p className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestPhone}</p>}
+                     {errors.guestPhone && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestPhone}</p>}
                    </div>
                  </div>
               )}

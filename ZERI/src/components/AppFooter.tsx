@@ -20,6 +20,7 @@ const COLUMNS = [
     title: 'Pjesëmarrja',
     links: [
       { to: '/raporto', label: 'Raporto një Problem' },
+      { to: '/raportet-e-mia', label: 'Raportet e Mia' },
       { to: '/sondazhet', label: 'Sondazhet Publike' },
       { to: '/Idea', label: 'Idetë Qytetare' },
       { to: '/donacion', label: 'Ndihma & Donacione' },

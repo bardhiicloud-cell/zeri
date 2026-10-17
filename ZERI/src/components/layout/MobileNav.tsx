@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, PlusCircle, Menu, X, ShieldAlert, UserRound,
   LogOut, Search, ChevronRight, ChevronDown, Sun, Moon, MapPin, Building2,
-  Plus, Check, Compass, Lightbulb, Vote, Wallet, Sparkles, LogIn, Handshake, Newspaper, Globe,
+  Plus, Check, Compass, Lightbulb, Vote, Wallet, Sparkles, LogIn, Handshake, Newspaper, Globe, FolderOpen,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
@@ -55,19 +55,21 @@ const TABS = [
 /** The quick-action rail inside the sheet: things a citizen does, not reads. */
 const QUICK_ACTIONS = [
   { href: '/raporto', label: 'Raporto', hint: 'Problem i ri', icon: PlusCircle, tone: 'from-blue-600 to-blue-800' },
-  { href: '/sondazhet', label: 'Voto', hint: 'Sondazhe', icon: Vote, tone: 'from-rose-600 to-pink-700' },
-  { href: '/Idea', label: 'Ide', hint: 'Banka e ideve', icon: Lightbulb, tone: 'from-amber-500 to-orange-600' },
-  { href: '/donacion', label: 'Ndihmo', hint: 'Donacione', icon: Wallet, tone: 'from-emerald-600 to-teal-700' },
+  { href: '/raportet-e-mia', label: 'Të miat', hint: 'Raportet e mia', icon: FolderOpen, tone: 'from-sky-500 to-cyan-700' },
+  { href: '/trackid', label: 'Track ID', hint: 'Ndiq rastin', icon: Search, tone: 'from-emerald-600 to-teal-700' },
+  { href: '/partneret', label: 'Partner', hint: 'Bëhuni partner', icon: Handshake, tone: 'from-amber-500 to-orange-600' },
 ] as const;
 
 /** What the centre "+" offers: everything a citizen can send or look up in one tap. */
 const CREATE_ACTIONS = [
   { id: 'report', label: 'Raporto një problem', hint: 'Dërgo foto dhe vendndodhje te komuna', icon: PlusCircle, tone: 'from-blue-500 to-blue-800', href: '/raporto' },
-  { id: 'track', label: 'Gjej raportin tim', hint: 'Ndiq rastin me Track ID', icon: Search, tone: 'from-sky-500 to-cyan-700', href: '/trackid' },
+  { id: 'mine', label: 'Raportet e mia', hint: 'Gjithçka që keni dërguar, me statusin', icon: FolderOpen, tone: 'from-sky-500 to-cyan-700', href: '/raportet-e-mia' },
+  { id: 'track', label: 'Gjej raportin me Track ID', hint: 'Ndiq rastin nga çdo pajisje', icon: Search, tone: 'from-cyan-500 to-teal-700', href: '/trackid' },
   { id: 'news', label: 'Raporto një lajm', hint: 'Dërgo lajm, foto ose video te redaksia', icon: Newspaper, tone: 'from-emerald-500 to-teal-700', href: '/lajmero' },
   { id: 'idea', label: 'Propozo një ide', hint: 'Banka e ideve për përmirësimin e komunës', icon: Lightbulb, tone: 'from-amber-500 to-orange-600', href: '/Idea' },
   { id: 'poll', label: 'Voto në sondazhe', hint: 'Shpreh mendimin për çështje publike', icon: Vote, tone: 'from-rose-500 to-pink-700', href: '/sondazhet' },
   { id: 'help', label: 'Ndihmë dhe donacione', hint: 'Raste sociale dhe fonde', icon: Wallet, tone: 'from-indigo-500 to-violet-700', href: '/donacion' },
+  { id: 'partner', label: 'Bëhuni partner', hint: 'Partneritet dhe reklamim në platformë', icon: Handshake, tone: 'from-orange-500 to-amber-700', href: '/partneret' },
 ] as const;
 
 /** Municipalities surfaced as one-tap chips before the full 38-name picker. */
@@ -75,7 +77,7 @@ const SCOPE_SHORTCUTS = ['Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 
 
 /** Module groups, mirroring the desktop sidebar's vocabulary. */
 const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
-  { id: 'primary', title: 'Kryesore', hrefs: ['/', '/raporto', '/harta', '/detailed-registry', '/lajme'] },
+  { id: 'primary', title: 'Kryesore', hrefs: ['/', '/raporto', '/raportet-e-mia', '/harta', '/detailed-registry', '/lajme'] },
   { id: 'kosova', title: 'Kosova & Historia', hrefs: ['/kosova', '/kosova/historia', '/kosova/pavaresia', '/historia-e-uck'] },
   { id: 'participate', title: 'Pjesëmarrja qytetare', hrefs: ['/Idea', '/sondazhet', '/projektet'] },
   {
@@ -125,6 +127,24 @@ export function MobileNav() {
     }
     return groups;
   }, []);
+
+  /**
+   * Groups start folded, except "Kryesore" and the group of the page being read:
+   * the sheet used to unfold every module at once, a long list to scroll past
+   * on a phone. One tap opens a group.
+   */
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(['primary']));
+  useEffect(() => {
+    if (!isSheetOpen) return;
+    const current = grouped.find((group) => group.items.some((item) => isNavActive(item.href, location.pathname)));
+    setOpenGroups(new Set(['primary', ...(current ? [current.id] : [])]));
+  }, [isSheetOpen, grouped, location.pathname]);
+  const toggleGroup = (id: string) => setOpenGroups((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
 
   const close = () => {
     setIsSheetOpen(false);
@@ -295,7 +315,8 @@ export function MobileNav() {
               className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
             />
             <div className="absolute inset-x-0 bottom-0 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+5.5rem)]">
-              <ul role="menu" aria-label={dt('Krijo')} className="mx-auto flex max-w-md flex-col gap-2.5">
+              {/* Eight actions: on a short phone the list scrolls instead of running off the top. */}
+              <ul role="menu" aria-label={dt('Krijo')} className="mx-auto flex max-h-[calc(100dvh-9rem)] max-w-md flex-col gap-2 overflow-y-auto overscroll-contain">
                 {CREATE_ACTIONS.map((action, index) => (
                   <motion.li
                     key={action.id}
@@ -308,9 +329,9 @@ export function MobileNav() {
                       type="button"
                       role="menuitem"
                       onClick={() => startCreate(action.href)}
-                      className="group flex w-full items-center gap-3.5 rounded-2xl border border-white/60 bg-white/92 p-3 text-left shadow-[0_16px_40px_-18px_rgba(15,23,42,0.55)] backdrop-blur-xl transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-slate-900/90"
+                      className="group flex w-full items-center gap-3 rounded-2xl border border-white/60 bg-white/92 p-2.5 text-left shadow-[0_16px_40px_-18px_rgba(15,23,42,0.55)] backdrop-blur-xl transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-slate-900/90"
                     >
-                      <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br text-white shadow-sm', action.tone)}>
+                      <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br text-white shadow-sm', action.tone)}>
                         <action.icon className="h-5 w-5" aria-hidden="true" />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -643,12 +664,25 @@ export function MobileNav() {
 
                 {/* Grouped module list, under the same headings the desktop sidebar uses. */}
                 <div className="space-y-4">
-                  {grouped.map((group) => (
+                  {grouped.map((group) => {
+                    const open = openGroups.has(group.id);
+                    return (
                     <section key={group.id}>
-                      <h3 className="mb-1.5 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-                        {dt(group.title)}
+                      <h3 className="mb-1.5">
+                        <button
+                          type="button"
+                          aria-expanded={open}
+                          aria-controls={`mobile-group-${group.id}`}
+                          onClick={() => toggleGroup(group.id)}
+                          className="flex min-h-10 w-full items-center gap-2 rounded-xl px-1 text-left text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <span className="flex-1">{dt(group.title)}</span>
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{group.items.length}</span>
+                          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} aria-hidden="true" />
+                        </button>
                       </h3>
-                      <ul className="space-y-0.5">
+                      {open && (
+                      <ul id={`mobile-group-${group.id}`} className="space-y-0.5">
                         {group.items.map((item) => {
                           const active = isActive(item.href);
                           return (
@@ -686,8 +720,10 @@ export function MobileNav() {
                           );
                         })}
                       </ul>
+                      )}
                     </section>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {canAccessAdmin(currentUser) && (

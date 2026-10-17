@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileSearch, HelpCircle, Map, PenSquare, Phone } from 'lucide-react';
+import { ArrowUpRight, FileSearch, FolderOpen, HelpCircle, Map, PenSquare, Phone } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
@@ -23,6 +23,15 @@ const QUICK_ACCESS_CARDS: QuickAccessCard[] = [
     icon: PenSquare,
     iconClassName: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
     accentClassName: 'from-blue-500/0 via-blue-500/10 to-blue-500/0',
+  },
+  {
+    to: '/raportet-e-mia',
+    title: 'Raportet e mia',
+    description: 'Të gjitha raportimet që keni dërguar, me statusin e secilit.',
+    action: 'Shiko raportet e mia',
+    icon: FolderOpen,
+    iconClassName: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+    accentClassName: 'from-sky-500/0 via-sky-500/10 to-sky-500/0',
   },
   {
     to: '/trackid',
@@ -80,7 +89,7 @@ export function QuickAccessGrid() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {QUICK_ACCESS_CARDS.map((card) => (
           <Link
             key={card.to}

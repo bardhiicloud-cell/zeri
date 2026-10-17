@@ -20,6 +20,7 @@ import CookieConsentBanner, { CookiePreferencesButton } from './components/Cooki
 const Dashboard = React.lazy(() => import('./pages/Dashboard.tsx'));
 const DetailedRegistryPage = React.lazy(() => import('./pages/DetailedRegistryPage.tsx'));
 const TrackIdPage = React.lazy(() => import('./pages/TrackIdPage'));
+const MyReportsPage = React.lazy(() => import('./pages/MyReportsPage'));
 const LajmeroPage = React.lazy(() => import('./pages/LajmeroPage'));
 const MyModerationPage = React.lazy(() => import('./pages/MyModerationPage'));
 const VerificationRequestPage = React.lazy(() => import('./pages/VerificationRequestPage'));
@@ -169,6 +170,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/politika-e-cookies': 'Politika e Privatësisë',
   '/donacion': 'Ndihma & Donacione',
   '/partneret': 'Partnerët & Reklama',
+  '/raportet-e-mia': 'Raportet e mia',
   '/kosova': 'Kosova — një popull, një histori, një e ardhme',
   '/historia-e-uck': 'Historia e UÇK-së',
   '/login': 'Hyrja',
@@ -870,6 +872,7 @@ export default function App() {
               <Route path="/forum" element={<Navigate to="/" replace />} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="/trackid" element={<TrackIdPage />} />
+              <Route path="/raportet-e-mia" element={<MyReportsPage />} />
               <Route path="/lajmero" element={<LajmeroPage />} />
               <Route path="/moderimi-im" element={<MyModerationPage />} />
               <Route path="/verifikimi" element={<VerificationRequestPage />} />
@@ -926,6 +929,7 @@ export default function App() {
               <Route path="forum" element={<Navigate to="/" replace />} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
               <Route path="trackid" element={<TrackIdPage />} />
+              <Route path="raportet-e-mia" element={<MyReportsPage />} />
               <Route path="lajmero" element={<LajmeroPage />} />
               <Route path="moderimi-im" element={<MyModerationPage />} />
               <Route path="verifikimi" element={<VerificationRequestPage />} />

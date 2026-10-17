@@ -83,7 +83,9 @@ const call = async (as: string | null, method: string, path: string, body?: unkn
   return { status: res.status, body: (await res.json().catch(() => ({}))) as Record<string, unknown> & { items?: Array<Record<string, unknown>> } };
 };
 const assign = (as: string, body: Record<string, unknown>) => call(as, 'POST', '/api/v1/reports/r1/assign', body);
-const history = async () => (await db.collection('reports').doc('r1').collection('assignmentHistory').get()).docs.map(d => d.data());
+// In time order: without orderBy Firestore returns documents by their random ids, so the
+// order assertions below passed or failed by chance.
+const history = async () => (await db.collection('reports').doc('r1').collection('assignmentHistory').orderBy('at').get()).docs.map(d => d.data());
 const inbox = async (uid: string) => (await db.collection('notifications').where('userId', '==', uid).get()).docs.map(d => d.data());
 
 describe('releaseHeldReports (an account was removed)', () => {
