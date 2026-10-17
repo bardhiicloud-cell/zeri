@@ -3,7 +3,7 @@ import {
   MapPin, Newspaper, Lightbulb, Vote, BarChart3, Wallet,
   Megaphone, Phone, Building2, Briefcase, Info, HeartPulse,
   Bot, ShieldAlert, ShieldCheck, MessageSquare, Radio,
-  PlusCircle, FileText, Handshake, Landmark, BookOpen, Flag, ScrollText,
+  PlusCircle, FileText, Handshake, Landmark, BookOpen, Flag, ScrollText, FolderOpen,
 } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from './constants';
 
@@ -52,6 +52,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
       { label: 'Raporto një Problem', href: '/raporto', icon: PlusCircle, hint: 'Njofti institucionin përgjegjës' },
       { label: 'Harta e Raportimeve', href: '/harta', icon: MapPin, hint: 'Hartë interaktive e të gjitha raporteve' },
       { label: 'Raportimet', href: '/detailed-registry', icon: Newspaper, hint: 'Të gjitha ankesat e regjistruara' },
+      { label: 'Raportet e Mia', href: '/raportet-e-mia', icon: FolderOpen, hint: 'Gjithçka që keni dërguar, me statusin' },
       { label: 'Gjej Raportin Tim', href: '/trackid', icon: FileText, hint: 'Ndjek rastin me Track ID' },
       { label: 'Banka e Ideve', href: '/Idea', icon: Lightbulb, hint: 'Propozimet dhe idetë e qytetarëve' },
       { label: 'Sondazhe & Votime', href: '/sondazhet', icon: Vote, hint: 'Pjesëmarrja në vendimmarrje' },
