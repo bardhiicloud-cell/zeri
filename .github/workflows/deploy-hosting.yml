@@ -64,3 +64,17 @@ jobs:
       - name: Show the deployed version
         if: env.HAS_KEY == 'true'
         run: cat dist/version.json
+      # What the public domain actually serves now, seen from outside: the commit in
+      # /version.json and the cache header on a page route.
+      - name: Check zeriqytetarve.com
+        if: env.HAS_KEY == 'true'
+        run: |
+          want=$(node -p "require('./dist/version.json').commit")
+          for i in 1 2 3 4 5 6; do
+            got=$(curl -fsS "https://zeriqytetarve.com/version.json?t=$(date +%s)" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).commit" || true)
+            echo "zeriqytetarve.com serves: ${got:-?} (expected $want)"
+            [ "$got" = "$want" ] && break
+            sleep 10
+          done
+          curl -sSI https://zeriqytetarve.com/raporto | grep -i '^cache-control' || true
+          [ "$got" = "$want" ] || echo "::warning::zeriqytetarve.com does not serve $want yet"

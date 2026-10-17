@@ -17,3 +17,6 @@ sa*.json
 proj_policy*.json
 key_create.json
 idp_config.json
+
+# Firebase CLI deploy cache (written by firebase deploy)
+.firebase/
