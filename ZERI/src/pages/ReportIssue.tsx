@@ -20,6 +20,7 @@ import { Badge } from '../components/ui/Badge';
 import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constants';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
+import { compressImage, looksLikeImage } from '../lib/imageCompress';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
 import { doc, setDoc, getDocFromServer, collection, serverTimestamp } from 'firebase/firestore';
@@ -573,7 +574,9 @@ export default function ReportIssue() {
     const limits = REPORT_MEDIA_LIMITS;
     let images = mediaItems.filter(m => m.type === 'image').length;
     let videos = mediaItems.filter(m => m.type === 'video').length;
-    for (const file of files) {
+    for (const picked of files) {
+      // Photos are shrunk to ~1600 px JPEG first (HEIC included): seconds to upload on 4G instead of minutes.
+      const file = looksLikeImage(picked) ? await compressImage(picked) : picked;
       const mime = file.type || '';
       const type: 'image' | 'video' | 'audio' | 'document' =
         mime.startsWith('video/') ? 'video'
@@ -875,7 +878,7 @@ export default function ReportIssue() {
         await withTimeout(setDoc(reportRef, {
           ...reportData,
           createdAt: serverTimestamp() // native firebase timestamp
-        }), 30000, 'Ruajtja zgjati shumë.');
+        }), 45000, 'Ruajtja zgjati shumë.');
       } catch (e) {
         const landed = await withTimeout(getDocFromServer(reportRef), 10000, 'timeout')
           .then(snap => snap.exists() ? (snap.data() as { trackingId?: string }) : null)

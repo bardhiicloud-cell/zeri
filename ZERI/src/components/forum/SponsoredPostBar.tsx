@@ -1,3 +1,4 @@
+import { apiUrl } from '../../lib/apiBase';
 import { useState } from 'react';
 import { ExternalLink, Megaphone } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
@@ -28,7 +29,7 @@ export function SponsoredPostBar({ postId, adLink, onReport }: { postId: string;
         </button>
       )}
       {safe && (
-        <a href={`/api/v1/ads/r/${encodeURIComponent(postId)}`} target="_blank" rel="sponsored nofollow noopener noreferrer"
+        <a href={apiUrl(`/api/v1/ads/r/${encodeURIComponent(postId)}`)} target="_blank" rel="sponsored nofollow noopener noreferrer"
           className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-black text-white hover:bg-amber-600">
           {dt('Mëso më shumë')} <ExternalLink className="h-3 w-3" aria-hidden="true" />
           <span className="sr-only">({dt('hapet në skedë të re, reklamë')})</span>

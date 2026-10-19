@@ -55,16 +55,15 @@ const TABS = [
 /** The quick-action rail inside the sheet: things a citizen does, not reads. */
 const QUICK_ACTIONS = [
   { href: '/raporto', label: 'Raporto', hint: 'Problem i ri', icon: PlusCircle, tone: 'from-blue-600 to-blue-800' },
-  { href: '/raportet-e-mia', label: 'Të miat', hint: 'Raportet e mia', icon: FolderOpen, tone: 'from-sky-500 to-cyan-700' },
-  { href: '/trackid', label: 'Track ID', hint: 'Ndiq rastin', icon: Search, tone: 'from-emerald-600 to-teal-700' },
+  { href: '/raportet-e-mia', label: 'Të miat', hint: 'Raportet e mia · Track ID', icon: FolderOpen, tone: 'from-sky-500 to-cyan-700' },
+  { href: '/lajmero', label: 'Lajm', hint: 'Raporto një lajm', icon: Newspaper, tone: 'from-emerald-600 to-teal-700' },
   { href: '/partneret', label: 'Partner', hint: 'Bëhuni partner', icon: Handshake, tone: 'from-amber-500 to-orange-600' },
 ] as const;
 
 /** What the centre "+" offers: everything a citizen can send or look up in one tap. */
 const CREATE_ACTIONS = [
   { id: 'report', label: 'Raporto një problem', hint: 'Dërgo foto dhe vendndodhje te komuna', icon: PlusCircle, tone: 'from-blue-500 to-blue-800', href: '/raporto' },
-  { id: 'mine', label: 'Raportet e mia', hint: 'Gjithçka që keni dërguar, me statusin', icon: FolderOpen, tone: 'from-sky-500 to-cyan-700', href: '/raportet-e-mia' },
-  { id: 'track', label: 'Gjej raportin me Track ID', hint: 'Ndiq rastin nga çdo pajisje', icon: Search, tone: 'from-cyan-500 to-teal-700', href: '/trackid' },
+  { id: 'mine', label: 'Raportet e mia · Track ID', hint: 'Statusi i çdo dërgese; kërkoni edhe me Track ID', icon: FolderOpen, tone: 'from-sky-500 to-cyan-700', href: '/raportet-e-mia' },
   { id: 'news', label: 'Raporto një lajm', hint: 'Dërgo lajm, foto ose video te redaksia', icon: Newspaper, tone: 'from-emerald-500 to-teal-700', href: '/lajmero' },
   { id: 'idea', label: 'Propozo një ide', hint: 'Banka e ideve për përmirësimin e komunës', icon: Lightbulb, tone: 'from-amber-500 to-orange-600', href: '/Idea' },
   { id: 'poll', label: 'Voto në sondazhe', hint: 'Shpreh mendimin për çështje publike', icon: Vote, tone: 'from-rose-500 to-pink-700', href: '/sondazhet' },

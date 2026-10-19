@@ -41,7 +41,13 @@
   --hx-bad: #f09090;
 }
 
-.hx-page { background: var(--hx-paper); }
+.hx-page {
+  background:
+    radial-gradient(60rem 30rem at 100% -5%, color-mix(in srgb, var(--hx-brass-2) 16%, transparent) 0%, transparent 70%),
+    radial-gradient(50rem 28rem at -10% 30%, color-mix(in srgb, var(--hx-blue) 10%, transparent) 0%, transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--hx-rule) 35%, transparent) 1px, transparent 1px) 0 0 / 100% 48px,
+    var(--hx-paper);
+}
 .hx-serif { font-family: var(--font-serif); letter-spacing: -0.01em; }
 .hx-card { background: var(--hx-card); border: 1px solid var(--hx-rule); border-radius: 18px; }
 .hx-rule { border-color: var(--hx-rule); }

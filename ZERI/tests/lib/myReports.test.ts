@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kindOf } from '../../src/pages/MyReportsPage';
+import { kindOf } from '../../src/pages/ReportsHubPage';
 
 describe('Raportet e mia', () => {
   it('tells each sector apart by its Track ID prefix', () => {

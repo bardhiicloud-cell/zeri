@@ -6,7 +6,7 @@ import {
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';
 import {
-  PRIORITY_LABEL, QUEUE_TEXT, REPORT_QUEUES, REPORT_STAGES, TASK_TEXT, stageIndex,
+  PRIORITY_LABEL, QUEUE_TEXT, REPORT_QUEUES, REPORT_STAGES, TASK_TEXT, stageIndex, queueOfStatus as queueOfStatusLocal,
   type PriorityLevel, type ReportQueue,
 } from '../../../lib/reportWorkflow';
 import {
@@ -16,6 +16,7 @@ import {
 import { cropReportPhoto, removeReportPhoto } from '../../../lib/reportMediaApi';
 import PhotoCropper from '../PhotoCropper';
 import type { ReportAction } from '../../../lib/reportWorkflow';
+import { directAdvance, directCounts, directQueue, directReject, directReopen, directReport, isApiUnavailableError } from '../../../lib/workflowDirect';
 
 /* ------------------------------------------------------------------ */
 /* Small pieces                                                        */
@@ -122,37 +123,70 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
   const generation = useRef(0);
   const [quickBusy, setQuickBusy] = useState<string | null>(null);
   const [startAction, setStartAction] = useState<ReportAction | undefined>(undefined);
+  /**
+   * Without the API server the panel reads and moves reports in the database itself
+   * (lib/workflowDirect.ts), so an administrator is never left with an error and a
+   * queue nobody can act on.
+   */
+  const [direct, setDirect] = useState(false);
+  const directRef = useRef(false);
+  const goDirect = useCallback(() => { directRef.current = true; setDirect(true); setRole((r: string) => r || 'superadmin'); }, []);
 
   const loadCounts = useCallback(async () => {
     try {
+      if (directRef.current) { setCounts(await directCounts()); return; }
       const result = await fetchQueueCounts();
       setCounts(result.counts);
       setOverdue(result.overdue);
       setRole(result.role);
     } catch (e) {
+      if (!directRef.current && isApiUnavailableError(e)) {
+        goDirect();
+        try { setCounts(await directCounts()); } catch { setCounts(null); }
+        return;
+      }
       setCounts(null);
       setError((e as Error).message);
     }
-  }, []);
+  }, [goDirect]);
 
   const loadQueue = useCallback(async (which: ReportQueue) => {
     const mine = ++generation.current;
     setLoading(true);
     setError('');
     try {
+      if (directRef.current) {
+        const items = await directQueue(which);
+        if (mine !== generation.current) return;
+        setRows(items);
+        setCursor(null);
+        return;
+      }
       const result = await fetchQueue(which);
       if (mine !== generation.current) return;
-      setRows(result.items);
-      setCursor(result.nextCursor);
+      setRows(Array.isArray(result?.items) ? result.items : []);
+      setCursor(result?.nextCursor ?? null);
     } catch (e) {
       if (mine !== generation.current) return;
+      if (!directRef.current && isApiUnavailableError(e)) {
+        goDirect();
+        try {
+          const items = await directQueue(which);
+          if (mine !== generation.current) return;
+          setRows(items);
+          setCursor(null);
+          return;
+        } catch (inner) {
+          e = inner;
+        }
+      }
       setRows([]);
       setCursor(null);
       setError((e as Error).message);
     } finally {
       if (mine === generation.current) setLoading(false);
     }
-  }, []);
+  }, [goDirect]);
 
   const refresh = useCallback(() => { void loadCounts(); void loadQueue(queue); }, [loadCounts, loadQueue, queue]);
 
@@ -189,6 +223,19 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
   /** The row's own button: runs one-click steps at once, opens the drawer for the ones that need text or people. */
   const runQuick = async (row: QueueRow) => {
     if (!row.quick) return;
+    if (direct) {
+      setQuickBusy(row.id);
+      try {
+        const to = await directAdvance(row.id, row.status);
+        toast.success(`${dt('Raporti kaloi në')} "${dt(QUEUE_TEXT[to].label)}".`);
+        refresh();
+      } catch (e) {
+        toast.error((e as Error).message);
+      } finally {
+        setQuickBusy(null);
+      }
+      return;
+    }
     if (!row.quick.oneClick) { setStartAction(row.quick.action); setOpenId(row.id); return; }
     setQuickBusy(row.id);
     try {
@@ -203,7 +250,23 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
   };
 
   const visible = role === 'municipality' ? REPORT_QUEUES.filter(q => q !== 'pending' && q !== 'rejected') : REPORT_QUEUES;
-  const isManager = role === 'superadmin' || role === 'manager';
+  const isManager = !direct && (role === 'superadmin' || role === 'manager');
+
+  const rejectDirect = async (row: QueueRow) => {
+    const reason = window.prompt(dt('Arsyeja e refuzimit (e sheh qytetari në Track ID):')) ?? '';
+    if (!reason.trim()) return;
+    setQuickBusy(row.id);
+    try { await directReject(row.id, row.status, reason); toast.success(dt('Raporti u refuzua.')); refresh(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setQuickBusy(null); }
+  };
+
+  const reopenDirect = async (row: QueueRow) => {
+    setQuickBusy(row.id);
+    try { await directReopen(row.id, row.status); toast.success(dt('Raporti u rikthye në pritje.')); refresh(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setQuickBusy(null); }
+  };
 
   return (
     <section className="space-y-4">
@@ -259,6 +322,13 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
         {queue === 'in_process' && overdue > 0 && <span className="rounded-full bg-rose-600 px-2 py-0.5 font-bold text-white">{overdue} {dt('me afat të kaluar')}</span>}
       </div>
 
+      {direct && (
+        <p role="status" className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {dt('Serveri i platformës nuk po përgjigjet, prandaj paneli punon drejtpërdrejt me bazën e të dhënave: mund të aprovoni, kaloni fazën ose refuzoni. Caktimi i agjentëve dhe detyrat kthehen kur serveri lidhet.')}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{error}
@@ -310,6 +380,14 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
                       {dt(row.quick.label)}
                     </button>
                   )}
+                  {direct && row.queue !== 'rejected' && row.queue !== 'closed' && (
+                    <button type="button" disabled={quickBusy === row.id} onClick={() => void rejectDirect(row)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 text-sm font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-500/30 dark:text-rose-300">
+                      <Ban className="h-4 w-4" aria-hidden="true" />{dt('Refuzo')}
+                    </button>
+                  )}
+                  {direct && row.queue === 'rejected' && (
+                    <button type="button" disabled={quickBusy === row.id} onClick={() => void reopenDirect(row)} className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-200">{dt('Rikthe')}</button>
+                  )}
                   <button type="button" onClick={() => setOpenId(row.id)} className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10">{dt('Hap')}</button>
                 </div>
               </li>
@@ -326,8 +404,110 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
         </>
       )}
 
-      {openId && <ReportWorkflowDrawer reportId={openId} startAction={startAction} onClose={() => { setOpenId(null); setStartAction(undefined); }} onChanged={refresh} />}
+      {openId && direct && <DirectReportDrawer reportId={openId} onClose={() => setOpenId(null)} onChanged={refresh} />}
+      {openId && !direct && <ReportWorkflowDrawer reportId={openId} startAction={startAction} onClose={() => { setOpenId(null); setStartAction(undefined); }} onChanged={refresh} />}
     </section>
+  );
+}
+
+
+/* ------------------------------------------------------------------ */
+/* The report, read straight from the database (no API server)        */
+/* ------------------------------------------------------------------ */
+
+function DirectReportDrawer({ reportId, onClose, onChanged }: { reportId: string; onClose: () => void; onChanged: () => void }) {
+  const [report, setReport] = useState<Record<string, any> | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setError('');
+    try {
+      const r = await directReport(reportId);
+      if (!r) setError(dt('Raporti nuk u gjet.'));
+      setReport(r);
+    } catch (e) { setError((e as Error).message); }
+  }, [reportId]);
+  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const act = async (kind: 'advance' | 'reject') => {
+    if (!report) return;
+    setBusy(true);
+    try {
+      if (kind === 'advance') {
+        const to = await directAdvance(report.id, String(report.status));
+        toast.success(`${dt('Raporti kaloi në')} "${dt(QUEUE_TEXT[to].label)}".`);
+      } else {
+        const reason = window.prompt(dt('Arsyeja e refuzimit (e sheh qytetari në Track ID):')) ?? '';
+        if (!reason.trim()) { setBusy(false); return; }
+        await directReject(report.id, String(report.status), reason);
+        toast.success(dt('Raporti u refuzua.'));
+      }
+      onChanged();
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
+  };
+
+  const queue = report ? queueOfStatusLocal(String(report.status)) : 'pending';
+  const images: string[] = Array.isArray(report?.images) ? report!.images : [];
+  const media: Array<{ url: string; type: string; name?: string }> = Array.isArray(report?.media) ? report!.media : [];
+
+  return (
+    <div className="fixed inset-0 z-[80] flex justify-end bg-slate-950/40 backdrop-blur-sm" onClick={onClose}>
+      <aside role="dialog" aria-modal="true" aria-label={dt('Raporti')} onClick={e => e.stopPropagation()} className="flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl dark:bg-slate-950">
+        <header className="flex items-start justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
+          <div className="min-w-0">
+            <p className="font-mono text-xs text-sky-700 dark:text-sky-300">{report?.trackingId || reportId}</p>
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">{report?.title || dt('Raporti')}</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-white/10"><X className="h-5 w-5" aria-hidden="true" /></button>
+        </header>
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">{error}</p>}
+          {!report && !error && <div className="flex h-40 items-center justify-center text-slate-400"><Loader2 className="h-6 w-6 animate-spin" aria-label={dt('Duke ngarkuar')} /></div>}
+          {report && (
+            <>
+              <StageTrack queue={queue} />
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div><dt className="text-xs text-slate-500">{dt('Komuna')}</dt><dd className="font-semibold">{report.location?.municipality || '—'}</dd></div>
+                <div><dt className="text-xs text-slate-500">{dt('Kategoria')}</dt><dd className="font-semibold">{report.category || '—'}</dd></div>
+                <div><dt className="text-xs text-slate-500">{dt('Urgjenca')}</dt><dd className="font-semibold">{report.urgency || '—'}</dd></div>
+                <div><dt className="text-xs text-slate-500">{dt('Raportuesi')}</dt><dd className="font-semibold">{report.isAnonymous ? dt('Anonim') : (report.authorName || '—')}</dd></div>
+                <div className="col-span-2"><dt className="text-xs text-slate-500">{dt('Adresa')}</dt><dd className="font-semibold">{report.location?.address || '—'}</dd></div>
+              </dl>
+              <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm text-slate-800 dark:bg-white/5 dark:text-slate-100">{report.description}</p>
+              {(media.length > 0 || images.length > 0) && (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {(media.length ? media : images.map((url): { url: string; type: string; name?: string } => ({ url, type: 'image' }))).map(m => m.type === 'video'
+                    ? <video key={m.url} src={m.url} controls className="aspect-video w-full rounded-lg bg-black" />
+                    : m.type === 'image'
+                      ? <a key={m.url} href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt="" className="aspect-square w-full rounded-lg object-cover" /></a>
+                      : <a key={m.url} href={m.url} target="_blank" rel="noreferrer" className="rounded-lg border p-2 text-xs underline">{m.name || dt('Dokument')}</a>)}
+                </div>
+              )}
+              {report.rejectionReason && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">{dt('Arsyeja e refuzimit')}: {report.rejectionReason}</p>}
+            </>
+          )}
+        </div>
+        {report && queue !== 'closed' && queue !== 'rejected' && (
+          <footer className="flex gap-2 border-t border-slate-200 p-4 dark:border-white/10">
+            <button type="button" disabled={busy} onClick={() => void act('advance')} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
+              {queue === 'pending' ? dt('Aprovo raportin') : dt('Kalo në fazën tjetër')}
+            </button>
+            <button type="button" disabled={busy} onClick={() => void act('reject')} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-rose-200 px-4 text-sm font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-500/30 dark:text-rose-300">
+              <Ban className="h-4 w-4" aria-hidden="true" />{dt('Refuzo')}
+            </button>
+          </footer>
+        )}
+      </aside>
+    </div>
   );
 }
 

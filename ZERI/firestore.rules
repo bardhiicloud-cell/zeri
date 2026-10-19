@@ -355,12 +355,15 @@ service cloud.firestore {
                     request.resource.data.content is string &&
                     request.resource.data.category is string &&
                     request.resource.data.published == false;
+      // Editors may not flip `published` (that is a recorded decision through the API).
+      // An administrator may, so that publishing still works while the API server is
+      // down; the page then writes publishedBy/publishedAt itself.
       allow update: if (isNewsAdmin() || isAdmin() || isSuperAdmin()) &&
                     request.resource.data.title is string &&
                     request.resource.data.summary is string &&
                     request.resource.data.content is string &&
                     request.resource.data.category is string &&
-                    request.resource.data.published == resource.data.published;
+                    (request.resource.data.published == resource.data.published || isSuperAdmin());
       allow delete: if isNewsAdmin() || isAdmin() || isSuperAdmin();
     }
 
@@ -494,7 +497,43 @@ service cloud.firestore {
     // ──────────────────────────────────────────────
     match /donationCauses/{causeId} {
       allow read: if true;
-      allow create, update, delete: if isSuperAdmin();
+      allow update, delete: if isSuperAdmin();
+      // A citizen's application, from the browser when the /api server is not there
+      // (src/lib/directSubmissions.ts). It is born 'pending' and the public pages show
+      // only approved causes; only an administrator can change it after that.
+      allow create: if isSuperAdmin() || (
+        canAct() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.reference is string && request.resource.data.reference.matches('^DN-[A-Z0-9]{8}$') &&
+        request.resource.data.title is string && request.resource.data.title.size() >= 5 && request.resource.data.title.size() <= 140 &&
+        request.resource.data.description is string && request.resource.data.description.size() <= 3000 &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.keys().hasOnly(['title', 'description', 'category', 'mediaType', 'mediaUrl', 'donationUrl', 'reference', 'status', 'authorId', 'createdAt'])
+      );
+    }
+
+    // ──────────────────────────────────────────────
+    // News tips (Raporto një lajm) — citizens create, the newsroom reads
+    // ──────────────────────────────────────────────
+    // The server route is preferred; this lets a tip be stored when the /api server
+    // is not reachable (src/lib/directSubmissions.ts). The citizen gets the LJ- Track ID
+    // only after the write succeeds. Nobody but the newsroom can read tips: they may
+    // carry a source's name and phone.
+    match /newsTips/{tipId} {
+      allow read, update, delete: if isNewsAdmin() || isSuperAdmin();
+      allow create: if isNewsAdmin() || isSuperAdmin() || (
+        canAct() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.status == 'submitted' &&
+        request.resource.data.reference is string && request.resource.data.reference.matches('^LJ-[A-Z0-9]{8}$') &&
+        request.resource.data.title is string && request.resource.data.title.size() >= 8 && request.resource.data.title.size() <= 160 &&
+        request.resource.data.body is string && request.resource.data.body.size() <= 6000 &&
+        request.resource.data.media is list && request.resource.data.media.size() <= 3 &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.keys().hasOnly(['title', 'body', 'category', 'anonymous', 'municipality', 'place',
+          'contactName', 'contactEmail', 'contactPhone', 'media', 'reference', 'status', 'authorId', 'createdAt', 'updatedAt'])
+      );
     }
 
     // ──────────────────────────────────────────────

@@ -65,7 +65,7 @@ export async function fetchReportPage(
     if ((error as Error)?.name === 'AbortError') throw error;
     throw new ReportListError('Lidhja me serverin dështoi.', 0);
   }
-  const body = await response.json().catch(() => ({}));
+  const body = (await response.json().catch(() => null)) ?? {};
   if (!response.ok) throw new ReportListError(body?.error || 'Raportet nuk u ngarkuan.', response.status);
   return { items: body.items ?? [], nextCursor: body.nextCursor ?? null, total: typeof body.total === 'number' ? body.total : null };
 }

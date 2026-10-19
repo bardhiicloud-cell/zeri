@@ -1,4 +1,5 @@
 import { dt } from '@/src/lib/dt';
+import { isAcceptedForPublic } from '../lib/publicReportsApi';
 import React, { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -211,11 +212,10 @@ export default function MapPage() {
    * rebuilt (with new array identities) on each render.
    */
   const filteredReports = useMemo(() => {
-    const isVisibleToViewer = (report: Report) => {
-      if (currentUser?.role === 'admin') return true;
-      if (currentUser && report.authorId === currentUser.id && report.authorId !== 'guest') return true;
-      return report.status !== 'Rejected';
-    };
+    // The public map shows only what a reviewer has accepted, for everyone, staff
+    // included: a report in "Në pritje" on the map looked published without approval.
+    // Staff see pending reports in the admin queue; authors on "Raportet e mia".
+    const isVisibleToViewer = (report: Report) => isAcceptedForPublic(report.status);
 
     const neighborhoodQuery = selectedNeighborhood.trim().toLowerCase();
 
@@ -238,7 +238,7 @@ export default function MapPage() {
 
       return legendFilters[report.urgency] !== false;
     });
-  }, [reports, currentUser, selectedMunicipality, selectedNeighborhood, activeFilter, selectedTopic, legendFilters]);
+  }, [reports, selectedMunicipality, selectedNeighborhood, activeFilter, selectedTopic, legendFilters]);
 
   /** Only reports with real coordinates can be drawn. */
   const mappableReports = useMemo(
