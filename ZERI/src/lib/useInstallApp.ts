@@ -5,19 +5,50 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const DISMISS_KEY = 'zeri_install_dismissed_at';
-const DISMISS_DAYS = 14;
+export type InstallPlatform = 'native' | 'ios-safari' | 'ios-other' | 'in-app' | 'none';
 
-const safeGet = (key: string) => { try { return window.localStorage.getItem(key); } catch { return null; } };
-const safeSet = (key: string, value: string) => { try { window.localStorage.setItem(key, value); } catch { /* private mode */ } };
+const STATE_KEY = 'zeri_install_state_v2';
+// Each refusal pushes the next offer further away: 3 days, 2 weeks, then 2 months.
+const BACKOFF_DAYS = [3, 14, 60];
+const MAX_DISMISSALS = BACKOFF_DAYS.length + 1;
+
+interface InstallState {
+  visits: number;
+  lastVisitDay: string;
+  dismissals: number;
+  dismissedAt: number;
+  installed: boolean;
+}
+
+const EMPTY_STATE: InstallState = { visits: 0, lastVisitDay: '', dismissals: 0, dismissedAt: 0, installed: false };
+
+function readState(): InstallState {
+  try {
+    const raw = window.localStorage.getItem(STATE_KEY);
+    return raw ? { ...EMPTY_STATE, ...(JSON.parse(raw) as Partial<InstallState>) } : { ...EMPTY_STATE };
+  } catch {
+    return { ...EMPTY_STATE };
+  }
+}
+
+function writeState(patch: Partial<InstallState>) {
+  try {
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ ...readState(), ...patch }));
+  } catch { /* private mode */ }
+}
 
 // The browser fires `beforeinstallprompt` once, early. Keep it at module level so a component that mounts
-// later (the footer button, the banner) can still use it.
+// later (the footer button, the sheet) can still use it.
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((fn) => fn());
 
 if (typeof window !== 'undefined') {
+  // Count one visit per calendar day, so "second visit" means a real return, not a reload.
+  const today = new Date().toISOString().slice(0, 10);
+  const state = readState();
+  if (state.lastVisitDay !== today) writeState({ visits: state.visits + 1, lastVisitDay: today });
+
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event as BeforeInstallPromptEvent;
@@ -25,6 +56,7 @@ if (typeof window !== 'undefined') {
   });
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
+    writeState({ installed: true });
     notify();
   });
 }
@@ -34,16 +66,18 @@ function isStandalone() {
   return window.matchMedia?.('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
 }
 
-function isIosSafari() {
-  if (typeof navigator === 'undefined') return false;
+function detectPlatform(): InstallPlatform {
+  if (typeof navigator === 'undefined') return 'none';
   const ua = navigator.userAgent;
   const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  // Other iOS browsers (Chrome, Firefox, Edge) cannot add to the home screen from their own menu on older iOS.
-  const safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|Instagram|FBAN|FBAV/.test(ua);
-  return ios && safari;
+  if (!ios) return deferredPrompt ? 'native' : 'none';
+  // Instagram / Facebook / TikTok webviews cannot add to the home screen at all.
+  if (/Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|Snapchat/.test(ua)) return 'in-app';
+  // iOS 16.4+ lets Chrome, Edge and Firefox add to the home screen from their share menu too.
+  return /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua) ? 'ios-other' : 'ios-safari';
 }
 
-/** Whether the app can be installed, how, and whether the visitor already dismissed the offer. */
+/** Whether the app can be installed, how, and whether the visitor should be offered it right now. */
 export function useInstallApp() {
   const [, force] = useState(0);
   useEffect(() => {
@@ -53,11 +87,17 @@ export function useInstallApp() {
   }, []);
 
   const standalone = isStandalone();
-  const ios = isIosSafari();
+  const platform = detectPlatform();
+  const state = readState();
   const canPrompt = !standalone && deferredPrompt !== null;
-  const needsManual = !standalone && ios;
-  const dismissedAt = Number(safeGet(DISMISS_KEY) || 0);
-  const recentlyDismissed = dismissedAt > 0 && Date.now() - dismissedAt < DISMISS_DAYS * 86_400_000;
+  const needsManual = !standalone && (platform === 'ios-safari' || platform === 'ios-other');
+  const inAppBrowser = !standalone && platform === 'in-app';
+
+  const waitDays = BACKOFF_DAYS[Math.min(state.dismissals, BACKOFF_DAYS.length) - 1] ?? 0;
+  const coolingDown = state.dismissals > 0 && Date.now() - state.dismissedAt < waitDays * 86_400_000;
+  // Offer only to people who are engaged: a returning visitor, or one who stayed a while (the sheet's own timer).
+  const shouldOffer = !state.installed && state.dismissals < MAX_DISMISSALS && !coolingDown;
+  const returning = state.visits >= 2;
 
   const install = useCallback(async () => {
     if (!deferredPrompt) return 'unavailable' as const;
@@ -66,10 +106,17 @@ export function useInstallApp() {
     notify();
     await prompt.prompt();
     const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted') writeState({ installed: true });
     return outcome;
   }, []);
 
-  const dismiss = useCallback(() => { safeSet(DISMISS_KEY, String(Date.now())); force((n) => n + 1); }, []);
+  const dismiss = useCallback(() => {
+    writeState({ dismissals: readState().dismissals + 1, dismissedAt: Date.now() });
+    force((n) => n + 1);
+  }, []);
 
-  return { standalone, canPrompt, needsManual, canInstall: canPrompt || needsManual, recentlyDismissed, install, dismiss };
+  return {
+    standalone, platform, canPrompt, needsManual, inAppBrowser,
+    canInstall: canPrompt || needsManual, shouldOffer, returning, install, dismiss,
+  };
 }
