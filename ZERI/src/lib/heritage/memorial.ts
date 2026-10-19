@@ -20,6 +20,8 @@ export interface Martyr {
   died: string;
   diedPlace: string;
   role: L;
+  /** Their last recorded words, only where a source gives them. */
+  lastWords?: L;
   /** Grouping on the page. */
   era: 'pararendes' | 'uck';
   source: string;

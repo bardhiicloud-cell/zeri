@@ -138,3 +138,100 @@
   .hx-hero-layer, .hx-star { animation: none; }
   .hx-page { background: #fff; }
 }
+
+/* ═══ Redesign (Oct 2026) ═══════════════════════════════════════════════════
+ * Kosova  → a state-archive look: cool stone-white, deep state blue, one gold rule.
+ * UÇK     → the red and black of the Albanian flag; `.hx-uck` re-tokens the same components.
+ */
+.hx-page.hx-state {
+  --hx-paper: #f3f5f9;
+  --hx-paper-2: #e8ecf4;
+  --hx-card: #ffffff;
+  --hx-rule: #d5dbe8;
+  --hx-brass: #8a6410;
+  background:
+    radial-gradient(70rem 26rem at 50% -8rem, rgba(28, 58, 140, .12) 0%, transparent 70%),
+    linear-gradient(180deg, #eef1f8 0%, var(--hx-paper) 38rem);
+}
+.dark .hx-page.hx-state {
+  --hx-paper: #070d1e; --hx-paper-2: #0b1430; --hx-card: #0e1834; --hx-rule: #1f2b4f;
+  background: radial-gradient(70rem 26rem at 50% -8rem, rgba(60, 100, 210, .2) 0%, transparent 70%), linear-gradient(180deg, #0a1229 0%, var(--hx-paper) 38rem);
+}
+.hx-state-hero { background: linear-gradient(160deg, #0f2260 0%, #0a1743 55%, #060d27 100%); color: #f4f6ff; }
+.hx-state-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background:
+    radial-gradient(40rem 20rem at 85% 10%, rgba(232, 195, 110, .22), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 1px, transparent 1px 22px);
+}
+.hx-gold-rule { height: 3px; background: linear-gradient(90deg, transparent, #e8c36e 20%, #e8c36e 80%, transparent); opacity: .85; }
+
+.hx-uck {
+  --hx-paper: #f6f2ef;
+  --hx-paper-2: #ece4df;
+  --hx-card: #ffffff;
+  --hx-ink: #160a0c;
+  --hx-ink-2: #4a3a3d;
+  --hx-ink-3: #7a6a6d;
+  --hx-brass: #b3122e;
+  --hx-brass-2: #d3202f;
+  --hx-rule: #e3d6d2;
+}
+.dark .hx-uck {
+  --hx-paper: #0b0708; --hx-paper-2: #130c0d; --hx-card: #170e10; --hx-ink: #f6ecec; --hx-ink-2: #cbb9bb; --hx-ink-3: #9a8587;
+  --hx-brass: #ff5468; --hx-brass-2: #ef3347; --hx-rule: #35191d;
+}
+.hx-page.hx-uck {
+  background:
+    radial-gradient(60rem 26rem at 100% -6rem, rgba(200, 16, 46, .16) 0%, transparent 70%),
+    radial-gradient(50rem 24rem at -10% 40%, rgba(0, 0, 0, .06) 0%, transparent 70%),
+    var(--hx-paper);
+}
+.dark .hx-page.hx-uck {
+  background: radial-gradient(60rem 26rem at 100% -6rem, rgba(200, 16, 46, .28) 0%, transparent 70%), var(--hx-paper);
+}
+.hx-uck-hero { background: linear-gradient(150deg, #1a0508 0%, #0a0405 60%, #000 100%); color: #fff; }
+.hx-uck-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(46rem 26rem at 90% 0%, rgba(200, 16, 46, .55), transparent 65%),
+    radial-gradient(30rem 20rem at 0% 100%, rgba(200, 16, 46, .22), transparent 70%);
+}
+.hx-uck-hero::after {
+  content: ''; position: absolute; inset: auto 0 0 0; height: 4px; pointer-events: none;
+  background: linear-gradient(90deg, #c8102e, #000 50%, #c8102e);
+}
+.hx-uck .hx-chron::before { background: linear-gradient(#d3202f, var(--hx-rule) 14%, var(--hx-rule) 86%, transparent); }
+
+/* Photo frame: a real photograph when one is in /public/heritage/photos, a quiet plate when not. */
+.hx-photo { position: relative; overflow: hidden; background: linear-gradient(135deg, #1b2a5c, #0a1230); }
+.hx-uck .hx-photo { background: linear-gradient(135deg, #3a0a12, #0a0405); }
+.hx-photo > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hx-photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.3); }
+
+/* Glass cards (homepage band) */
+.hx-glass {
+  position: relative; isolation: isolate; overflow: hidden; border-radius: 26px; color: #fff;
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 28px 60px -34px rgba(8, 14, 40, .75);
+  transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s;
+}
+.hx-glass:hover { transform: translateY(-3px); }
+.hx-glass::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 42%);
+}
+@media (prefers-reduced-motion: reduce) { .hx-glass, .hx-glass:hover { transition: none; transform: none; } }
+
+/* Music dock */
+.hx-dock { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); z-index: 60; width: min(560px, calc(100vw - 24px)); }
+@media (min-width: 1024px) { .hx-dock { bottom: 24px; } }
+.hx-dock-card {
+  background: rgba(14, 6, 8, .88); backdrop-filter: blur(18px) saturate(1.4); color: #fff;
+  border: 1px solid rgba(255,255,255,.16); border-radius: 20px; box-shadow: 0 24px 60px -20px rgba(0,0,0,.7);
+}
+@keyframes hx-eq { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+.hx-eq span { display: inline-block; width: 3px; height: 14px; border-radius: 2px; background: #ef3347; transform-origin: bottom; animation: hx-eq 1s ease-in-out infinite; }
+.hx-eq span:nth-child(2) { animation-delay: -.3s; } .hx-eq span:nth-child(3) { animation-delay: -.6s; }
+.hx-eq[data-paused='true'] span { animation-play-state: paused; transform: scaleY(.3); }
+@media (prefers-reduced-motion: reduce) { .hx-eq span { animation: none; } }

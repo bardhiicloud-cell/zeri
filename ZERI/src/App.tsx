@@ -44,6 +44,7 @@ const RrethProjektitPage = React.lazy(() => import('./pages/RrethProjektitPage')
 const TermsOfServicePage = React.lazy(() => import('./pages/TermsOfServicePage'));
 const PrivacyPolicyPage = React.lazy(() => import('./pages/PrivacyPolicyPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const ZeriQytetarPage = React.lazy(() => import('./pages/ZeriQytetarPage'));
 const KosovaHubPage = React.lazy(() => import('./pages/heritage/KosovaHubPage'));
 const KosovaSectionPage = React.lazy(() => import('./pages/heritage/KosovaSectionPage'));
 const HeritageEntryPage = React.lazy(() => import('./pages/heritage/HeritageEntryPage'));
@@ -171,6 +172,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/donacion': 'Ndihma & Donacione',
   '/partneret': 'Partnerët & Reklama',
   '/raportet-e-mia': 'Raportet e mia',
+  '/zeri-qytetar': 'Zëri i Qytetarëve — çka bëjmë ne',
   '/kosova': 'Kosova — një popull, një histori, një e ardhme',
   '/historia-e-uck': 'Historia e UÇK-së',
   '/login': 'Hyrja',
@@ -908,6 +910,7 @@ export default function App() {
               <Route path="/politika-e-cookies" element={<PrivacyPolicyPage />} />
               <Route path="/donacion" element={<DonationsPage />} />
               <Route path="/partneret" element={<PartnersPage />} />
+              <Route path="/zeri-qytetar" element={<ZeriQytetarPage />} />
               <Route path="/kosova" element={<KosovaHubPage />} />
               <Route path="/kosova/:section" element={<KosovaSectionPage />} />
               <Route path="/kosova/:section/:id" element={<HeritageEntryPage />} />
@@ -959,6 +962,7 @@ export default function App() {
               <Route path="privatesia" element={<PrivacyPolicyPage />} />
               <Route path="donacion" element={<DonationsPage />} />
               <Route path="partneret" element={<PartnersPage />} />
+              <Route path="zeri-qytetar" element={<ZeriQytetarPage />} />
               <Route path="kosova" element={<KosovaHubPage />} />
               <Route path="kosova/:section" element={<KosovaSectionPage />} />
               <Route path="kosova/:section/:id" element={<HeritageEntryPage />} />

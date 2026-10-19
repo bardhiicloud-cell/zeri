@@ -5,10 +5,10 @@ import { usePageMeta } from '../../lib/usePageMeta';
 import { useHeritage } from '../../lib/heritage/api';
 import { contentStats, entriesOf, searchEntries, timelineOf } from '../../lib/heritage/content';
 import { EVIDENCE, EVIDENCE_STATUSES, KOSOVA_SECTIONS, UCK_SECTIONS, formatHeritageDate, pick } from '../../lib/heritage/types';
-import { HeroArt, PlateArt } from '../../components/heritage/HeritageArt';
+import { PlateArt } from '../../components/heritage/HeritageArt';
 import { EvidenceBadge, entryPath, sectionPath, useHeritageLang, Crumbs } from '../../components/heritage/Atoms';
 import { EntryCard } from '../../components/heritage/Blocks';
-import { TourismSection } from '../../components/heritage/Memorial';
+import { TourismSection, WhyVisitSection } from '../../components/heritage/Memorial';
 
 /**
  * /kosova — the front door of the identity & history experience.
@@ -42,39 +42,45 @@ export default function KosovaHubPage() {
   ];
 
   return (
-    <div data-no-translate className="hx hx-page -mx-3 -my-3 sm:-mx-5 sm:-my-4 lg:-mx-8">
+    <div data-no-translate className="hx hx-page hx-state -mx-3 -my-3 sm:-mx-5 sm:-my-4 lg:-mx-8">
       <div className="mx-auto max-w-[1280px] space-y-14 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:pt-6">
         <Crumbs items={[{ to: '/', label: t('home') }, { label: t('kosovo') }]} />
 
         {/* ── Hero ───────────────────────────────────────────────────────── */}
-        <section aria-labelledby="hx-h1" className="hx-hero hx-grain relative isolate overflow-hidden rounded-[28px] shadow-[0_30px_80px_-40px_rgba(7,13,32,.9)]">
-          <div className="absolute inset-0 -z-10" aria-hidden="true">
-            {settings.heroImageUrl
-              ? <img src={settings.heroImageUrl} alt="" className="h-full w-full object-cover" decoding="async" />
-              : <HeroArt className="h-full w-full" />}
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,13,32,.82)_0%,rgba(7,13,32,.35)_55%,rgba(7,13,32,0)_100%)]" />
-          </div>
-          <div className="flex min-h-[520px] flex-col justify-end gap-6 p-6 sm:min-h-[580px] sm:p-10 lg:p-14">
-            <img src="/heritage/stema-kosoves.png" alt={lang === 'sq' ? 'Stema e Republikës së Kosovës' : 'Coat of arms of the Republic of Kosovo'} width={96} height={106}
-              className="hx-rise h-20 w-auto drop-shadow-[0_10px_24px_rgba(0,0,0,.5)] sm:h-28" style={{ ['--i' as string]: 0 }} />
-            <p className="hx-eyebrow hx-rise" style={{ ['--i' as string]: 0, color: '#e8c36e' }}>{t('kicker')}</p>
-            <div className="hx-rise" style={{ ['--i' as string]: 1 }}>
-              <h1 id="hx-h1" className="hx-serif text-[clamp(3.4rem,13vw,8.5rem)] font-black leading-[0.85] tracking-tight text-white">{t('heroTitle')}</h1>
-              <p className="hx-serif mt-3 text-xl font-bold italic text-[#f0cf7e] sm:text-3xl">{lang === 'sq' ? 'Historia · Kultura · Turizmi' : 'History · Culture · Tourism'}</p>
+        <section aria-labelledby="hx-h1" className="hx-state-hero hx-grain relative isolate overflow-hidden rounded-[28px] shadow-[0_30px_80px_-44px_rgba(7,13,32,.95)]">
+          {settings.heroImageUrl && (
+            <div className="absolute inset-0 -z-10" aria-hidden="true">
+              <img src={settings.heroImageUrl} alt="" className="h-full w-full object-cover opacity-35" decoding="async" />
             </div>
-            <p className="hx-rise max-w-2xl text-[15px] leading-relaxed text-slate-200 sm:text-base" style={{ ['--i' as string]: 2 }}>{t('heroIntro')}</p>
-            <div className="hx-rise flex flex-wrap gap-3" style={{ ['--i' as string]: 3 }}>
-              <a href="#hx-chapters" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#e8c36e] px-5 text-sm font-black text-[#0b1531] transition hover:bg-[#f2d68c]">
-                <Compass className="h-4 w-4" aria-hidden="true" />{t('explore')}
-              </a>
-              <a href="#hx-turizem" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#e8c36e]/60 bg-[#e8c36e]/10 px-5 text-sm font-black text-[#f0cf7e] backdrop-blur transition hover:bg-[#e8c36e]/20">
-                {lang === 'sq' ? 'Turizmi' : 'Tourism'}
-              </a>
-              <Link to="/historia-e-uck" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/30 bg-white/5 px-5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15">
-                {t('openArchive')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+          )}
+          <div className="relative grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.35fr_1fr] lg:p-14">
+            <div className="flex flex-col gap-5">
+              <p className="hx-eyebrow hx-rise" style={{ ['--i' as string]: 0, color: '#e8c36e' }}>{t('kicker')}</p>
+              <div className="hx-rise" style={{ ['--i' as string]: 1 }}>
+                <h1 id="hx-h1" className="hx-serif text-[clamp(3rem,9vw,6.2rem)] font-black leading-[0.9] tracking-tight text-white">{t('heroTitle')}</h1>
+                <div className="hx-gold-rule mt-4 w-28" aria-hidden="true" />
+                <p className="hx-serif mt-4 text-lg font-bold italic text-[#f0cf7e] sm:text-2xl">{lang === 'sq' ? 'Historia · Kultura · Turizmi' : 'History · Culture · Tourism'}</p>
+              </div>
+              <p className="hx-rise max-w-xl text-[15px] leading-relaxed text-slate-200" style={{ ['--i' as string]: 2 }}>{t('heroIntro')}</p>
+              <div className="hx-rise flex flex-wrap gap-3" style={{ ['--i' as string]: 3 }}>
+                <a href="#hx-chapters" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#e8c36e] px-5 text-sm font-black text-[#0b1531] transition hover:bg-[#f2d68c]">
+                  <Compass className="h-4 w-4" aria-hidden="true" />{t('explore')}
+                </a>
+                <a href="#hx-turizem" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#e8c36e]/60 bg-[#e8c36e]/10 px-5 text-sm font-black text-[#f0cf7e] transition hover:bg-[#e8c36e]/20">
+                  {lang === 'sq' ? 'Turizmi' : 'Tourism'}
+                </a>
+                <Link to="/historia-e-uck" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/30 bg-white/5 px-5 text-sm font-bold text-white transition hover:bg-white/15">
+                  {t('openArchive')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+              {settings.heroImageUrl && settings.heroCredit && <p className="text-[11px] text-white/60">© {settings.heroCredit}</p>}
             </div>
-            {settings.heroImageUrl && settings.heroCredit && <p className="text-[11px] text-white/60">© {settings.heroCredit}</p>}
+            <div className="hx-rise relative hidden items-center justify-center lg:flex" style={{ ['--i' as string]: 2 }}>
+              <span className="absolute h-72 w-72 rounded-full bg-[#e8c36e]/15 blur-3xl" aria-hidden="true" />
+              <img src="/heritage/stema-kosoves.png" alt={lang === 'sq' ? 'Stema e Republikës së Kosovës' : 'Coat of arms of the Republic of Kosovo'} width={426} height={472}
+                className="relative h-auto w-56 max-w-none self-center object-contain drop-shadow-[0_18px_40px_rgba(0,0,0,.55)] xl:w-64" />
+            </div>
+            <img src="/heritage/stema-kosoves.png" alt="" width={64} height={71} className="absolute right-5 top-5 h-14 w-auto self-start object-contain opacity-90 lg:hidden" />
           </div>
         </section>
 
@@ -93,7 +99,8 @@ export default function KosovaHubPage() {
           </dl>
         </section>
 
-        {/* ── Tourism ─────────────────────────────────────────────────────── */}
+        {/* ── Why visit, then the places ──────────────────────────────────── */}
+        <WhyVisitSection lang={lang} />
         <TourismSection lang={lang} />
 
         {/* ── Search ──────────────────────────────────────────────────────── */}
@@ -158,26 +165,24 @@ export default function KosovaHubPage() {
         </section>
 
         {/* ── The KLA archive: a major feature of its own ─────────────────── */}
-        <section aria-labelledby="hx-uck" className="hx-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
-          <div className="absolute inset-0 -z-10 opacity-60" aria-hidden="true"><PlateArt hue={14} seed={91} className="h-full w-full" /></div>
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(7,13,32,.96)_0%,rgba(7,13,32,.78)_52%,rgba(7,13,32,.35)_100%)]" aria-hidden="true" />
+        <section aria-labelledby="hx-uck" className="hx-uck-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
           <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-[1.15fr_1fr] lg:p-14">
             <div className="space-y-4">
-              <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{t('uckKicker')} · ARK-1998/99</p>
+              <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{t('uckKicker')} · ARK-1998/99</p>
               <h2 id="hx-uck" className="hx-serif text-4xl font-black leading-[0.95] text-white sm:text-6xl">{t('uckTitle')}</h2>
               <p className="max-w-xl text-[15px] leading-relaxed text-slate-200">{t('uckLead')}</p>
               <p className="max-w-xl rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-slate-300">
                 <strong className="text-white">{t('method')}.</strong> {t('methodBody')}
               </p>
-              <Link to="/historia-e-uck" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#e8c36e] px-5 text-sm font-black text-[#0b1531] transition hover:bg-[#f2d68c]">
+              <Link to="/historia-e-uck" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#c8102e] px-5 text-sm font-black text-white transition hover:bg-[#e0132f]">
                 {t('uckBandCta')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
             <ol className="grid grid-cols-2 gap-2 self-end text-sm">
               {UCK_SECTIONS.map((s) => (
                 <li key={s.id}>
-                  <Link to={sectionPath('uck', s.id)} className="flex min-h-14 items-center gap-3 rounded-xl border border-white/15 bg-white/5 p-3 text-white backdrop-blur transition hover:border-[#e8c36e] hover:bg-white/10">
-                    <span className="hx-serif w-7 shrink-0 text-lg font-black text-[#e8c36e]">{s.numeral}</span>
+                  <Link to={sectionPath('uck', s.id)} className="flex min-h-14 items-center gap-3 rounded-xl border border-white/15 bg-white/5 p-3 text-white backdrop-blur transition hover:border-[#ff4d63] hover:bg-white/10">
+                    <span className="hx-serif w-7 shrink-0 text-lg font-black text-[#ff4d63]">{s.numeral}</span>
                     <span className="text-xs font-bold leading-tight">{s.title[lang]}</span>
                   </Link>
                 </li>
@@ -187,9 +192,9 @@ export default function KosovaHubPage() {
           {uckHighlights.length > 0 && (
             <ul className="grid gap-px border-t border-white/10 bg-white/10 sm:grid-cols-3">
               {uckHighlights.map((e) => (
-                <li key={e.id} className="bg-[rgba(7,13,32,.85)] p-4 sm:p-5">
+                <li key={e.id} className="bg-[rgba(10,4,5,.9)] p-4 sm:p-5">
                   <Link to={entryPath(e)} className="group block space-y-1.5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#e8c36e]">{formatHeritageDate(e.date, lang)}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#ff8a98]">{formatHeritageDate(e.date, lang)}</p>
                     <p className="hx-serif text-base font-black leading-snug text-white group-hover:underline">{pick(e.title, lang)}</p>
                     <EvidenceBadge status={e.evidence} lang={lang} />
                   </Link>
