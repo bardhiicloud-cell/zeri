@@ -42,7 +42,7 @@ export function GuestGuard({ children }: GuestGuardProps) {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-900/20 backdrop-blur-md"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-900/20 md:backdrop-blur-md"
           >
             <motion.div 
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -67,13 +67,13 @@ export function GuestGuard({ children }: GuestGuardProps) {
               <div className="space-y-3 pointer-events-auto">
                 <button
                   onClick={() => navigate('/login')}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] shadow-blue-500/20 dark:shadow-blue-500/25"
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] shadow-blue-500/20 dark:shadow-blue-500/25"
                 >
                   <LogIn className="w-5 h-5" />{dt(`Kyçuni`)}
                 </button>
                 <button
                   onClick={() => navigate('/register')}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white dark:hover:text-white font-bold py-3.5 px-6 rounded-xl transition-all"
+                  className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white dark:hover:text-white font-bold py-3.5 px-6 rounded-xl transition"
                 >
                   <UserPlus className="w-5 h-5" />{dt(`Regjistrohu`)}
                 </button>

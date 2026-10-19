@@ -252,7 +252,7 @@ export default function AdminForumStories() {
               type="button"
               onClick={() => setFilter(f.id)}
               className={cn(
-                'px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all',
+                'px-3 py-1.5 rounded-xl text-[11px] font-bold border transition',
                 filter === f.id
                   ? 'border-fuchsia-600 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300'
                   : 'border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
@@ -275,7 +275,7 @@ export default function AdminForumStories() {
             <li
               key={s.id}
               className={cn(
-                'group relative overflow-hidden rounded-2xl border bg-slate-900 shadow-sm transition-all',
+                'group relative overflow-hidden rounded-2xl border bg-slate-900 shadow-sm transition',
                 s.isHidden ? 'border-rose-400/50 opacity-70' : 'border-slate-700',
               )}
             >
@@ -366,7 +366,7 @@ export default function AdminForumStories() {
 
       {/* Preview modal — renders exactly as the citizen viewer does */}
       {previewing && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm" onClick={() => setPreviewing(null)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-4 md:backdrop-blur-sm" onClick={() => setPreviewing(null)}>
           <section
             role="dialog"
             aria-modal="true"

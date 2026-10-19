@@ -83,7 +83,7 @@ export default function EmailInstitutionDialog({ reportId, reportTitle, contact,
   };
 
   return (
-    <div className="fixed inset-0 z-[570] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={dt('Dërgo te institucioni')}>
+    <div className="fixed inset-0 z-[570] flex items-center justify-center bg-slate-950/60 p-4 md:backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={dt('Dërgo te institucioni')}>
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
         <header className="flex items-start gap-3 border-b border-slate-200 p-5 dark:border-white/10">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white"><Mail className="h-4 w-4" aria-hidden="true" /></span>

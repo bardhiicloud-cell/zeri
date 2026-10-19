@@ -33,7 +33,7 @@ export default function SectionGuidePanel({ sectionId, role, onClose, onGo, open
 
   return (
     <div className="fixed inset-0 z-[540]" role="dialog" aria-modal="true" aria-label={dt('Si punon')}>
-      <button type="button" aria-label={dt('Mbyll')} onClick={onClose} className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]" />
+      <button type="button" aria-label={dt('Mbyll')} onClick={onClose} className="absolute inset-0 bg-slate-950/50 md:backdrop-blur-[2px]" />
       <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl dark:bg-slate-900">
         <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-5 py-4 dark:border-white/10">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-600 text-white"><BookOpen className="h-4 w-4" aria-hidden="true" /></span>

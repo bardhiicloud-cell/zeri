@@ -212,7 +212,7 @@ export default function PollsPage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="luxury-card flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-200 ease-out hover:scale-[1.02] sm:gap-4 sm:px-5"
+              className="luxury-card flex items-center gap-3 rounded-2xl px-4 py-3.5 transition duration-200 ease-out hover:scale-[1.02] sm:gap-4 sm:px-5"
             >
               <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', stat.tone)}>
                 <stat.icon className="h-5 w-5" aria-hidden="true" />
@@ -261,7 +261,7 @@ export default function PollsPage() {
                 key={f}
                 onClick={() => setFilter(f as any)}
                 className={cn(
-                  "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-[11px] transition-all uppercase tracking-widest whitespace-nowrap",
+                  "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-[11px] transition uppercase tracking-widest whitespace-nowrap",
                   filter === f
                     ? f === 'active' ? 'bg-rose-500 text-white shadow-sm dark:shadow-none' : 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white shadow-sm dark:shadow-none'
                     : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:text-white dark:text-slate-100 hover:bg-slate-200/50 dark:bg-slate-700/50 dark:hover:bg-slate-800 dark:bg-slate-800/50'
@@ -402,13 +402,13 @@ export default function PollsPage() {
                             ) : (
                               <button
                                 onClick={() => handleVote(poll.id, option.id)}
-                                className="flex w-full cursor-pointer items-center justify-between rounded-[var(--radius-card)] border-2 border-slate-200 bg-[var(--color-surface)] p-4 text-left transition-all hover:border-rose-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-white/10 dark:bg-[var(--color-surface-dark)] dark:hover:border-rose-500 dark:hover:shadow-none group/opt"
+                                className="flex w-full cursor-pointer items-center justify-between rounded-[var(--radius-card)] border-2 border-slate-200 bg-[var(--color-surface)] p-4 text-left transition hover:border-rose-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-white/10 dark:bg-[var(--color-surface-dark)] dark:hover:border-rose-500 dark:hover:shadow-none group/opt"
                               >
                                 <span className="text-[13px] font-bold text-slate-700 transition-colors group-hover/opt:text-slate-900 dark:text-slate-300 dark:group-hover/opt:text-white">
                                   {option.text}
                                 </span>
-                                <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-300 bg-white shadow-sm transition-all group-hover/opt:border-rose-500 dark:border-white/20 dark:bg-slate-800 dark:shadow-none">
-                                  <div className="h-2 w-2 scale-0 rounded-full bg-rose-500 transition-all group-hover/opt:scale-100" />
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-300 bg-white shadow-sm transition group-hover/opt:border-rose-500 dark:border-white/20 dark:bg-slate-800 dark:shadow-none">
+                                  <div className="h-2 w-2 scale-0 rounded-full bg-rose-500 transition group-hover/opt:scale-100" />
                                 </div>
                               </button>
                             )}

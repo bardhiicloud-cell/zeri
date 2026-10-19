@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Cookie, ShieldCheck, X, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { AGE_PASSED_EVENT, AGE_VERIFICATION_KEY } from '../lib/ageGate';
 import { dt } from '@/src/lib/dt';
 import {
   announceConsentChange,
@@ -14,7 +15,6 @@ import {
   type ConsentState,
 } from '../lib/consent';
 
-const AGE_VERIFICATION_KEY = 'zeri_age_verified_v1';
 
 /**
  * Cookie consent banner — Law 06/L-082 compliant.
@@ -47,13 +47,15 @@ export default function CookieConsentBanner() {
 
   // Lock body scroll while the banner is up so the page behind it cannot move.
   useEffect(() => {
-    if (!isOpen && !ageRequired) return;
+    // The summary is a light bottom card the visitor can scroll past; only the age
+    // gate and the full preferences view hold the page.
+    if (!ageRequired && !(isOpen && showPreferences)) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [isOpen, ageRequired]);
+  }, [isOpen, ageRequired, showPreferences]);
 
   const verifyAge = useCallback((event: React.FormEvent) => {
     event.preventDefault();
@@ -70,6 +72,7 @@ export default function CookieConsentBanner() {
     }
 
     window.localStorage.setItem(AGE_VERIFICATION_KEY, 'passed');
+    window.dispatchEvent(new Event(AGE_PASSED_EVENT));
     setAgeRequired(false);
     setIsUnderage(false);
     if (!hasDecided()) setIsOpen(true);
@@ -121,25 +124,37 @@ export default function CookieConsentBanner() {
       {isOpen && (
         <div
           role="dialog"
-          aria-modal="true"
+          aria-modal={showPreferences ? true : undefined}
           aria-labelledby="cookie-consent-title"
-          className="fixed inset-0 z-[100000] flex items-end justify-center sm:items-center sm:p-4"
+          className={cn(
+            'fixed inset-x-0 z-[100000] flex justify-center',
+            // Summary: a compact card above the mobile dock, never covering the page.
+            // Preferences: the full modal with a backdrop.
+            showPreferences
+              ? 'inset-y-0 items-end sm:items-center sm:p-4'
+              : 'pointer-events-none bottom-[calc(4.75rem+env(safe-area-inset-bottom))] p-3 md:bottom-0 md:p-4'
+          )}
         >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-          />
+          {showPreferences && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/60"
+            />
+          )}
 
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
-            className="luxury-card relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900"
+            className={cn(
+              'luxury-card pointer-events-auto relative flex w-full max-w-2xl flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900',
+              showPreferences ? 'max-h-[92dvh] rounded-[26px]' : 'max-h-[60dvh] rounded-2xl'
+            )}
           >
-            <div className="flex items-start gap-3.5 border-b border-slate-100 p-5 dark:border-white/5 sm:p-6">
+            <div className={cn('flex items-start gap-3.5 border-b border-slate-100 dark:border-white/5', showPreferences ? 'p-5 sm:p-6' : 'p-4 sm:p-6')}>
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
                 <Cookie className="h-5 w-5" aria-hidden="true" />
               </div>
@@ -150,7 +165,7 @@ export default function CookieConsentBanner() {
                 >
                   {dt('Politika e privatësisë dhe Cookies')}
                 </h2>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                <p className={cn('mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400', !showPreferences && 'hidden sm:block')}>
                   {dt('Ligji Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale në Kosovë kërkon pëlqimin tuaj të qartë dhe të lirë për çdo Cookies jo-esenciale dhe çdo gjurmim të lokacionit.')}
                 </p>
               </div>
@@ -166,20 +181,20 @@ export default function CookieConsentBanner() {
               )}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
               {!showPreferences ? (
                 <div className="space-y-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                   <p>
                     {dt('Ne përdorim Cookies dhe teknologji të ngjashme për të mbajtur sesionin tuaj, për të matur sa të përdoret platforma dhe për të shfaqur reklama.')} {dt('Pa pëlqimin tuaj, asnjë Cookies analitike apo marketingu nuk ngarkohet.')}
                   </p>
-                  <ul className="space-y-1.5">
+                  <ul className="hidden space-y-1.5 sm:block">
                     {OPTIONAL_CATEGORIES.map((key) => (
                       <li key={key} className="flex items-start gap-2">
                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                         <span>
-                          <strong className="font-bold text-slate-800 dark:text-white">{CATEGORY_LABELS[key].sq}</strong>
+                          <strong className="font-bold text-slate-800 dark:text-white">{dt(CATEGORY_LABELS[key].sq)}</strong>
                           {' — '}
-                          {CATEGORY_LABELS[key].descriptionSq}
+                          {dt(CATEGORY_LABELS[key].descriptionSq)}
                         </span>
                       </li>
                     ))}
@@ -220,10 +235,10 @@ export default function CookieConsentBanner() {
                       />
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-black text-slate-900 dark:text-white">
-                          {CATEGORY_LABELS[toggle.key].sq}
+                          {dt(CATEGORY_LABELS[toggle.key].sq)}
                         </span>
                         <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                          {CATEGORY_LABELS[toggle.key].descriptionSq}
+                          {dt(CATEGORY_LABELS[toggle.key].descriptionSq)}
                         </span>
                       </span>
                     </label>
@@ -247,7 +262,7 @@ export default function CookieConsentBanner() {
                     type="button"
                     onClick={savePreferences}
                     disabled={isSaving}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition-all hover:brightness-110 disabled:opacity-60"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition hover:brightness-110 disabled:opacity-60"
                   >
                     {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
                     {dt('Ruaj preferencat')}
@@ -267,7 +282,7 @@ export default function CookieConsentBanner() {
                     type="button"
                     onClick={acceptAll}
                     disabled={isSaving}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition-all hover:brightness-110 disabled:opacity-60"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition hover:brightness-110 disabled:opacity-60"
                   >
                     {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
                     {dt('Prano të gjitha')}
@@ -292,7 +307,7 @@ export default function CookieConsentBanner() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="age-verification-title"
-          className="fixed inset-0 z-[100001] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[100001] flex items-center justify-center bg-slate-950/80 p-4 md:backdrop-blur-md"
         >
           <motion.section
             initial={{ opacity: 0, y: 18 }}
@@ -301,7 +316,7 @@ export default function CookieConsentBanner() {
             className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:p-8"
           >
             <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-blue-100 text-lg font-black text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">16+</div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">Para vazhdimit</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Para vazhdimit')}</p>
             <h2 id="age-verification-title" className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
               {dt('Sa vjeç jeni?')}
             </h2>
@@ -310,7 +325,7 @@ export default function CookieConsentBanner() {
             </p>
             <form onSubmit={verifyAge} className="mt-6 space-y-4">
               <label htmlFor="age-verification-input" className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                Mosha juaj
+                {dt('Mosha juaj')}
               </label>
               <input
                 id="age-verification-input"
@@ -327,7 +342,7 @@ export default function CookieConsentBanner() {
                   setAgeError('');
                   setIsUnderage(false);
                 }}
-                placeholder="p.sh. 17"
+                placeholder={dt('p.sh. 17')}
                 aria-describedby={isUnderage ? 'age-verification-blocked' : ageError ? 'age-verification-error' : undefined}
                 className="min-h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-800 dark:text-white"
               />
@@ -342,7 +357,7 @@ export default function CookieConsentBanner() {
               </button>
             </form>
             <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-400">
-              Për verifikim ruhet vetëm shenja se mosha minimale është plotësuar; mosha që shkruani nuk regjistrohet.
+              {dt('Për verifikim ruhet vetëm shenja se mosha minimale është plotësuar; mosha që shkruani nuk regjistrohet.')}
             </p>
           </motion.section>
         </div>
@@ -399,7 +414,7 @@ export function CookiePreferencesButton({ className }: { className?: string }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/60 md:backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -479,7 +494,7 @@ export function CookiePreferencesButton({ className }: { className?: string }) {
                   type="button"
                   onClick={() => save({ analytics, marketing })}
                   disabled={isSaving}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition-all hover:brightness-110 disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition hover:brightness-110 disabled:opacity-60"
                 >
                   {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
                   {dt('Ruaj preferencat')}

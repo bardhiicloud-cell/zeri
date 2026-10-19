@@ -155,7 +155,7 @@ export default function AdminPolls() {
               else setIsCreating(true);
             }}
             className={cn(
-              "flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-sm transition-all rounded-xl shadow-sm dark:shadow-none hover:shadow active:scale-95 w-full sm:w-auto",
+              "flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-sm transition rounded-xl shadow-sm dark:shadow-none hover:shadow active:scale-95 w-full sm:w-auto",
               isCreating 
                 ? "bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100" 
                 : "bg-slate-900 text-white hover:bg-slate-800 border border-slate-800"
@@ -175,7 +175,7 @@ export default function AdminPolls() {
               placeholder={dt(`Kërko me emër ose përshkrim...`)}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium placeholder:text-slate-400 focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium placeholder:text-slate-400 focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition"
             />
          </div>
          {selectedIds.size > 0 && (
@@ -202,33 +202,33 @@ export default function AdminPolls() {
            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Çështja (Pyetja kryesore)`)}</label>
-                <input required type="text" value={newPoll.question} onChange={e => setNewPoll({...newPoll, question: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium" placeholder={dt(`psh. Cila është gjendja e rrugëve?`)} />
+                <input required type="text" value={newPoll.question} onChange={e => setNewPoll({...newPoll, question: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-medium" placeholder={dt(`psh. Cila është gjendja e rrugëve?`)} />
               </div>
               
               <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Përshkrimi (Detajet)`)}</label>
-                <textarea value={newPoll.description} onChange={e => setNewPoll({...newPoll, description: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium min-h-[100px]" placeholder={dt(`Detaje shtesë mbi sondazhin...`)} />
+                <textarea value={newPoll.description} onChange={e => setNewPoll({...newPoll, description: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-medium min-h-[100px]" placeholder={dt(`Detaje shtesë mbi sondazhin...`)} />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Afati i Përfundimit`)}</label>
-                  <input required type="datetime-local" value={newPoll.expiresAt} onChange={e => setNewPoll({...newPoll, expiresAt: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium" />
+                  <input required type="datetime-local" value={newPoll.expiresAt} onChange={e => setNewPoll({...newPoll, expiresAt: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-medium" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Kategoria`)}</label>
-                  <input type="text" value={newPoll.category} onChange={e => setNewPoll({...newPoll, category: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium" placeholder={dt(`psh. Infrastrukturë`)} />
+                  <input type="text" value={newPoll.category} onChange={e => setNewPoll({...newPoll, category: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-medium" placeholder={dt(`psh. Infrastrukturë`)} />
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Imazhi (URL - Opsionale)`)}</label>
-                   <input type="url" value={newPoll.image} onChange={e => setNewPoll({...newPoll, image: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium" placeholder={dt(`https://...`)} />
+                   <input type="url" value={newPoll.image} onChange={e => setNewPoll({...newPoll, image: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-medium" placeholder={dt(`https://...`)} />
                 </div>
                 <div>
                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Targeti Lokal`)}</label>
-                   <select value={newPoll.municipality} onChange={e => setNewPoll({...newPoll, municipality: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium appearance-none">
+                   <select value={newPoll.municipality} onChange={e => setNewPoll({...newPoll, municipality: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-medium appearance-none">
                      <option value="">{dt(`Nacionale (E Gjithë Kosova)`)}</option>
                      {KOSOVO_MUNICIPALITIES.map(m => (
                        <option key={m} value={m}>{m}</option>
@@ -266,7 +266,7 @@ export default function AdminPolls() {
                     </div>
                   ))}
                   
-                  <button type="button" onClick={() => setNewPoll({...newPoll, options: [...newPoll.options, {id: Math.random().toString(), text: '', votes: 0, icon: '❓'}]})} className="w-full py-3 border-2 border-dashed border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-slate-800 dark:bg-slate-900 transition-all flex items-center justify-center gap-2">
+                  <button type="button" onClick={() => setNewPoll({...newPoll, options: [...newPoll.options, {id: Math.random().toString(), text: '', votes: 0, icon: '❓'}]})} className="w-full py-3 border-2 border-dashed border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-slate-800 dark:bg-slate-900 transition flex items-center justify-center gap-2">
                     <Plus className="w-4 h-4" />{dt(`Shto Opsion Tjetër`)}
                   </button>
                 </div>
@@ -294,7 +294,7 @@ export default function AdminPolls() {
                animate={{ opacity: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.95 }}
                key={poll.id} 
-               className={cn("bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-none hover:shadow transition-all relative flex flex-col overflow-hidden group", isSelected && "ring-2 ring-indigo-500")}
+               className={cn("bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-none hover:shadow transition relative flex flex-col overflow-hidden group", isSelected && "ring-2 ring-indigo-500")}
             >
               <div className="absolute top-4 left-4 z-20">
                  <button onClick={() => toggleSelectBlock(poll.id)} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-500 dark:text-slate-400 shadow-sm dark:shadow-none border border-slate-200/60 dark:border-white/10 border border-slate-200/60 dark:border-white/10 transition-colors">

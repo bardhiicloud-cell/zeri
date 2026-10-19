@@ -58,7 +58,7 @@ export default function RemoveAccountDialog({ target, onClose, onRemoved }: Prop
   };
 
   return (
-    <div className="fixed inset-0 z-[600] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={dt('Hiq llogarinë')}>
+    <div className="fixed inset-0 z-[600] flex items-center justify-center bg-slate-950/60 p-4 md:backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={dt('Hiq llogarinë')}>
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{dt('Hiq llogarinë e')} {target.name}</h3>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">

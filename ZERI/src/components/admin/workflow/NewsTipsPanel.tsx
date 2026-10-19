@@ -158,7 +158,7 @@ function TipDrawer({ id, onClose, onChanged }: { id: string; onClose: () => void
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex justify-end bg-slate-950/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex justify-end bg-slate-950/40 md:backdrop-blur-sm" onClick={onClose}>
       <aside role="dialog" aria-modal="true" aria-label={dt('Lajmi i dërguar')} onClick={e => e.stopPropagation()} className="flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl dark:bg-slate-950">
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
           <div className="min-w-0">

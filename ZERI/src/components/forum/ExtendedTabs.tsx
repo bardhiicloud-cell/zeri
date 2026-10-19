@@ -192,11 +192,11 @@ export const GroupsTab = ({ requireAuth, currentUser }: { requireAuth: () => boo
         <form onSubmit={handleCreateGroup} className="space-y-6 max-w-2xl">
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Emri i Grupit`)}</label>
-            <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={dt(`psh. Zhvilluesit Kosovarë`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-medium" />
+            <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={dt(`psh. Zhvilluesit Kosovarë`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition font-medium" />
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Përshkrimi i Grupit`)}</label>
-            <textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={dt(`Përshkruani qëllimin e këtij grupi...`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[120px] resize-none text-sm" />
+            <textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={dt(`Përshkruani qëllimin e këtij grupi...`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition min-h-[120px] resize-none text-sm" />
           </div>
           <button type="submit" disabled={!newGroupName.trim()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50">{dt(`Krijo Grupin`)}</button>
         </form>
@@ -218,7 +218,7 @@ export const GroupsTab = ({ requireAuth, currentUser }: { requireAuth: () => boo
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">{activeGroup.members?.length || 1}{dt(`anëtarë • Krijuar nga`)} {activeGroup.creatorName}</p>
             </div>
           </div>
-          <button onClick={() => handleJoinGroup(activeGroup)} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm dark:shadow-none ${isMember ? 'bg-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+          <button onClick={() => handleJoinGroup(activeGroup)} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-sm dark:shadow-none ${isMember ? 'bg-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
             {isMember ? 'Largohu nga Grupi' : 'Bashkohu me Grupin'}
           </button>
         </div>
@@ -331,7 +331,7 @@ export const GroupsTab = ({ requireAuth, currentUser }: { requireAuth: () => boo
         {groups.map(g => {
           const isMember = g.members?.includes(currentUser?.id);
           return (
-            <div key={g.id} className="border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 hover:border-blue-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-all cursor-pointer bg-slate-50 dark:bg-slate-800/50 group flex flex-col" onClick={() => setActiveGroup(g)}>
+            <div key={g.id} className="border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 hover:border-blue-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition cursor-pointer bg-slate-50 dark:bg-slate-800/50 group flex flex-col" onClick={() => setActiveGroup(g)}>
               <div className="flex items-start gap-4 mb-3">
                 <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 shadow-sm dark:shadow-none">
                   <Users className="w-6 h-6" />
@@ -438,7 +438,7 @@ export const ProfileTab = ({ currentUser, userPosts, requireAuth }: { currentUse
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/10 shadow-sm dark:shadow-none overflow-hidden mb-6">
       <div className="relative h-48 sm:h-64 bg-slate-200 group">
-        <img src={coverImg} alt="Cover" className="w-full h-full object-cover" />
+        <img loading="lazy" decoding="async" src={coverImg} alt="Cover" className="w-full h-full object-cover" />
         <button 
           onClick={() => handleUpload('cover')}
           className="absolute bottom-4 right-4 bg-white/80 hover:bg-white dark:bg-slate-900 backdrop-blur-sm text-slate-900 dark:text-white px-3 py-1.5 rounded-2xl text-sm font-bold flex items-center gap-2 transition-colors opacity-0 group-hover:opacity-100"
@@ -450,7 +450,7 @@ export const ProfileTab = ({ currentUser, userPosts, requireAuth }: { currentUse
       <div className="px-4 sm:px-8 pb-8 relative">
         <div className="absolute -top-16 left-4 sm:left-8 w-32 h-32 bg-white dark:bg-slate-900 rounded-full p-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none group z-10">
           {profileImg ? (
-             <img src={profileImg} alt="Profile" className="w-full h-full rounded-full object-cover" />
+             <img loading="lazy" decoding="async" src={profileImg} alt="Profile" className="w-full h-full rounded-full object-cover" />
           ) : (
             <div className="w-full h-full bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-4xl uppercase">
               {currentUser?.name?.substring(0, 2) || 'US'}
@@ -498,7 +498,7 @@ export const ProfileTab = ({ currentUser, userPosts, requireAuth }: { currentUse
                   </div>
                   <p className="text-slate-800 dark:text-slate-200 dark:text-slate-200 text-[15px] leading-relaxed">{post.content}</p>
                   {post.imageUrl && (
-                    <img src={post.imageUrl} alt="Post media" className="mt-4 rounded-xl max-h-80 w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={post.imageUrl} alt="Post media" className="mt-4 rounded-xl max-h-80 w-full object-cover" />
                   )}
                   {post.videoUrl && (
                     <video src={post.videoUrl} controls className="mt-4 rounded-xl max-h-80 w-full object-cover" />

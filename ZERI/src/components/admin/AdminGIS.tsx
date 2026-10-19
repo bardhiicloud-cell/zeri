@@ -88,7 +88,7 @@ export default function AdminGIS() {
     : defaultPosition;
 
   return (
-    <div className="h-[calc(100vh-220px)] w-full relative flex flex-col font-sans overflow-hidden bg-slate-900 border-2 border-slate-200/60 dark:border-white/10 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none transition-all duration-300 rounded-xl">
+    <div className="h-[calc(100vh-220px)] w-full relative flex flex-col font-sans overflow-hidden bg-slate-900 border-2 border-slate-200/60 dark:border-white/10 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none transition duration-300 rounded-xl">
       
       {/* Top Bar for NOC */}
       <div className="bg-slate-900 p-4 flex flex-col md:flex-row justify-between items-center z-[400] relative border-b-2 border-blue-500/30 gap-4">

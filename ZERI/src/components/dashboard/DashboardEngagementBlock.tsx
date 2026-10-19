@@ -90,7 +90,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
               <button
                 type="submit"
                 disabled={!trackId.trim()}
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-slate-900 transition-all hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-slate-900 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {dt('Verifiko Statusin')}
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -129,7 +129,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
             </span>
             <Link
               to="/Idea"
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2 text-xs font-black text-white transition-all hover:brightness-110"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2 text-xs font-black text-white transition hover:brightness-110"
             >
               <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
               {dt('Propozo një Ide')}

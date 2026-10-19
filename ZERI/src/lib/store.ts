@@ -1495,7 +1495,6 @@ export const useStore = create<AppState>()(
           const { db } = await import('./firebase');
           const { doc, deleteDoc } = await import('firebase/firestore');
           await deleteDoc(doc(db, 'reports', id));
-          console.log(`Raporti ${id} u fshi. Njoftimi derguar te approval@ks.com`);
         } catch(e) {
           console.error("Gabim gjate fshirjes:", e);
           alert("Nuk mund të fshihet dosja. Ju lutem provoni përsëri.");

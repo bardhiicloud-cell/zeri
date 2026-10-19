@@ -148,7 +148,7 @@ export default function SocialFeed() {
           <div className="flex gap-4">
             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shrink-0 border border-slate-300">
               {currentUser.avatar ? (
-                <img src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                <img loading="lazy" decoding="async" src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <User className="w-5 h-5 text-slate-400" />
               )}
@@ -158,7 +158,7 @@ export default function SocialFeed() {
                 value={newPostContent}
                 onChange={e => setNewPostContent(e.target.value)}
                 placeholder={`Çfarë keni në mendje rreth këtyre sondazheve, ${currentUser.name}?`}
-                className="w-full min-h-[100px] p-3 bg-neutral-50 border border-slate-200/60 rounded-xl resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-400"
+                className="w-full min-h-[100px] p-3 bg-neutral-50 border border-slate-200/60 rounded-xl resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-slate-400"
               />
               <div className="flex justify-end">
                 <button
@@ -192,7 +192,7 @@ export default function SocialFeed() {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shrink-0 border border-slate-300">
                       {post.authorAvatar ? (
-                        <img src={post.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                        <img loading="lazy" decoding="async" src={post.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                       ) : (
                         <User className="w-5 h-5 text-slate-400" />
                       )}
@@ -243,7 +243,7 @@ export default function SocialFeed() {
                       <div key={comment.id} className="flex gap-3">
                         <div className="w-8 h-8 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-white/10 shadow-sm dark:shadow-none mt-1">
                           {comment.authorAvatar ? (
-                            <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                            <img loading="lazy" decoding="async" src={comment.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                           ) : (
                             <User className="w-4 h-4 text-slate-400" />
                           )}
@@ -277,7 +277,7 @@ export default function SocialFeed() {
                         value={newCommentContent[post.id] || ''}
                         onChange={e => setNewCommentContent(prev => ({ ...prev, [post.id]: e.target.value }))}
                         placeholder={dt(`Shkruaj një koment...`)}
-                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-full text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-full text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                       />
                       <button 
                         type="submit"

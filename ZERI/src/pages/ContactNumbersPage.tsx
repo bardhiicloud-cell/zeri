@@ -92,7 +92,7 @@ export default function ContactNumbersPage() {
           return (
             <div 
               key={index} 
-              className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 hover:border-rose-300 dark:hover:border-rose-500/50 rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:hover:shadow-none transition-all duration-300 flex flex-col shadow-sm dark:shadow-none h-full"
+              className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 hover:border-rose-300 dark:hover:border-rose-500/50 rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:hover:shadow-none transition duration-300 flex flex-col shadow-sm dark:shadow-none h-full"
             >
               <div className="absolute right-[-10px] top-[-10px] opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-700 pointer-events-none">
                  <Icon className="w-24 h-24 text-slate-900 dark:text-white shrink-0" />
@@ -129,7 +129,7 @@ export default function ContactNumbersPage() {
                 {/* Call Button */}
                 <a 
                   href={`tel:${emergency.phone}`} 
-                  className="w-full shrink-0 bg-slate-900 hover:bg-rose-600 text-white rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 shadow-sm dark:shadow-none mt-2 sm:mt-auto"
+                  className="w-full shrink-0 bg-slate-900 hover:bg-rose-600 text-white rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition duration-300 active:scale-95 shadow-sm dark:shadow-none mt-2 sm:mt-auto"
                 >
                   <Phone className="w-4 h-4 text-rose-500 fill-rose-500/10 group-hover:text-white" />
                   <span>{dt(`Telefono Tani`)}</span>
@@ -234,7 +234,7 @@ export default function ContactNumbersPage() {
                       </div>
                       <a 
                         href={`tel:${contact.phone.replace(/\s+/g, '')}`} 
-                        className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-rose-600 hover:bg-slate-900 text-white rounded-2xl font-black transition-all duration-300 shadow-sm dark:shadow-none shrink-0 active:scale-95 text-xs uppercase tracking-widest"
+                        className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-rose-600 hover:bg-slate-900 text-white rounded-2xl font-black transition duration-300 shadow-sm dark:shadow-none shrink-0 active:scale-95 text-xs uppercase tracking-widest"
                       >
                         <Phone className="w-3.5 h-3.5 text-white" />
                         <span>{dt(`Thirr`)}</span>

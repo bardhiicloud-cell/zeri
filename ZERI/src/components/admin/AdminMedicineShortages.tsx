@@ -313,17 +313,17 @@ export default function AdminMedicineShortages() {
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         {s.status !== 'verified' && (
-                          <button onClick={() => setStatus(s, 'verified')} className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition-all active:scale-95" title={dt('Verifiko dhe boto publikisht')}>
+                          <button onClick={() => setStatus(s, 'verified')} className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition active:scale-95" title={dt('Verifiko dhe boto publikisht')}>
                             <ShieldCheck className="w-3 h-3" /> {dt('Verifiko')}
                           </button>
                         )}
                         {s.status !== 'resolved' && (
-                          <button onClick={() => setStatus(s, 'resolved')} className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] transition-all active:scale-95" title={dt('Shëno si të zgjidhur')}>
+                          <button onClick={() => setStatus(s, 'resolved')} className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] transition active:scale-95" title={dt('Shëno si të zgjidhur')}>
                             {dt('Zgjidhur')}
                           </button>
                         )}
                         {s.status !== 'rejected' && (
-                          <button onClick={() => setStatus(s, 'rejected')} className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition-all active:scale-95" title={dt('Refuzo raportimin')}>
+                          <button onClick={() => setStatus(s, 'rejected')} className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition active:scale-95" title={dt('Refuzo raportimin')}>
                             {dt('Refuzo')}
                           </button>
                         )}
@@ -342,7 +342,7 @@ export default function AdminMedicineShortages() {
 
       {/* Inspect modal */}
       {inspecting && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] bg-black/60 md:backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2.5">

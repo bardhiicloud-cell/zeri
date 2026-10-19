@@ -1,8 +1,3 @@
-import { dynamicTranslations } from './dynamicTranslations';
-import { uiTranslations } from './uiTranslations';
-import { newLanguageTranslations } from './newLanguageTranslations';
-import { siteTranslations } from './siteTranslations';
-import { publicPagesTranslations } from './publicPagesTranslations';
 import {
   DEFAULT_LANGUAGE,
   isSupportedLanguage,
@@ -14,6 +9,45 @@ import {
 import { translationLanguageFor } from './seo';
 
 type SupportedLanguage = SupportedLanguageCode;
+
+/**
+ * The translation tables are ~4 MB of generated text. Albanian is the source
+ * language and needs none of it, so they live in their own chunk and are only
+ * fetched once a visitor is in another language. Until then dt() returns the
+ * Albanian original, which is exactly what the tables return for `sq`.
+ */
+type TranslationTables = typeof import('./translationTables');
+let tables: TranslationTables | null = null;
+let tablesLoading: Promise<void> | null = null;
+
+/** The only Albanian entry whose output differs from its key (a deliberate rewording). */
+const ALBANIAN_OVERRIDES: Record<string, string> = {
+  'Mbi 24 ide të pranuara këtë muaj': 'Ide që e përmirësojnë komunën',
+};
+
+/**
+ * Fetch the translation tables when `language` needs them. Resolves at once for
+ * Albanian and when they are already loaded; a failed fetch can be retried.
+ */
+export function ensureTranslationTables(language: string): Promise<void> {
+  if (tables || !isSupportedLanguage(language) || translationLanguageFor(language) === DEFAULT_LANGUAGE) {
+    return Promise.resolve();
+  }
+  tablesLoading ??= import('./translationTables')
+    .then((module) => {
+      tables = module;
+    })
+    .catch((error) => {
+      tablesLoading = null;
+      throw error;
+    });
+  return tablesLoading;
+}
+
+/** True when dt() can already translate into `language`. */
+export function translationTablesReady(language: string): boolean {
+  return !!tables || !isSupportedLanguage(language) || translationLanguageFor(language) === DEFAULT_LANGUAGE;
+}
 
 const isSupported = (value: string | null): value is SupportedLanguage =>
   value !== null && (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
@@ -51,6 +85,9 @@ export function dt(text: string, forcedLang?: string): string {
    * needed and an English fix reaches all three at once.
    */
   lang = translationLanguageFor(lang);
+
+  if (!tables) return lang === DEFAULT_LANGUAGE ? ALBANIAN_OVERRIDES[text] ?? text : text;
+  const { publicPagesTranslations, newLanguageTranslations, siteTranslations, uiTranslations, dynamicTranslations } = tables;
 
   const publicPage = publicPagesTranslations[text]?.[lang];
   if (publicPage) return publicPage;

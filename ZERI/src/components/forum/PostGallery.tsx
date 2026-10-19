@@ -32,7 +32,7 @@ export function PostGallery({ urls }: { urls: string[] }) {
           onKeyDown={(e) => { if (e.key === 'Escape') setOpen(null); if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); }}>
           <button type="button" autoFocus onClick={() => setOpen(null)} aria-label={dt('Mbyll')} className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white"><X className="h-5 w-5" aria-hidden="true" /></button>
           <button type="button" onClick={() => go(-1)} aria-label={dt('Para')} className="absolute left-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white"><ChevronLeft className="h-6 w-6" aria-hidden="true" /></button>
-          <img src={urls[open]} alt="" className="max-h-[90dvh] max-w-[92vw] object-contain" />
+          <img loading="lazy" decoding="async" src={urls[open]} alt="" className="max-h-[90dvh] max-w-[92vw] object-contain" />
           <button type="button" onClick={() => go(1)} aria-label={dt('Pas')} className="absolute right-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white"><ChevronRight className="h-6 w-6" aria-hidden="true" /></button>
           <span className="absolute bottom-4 rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white">{open + 1} / {urls.length}</span>
         </div>

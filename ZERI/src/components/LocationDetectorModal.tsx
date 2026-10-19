@@ -7,7 +7,8 @@ import { cn } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeMunicipalityName, isInsideKosovo } from '../lib/municipalityNormalizer';
-import { hasAnalyticsConsent, onConsentChange } from '../lib/consent';
+import { hasAnalyticsConsent, hasDecided, onConsentChange } from '../lib/consent';
+import { AGE_PASSED_EVENT, isAgeVerified } from '../lib/ageGate';
 import {
   ALL_MUNICIPALITIES,
   ALL_SCOPE,
@@ -36,6 +37,20 @@ export function LocationDetectorModal() {
   // explicit, specific consent before the browser geolocation API is touched.
   useEffect(() => {
     return onConsentChange(() => setGeolocationAllowed(hasAnalyticsConsent()));
+  }, []);
+
+  // A first visit used to stack three gates at once (age, cookies, location).
+  // The location prompt now waits until the age check is passed and the cookie
+  // question is answered, so the citizen meets one question at a time.
+  const [gatesClear, setGatesClear] = useState<boolean>(() => isAgeVerified() && hasDecided());
+  useEffect(() => {
+    const refresh = () => setGatesClear(isAgeVerified() && hasDecided());
+    window.addEventListener(AGE_PASSED_EVENT, refresh);
+    const off = onConsentChange(refresh);
+    return () => {
+      window.removeEventListener(AGE_PASSED_EVENT, refresh);
+      off();
+    };
   }, []);
 
   // Persist only the municipality name. The Geolocation coordinates feed the
@@ -137,7 +152,7 @@ export function LocationDetectorModal() {
   // mount — the citizen could see their municipality saved while the gate
   // stayed up, and every in-app navigation re-showed it.
   const hasAnswered = useStore(state => state.hasChosenMunicipality);
-  if (hasAnswered) return null;
+  if (hasAnswered || !gatesClear) return null;
 
 
   return (
@@ -147,7 +162,7 @@ export function LocationDetectorModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-md"
+          className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/80 md:backdrop-blur-md"
         />
 
         <motion.div
@@ -198,7 +213,7 @@ export function LocationDetectorModal() {
             <button
               onClick={handleAutoDetect}
               disabled={isLoading}
-              className="w-full mb-6 group relative overflow-hidden rounded-2xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-blue-900/50 p-4 flex items-center gap-4 transition-all hover:border-blue-300 dark:hover:border-blue-700/50 hover:shadow-md active:scale-[0.98] disabled:opacity-70"
+              className="w-full mb-6 group relative overflow-hidden rounded-2xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-blue-900/50 p-4 flex items-center gap-4 transition hover:border-blue-300 dark:hover:border-blue-700/50 hover:shadow-md active:scale-[0.98] disabled:opacity-70"
             >
               <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
                 {isLoading ? (
@@ -233,7 +248,7 @@ export function LocationDetectorModal() {
                 aria-label={dt("Kërko komunën...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-400"
               />
             </div>
 
@@ -243,7 +258,7 @@ export function LocationDetectorModal() {
                   <button
                     key={m}
                     onClick={() => handleManualSelect(m)}
-                    className="w-full px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl text-left transition-all flex items-center justify-between group"
+                    className="w-full px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl text-left transition flex items-center justify-between group"
                   >
                     {m}
                     <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

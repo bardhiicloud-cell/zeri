@@ -932,7 +932,7 @@ export default function ReportIssue() {
       {step < 3 && (
         <div className="flex items-center justify-center gap-4 mb-8 md:mb-16 w-full max-w-xs md:max-w-md mx-auto">
           <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 border-2 font-bold text-xs md:text-sm title-serif ${step === 1 ? 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white border-slate-900 dark:border-white' : 'bg-transparent text-[var(--color-text)] dark:text-white border-slate-900 dark:border-white'}`}>1</div>
-          <div className="h-0.5 flex-1 bg-neutral-300"><div className={`h-full bg-indigo-600 transition-all ${step > 1 ? 'w-full' : 'w-0'}`} /></div>
+          <div className="h-0.5 flex-1 bg-neutral-300"><div className={`h-full bg-indigo-600 transition ${step > 1 ? 'w-full' : 'w-0'}`} /></div>
           <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 border-2 font-bold text-xs md:text-sm title-serif transition-colors ${step === 2 ? 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white border-slate-900 dark:border-white' : 'bg-transparent text-neutral-500 dark:text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] border-neutral-300 dark:border-slate-700'}`}>2</div>
         </div>
       )}
@@ -973,9 +973,9 @@ export default function ReportIssue() {
                    {mediaItems.map((media, idx) => (
                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200/60 dark:border-white/10">
                        {media.type === 'image' ? (
-                         <img src={media.url} alt="Preview" className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition-all" />
+                         <img src={media.url} alt="Preview" className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition" />
                        ) : media.type === 'video' ? (
-                         <video src={media.url} className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition-all" muted playsInline />
+                         <video src={media.url} className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition" muted playsInline />
                        ) : (
                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[var(--color-surface-subtle)] p-2 text-center">
                            {media.type === 'audio'
@@ -1016,7 +1016,7 @@ export default function ReportIssue() {
                 }
                 setStep(2);
               }}
-              className="w-full flex items-center justify-center gap-3 p-4 md:p-5 font-bold transition-all tracking-wide text-sm md:text-sm border rounded-xl active:scale-[0.99] mb-8 bg-slate-900 hover:bg-indigo-600 text-white border-slate-200/60 dark:border-white/10 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] hover:shadow-indigo-500/10"
+              className="w-full flex items-center justify-center gap-3 p-4 md:p-5 font-bold transition tracking-wide text-sm md:text-sm border rounded-xl active:scale-[0.99] mb-8 bg-slate-900 hover:bg-indigo-600 text-white border-slate-200/60 dark:border-white/10 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] hover:shadow-indigo-500/10"
             >{dt(`Vazhdo te hapi tjetër (Konfirmo Lokacionin)`)} <ChevronRight className="w-4 h-4 animate-pulse text-rose-500" />
             </button>
 
@@ -1244,7 +1244,7 @@ export default function ReportIssue() {
                 <select 
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value as UrgentLevel)}
-                  className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all text-[var(--color-text)]"
+                  className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition text-[var(--color-text)]"
                 >
                   <option value="E ulët">{dt(`SHKALLA I:`)} {dt('E ulët').toUpperCase()}</option>
                   <option value="Mesatare">{dt(`SHKALLA II:`)} {dt('Mesatare').toUpperCase()}</option>
@@ -1316,7 +1316,7 @@ export default function ReportIssue() {
                           }
                         },
                         (err) => {
-                          console.log(err);
+                          console.warn(err);
                           setIsLocating(false);
                           toast.error("Nuk mund të gjejmë lokacionin. Ju lutem kontrolloni nëse keni lejuar qasjen në GPS (Allow Location) në shfletuesin tuaj.");
                         },
@@ -1352,7 +1352,7 @@ export default function ReportIssue() {
                    type="text" 
                    value={address}
                    onChange={e => setAddress(e.target.value)}
-                   className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all text-[var(--color-text)]"
+                   className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition text-[var(--color-text)]"
                    placeholder={dt(`Identifikoni lokacionin me saktësi...`)}
                 />
                 {isSearchingAddress && (
@@ -1426,7 +1426,7 @@ export default function ReportIssue() {
                       value={adLink}
                       onChange={e => setAdLink(e.target.value)}
                       placeholder={dt(`Linku i reklamës (opsional) - https://...`)}
-                      className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all text-[var(--color-text)]"
+                      className="w-full px-[var(--spacing-4)] py-[var(--spacing-3)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-[var(--radius-button)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition text-[var(--color-text)]"
                     />
                   )}
                 </div>

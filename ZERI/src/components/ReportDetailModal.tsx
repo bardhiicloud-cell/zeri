@@ -244,7 +244,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
 
   return createPortal(
     <div className="fixed inset-0 z-[12000] flex items-center justify-center overflow-hidden p-0 md:p-6" role="dialog" aria-modal="true" aria-label={report.title}>
-       <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md transition-opacity" onClick={onClose} />
+       <div className="fixed inset-0 bg-slate-900/95 md:backdrop-blur-md transition-opacity" onClick={onClose} />
 
        <div className="relative flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-black shadow-2xl md:h-[min(90dvh,900px)] md:flex-row md:rounded-2xl md:border md:border-white/15">
 
@@ -393,7 +393,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                      href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${report.location.lat},${report.location.lng}`}
                      target="_blank"
                      rel="noopener noreferrer"
-                     className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded-xl border border-white/20 transition-all text-xs font-bold w-fit cursor-pointer"
+                     className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded-xl border border-white/20 transition text-xs font-bold w-fit cursor-pointer"
                    >
                      <span>{dt(`Street View 🗺️`)}</span>
                    </a>

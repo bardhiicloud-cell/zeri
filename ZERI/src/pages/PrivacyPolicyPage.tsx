@@ -239,7 +239,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <Link
                 to="/kontakt"
-                className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-xs font-black text-white transition-all hover:brightness-110"
+                className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-xs font-black text-white transition hover:brightness-110"
               >
                 {dt('Dërgo kërkesë për privatësi')}
               </Link>

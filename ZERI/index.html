@@ -2,9 +2,6 @@
 <html lang="sq">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <!-- Pinch-zoom stays enabled (WCAG 1.4.4); viewport-fit=cover lets the layout use notch/safe-area insets. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
@@ -16,6 +13,18 @@
     <title>Zëri Qytetarëve — Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës</title>
     <meta name="description" content="Platforma Zëri Qytetarëve i mundëson qytetarëve të raportojnë çështje, të ndiqin zgjidhjen e tyre, të votojnë në sondazhe dhe të kontribuojnë në vendimmarrjen komunale të Kosovës." />
     <meta name="keywords" content="qytetar, kosova, raporto, siguria, komuna, transparent, angazhim qytetar" />
+
+    <!--
+      Fonts. Loaded from the document instead of a CSS @import: an @import is only
+      discovered after the stylesheet has downloaded, so the font request used to
+      queue behind the 430 kB bundle CSS. Here the connection opens immediately and
+      the request runs in parallel with the bundle (display=swap shows the system
+      font until the web font arrives). No inline onload trick: the server's CSP
+      forbids inline event handlers.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+Armenian:wght@400;600;700&display=swap" />
 
     <!-- Icons: SVG favicon works everywhere modern; ICO fallback for older crawlers -->
     <link rel="icon" type="image/png" href="/favicon.png" />

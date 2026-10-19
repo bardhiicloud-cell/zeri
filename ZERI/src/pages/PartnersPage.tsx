@@ -104,7 +104,7 @@ export default function PartnersPage() {
   }, [ads]);
 
   const contactBtn =
-    'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+    'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
   const sectionTitle = 'text-[20px] font-semibold leading-tight sm:text-[24px]';
   const eyebrow = 'text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--au-accent)]';
 

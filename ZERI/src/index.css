@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+Armenian:wght@400;600;700&display=swap');
 @import "tailwindcss";
 /* Base marker-cluster stylesheet: react-leaflet-cluster does not import it for us.
    Only the fly-in/spiderfy transition rules are needed - the colours below are
@@ -44,38 +43,19 @@ html:not(.dark) {
 }
 
 /*
- * Theme cross-fade. Only background/border/text colours are transitioned, and
- * only on the containers that carry them, so hovering a card still animates at
- * the speed the component asked for rather than being flattened to 220ms.
+ * Theme cross-fade. `themePreference.ts` adds `.theme-fade` to <html> for
+ * ~250ms around a deliberate light/dark switch, so the palette eases instead of
+ * snapping. It is not declared permanently: a standing transition on every
+ * div/a/button made the browser track colour transitions on thousands of nodes
+ * for the whole session. Elements that declare their own transition keep it,
+ * and the map never smears.
  */
 @media (prefers-reduced-motion: no-preference) {
-  body,
-  header,
-  aside,
-  nav,
-  main,
-  footer,
-  section,
-  article,
-  div,
-  button,
-  a,
-  input,
-  select,
-  textarea {
+  html.theme-fade body,
+  html.theme-fade :where(header, aside, nav, main, footer, section, article, div, button, a, input, select, textarea):not([class*="transition-"], .leaflet-container, .leaflet-container *) {
     transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 180ms;
+    transition-duration: 200ms;
     transition-timing-function: ease-out;
-  }
-
-  /*
-   * ...but never for elements that already declare their own transition, and
-   * never for the map, where a colour transition makes panning smear.
-   */
-  [class*="transition-"],
-  .leaflet-container,
-  .leaflet-container * {
-    transition-property: revert-layer;
   }
 }
 
@@ -848,3 +828,8 @@ html:not(.dark) :where(.text-slate-500, .text-gray-500):not(.luxury-hero *, [cla
 @keyframes hero-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 .hero-twinkle { animation: hero-twinkle 4.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .hero-twinkle { animation: none; } }
+
+
+/* Route change: the incoming page eases in. Opacity only, so fixed overlays keep their containing block. */
+@keyframes page-enter { from { opacity: 0; } to { opacity: 1; } }
+.page-enter { animation: page-enter 200ms ease-out backwards; }

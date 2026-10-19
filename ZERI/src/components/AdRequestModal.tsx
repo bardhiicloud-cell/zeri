@@ -3,7 +3,7 @@ import {
   X, Sparkles, 
   Send, ShieldCheck, ArrowRight, ExternalLink, AlertCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { useStore } from '../lib/store';
@@ -117,7 +117,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
 
   if (payment) {
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/60 backdrop-blur-xs sm:items-center sm:p-4">
+      <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/60 md:backdrop-blur-xs sm:items-center sm:p-4">
         <div className="max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-3xl dark:bg-zinc-900">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-black text-slate-900 dark:text-white">{dt('Pagesa e reklamës')}</h3>
@@ -132,7 +132,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 md:backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -175,7 +175,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
                 type="button"
                 key={pkg.id}
                 onClick={() => setSelectedPackage(pkg.id as any)}
-                className={`p-3.5 rounded-2xl border text-left transition-all ${
+                className={`p-3.5 rounded-2xl border text-left transition ${
                   selectedPackage === pkg.id
                     ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
                     : 'border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/40 hover:border-slate-300'
@@ -283,7 +283,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-blue-600/20 active:scale-95 transition flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               <span>{isSubmitting ? dt('Duke dërguar...') : dt('Dërgo Kërkesën për Reklamim')}</span>

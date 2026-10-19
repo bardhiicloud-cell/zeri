@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Language, translations } from './translations';
-import { dt as dTrans } from './dt';
+import { dt as dTrans, ensureTranslationTables, translationTablesReady } from './dt';
 import {
   DEFAULT_LANGUAGE,
   HTML_LANG_TAGS,
@@ -32,6 +32,24 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => readStoredLanguage() as Language);
+  // Bumped once the lazily loaded translation tables arrive, so every consumer
+  // re-renders from Albanian into the chosen language without a reload.
+  const [tablesVersion, setTablesVersion] = useState(0);
+
+  useEffect(() => {
+    if (translationTablesReady(language)) return;
+    let cancelled = false;
+    ensureTranslationTables(language)
+      .then(() => {
+        if (!cancelled) setTablesVersion((version) => version + 1);
+      })
+      .catch(() => {
+        // Offline or a stale deploy: the page keeps its Albanian text.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
 
   /**
    * Persist immediately. The previous implementation only wrote to storage from
@@ -69,7 +87,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       || (key as string);
   }, [language]);
 
-  const dt = useCallback((text: string) => dTrans(text, language), [language]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dt = useCallback((text: string) => dTrans(text, language), [language, tablesVersion]);
 
   const value = useMemo<LanguageContextType>(
     () => ({ language, setLanguage, t, dt }),

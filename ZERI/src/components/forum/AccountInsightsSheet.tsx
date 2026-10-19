@@ -177,7 +177,7 @@ export function AccountInsightsSheet({ authorId, posts, isBusiness, followersCou
   const contactTotal = sumOf(cur, (d) => d.contactClicks);
 
   return createPortal(
-    <div className="fixed inset-0 z-[12000] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-[12000] flex items-end justify-center bg-black/60 md:backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div role="dialog" aria-modal="true" aria-label={dt('Statistikat e llogarisë')}
         className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl dark:bg-zinc-900 sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">

@@ -358,7 +358,7 @@ export default function AdminAgentMonitoring() {
             type="button"
             aria-label="Mbyll detajet"
             onClick={() => setSelectedAgent(null)}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/60 md:backdrop-blur-sm"
           />
           <aside className="relative z-10 flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white shadow-2xl dark:bg-slate-900">
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 p-5 backdrop-blur dark:border-white/5 dark:bg-slate-900/95">

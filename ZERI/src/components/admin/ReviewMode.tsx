@@ -334,7 +334,7 @@ export default function ReviewMode({
   const photo = images[photoIndex];
 
   return (
-    <div className="fixed inset-0 z-[560] flex flex-col bg-slate-950/90 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={dt('Modaliteti i rishikimit')}>
+    <div className="fixed inset-0 z-[560] flex flex-col bg-slate-950/90 md:backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={dt('Modaliteti i rishikimit')}>
       {/* Top bar: where you are */}
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3 text-white">
         <span className="text-sm font-bold">{dt('Rishikim')}</span>

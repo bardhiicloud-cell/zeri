@@ -76,7 +76,7 @@ export function AdvancedFilterDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[90] cursor-default bg-slate-950/30 backdrop-blur-[2px] lg:hidden"
+            className="fixed inset-0 z-[90] cursor-default bg-slate-950/30 md:backdrop-blur-[2px] lg:hidden"
           />
           <motion.aside
             role="dialog"
