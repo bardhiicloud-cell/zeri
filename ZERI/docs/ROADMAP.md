@@ -16,11 +16,15 @@ Hapat që kërkojnë njerëz jashtë kodit janë shënuar ⚠️.
 | Skedarë me `any` | 98 |
 
 ## WS1: Përkthimet (i18n 6 → 10)
-Kriter: asnjë përkthim në bundle-in e hyrjes; ngarkohet vetëm gjuha aktive; një sistem i vetëm.
-- [ ] Ngarkim lazy i tabelave sipas gjuhës
-- [ ] Bashkimi i `siteTranslations`, `dynamicTranslations`, `uiTranslations`, `publicPagesTranslations`, `newLanguageTranslations`
-- [ ] CI kontrollon çelësat që mungojnë (`i18n:check`)
-- [ ] Nxjerrja e `_translation_cache.json` nga repo
+Kriter: asnjë përkthim në bundle-in e hyrjes; ngarkohet vetëm gjuha aktive; një sistem i vetëm; asnjë tekst pa përkthim.
+- [x] Ngarkim lazy sipas gjuhës (anglisht 95 KB gzip, kishte 1.47 MB)
+- [x] Një sistem: `src/lib/i18n/locales/<gjuha>.json` + `scripts/i18n.ts` (check / missing / import); u hoqën 5 tabelat TS dhe 10 skriptat e vjetra
+- [x] `npm run i18n:check` në CI: tekst i ri pa përkthim ose me placeholder të dëmtuar e prish build-in
+- [x] `_translation_cache.json` dhe artefaktet e gjeneratorit nga repo
+- [ ] 1057 tekste `dt()` pa asnjë përkthim (shfaqen shqip në çdo gjuhë) → baseline te `scripts/i18n-baseline.json` duhet të bëhet 0
+- [ ] Mbulim i plotë për `sr` (82%), `bs` (~80%), `tr` (88%), `en`/`de`
+- [ ] 453 përkthime me placeholder të dëmtuar ose me shkrim të gabuar → 0
+- [ ] ⚠️ Rishikim nga folës amtarë për 6 gjuhët kryesore (sq, en, de, tr, sr, bs)
 
 ## WS2: Struktura e kodit (frontend 5.5 → 10, mirëmbajtshmëri 5.5 → 10)
 Kriter: `max-lines` 400 pa përjashtime; `server.ts` vetëm bootstrap; `src/lib` në nënfolderë.
