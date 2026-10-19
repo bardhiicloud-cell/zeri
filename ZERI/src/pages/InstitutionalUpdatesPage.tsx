@@ -254,7 +254,7 @@ export default function InstitutionalUpdatesPage() {
               >
                 {/* Image */}
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                  <img 
+                  <img loading="lazy" decoding="async" 
                     src={item.image} 
                     alt={item.title} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
@@ -331,7 +331,7 @@ export default function InstitutionalUpdatesPage() {
             <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900 sm:rounded-3xl">
               <div className="relative aspect-[16/9] w-full">
-              <img 
+              <img loading="lazy" decoding="async" 
                 src={selectedArticle.image} 
                 alt={selectedArticle.title} 
                 className="w-full h-full object-cover" 

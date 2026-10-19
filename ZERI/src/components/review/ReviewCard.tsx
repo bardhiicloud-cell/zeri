@@ -194,7 +194,7 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
             {/* Hover preview — a glance without committing to the full view. */}
             {hoveredImage && !openImage && (
               <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-                <img
+                <img loading="lazy" decoding="async"
                   src={hoveredImage}
                   alt={dt('Pamje paraprake')}
                   className="max-h-72 w-full object-contain bg-slate-50 dark:bg-slate-950"
@@ -386,7 +386,7 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
           >
             <XCircle className="h-6 w-6" />
           </button>
-          <img
+          <img loading="lazy" decoding="async"
             src={openImage}
             alt={dt('Fotografi e zmadhuar')}
             className="max-h-full max-w-full rounded-lg object-contain"

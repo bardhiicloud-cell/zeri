@@ -1,8 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import { InstallAppBanner } from '../InstallAppPrompt';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '../../lib/store';
 import { useLanguage } from '../../lib/LanguageContext';
 import { NetworkStatus } from './NetworkStatus';
@@ -20,6 +19,16 @@ import { SearchPalette, useGlobalSearch } from './GlobalSearch';
 import { AnnouncementBanner } from '../AnnouncementBanner.tsx';
 import { BroadcastPopup, BroadcastStrip } from '../BroadcastLayer';
 import { canAccessAdmin } from '../../lib/adminPermissions';
+
+/** Shown inside the shell while a lazily loaded page downloads. */
+function PageLoading() {
+  return (
+    <div className="flex min-h-[50vh] w-full flex-1 items-center justify-center" role="status" aria-live="polite">
+      <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-400" />
+      <span className="sr-only">{dt('Duke ngarkuar seksionin...')}</span>
+    </div>
+  );
+}
 
 /**
  * The application shell: a top bar for the institutional sections, a left
@@ -198,7 +207,23 @@ export function AppLayout() {
           {!isForumPage && !isNewsPage && <BroadcastStrip placement="banner" />}
           {!isForumPage && !isNewsPage && <AnnouncementBanner />}
           {!isForumPage && !isNewsPage && showTopAd && <AdBanner position="top" />}
-          <Outlet />
+          {/*
+            The routed page fades in on every navigation (opacity only: a transform
+            would turn this wrapper into the containing block of fixed modals while
+            it runs). The local Suspense keeps the navigation bar and sidebar on
+            screen while a page chunk downloads, instead of swapping the whole
+            shell for a full-screen spinner.
+          */}
+          <div
+            key={isForumPage ? 'forum' : pathname}
+            className={isForumPage
+              ? "flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
+              : "page-enter flex w-full min-w-0 flex-1 flex-col"}
+          >
+            <Suspense fallback={<PageLoading />}>
+              <Outlet />
+            </Suspense>
+          </div>
           <BroadcastPopup />
           <InstallAppBanner />
           {!isForumPage && !isNewsPage && <AppFooter />}

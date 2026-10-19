@@ -7,7 +7,7 @@ import {
   Stethoscope, Pill, X, ArrowUpRight, Upload, Camera, Eye, Send,
   Mail, Printer, AlertTriangle, ShieldCheck, Link as LinkIcon, Edit3
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, onSnapshot, addDoc, query, updateDoc, doc, where, limit } from 'firebase/firestore';
 import { auth, db, readPrivateHealthDocument, uploadPrivateHealthDocument } from '../lib/firebase.ts';
 import { useStore } from '../lib/store';

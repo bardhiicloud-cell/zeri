@@ -1266,7 +1266,7 @@ export default function ForumPage() {
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </button>
             <button type="button" onClick={() => setActiveTab('profile')} aria-label={dt('Profili im')} className="shrink-0">
-              <img src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-white/10" />
+              <img loading="lazy" decoding="async" src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-white/10" />
             </button>
             <button type="button" onClick={() => setActiveTab('explore')} className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 text-left text-sm text-slate-500 dark:border-white/10 dark:bg-zinc-800 dark:text-slate-400">
               <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -1355,7 +1355,7 @@ export default function ForumPage() {
              </button>
              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 overflow-hidden">
                <div className={`flex items-center gap-3 ${railCollapsed ? 'justify-center p-2.5' : 'p-4'}`}>
-                 <img
+                 <img loading="lazy" decoding="async"
                    src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'}
                    className="h-12 w-12 shrink-0 rounded-full border border-slate-200 bg-white object-cover dark:border-zinc-700"
                    alt=""
@@ -1477,7 +1477,7 @@ export default function ForumPage() {
                onClick={() => { setActiveTab('profile'); }}
                className="hidden w-full items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 text-left shadow-sm transition hover:border-blue-300 dark:border-zinc-800 dark:bg-zinc-900"
              >
-               <img
+               <img loading="lazy" decoding="async"
                  src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'}
                  className="h-11 w-11 rounded-full object-cover ring-2 ring-blue-100 dark:ring-blue-500/20"
                  alt=""
@@ -1622,7 +1622,7 @@ export default function ForumPage() {
                 )}
                 <div className="border-b border-slate-200/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 p-4 dark:border-zinc-800 dark:from-sky-950/20 dark:via-zinc-900 dark:to-indigo-950/20">
                   <div className="flex items-start gap-3">
-                    <img src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-zinc-900" alt="" />
+                    <img loading="lazy" decoding="async" src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-zinc-900" alt="" />
                     <div className="flex-1">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{dt('Komuniteti Qytetar')}</div>
@@ -1876,7 +1876,7 @@ export default function ForumPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <img  alt=""
+                    <img loading="lazy" decoding="async"  alt=""
                       src={post.authorAvatar}
                       className="w-10 h-10 rounded-full object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => setProfileModalData({isOpen: true, authorId: post.authorId, authorName: post.authorName, authorAvatar: post.authorAvatar})}
@@ -2127,7 +2127,7 @@ export default function ForumPage() {
                                 )}
                                 {(post.comments || []).map((comment: any) => (
                                   <div key={comment.id} className="flex gap-2.5">
-                                    <img src={comment.authorAvatar || 'https://ui-avatars.com/api/?name=U'} className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5" alt="" />
+                                    <img loading="lazy" decoding="async" src={comment.authorAvatar || 'https://ui-avatars.com/api/?name=U'} className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5" alt="" />
                                     <div className="flex-1">
                                       <div className="bg-slate-100 dark:bg-zinc-800/80 rounded-2xl px-4 py-2.5 border border-slate-200 dark:border-zinc-700">
                                         <div className="flex items-center justify-between gap-2 mb-0.5">
@@ -2170,7 +2170,7 @@ export default function ForumPage() {
                                         <div className="mt-2.5 space-y-2 pl-3 border-l-2 border-slate-200 dark:border-zinc-700">
                                           {(comment.replies || []).map((reply: any) => (
                                             <div key={reply.id} className="flex gap-2">
-                                              <img src={reply.authorAvatar || 'https://ui-avatars.com/api/?name=U'} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" alt="" />
+                                              <img loading="lazy" decoding="async" src={reply.authorAvatar || 'https://ui-avatars.com/api/?name=U'} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" alt="" />
                                               <div className="flex-1 bg-slate-50 dark:bg-zinc-800/50 rounded-xl px-3 py-2 border border-slate-200 dark:border-zinc-700/60">
                                                 <div className="flex items-center justify-between gap-2 mb-0.5">
                                                   <span className="font-bold text-[11px] text-slate-900 dark:text-white">{(reply.authorName || 'user')}</span>
@@ -2206,7 +2206,7 @@ export default function ForumPage() {
                                       {/* Reply Input Form */}
                                       {replyingCommentId === comment.id && (
                                         <div className="mt-2.5 flex gap-2 pl-2 border-l-2 border-blue-500">
-                                          <img src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-6 h-6 rounded-full object-cover shrink-0" alt="" />
+                                          <img loading="lazy" decoding="async" src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-6 h-6 rounded-full object-cover shrink-0" alt="" />
                                           <div className="flex-1 flex bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-full overflow-hidden focus-within:border-blue-500 transition-colors">
                                             <input
                                               type="text"
@@ -2238,7 +2238,7 @@ export default function ForumPage() {
 
                               {/* Primary Comment Textarea */}
                               <div className="flex items-start gap-2.5 mt-3 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                                <img src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-8 h-8 rounded-full object-cover shrink-0 mt-1" alt="" />
+                                <img loading="lazy" decoding="async" src={currentUser?.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-8 h-8 rounded-full object-cover shrink-0 mt-1" alt="" />
                                 <div className="flex-1 flex flex-col relative">
                                   <textarea
                                     value={newCommentContent}
@@ -2606,7 +2606,7 @@ export default function ForumPage() {
               {/* Preview of Quoted Post */}
               <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs mb-4">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={quoteTargetPost.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(quoteTargetPost.authorName)}`}
                     className="w-5 h-5 rounded-full object-cover"
                     alt={quoteTargetPost.authorName}
@@ -2616,7 +2616,7 @@ export default function ForumPage() {
                 </div>
                 <p className="text-slate-300 text-[11px] line-clamp-2">{quoteTargetPost.content}</p>
                 {quoteTargetPost.imageUrl && (
-                  <img src={quoteTargetPost.imageUrl} alt="Quote media" className="w-full h-24 object-cover rounded-lg mt-2" />
+                  <img loading="lazy" decoding="async" src={quoteTargetPost.imageUrl} alt="Quote media" className="w-full h-24 object-cover rounded-lg mt-2" />
                 )}
               </div>
 

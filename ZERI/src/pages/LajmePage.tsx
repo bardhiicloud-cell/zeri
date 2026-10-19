@@ -699,7 +699,7 @@ export default function LajmePage() {
             {leadArticle ? (
               <button type="button" onClick={() => openArticle(leadArticle)} className="group block w-full text-left">
                 <div className="au-photo overflow-hidden rounded-2xl" style={{ aspectRatio: '16/10' }}>
-                  {leadArticle.imageUrl && <img src={leadArticle.imageUrl} alt="" decoding="async" />}
+                  {leadArticle.imageUrl && <img loading="lazy" src={leadArticle.imageUrl} alt="" decoding="async" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
                   <span className="absolute left-3 top-3 z-10 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white">{dt(leadArticle.category)}</span>
                   {leadArticle.isDemo && <span className="absolute right-3 top-3 z-10 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-900">Demo</span>}
@@ -736,7 +736,7 @@ export default function LajmePage() {
             <div className="divide-y divide-slate-200 dark:divide-white/10">
               {trendingArticles.map(news => (
                 <button key={news.id} type="button" onClick={() => openArticle(news)} className="group flex w-full gap-3 py-3 text-left">
-                  {news.imageUrl && <img src={news.imageUrl} alt="" className="h-[76px] w-[112px] shrink-0 rounded-lg object-cover" />}
+                  {news.imageUrl && <img loading="lazy" decoding="async" src={news.imageUrl} alt="" className="h-[76px] w-[112px] shrink-0 rounded-lg object-cover" />}
                   <span className="min-w-0">
                     <span className="block text-[10px] font-bold text-rose-600 dark:text-rose-400">{dt(news.category)}</span>
                     <span className="mt-1 line-clamp-3 block text-xs font-extrabold leading-snug text-slate-950 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{news.title}</span>
@@ -1136,7 +1136,7 @@ export default function LajmePage() {
               {/* Cinematic feature header */}
               <section className="relative isolate overflow-hidden rounded-[28px] bg-slate-900 text-white shadow-2xl">
                 {activeArticle.imageUrl ? (
-                  <img src={activeArticle.imageUrl} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={activeArticle.imageUrl} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
                 ) : (
                   <div aria-hidden="true" className="absolute inset-0 -z-20 bg-gradient-to-br from-[#061226] via-[#0b2b57] to-[#14408a]" />
                 )}

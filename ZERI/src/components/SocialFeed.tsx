@@ -148,7 +148,7 @@ export default function SocialFeed() {
           <div className="flex gap-4">
             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shrink-0 border border-slate-300">
               {currentUser.avatar ? (
-                <img src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                <img loading="lazy" decoding="async" src={currentUser.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <User className="w-5 h-5 text-slate-400" />
               )}
@@ -192,7 +192,7 @@ export default function SocialFeed() {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shrink-0 border border-slate-300">
                       {post.authorAvatar ? (
-                        <img src={post.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                        <img loading="lazy" decoding="async" src={post.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                       ) : (
                         <User className="w-5 h-5 text-slate-400" />
                       )}
@@ -243,7 +243,7 @@ export default function SocialFeed() {
                       <div key={comment.id} className="flex gap-3">
                         <div className="w-8 h-8 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-white/10 shadow-sm dark:shadow-none mt-1">
                           {comment.authorAvatar ? (
-                            <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                            <img loading="lazy" decoding="async" src={comment.authorAvatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                           ) : (
                             <User className="w-4 h-4 text-slate-400" />
                           )}

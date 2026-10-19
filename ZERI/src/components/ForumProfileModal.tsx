@@ -224,7 +224,7 @@ export function ForumProfileModal({
               <div className="flex justify-between items-end -mt-12 mb-3">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-[2rem] p-1 bg-gradient-to-tr from-blue-500 via-indigo-500 to-pink-500 shadow-2xl">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=3b82f6&color=fff`}
                       alt={authorName}
                       className="w-full h-full rounded-[1.25rem] object-cover bg-slate-800"

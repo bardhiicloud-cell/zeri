@@ -438,7 +438,7 @@ export const ProfileTab = ({ currentUser, userPosts, requireAuth }: { currentUse
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/10 shadow-sm dark:shadow-none overflow-hidden mb-6">
       <div className="relative h-48 sm:h-64 bg-slate-200 group">
-        <img src={coverImg} alt="Cover" className="w-full h-full object-cover" />
+        <img loading="lazy" decoding="async" src={coverImg} alt="Cover" className="w-full h-full object-cover" />
         <button 
           onClick={() => handleUpload('cover')}
           className="absolute bottom-4 right-4 bg-white/80 hover:bg-white dark:bg-slate-900 backdrop-blur-sm text-slate-900 dark:text-white px-3 py-1.5 rounded-2xl text-sm font-bold flex items-center gap-2 transition-colors opacity-0 group-hover:opacity-100"
@@ -450,7 +450,7 @@ export const ProfileTab = ({ currentUser, userPosts, requireAuth }: { currentUse
       <div className="px-4 sm:px-8 pb-8 relative">
         <div className="absolute -top-16 left-4 sm:left-8 w-32 h-32 bg-white dark:bg-slate-900 rounded-full p-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none group z-10">
           {profileImg ? (
-             <img src={profileImg} alt="Profile" className="w-full h-full rounded-full object-cover" />
+             <img loading="lazy" decoding="async" src={profileImg} alt="Profile" className="w-full h-full rounded-full object-cover" />
           ) : (
             <div className="w-full h-full bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-4xl uppercase">
               {currentUser?.name?.substring(0, 2) || 'US'}
@@ -498,7 +498,7 @@ export const ProfileTab = ({ currentUser, userPosts, requireAuth }: { currentUse
                   </div>
                   <p className="text-slate-800 dark:text-slate-200 dark:text-slate-200 text-[15px] leading-relaxed">{post.content}</p>
                   {post.imageUrl && (
-                    <img src={post.imageUrl} alt="Post media" className="mt-4 rounded-xl max-h-80 w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={post.imageUrl} alt="Post media" className="mt-4 rounded-xl max-h-80 w-full object-cover" />
                   )}
                   {post.videoUrl && (
                     <video src={post.videoUrl} controls className="mt-4 rounded-xl max-h-80 w-full object-cover" />

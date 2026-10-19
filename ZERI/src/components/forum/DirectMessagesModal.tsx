@@ -321,7 +321,7 @@ export function DirectMessagesModal({
                   <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white ring-2 ring-white/10">
                     {currentUser?.name?.[0]?.toUpperCase() || 'Q'}
                     {currentUser?.avatar && (
-                      <img src={currentUser.avatar} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 h-full w-full object-cover" />
+                      <img loading="lazy" decoding="async" src={currentUser.avatar} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 h-full w-full object-cover" />
                     )}
                   </div>
                   <span className="truncate text-sm font-bold text-white">{currentUser?.name || dt('Mesazhet Private')}</span>
@@ -425,7 +425,7 @@ export function DirectMessagesModal({
                       <button key={conv.id} type="button" onClick={() => setActiveConvId(conv.id)}
                         className="flex w-12 shrink-0 flex-col items-center gap-1" title={person?.name}>
                         {person?.avatar ? (
-                          <img src={person.avatar} alt="" className={`h-11 w-11 rounded-full object-cover border-2 ${conv.id === activeConvId ? 'border-blue-500' : 'border-white/10'}`} />
+                          <img loading="lazy" decoding="async" src={person.avatar} alt="" className={`h-11 w-11 rounded-full object-cover border-2 ${conv.id === activeConvId ? 'border-blue-500' : 'border-white/10'}`} />
                         ) : (
                           <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-slate-300 border-2 ${conv.id === activeConvId ? 'border-blue-500' : 'border-white/10'}`}>
                             {person?.name?.[0]?.toUpperCase() || 'Q'}
@@ -486,7 +486,7 @@ export function DirectMessagesModal({
                         >
                           <div className="relative">
                             {partner?.avatar ? (
-                              <img src={partner.avatar} alt={partner.name} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                              <img loading="lazy" decoding="async" src={partner.avatar} alt={partner.name} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
                             ) : (
                               <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-700 font-bold text-sm">
                                 {partner?.name?.[0]?.toUpperCase() || 'Q'}
@@ -541,7 +541,7 @@ export function DirectMessagesModal({
                         <ArrowLeft className="w-4 h-4" />
                       </button>
                       {otherUserData.avatar ? (
-                        <img src={otherUserData.avatar} alt={otherUserData.name} className="w-9 h-9 rounded-full object-cover border border-slate-700" />
+                        <img loading="lazy" decoding="async" src={otherUserData.avatar} alt={otherUserData.name} className="w-9 h-9 rounded-full object-cover border border-slate-700" />
                       ) : (
                         <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold text-xs border border-slate-700">
                           {otherUserData.name?.[0]?.toUpperCase() || 'Q'}
@@ -640,7 +640,7 @@ export function DirectMessagesModal({
                               }`}
                             >
                               {msg.imageUrl && (
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={msg.imageUrl}
                                   alt="Bashkëngjitur"
                                   className="w-full max-h-48 object-cover rounded-xl mb-2 border border-black/20"

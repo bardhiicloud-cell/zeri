@@ -160,7 +160,7 @@ export default function LajmeroPage() {
           <div className="flex flex-wrap gap-2">
             {media.map((m, i) => (
               <div key={m.name + i} className="relative h-24 w-32 overflow-hidden rounded-xl bg-slate-100 dark:bg-white/5">
-                {m.url.startsWith('data:video') ? <video src={m.url} className="h-full w-full object-cover" muted /> : <img src={m.url} alt="" className="h-full w-full object-cover" />}
+                {m.url.startsWith('data:video') ? <video src={m.url} className="h-full w-full object-cover" muted /> : <img loading="lazy" decoding="async" src={m.url} alt="" className="h-full w-full object-cover" />}
                 <button type="button" onClick={() => setMedia(list => list.filter((_, j) => j !== i))} aria-label={dt('Hiq')} className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/80 text-white"><X className="h-4 w-4" aria-hidden="true" /></button>
               </div>
             ))}

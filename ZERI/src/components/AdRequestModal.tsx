@@ -3,7 +3,7 @@ import {
   X, Sparkles, 
   Send, ShieldCheck, ArrowRight, ExternalLink, AlertCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { useStore } from '../lib/store';

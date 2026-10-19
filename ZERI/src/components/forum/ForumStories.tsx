@@ -325,7 +325,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
         className="group flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5 text-center"
       >
         <span className="rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-violet-600 p-[2px] transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none">
-          <img
+          <img loading="lazy" decoding="async"
             src={story.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(story.authorName)}`}
             alt=""
             className="h-12 w-12 rounded-full border-2 border-white object-cover dark:border-zinc-900"
@@ -368,7 +368,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
           >
             <span className="relative flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border-2 border-dashed border-blue-400 bg-blue-50 text-blue-700 transition group-hover:bg-blue-100 dark:border-blue-500/60 dark:bg-blue-950/40 dark:text-blue-300">
               {ownStories ? (
-                <img src={ownStories[0].authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.name || 'Q')}`} alt="" className="h-full w-full rounded-full object-cover" />
+                <img loading="lazy" decoding="async" src={ownStories[0].authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.name || 'Q')}`} alt="" className="h-full w-full rounded-full object-cover" />
               ) : <ImagePlus className="h-5 w-5" aria-hidden="true" />}
               <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white dark:border-zinc-900">
                 <Plus className="h-3 w-3" aria-hidden="true" />
@@ -437,7 +437,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                 {selectedFile.type.startsWith('video/') ? (
                   <video src={previewUrl} className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} autoPlay loop muted playsInline />
                 ) : (
-                  <img src={previewUrl} alt="Parapamje e story-t" className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} draggable={false} />
+                  <img loading="lazy" decoding="async" src={previewUrl} alt="Parapamje e story-t" className={`absolute inset-0 h-full w-full object-cover ${effectClass(effect)}`} draggable={false} />
                 )}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/80 to-transparent" />
@@ -588,7 +588,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                               {selectedFile.type.startsWith('video/') ? (
                                 <video src={previewUrl} muted preload="metadata" className={`h-full w-full object-cover ${item.className}`} />
                               ) : (
-                                <img src={previewUrl} alt="" draggable={false} className={`h-full w-full object-cover ${item.className}`} />
+                                <img loading="lazy" decoding="async" src={previewUrl} alt="" draggable={false} className={`h-full w-full object-cover ${item.className}`} />
                               )}
                             </span>
                             <span className={`text-[10px] font-bold ${effect === item.id ? 'text-white' : 'text-white/60'}`}>{item.label}</span>
@@ -638,7 +638,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
               ))}
             </div>
             <div className="absolute inset-x-3 top-7 z-20 flex items-center gap-2 text-white">
-              <img src={activeStory.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.authorName)}`} alt="" className="h-9 w-9 rounded-full border border-white/40 object-cover" />
+              <img loading="lazy" decoding="async" src={activeStory.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.authorName)}`} alt="" className="h-9 w-9 rounded-full border border-white/40 object-cover" />
               <span className="min-w-0 flex-1 truncate text-sm font-bold">{activeStory.authorName}</span>
               <button type="button" onClick={() => setActiveStoryGroup(null)} aria-label="Mbyll story-n" className="rounded-full bg-black/30 p-2 text-white hover:bg-black/50">
                 <X className="h-5 w-5" />
@@ -655,7 +655,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                 className={`h-full w-full object-contain ${effectClass(activeStory.effect)}`}
               />
             ) : (
-              <img src={activeStory.mediaUrl} alt="" className={`h-full w-full object-contain ${effectClass(activeStory.effect)}`} />
+              <img loading="lazy" decoding="async" src={activeStory.mediaUrl} alt="" className={`h-full w-full object-contain ${effectClass(activeStory.effect)}`} />
             )}
             {activeStory.textOverlay && (
               <p
@@ -681,7 +681,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
                         {viewers?.list.length === 0 && <li className="p-2 text-xs text-white/70">{dt('Askush nuk e ka parë ende.')}</li>}
                         {viewers?.list.map((v) => (
                           <li key={v.id} className="flex items-center gap-2 p-1 text-sm">
-                            <img src={v.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(v.name)}`} alt="" className="h-7 w-7 rounded-full object-cover" />
+                            <img loading="lazy" decoding="async" src={v.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(v.name)}`} alt="" className="h-7 w-7 rounded-full object-cover" />
                             <span className="truncate">{v.name}</span>
                           </li>
                         ))}

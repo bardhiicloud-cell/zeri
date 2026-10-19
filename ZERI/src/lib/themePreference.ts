@@ -126,12 +126,28 @@ export function initializeTheme(): ThemeAnalysis {
   return analyzeTheme();
 }
 
+let themeFadeTimer: number | undefined;
+
+/**
+ * Cross-fade the palette for the moment of a deliberate switch only. The colour
+ * transition used to be declared on every div/a/button permanently, which made
+ * the engine track transitions on thousands of nodes during hover, scroll and
+ * route changes. A short-lived class on <html> gives the same polish for free.
+ */
+function fadeThemeSwitch(): void {
+  const root = document.documentElement;
+  root.classList.add('theme-fade');
+  window.clearTimeout(themeFadeTimer);
+  themeFadeTimer = window.setTimeout(() => root.classList.remove('theme-fade'), 260);
+}
+
 function setExplicitTheme(theme: ThemePreference): void {
   try {
     localStorage.setItem(CHOICE_KEY, theme);
   } catch {
     // The toggle still works for this page view without storage.
   }
+  fadeThemeSwitch();
   applyCurrent();
 }
 

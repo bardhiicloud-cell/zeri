@@ -120,7 +120,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
               <div className="flex flex-col items-center">
                 <div className="relative">
                   {avatar ? (
-                    <img src={avatar} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)]" />
+                    <img loading="lazy" decoding="async" src={avatar} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)]" />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-4 border-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] text-slate-400">
                       <UserIcon className="w-10 h-10" />

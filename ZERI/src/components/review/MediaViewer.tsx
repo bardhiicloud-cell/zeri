@@ -42,7 +42,7 @@ export function MediaViewer({ items, start, onClose }: { items: ViewerItem[]; st
       <div className="relative flex min-h-0 flex-1 items-center justify-center p-4">
         {item.type === 'image' && (
           <div className={zoom ? 'h-full w-full overflow-auto' : 'contents'}>
-            <img src={item.url} alt={dt('Fotografi e raportimit')} onClick={() => setZoom(z => !z)}
+            <img loading="lazy" decoding="async" src={item.url} alt={dt('Fotografi e raportimit')} onClick={() => setZoom(z => !z)}
               className={zoom ? 'max-w-none cursor-zoom-out' : 'max-h-full max-w-full cursor-zoom-in rounded-lg object-contain'} />
           </div>
         )}

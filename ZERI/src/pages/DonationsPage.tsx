@@ -336,7 +336,7 @@ const ITEMS_PER_PAGE = 6;
                     {newApplication.mediaType === 'video' ? (
                       <video src={newApplication.mediaUrl} className="w-full h-full object-cover" controls muted />
                     ) : (
-                      <img src={newApplication.mediaUrl} className="w-full h-full object-cover" alt={dt('Pamje paraprake e skedarit të zgjedhur')} />
+                      <img loading="lazy" decoding="async" src={newApplication.mediaUrl} className="w-full h-full object-cover" alt={dt('Pamje paraprake e skedarit të zgjedhur')} />
                     )}
                     <button
                       type="button"
@@ -512,7 +512,7 @@ const ITEMS_PER_PAGE = 6;
                 {selectedCause.mediaType === 'video' ? (
                   <video src={selectedCause.mediaUrl} className="w-full h-full object-cover" controls muted />
                 ) : (
-                  <img src={selectedCause.mediaUrl} alt={selectedCause.title} className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={selectedCause.mediaUrl} alt={selectedCause.title} className="w-full h-full object-cover" />
                 )}
                 <button
                   type="button"

@@ -124,7 +124,7 @@ export function ReelCommentsSheet({ reel, currentUser, canInteract, isStaff, onR
             {comments.map((c) => (
               <li key={c.id} className="flex gap-3 py-3">
                 {c.authorAvatar
-                  ? <img src={c.authorAvatar} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                  ? <img loading="lazy" decoding="async" src={c.authorAvatar} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
                   : <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-black dark:bg-zinc-700">{c.authorName.charAt(0).toUpperCase()}</span>}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs"><span className="font-black">{c.authorName}</span> <span className="text-slate-400">· {timeAgo(c.createdAtMs)}</span></p>
