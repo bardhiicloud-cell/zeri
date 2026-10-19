@@ -8,6 +8,7 @@ import { EVIDENCE, EVIDENCE_STATUSES, KOSOVA_SECTIONS, UCK_SECTIONS, formatHerit
 import { HeroArt, PlateArt } from '../../components/heritage/HeritageArt';
 import { EvidenceBadge, entryPath, sectionPath, useHeritageLang, Crumbs } from '../../components/heritage/Atoms';
 import { EntryCard } from '../../components/heritage/Blocks';
+import { TourismSection } from '../../components/heritage/Memorial';
 
 /**
  * /kosova — the front door of the identity & history experience.
@@ -54,15 +55,20 @@ export default function KosovaHubPage() {
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,13,32,.82)_0%,rgba(7,13,32,.35)_55%,rgba(7,13,32,0)_100%)]" />
           </div>
           <div className="flex min-h-[520px] flex-col justify-end gap-6 p-6 sm:min-h-[580px] sm:p-10 lg:p-14">
+            <img src="/heritage/stema-kosoves.png" alt={lang === 'sq' ? 'Stema e Republikës së Kosovës' : 'Coat of arms of the Republic of Kosovo'} width={96} height={106}
+              className="hx-rise h-20 w-auto drop-shadow-[0_10px_24px_rgba(0,0,0,.5)] sm:h-28" style={{ ['--i' as string]: 0 }} />
             <p className="hx-eyebrow hx-rise" style={{ ['--i' as string]: 0, color: '#e8c36e' }}>{t('kicker')}</p>
             <div className="hx-rise" style={{ ['--i' as string]: 1 }}>
               <h1 id="hx-h1" className="hx-serif text-[clamp(3.4rem,13vw,8.5rem)] font-black leading-[0.85] tracking-tight text-white">{t('heroTitle')}</h1>
-              <p className="hx-serif mt-3 text-xl font-bold italic text-[#f0cf7e] sm:text-3xl">{t('heroSub')}</p>
+              <p className="hx-serif mt-3 text-xl font-bold italic text-[#f0cf7e] sm:text-3xl">{lang === 'sq' ? 'Historia · Kultura · Turizmi' : 'History · Culture · Tourism'}</p>
             </div>
             <p className="hx-rise max-w-2xl text-[15px] leading-relaxed text-slate-200 sm:text-base" style={{ ['--i' as string]: 2 }}>{t('heroIntro')}</p>
             <div className="hx-rise flex flex-wrap gap-3" style={{ ['--i' as string]: 3 }}>
               <a href="#hx-chapters" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#e8c36e] px-5 text-sm font-black text-[#0b1531] transition hover:bg-[#f2d68c]">
                 <Compass className="h-4 w-4" aria-hidden="true" />{t('explore')}
+              </a>
+              <a href="#hx-turizem" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#e8c36e]/60 bg-[#e8c36e]/10 px-5 text-sm font-black text-[#f0cf7e] backdrop-blur transition hover:bg-[#e8c36e]/20">
+                {lang === 'sq' ? 'Turizmi' : 'Tourism'}
               </a>
               <Link to="/historia-e-uck" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/30 bg-white/5 px-5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15">
                 {t('openArchive')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -86,6 +92,9 @@ export default function KosovaHubPage() {
             ))}
           </dl>
         </section>
+
+        {/* ── Tourism ─────────────────────────────────────────────────────── */}
+        <TourismSection lang={lang} />
 
         {/* ── Search ──────────────────────────────────────────────────────── */}
         <section aria-labelledby="hx-search" className="space-y-3">

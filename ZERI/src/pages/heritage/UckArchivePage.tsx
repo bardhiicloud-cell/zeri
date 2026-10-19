@@ -10,6 +10,7 @@ import { ClaimsView, Crumbs, EvidenceBadge, SensitiveGate, entryPath, sectionPat
 import { ArticleBlock } from '../../components/heritage/Blocks';
 import { Chronicle } from '../../components/heritage/Chronicle';
 import NotFoundPage from '../NotFoundPage';
+import { FamiliesSection, LiberationSection, MartyrsSection } from '../../components/heritage/Memorial';
 
 /**
  * /historia-e-uck and /historia-e-uck/:section — the KLA historical archive.
@@ -93,10 +94,30 @@ export default function UckArchivePage() {
         <header className="hx-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
           <div className="absolute inset-0 -z-10 opacity-50" aria-hidden="true"><PlateArt hue={section?.hue ?? 14} seed={section ? index + 40 : 91} className="h-full w-full" /></div>
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(7,13,32,.95)_0%,rgba(7,13,32,.8)_60%,rgba(7,13,32,.45)_100%)]" aria-hidden="true" />
-          <div className="space-y-3 p-6 sm:p-10 lg:p-12">
-            <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{t('uckKicker')} · ARK-1998/99{section ? ` · ${section.numeral}` : ''}</p>
-            <h1 className="hx-serif max-w-3xl text-4xl font-black leading-[0.98] text-white sm:text-6xl">{section ? section.title[lang] : t('uckTitle')}</h1>
-            <p className="max-w-2xl text-base leading-relaxed text-slate-200">{section ? section.lead[lang] : t('uckLead')}</p>
+          {!section && <div className="absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_100%_0%,rgba(200,16,46,.45)_0%,transparent_65%)]" aria-hidden="true" />}
+          <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-10 lg:p-12">
+            {!section && (
+              <img src="/heritage/emblema-uck.webp" alt={lang === 'sq' ? 'Emblema e UÇK-së' : 'KLA emblem'} width={150} height={170}
+                className="h-28 w-auto shrink-0 self-start drop-shadow-[0_14px_30px_rgba(0,0,0,.55)] sm:h-40" />
+            )}
+            <div className="space-y-3">
+              <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{section ? `${t('uckKicker')} · ARK-1998/99 · ${section.numeral}` : (lang === 'sq' ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army')}</p>
+              <h1 className="hx-serif max-w-3xl text-4xl font-black leading-[0.98] text-white sm:text-6xl">
+                {section ? section.title[lang] : <>UÇK <span className="text-[#e8c36e]">—</span> {lang === 'sq' ? 'Lufta e pastër' : 'A just war'}</>}
+              </h1>
+              <p className="max-w-2xl text-base leading-relaxed text-slate-200">
+                {section ? section.lead[lang] : (lang === 'sq'
+                  ? 'Lufta e një populli për të mbrojtur familjen, tokën dhe lirinë. Dëshmorët, familjet legjendare dhe faktet që e tregojnë — çdo datë me burim.'
+                  : 'A people’s war to defend family, land and freedom. The martyrs, the legendary families and the facts that tell it — every date with a source.')}
+              </p>
+              {!section && (
+                <nav aria-label={lang === 'sq' ? 'Në këtë faqe' : 'On this page'} className="flex flex-wrap gap-2 pt-1">
+                  {[['#hx-lib', lang === 'sq' ? 'Jo terrorizëm' : 'Not terrorism'], ['#hx-martyrs', lang === 'sq' ? 'Dëshmorët' : 'Martyrs'], ['#hx-fam', lang === 'sq' ? 'Familjet legjendare' : 'Legendary families'], ['#hx-chap', lang === 'sq' ? 'Kapitujt e arkivit' : 'Archive chapters']].map(([href, label]) => (
+                    <a key={href} href={href} className="inline-flex min-h-10 items-center rounded-full border border-white/25 bg-white/5 px-3.5 text-xs font-black text-white backdrop-blur transition hover:border-[#e8c36e] hover:text-[#e8c36e]">{label}</a>
+                  ))}
+                </nav>
+              )}
+            </div>
           </div>
         </header>
 
@@ -123,6 +144,10 @@ export default function UckArchivePage() {
           <div className="min-w-0 space-y-8">
             {!section && (
               <>
+                <LiberationSection lang={lang} />
+                <MartyrsSection lang={lang} />
+                <FamiliesSection lang={lang} />
+
                 <section className="hx-card space-y-3 p-6 sm:p-8" aria-labelledby="hx-method">
                   <h2 id="hx-method" className="hx-eyebrow flex items-center gap-2"><ShieldAlert className="h-4 w-4" aria-hidden="true" />{t('method')}</h2>
                   <p className="hx-serif text-xl font-bold leading-snug" style={{ color: 'var(--hx-ink)' }}>{t('methodBody')}</p>

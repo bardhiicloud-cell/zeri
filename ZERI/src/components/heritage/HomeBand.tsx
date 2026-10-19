@@ -1,58 +1,60 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpenCheck, Landmark } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import '../../styles/heritage.css';
-import { KOSOVA_SECTIONS, UCK_SECTIONS } from '../../lib/heritage/types';
 import { useHeritageLang } from '../../lib/heritage/useLang';
-import { HeroArt, PlateArt } from './HeritageArt';
 
 /**
- * Homepage entry points for the two archives, placed directly under the reporting hero.
- * It is deliberately light (no archive content is imported), so the homepage pays only for
- * two SVG scenes and a stylesheet; the archive itself loads when someone follows a link.
+ * Homepage entry points for the two archives: one card for Kosova (history and tourism),
+ * one for the UÇK. Deliberately light — two emblems and a stylesheet, no archive content —
+ * so the homepage stays fast; the archive loads when someone follows a link.
  */
 export function HeritageHomeBand() {
-  const { lang, t } = useHeritageLang();
+  const { lang } = useHeritageLang();
+  const sq = lang === 'sq';
   return (
-    <section data-no-translate aria-label={t('homeBandTitle')} className="hx grid gap-3 sm:gap-4 xl:grid-cols-[1.7fr_1fr]">
+    <section data-no-translate aria-label={sq ? 'Kosova dhe UÇK' : 'Kosovo and the KLA'} className="hx grid gap-3 sm:grid-cols-2 sm:gap-4">
       {/* Kosova */}
-      <div className="hx-hero hx-grain relative isolate flex min-h-[340px] flex-col justify-end overflow-hidden rounded-[24px] sm:min-h-[380px]">
-        <div className="absolute inset-0 -z-10" aria-hidden="true">
-          <HeroArt className="h-full w-full" />
-          <div className="absolute inset-0 bg-[linear-gradient(95deg,rgba(7,13,32,.88)_0%,rgba(7,13,32,.5)_58%,rgba(7,13,32,.05)_100%)]" />
+      <Link
+        to="/kosova"
+        className="hx-grain group relative isolate flex min-h-[188px] items-center gap-4 overflow-hidden rounded-[24px] p-5 text-white shadow-[0_24px_60px_-34px_rgba(12,40,120,.85)] transition active:scale-[0.99] sm:min-h-[220px] sm:p-7"
+        style={{ background: 'radial-gradient(120% 120% at 100% 0%, #2a56c6 0%, #12317f 45%, #0a1b4d 100%)' }}
+      >
+        <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#e8c36e]/20 blur-3xl" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-[#e8c36e] to-transparent opacity-70" />
+        <img src="/heritage/stema-kosoves.png" alt="" width={84} height={93} loading="lazy" decoding="async" className="h-20 w-auto shrink-0 drop-shadow-[0_8px_18px_rgba(0,0,0,.45)] transition duration-500 group-hover:-rotate-3 group-hover:scale-105 sm:h-24" />
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#e8c36e]">{sq ? 'Republika e Kosovës' : 'Republic of Kosovo'}</p>
+          <h2 className="hx-serif text-[1.65rem] font-black leading-[1.02] sm:text-3xl">
+            Kosova <span className="text-[#e8c36e]">—</span> {sq ? 'Historia' : 'History'} <span className="text-[#e8c36e]">—</span> {sq ? 'Turizëm' : 'Tourism'}
+          </h2>
+          <p className="text-[13px] leading-snug text-blue-100 sm:text-sm">
+            {sq ? 'Nga Dardania te shteti i pavarur, dhe vendet më të bukura që duhen parë.' : 'From Dardania to an independent state, and the most beautiful places to see.'}
+          </p>
+          <span className="inline-flex items-center gap-1.5 pt-1 text-sm font-black text-[#e8c36e]">
+            {sq ? 'Zbulo Kosovën' : 'Discover Kosovo'}<ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" />
+          </span>
         </div>
-        <div className="space-y-3 p-5 sm:p-8">
-          <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{t('kicker')}</p>
-          <h2 className="hx-serif max-w-2xl text-[1.7rem] font-black leading-[1.02] tracking-tight text-white sm:text-4xl lg:text-[2.7rem]">{t('homeBandTitle')}</h2>
-          <p className="line-clamp-4 max-w-2xl text-[13px] leading-relaxed text-slate-200 sm:line-clamp-none sm:text-[15px]">{t('heroIntro')}</p>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
-            <Link to="/kosova" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#e8c36e] px-5 text-sm font-black text-[#0b1531] transition hover:bg-[#f2d68c] active:scale-[0.98]">
-              <Landmark className="h-4 w-4" aria-hidden="true" />{t('homeBandCta')}
-            </Link>
-            <p className="text-[11px] font-semibold text-slate-300">{t('homeBandMeta')}</p>
-          </div>
-          <ul className="flex flex-wrap gap-1.5 pt-1" aria-label={t('chapters')}>
-            {KOSOVA_SECTIONS.slice(0, 5).map((s) => (
-              <li key={s.id}><Link to={`/kosova/${s.id}`} className="inline-flex min-h-8 items-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-bold text-white backdrop-blur transition hover:border-[#e8c36e]">{s.title[lang]}</Link></li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      </Link>
 
-      {/* UÇK archive */}
-      <Link to="/historia-e-uck" className="hx-hero hx-grain group relative isolate flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[24px] p-5 sm:min-h-[380px] sm:p-7">
-        <div className="absolute inset-0 -z-10 opacity-60" aria-hidden="true"><PlateArt hue={14} seed={91} className="h-full w-full" /></div>
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,rgba(7,13,32,.9)_0%,rgba(7,13,32,.78)_100%)]" aria-hidden="true" />
-        <div className="space-y-2">
-          <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{t('uckKicker')} · ARK-1998/99</p>
-          <h2 className="hx-serif text-3xl font-black leading-[1] text-white sm:text-4xl">{t('uckBandTitle')}</h2>
-          <p className="text-[13px] leading-relaxed text-slate-300 sm:text-sm">{t('uckBandBody')}</p>
-        </div>
-        <div className="space-y-3">
-          <ol className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-bold text-slate-200" aria-hidden="true">
-            {UCK_SECTIONS.slice(0, 6).map((s) => <li key={s.id} className="flex gap-2"><span className="text-[#e8c36e]">{s.numeral}</span>{s.title[lang]}</li>)}
-          </ol>
-          <span className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#e8c36e]/60 px-4 text-sm font-black text-[#e8c36e] transition group-hover:bg-[#e8c36e] group-hover:text-[#0b1531]">
-            <BookOpenCheck className="h-4 w-4" aria-hidden="true" />{t('uckBandCta')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+      {/* UÇK */}
+      <Link
+        to="/historia-e-uck"
+        className="hx-grain group relative isolate flex min-h-[188px] items-center gap-4 overflow-hidden rounded-[24px] p-5 text-white shadow-[0_24px_60px_-34px_rgba(140,10,30,.9)] transition active:scale-[0.99] sm:min-h-[220px] sm:p-7"
+        style={{ background: 'radial-gradient(120% 120% at 100% 0%, #b3122e 0%, #6d0b1c 42%, #14070b 100%)' }}
+      >
+        <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#f2d200]/15 blur-3xl" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-[#f2d200] to-transparent opacity-70" />
+        <img src="/heritage/emblema-uck.webp" alt="" width={84} height={95} loading="lazy" decoding="async" className="h-20 w-auto shrink-0 drop-shadow-[0_8px_18px_rgba(0,0,0,.5)] transition duration-500 group-hover:rotate-3 group-hover:scale-105 sm:h-24" />
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#f2d200]">{sq ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army'}</p>
+          <h2 className="hx-serif text-[1.65rem] font-black leading-[1.02] sm:text-3xl">
+            UÇK <span className="text-[#f2d200]">—</span> {sq ? 'Lufta e pastër' : 'A just war'}
+          </h2>
+          <p className="text-[13px] leading-snug text-rose-100 sm:text-sm">
+            {sq ? 'Dëshmorët, familjet legjendare dhe e vërteta e luftës për liri.' : 'The martyrs, the legendary families and the truth of the fight for freedom.'}
+          </p>
+          <span className="inline-flex items-center gap-1.5 pt-1 text-sm font-black text-[#f2d200]">
+            {sq ? 'Hap arkivin' : 'Open the archive'}<ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" />
           </span>
         </div>
       </Link>
