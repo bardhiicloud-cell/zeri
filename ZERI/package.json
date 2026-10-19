@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "i18n:build": "tsx scripts/build-i18n.ts",
+    "predev": "npm run i18n:build",
     "dev": "tsx server.ts",
     "prototype:server": "tsx server.ts",
+    "prebuild": "npm run i18n:build",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node scripts/start-prod.cjs",
     "clean": "rm -rf dist",
