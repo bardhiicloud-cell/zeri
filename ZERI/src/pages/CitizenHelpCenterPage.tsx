@@ -152,6 +152,9 @@ export default function CitizenHelpCenterPage() {
                 placeholder={dt('p.sh. Track-ID, foto, anonim')} className="h-11 w-full bg-transparent text-[15px] outline-none placeholder:text-slate-500" />
               {query && <button type="button" onClick={() => setQuery('')} className="au-btn au-btn-dark !h-8 shrink-0 !px-3 !text-[12px]">{dt('Pastro kërkimin')}</button>}
             </div>
+            <button type="button" onClick={() => window.dispatchEvent(new Event('zeri:open-tour'))} className="mt-3 text-sm font-bold text-white underline underline-offset-4">
+              {dt('Shfaq tutorialin hap pas hapi')}
+            </button>
           </div>
         }
       />

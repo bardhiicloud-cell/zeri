@@ -55,7 +55,7 @@ const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
   {
     id: 'kosova',
     title: 'Kosova & Historia',
-    hrefs: ['/kosova', '/kosova/historia', '/kosova/pavaresia', '/historia-e-uck'],
+    hrefs: ['/kosova'],
   },
   {
     id: 'participate',

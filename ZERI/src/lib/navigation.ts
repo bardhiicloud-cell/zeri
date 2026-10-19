@@ -3,7 +3,7 @@ import {
   MapPin, Newspaper, Lightbulb, Vote, BarChart3, Wallet,
   Megaphone, Phone, Building2, Briefcase, Info, HeartPulse,
   Bot, ShieldAlert, ShieldCheck, MessageSquare, Radio,
-  PlusCircle, FileText, Handshake, Landmark, BookOpen, Flag, ScrollText, FolderOpen,
+  PlusCircle, FileText, Handshake, Landmark, FolderOpen,
 } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from './constants';
 
@@ -64,11 +64,9 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     id: 'kosova',
     label: 'Kosova & Historia',
     icon: Landmark,
+    // One doorway: the hub itself links to the history, independence and KLA chapters.
     items: [
-      { label: 'Kosova', href: '/kosova', icon: Landmark, hint: 'Një popull, një histori, një e ardhme' },
-      { label: 'Historia e Kosovës', href: '/kosova/historia', icon: BookOpen, hint: 'Kronologji e burimëzuar' },
-      { label: 'Pavarësia e Kosovës', href: '/kosova/pavaresia', icon: Flag, hint: '17 shkurt 2008 dhe ndërtimi i shtetit' },
-      { label: 'Historia e UÇK-së', href: '/historia-e-uck', icon: ScrollText, hint: 'Arkiv historik me burime e data' },
+      { label: 'Kosova, historia dhe pavarësia', href: '/kosova', icon: Landmark, hint: 'Historia, pavarësia dhe UÇK në një vend' },
     ],
   },
   {

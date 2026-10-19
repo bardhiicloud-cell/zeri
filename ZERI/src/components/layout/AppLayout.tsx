@@ -10,6 +10,7 @@ import { LeaderboardModal } from '../LeaderboardModal';
 import { UserProfileModal } from '../UserProfileModal.tsx';
 import { QuickReportModal } from '../QuickReportModal';
 import { LocationDetectorModal } from '../LocationDetectorModal';
+import { WelcomeTour } from '../WelcomeTour';
 import { AppFooter } from '../AppFooter.tsx';
 import AdBanner from '../AdBanner.tsx';
 import { TopNavbar } from './TopNavbar.tsx';
@@ -131,6 +132,7 @@ export function AppLayout() {
         cannot claim a grid track no matter how they position themselves.
       */}
       <LocationDetectorModal />
+      <WelcomeTour />
 
       <div className="pointer-events-none fixed left-0 right-0 top-0 z-[9999]">
         <NetworkStatus />
