@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Download, FileText, Loader2, Newspaper, X 
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';
 import { describeApiFailure, requireAdminToken } from '../../../lib/adminApi';
+import { actOnTipDirect, getTipDirect, listTipsDirect } from '../../../lib/newsTipsDirect';
 
 type Stage = 'submitted' | 'accepted' | 'in_editing' | 'published' | 'rejected';
 const STAGES: Array<[Stage, string, string]> = [
@@ -21,10 +22,29 @@ interface Detail extends Row {
   media: Array<{ type: 'image' | 'video'; url: string }>; rejectionReason: string; history: Array<{ action: string; actorName: string; text: string; atMs: number; from: string; to: string }>;
 }
 
+/** Without the API server the same three calls are answered from the database (lib/newsTipsDirect.ts). */
+async function direct<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+  const url = new URL(path, window.location.origin);
+  const parts = url.pathname.split('/').filter(Boolean); // api v1 admin news-tips [id] [action]
+  const id = parts[4] ? decodeURIComponent(parts[4]) : '';
+  if (!id) return (await listTipsDirect(url.searchParams.get('stage') || 'submitted')) as unknown as T;
+  if (parts[5] === 'action') {
+    const b = (init?.body ?? {}) as { action?: string; reason?: string };
+    return (await actOnTipDirect(id, String(b.action ?? ''), String(b.reason ?? ''))) as unknown as T;
+  }
+  return (await getTipDirect(id)) as unknown as T;
+}
+
 async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   const token = await requireAdminToken();
-  const response = await fetch(path, { method: init?.method ?? 'GET', headers: { Authorization: `Bearer ${token}`, ...(init?.body ? { 'Content-Type': 'application/json' } : {}) }, body: init?.body ? JSON.stringify(init.body) : undefined });
-  const body = await response.json().catch(() => ({}));
+  let response: Response;
+  try {
+    response = await fetch(path, { method: init?.method ?? 'GET', headers: { Authorization: `Bearer ${token}`, ...(init?.body ? { 'Content-Type': 'application/json' } : {}) }, body: init?.body ? JSON.stringify(init.body) : undefined });
+  } catch {
+    return direct<T>(path, init);
+  }
+  if ([404, 502, 503, 504].includes(response.status)) return direct<T>(path, init);
+  const body = (await response.json().catch(() => null)) ?? {};
   if (!response.ok) throw new Error(describeApiFailure(response.status, body));
   return body as T;
 }
@@ -58,8 +78,8 @@ export default function NewsTipsPanel() {
     setError('');
     try {
       const r = await call<{ counts: Record<string, number>; items: Row[] }>(`/api/v1/admin/news-tips?stage=${stage}`);
-      setCounts(r.counts);
-      setRows(r.items);
+      setCounts(r.counts ?? {});
+      setRows(Array.isArray(r.items) ? r.items : []);
     } catch (e) {
       setRows([]);
       setError((e as Error).message);

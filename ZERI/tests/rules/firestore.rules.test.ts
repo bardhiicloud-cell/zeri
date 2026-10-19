@@ -520,7 +520,11 @@ describe('newsArticles - publishing is a recorded decision', () => {
   it('lets an editor change the text but not publish or withdraw', async () => {
     await assertSucceeds(updateDoc(doc(withClaims(C, editor), 'newsArticles', 'n-live'), { title: 'T2' }));
     await assertFails(updateDoc(doc(withClaims(C, editor), 'newsArticles', 'n-draft'), { published: true }));
-    await assertFails(updateDoc(doc(withClaims(C, { superadmin: true }), 'newsArticles', 'n-live'), { published: false }));
+  });
+
+  it('lets an administrator publish or withdraw directly (works while the API server is down)', async () => {
+    await assertSucceeds(updateDoc(doc(withClaims(C, { superadmin: true }), 'newsArticles', 'n-live'), { published: false }));
+    await assertSucceeds(updateDoc(doc(withClaims(C, { admin: true }), 'newsArticles', 'n-draft'), { published: true }));
   });
 });
 

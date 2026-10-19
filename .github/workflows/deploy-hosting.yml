@@ -66,6 +66,19 @@ jobs:
           projectId: gen-lang-client-0907710011
           entryPoint: ZERI
           channelId: live
+      # The database and storage rules travel with the code, so a change to
+      # firestore.rules (and the indexes the server queries need) goes live with
+      # the site. Uses the same service-account key. Never blocks the site deploy.
+      - name: Deploy Firestore and Storage rules and indexes
+        if: env.HAS_KEY == 'true'
+        continue-on-error: true
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx firebase deploy --only firestore,storage --project gen-lang-client-0907710011 --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
       - name: Show the deployed version
         if: env.HAS_KEY == 'true'
         run: cat dist/version.json

@@ -113,21 +113,43 @@ describe('a visitor without the /api server', () => {
     await assertSucceeds(addDoc(collection(guest(), 'healthRegistry'), healthCase()));
   });
 
-  // These two go through the server only. The page now says so instead of failing
-  // silently (src/lib/directSubmissions.ts, 'denied'). Opening them to the browser is
-  // a rules decision for the project owner, not something the page may assume.
-  it('can not file a news tip directly', async () => {
-    await assertFails(addDoc(collection(guest(), 'newsTips'), {
+  // Opened to the browser by the project owner (2026-10-19) so that "Raporto një lajm"
+  // and donation applications work while the /api server is down.
+  // directSubmissions.ts runs ensureReportSession first, which creates the guest's profile.
+  const withProfile = () => setDoc(doc(guest(), 'users', GUEST), { id: GUEST, name: '', avatar: '', createdAt: serverTimestamp() });
+
+  it('files a news tip directly', async () => {
+    await withProfile();
+    await assertSucceeds(addDoc(collection(guest(), 'newsTips'), {
       title: 'Titull i lajmit testues', body: 'x'.repeat(50), category: 'korrupsion', municipality: '', place: '',
       anonymous: true, contactName: '', contactEmail: '', contactPhone: '', media: [],
       reference: 'LJ-ABCDEFGH', status: 'submitted', authorId: GUEST, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     }));
   });
 
-  it('can not file a donation application directly', async () => {
-    await assertFails(addDoc(collection(guest(), 'donationCauses'), {
+  it('can not file a news tip that is already accepted or under someone else\'s name', async () => {
+    await withProfile();
+    await assertFails(addDoc(collection(guest(), 'newsTips'), {
+      title: 'Titull i lajmit testues', body: 'x'.repeat(50), category: 'korrupsion', municipality: '', place: '',
+      anonymous: true, contactName: '', contactEmail: '', contactPhone: '', media: [],
+      reference: 'LJ-ABCDEFGH', status: 'published', authorId: GUEST, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    }));
+    await assertFails(addDoc(collection(guest(), 'newsTips'), {
+      title: 'Titull i lajmit testues', body: 'x'.repeat(50), category: 'korrupsion', municipality: '', place: '',
+      anonymous: true, contactName: '', contactEmail: '', contactPhone: '', media: [],
+      reference: 'LJ-ABCDEFGH', status: 'submitted', authorId: 'someoneElse', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    }));
+  });
+
+  it('files a donation application only as pending', async () => {
+    await withProfile();
+    await assertSucceeds(addDoc(collection(guest(), 'donationCauses'), {
       title: 'Ndihmë', description: 'y'.repeat(30), category: 'shtepi', mediaType: 'image', mediaUrl: 'data:image/png;base64,AAAA',
       donationUrl: '', reference: 'DN-ABCDEFGH', status: 'pending', authorId: GUEST, createdAt: serverTimestamp(),
+    }));
+    await assertFails(addDoc(collection(guest(), 'donationCauses'), {
+      title: 'Ndihmë', description: 'y'.repeat(30), category: 'shtepi', mediaType: 'image', mediaUrl: 'data:image/png;base64,AAAA',
+      donationUrl: '', reference: 'DN-ABCDEFGH', status: 'active', authorId: GUEST, createdAt: serverTimestamp(),
     }));
   });
 });

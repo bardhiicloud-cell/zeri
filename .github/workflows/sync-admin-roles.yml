@@ -1,0 +1,43 @@
+name: Sync admin roles
+
+# Gives every staff account the token flags (admin, superadmin, agent, …) that the
+# database rules and the API check, from the `role` saved on its profile.
+# Without them an administrator can open the panel but cannot approve anything.
+# Run it from GitHub → Actions → "Sync admin roles" → Run workflow, after adding
+# or changing a staff account. Uses the FIREBASE_SERVICE_ACCOUNT secret.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Write the changes (unticked = only show what would change)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ZERI
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      FIREBASE_PROJECT_ID: gen-lang-client-0907710011
+      VITE_FIREBASE_DATABASE_ID: ai-studio-ba83412d-22cf-4764-9885-a01600d542ae
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ZERI/package-lock.json
+      - run: npm ci
+      - name: Sync claims
+        run: |
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            npx tsx scripts/sync-claims.ts --apply --confirm-project gen-lang-client-0907710011
+          else
+            npx tsx scripts/sync-claims.ts
+          fi
