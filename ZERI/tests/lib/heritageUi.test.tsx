@@ -52,13 +52,15 @@ describe('Kosovo archive UI', () => {
     expect(screen.getByText(/Welcome to Kosovo — a country where hospitality is tradition/)).toBeTruthy();
   });
 
-  it('the homepage band is two cards, Kosova and UÇK, linking to both archives', () => {
+  it('the homepage band is three cards: Kosova, UÇK and Zëri i Qytetarëve', () => {
     mount('/');
     expect(screen.getByRole('heading', { name: 'Kosova — Historia — Turizëm' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'UÇK — Lufta e pastër' })).toBeTruthy();
     const hrefs = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/kosova');
     expect(hrefs).toContain('/historia-e-uck');
+    expect(hrefs).toContain('/zeri-qytetar');
+    expect(screen.getByRole('heading', { name: 'Zëri i Qytetarëve' })).toBeTruthy();
   });
 
   it('search finds entries without accents', async () => {

@@ -5,12 +5,12 @@ import { usePageMeta } from '../../lib/usePageMeta';
 import { useHeritage } from '../../lib/heritage/api';
 import { entriesOf, timelineOf } from '../../lib/heritage/content';
 import { UCK_SECTIONS, findSection, pick, type HeritageEntry } from '../../lib/heritage/types';
-import { PlateArt } from '../../components/heritage/HeritageArt';
+import { MusicDock } from '../../components/heritage/MusicDock';
 import { ClaimsView, Crumbs, EvidenceBadge, SensitiveGate, entryPath, sectionPath, useHeritageLang } from '../../components/heritage/Atoms';
 import { ArticleBlock } from '../../components/heritage/Blocks';
 import { Chronicle } from '../../components/heritage/Chronicle';
 import NotFoundPage from '../NotFoundPage';
-import { FamiliesSection, LiberationSection, MartyrsSection } from '../../components/heritage/Memorial';
+import { AccountabilitySection, FamiliesSection, JashariSection, LiberationSection, MartyrsSection } from '../../components/heritage/Memorial';
 
 /**
  * /historia-e-uck and /historia-e-uck/:section — the KLA historical archive.
@@ -79,11 +79,14 @@ export default function UckArchivePage() {
         </div>
       );
     }
+    if (section.id === 'sexual-violence') {
+      return <div className="space-y-8"><AccountabilitySection lang={lang} /><div className="space-y-5">{entries.map((e) => <ArticleBlock key={e.id} entry={e} content={content} lang={lang} />)}</div></div>;
+    }
     return <div className="space-y-5">{entries.map((e) => <ArticleBlock key={e.id} entry={e} content={content} lang={lang} />)}</div>;
   })() : null;
 
   return (
-    <div data-no-translate className="hx hx-page -mx-3 -my-3 sm:-mx-5 sm:-my-4 lg:-mx-8">
+    <div data-no-translate className="hx hx-page hx-uck -mx-3 -my-3 sm:-mx-5 sm:-my-4 lg:-mx-8">
       <div className="mx-auto max-w-[1280px] space-y-8 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:pt-6">
         <Crumbs items={[
           { to: '/', label: t('home') }, { to: '/kosova', label: t('kosovo') },
@@ -91,20 +94,18 @@ export default function UckArchivePage() {
         ]} />
 
         {/* Masthead */}
-        <header className="hx-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
-          <div className="absolute inset-0 -z-10 opacity-50" aria-hidden="true"><PlateArt hue={section?.hue ?? 14} seed={section ? index + 40 : 91} className="h-full w-full" /></div>
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(7,13,32,.95)_0%,rgba(7,13,32,.8)_60%,rgba(7,13,32,.45)_100%)]" aria-hidden="true" />
-          {!section && <div className="absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_100%_0%,rgba(200,16,46,.45)_0%,transparent_65%)]" aria-hidden="true" />}
-          <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-10 lg:p-12">
+        <header className="hx-uck-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
+          <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-10 sm:p-10 lg:p-12">
             {!section && (
               <img src="/heritage/emblema-uck.webp" alt={lang === 'sq' ? 'Emblema e UÇK-së' : 'KLA emblem'} width={150} height={170}
-                className="h-28 w-auto shrink-0 self-start drop-shadow-[0_14px_30px_rgba(0,0,0,.55)] sm:h-40" />
+                className="h-32 w-auto max-w-none shrink-0 self-start object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,.6)] sm:h-44" />
             )}
-            <div className="space-y-3">
-              <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{section ? `${t('uckKicker')} · ARK-1998/99 · ${section.numeral}` : (lang === 'sq' ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army')}</p>
-              <h1 className="hx-serif max-w-3xl text-4xl font-black leading-[0.98] text-white sm:text-6xl">
-                {section ? section.title[lang] : <>UÇK <span className="text-[#e8c36e]">—</span> {lang === 'sq' ? 'Lufta e pastër' : 'A just war'}</>}
+            <div className="space-y-4">
+              <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{section ? `${t('uckKicker')} · ARK-1998/99 · ${section.numeral}` : (lang === 'sq' ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army')}</p>
+              <h1 className="hx-serif max-w-3xl text-[clamp(2.4rem,6vw,4.4rem)] font-black leading-[0.98] text-white">
+                {section ? section.title[lang] : <>UÇK <span className="text-[#ff4d63]">—</span> {lang === 'sq' ? 'Lufta e pastër' : 'A just war'}</>}
               </h1>
+              {!section && <div className="h-1 w-24 rounded-full bg-gradient-to-r from-[#c8102e] to-white/80" aria-hidden="true" />}
               <p className="max-w-2xl text-base leading-relaxed text-slate-200">
                 {section ? section.lead[lang] : (lang === 'sq'
                   ? 'Lufta e një populli për të mbrojtur familjen, tokën dhe lirinë. Dëshmorët, familjet legjendare dhe faktet që e tregojnë — çdo datë me burim.'
@@ -112,8 +113,8 @@ export default function UckArchivePage() {
               </p>
               {!section && (
                 <nav aria-label={lang === 'sq' ? 'Në këtë faqe' : 'On this page'} className="flex flex-wrap gap-2 pt-1">
-                  {[['#hx-lib', lang === 'sq' ? 'Jo terrorizëm' : 'Not terrorism'], ['#hx-martyrs', lang === 'sq' ? 'Dëshmorët' : 'Martyrs'], ['#hx-fam', lang === 'sq' ? 'Familjet legjendare' : 'Legendary families'], ['#hx-chap', lang === 'sq' ? 'Kapitujt e arkivit' : 'Archive chapters']].map(([href, label]) => (
-                    <a key={href} href={href} className="inline-flex min-h-10 items-center rounded-full border border-white/25 bg-white/5 px-3.5 text-xs font-black text-white backdrop-blur transition hover:border-[#e8c36e] hover:text-[#e8c36e]">{label}</a>
+                  {[['#hx-lib', lang === 'sq' ? 'Jo terrorizëm' : 'Not terrorism'], ['#hx-jashari', 'Adem Jashari'], ['#hx-martyrs', lang === 'sq' ? 'Dëshmorët' : 'Martyrs'], ['#hx-fam', lang === 'sq' ? 'Familjet legjendare' : 'Legendary families'], ['#hx-serbia', lang === 'sq' ? 'Drejtësi' : 'Justice'], ['#hx-chap', lang === 'sq' ? 'Kapitujt' : 'Chapters']].map(([href, label]) => (
+                    <a key={href} href={href} className="inline-flex min-h-10 items-center rounded-full border border-white/25 bg-white/5 px-3.5 text-xs font-black text-white backdrop-blur transition hover:border-[#ff4d63] hover:text-[#ff8a98]">{label}</a>
                   ))}
                 </nav>
               )}
@@ -145,8 +146,10 @@ export default function UckArchivePage() {
             {!section && (
               <>
                 <LiberationSection lang={lang} />
+                <JashariSection lang={lang} />
                 <MartyrsSection lang={lang} />
                 <FamiliesSection lang={lang} />
+                <AccountabilitySection lang={lang} />
 
                 <section className="hx-card space-y-3 p-6 sm:p-8" aria-labelledby="hx-method">
                   <h2 id="hx-method" className="hx-eyebrow flex items-center gap-2"><ShieldAlert className="h-4 w-4" aria-hidden="true" />{t('method')}</h2>
@@ -219,6 +222,7 @@ export default function UckArchivePage() {
           </div>
         </div>
       </div>
+      <MusicDock lang={lang} />
     </div>
   );
 }

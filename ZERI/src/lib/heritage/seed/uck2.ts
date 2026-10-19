@@ -132,10 +132,10 @@ const sexual: HeritageEntry[] = [
     body: l(
       `Human Rights Watch dhe organizata të tjera dokumentuan dhunë seksuale kundër grave dhe, më rrallë, burrave gjatë konfliktit, e kryer kryesisht nga forca serbe e jugosllave. Vendimet e ICTY-së i përmendin gjithashtu në konstatimet e tyre.
 
-Numri i saktë nuk njihet: stigmatizimi, frika dhe mungesa e shërbimeve bënë që pjesa më e madhe e rasteve të mos raportoheshin. Për këtë arsye ky arkiv **nuk jep shifër** dhe nuk i shfaq detajet e akteve. Fokusi është njohja, drejtësia dhe mbështetja.`,
+Numri i saktë nuk njihet: stigmatizimi, frika dhe mungesa e shërbimeve bënë që pjesa më e madhe e rasteve të mos raportoheshin. Vlerësimet e dokumentuara dhe numri i njohur zyrtarisht, secila shifër me burimin dhe kufizimet e saj, janë më sipër te seksioni “Akuzat ndaj Serbisë së Millosheviqit”. Ky arkiv nuk shfaq detajet e akteve. Fokusi është njohja, drejtësia dhe mbështetja.`,
       `Human Rights Watch and other organisations documented sexual violence against women and, less often, men during the conflict, committed mainly by Serbian and Yugoslav forces. ICTY judgments also mention it in their findings.
 
-The exact number is not known: stigma, fear and lack of services meant that most cases were never reported. For this reason this archive **gives no figure** and does not display the details of the acts. The focus is recognition, justice and support.`),
+The exact number is not known: stigma, fear and lack of services meant that most cases were never reported. The documented estimates and the officially recognised number, each figure with its source and limits, are in the section above, “The case against Milošević’s Serbia”. This archive does not display the details of the acts. The focus is recognition, justice and support.`),
     evidence: 'established', sourceIds: ['hrw-rape', 'icty-milutinovic'],
   }),
   entry({

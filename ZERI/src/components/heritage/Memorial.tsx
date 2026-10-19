@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Building2, Castle, Church, Columns3, Droplets, ExternalLink, Flag, Flame, Gem, House, Landmark, MapPin, Mountain,
-  PawPrint, Sailboat, Scale, Search, Snowflake, Store, TreePine, Trees, Users, Waves, type LucideIcon,
+  PawPrint, Sailboat, Scale, Search, HeartHandshake, Quote, Snowflake, Store, TreePine, Trees, Users, Waves, type LucideIcon,
 } from 'lucide-react';
 import {
   LEGENDARY_FAMILIES, LIBERATION_POINTS, MARTYRS, PLACES, PLACE_KINDS, ageAtDeath, formatMemorialDate,
@@ -9,6 +9,10 @@ import {
 } from '../../lib/heritage/memorial';
 import type { HeritageLang } from '../../lib/heritage/types';
 import { PlateArt } from './HeritageArt';
+import { Photo } from './Photo';
+import { CHARGES, SEXUAL_VIOLENCE_COUNTS, STRENGTH_LABEL } from '../../lib/heritage/accountability';
+import { JASHARI_FACTS, JASHARI_SOURCE, PREKAZ_BEATS, PREKAZ_SOURCE } from '../../lib/heritage/jashari';
+import { CITIES, WHY_VISIT } from '../../lib/heritage/welcome';
 
 const year = (v?: string) => (v ? v.slice(0, 4) : '—');
 const initials = (name: string) => name.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
@@ -17,11 +21,10 @@ const initials = (name: string) => name.split(/[\s-]+/).filter(Boolean).slice(0,
 
 export function LiberationSection({ lang }: { lang: HeritageLang }) {
   return (
-    <section aria-labelledby="hx-lib" className="hx-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(90%_70%_at_100%_0%,rgba(200,16,46,.35)_0%,transparent_60%),radial-gradient(70%_60%_at_0%_100%,rgba(232,195,110,.18)_0%,transparent_60%)]" aria-hidden="true" />
+    <section aria-labelledby="hx-lib" className="hx-uck-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
       <div className="space-y-6 p-6 sm:p-10">
         <header className="max-w-3xl space-y-3">
-          <p className="hx-eyebrow" style={{ color: '#e8c36e' }}>{lang === 'sq' ? 'E vërteta e luftës' : 'The truth of the war'}</p>
+          <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{lang === 'sq' ? 'E vërteta e luftës' : 'The truth of the war'}</p>
           <h2 id="hx-lib" className="hx-serif text-3xl font-black leading-[1.02] text-white sm:text-5xl">
             {lang === 'sq' ? 'Luftë çlirimtare, jo terrorizëm' : 'A war of liberation, not terrorism'}
           </h2>
@@ -35,11 +38,11 @@ export function LiberationSection({ lang }: { lang: HeritageLang }) {
           {LIBERATION_POINTS.map((p, i) => (
             <li key={p.sourceLabel + i} className="rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur">
               <p className="flex items-start gap-3">
-                <span className="hx-serif w-8 shrink-0 text-2xl font-black leading-none text-[#e8c36e]">{String(i + 1).padStart(2, '0')}</span>
+                <span className="hx-serif w-8 shrink-0 text-2xl font-black leading-none text-[#ff4d63]">{String(i + 1).padStart(2, '0')}</span>
                 <span className="hx-serif text-lg font-black leading-snug text-white">{p.title[lang]}</span>
               </p>
               <p className="mt-2 pl-11 text-sm leading-relaxed text-slate-300">{p.body[lang]}</p>
-              <a href={p.source} target="_blank" rel="noreferrer" className="mt-3 ml-11 inline-flex items-center gap-1 text-[11px] font-bold text-[#e8c36e] hover:underline">
+              <a href={p.source} target="_blank" rel="noreferrer" className="mt-3 ml-11 inline-flex items-center gap-1 text-[11px] font-bold text-[#ff8a98] hover:underline">
                 <Scale className="h-3.5 w-3.5" aria-hidden="true" />{p.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             </li>
@@ -56,9 +59,10 @@ function MartyrCard({ m, lang }: { m: Martyr; lang: HeritageLang }) {
   const age = ageAtDeath(m.born, m.died);
   return (
     <li className="hx-card relative flex gap-4 overflow-hidden p-4 sm:p-5">
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#c8102e] via-[#e8c36e] to-[#c8102e]" />
-      <span aria-hidden="true" className="hx-serif flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-black text-[#e8c36e] ring-2 ring-[#e8c36e]/70" style={{ background: 'radial-gradient(circle at 30% 25%, #2a1416, #0b0b12)' }}>
-        {initials(m.name)}
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#c8102e] via-[#111] to-[#c8102e]" />
+      <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#c8102e]" style={{ background: 'radial-gradient(circle at 30% 25%, #3a0a12, #0b0b12)' }}>
+        <span aria-hidden="true" className="hx-serif text-lg font-black text-white/90">{initials(m.name)}</span>
+        <Photo name={`dheshmor-${m.id}`} alt={m.name} bare className="!absolute inset-0 !bg-transparent" />
       </span>
       <div className="min-w-0 flex-1">
         <h3 className="hx-serif text-lg font-black leading-tight" style={{ color: 'var(--hx-ink)' }}>
@@ -70,6 +74,11 @@ function MartyrCard({ m, lang }: { m: Martyr; lang: HeritageLang }) {
           <div className="flex gap-1.5"><dt className="hx-ink-3 w-16 shrink-0">{lang === 'sq' ? 'Rënë' : 'Fell'}</dt><dd className="font-semibold" style={{ color: 'var(--hx-ink)' }}>{formatMemorialDate(m.died)}, {m.diedPlace}</dd></div>
         </dl>
         <p className="hx-ink-2 mt-2 text-sm leading-relaxed">{m.role[lang]}</p>
+        {m.lastWords && (
+          <blockquote className="mt-2 border-l-2 border-[#c8102e] pl-3 text-sm italic" style={{ color: 'var(--hx-ink)' }}>
+            <span className="hx-ink-3 block text-[10px] font-black uppercase not-italic tracking-wider">{lang === 'sq' ? 'Fjalët e fundit' : 'Last words'}</span>“{m.lastWords[lang]}”
+          </blockquote>
+        )}
         <a href={m.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider hover:underline">
           {lang === 'sq' ? 'Burimi' : 'Source'}<ExternalLink className="h-3 w-3" aria-hidden="true" />
         </a>
@@ -150,6 +159,7 @@ export function FamiliesSection({ lang }: { lang: HeritageLang }) {
                 <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
                   <Users className="h-10 w-10 text-white/80" />
                 </span>
+                <Photo name={`familja-${f.id}`} alt={f.name} bare className="!absolute inset-0" position="top" />
               </div>
               <div className="flex flex-1 flex-col gap-2 p-5">
                 <p className="hx-ink-3 flex items-center gap-1 text-xs font-bold"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{f.place}</p>
@@ -213,8 +223,9 @@ export function TourismSection({ lang }: { lang: HeritageLang }) {
           return (
             <li key={p.id}>
               <article className="hx-plate group flex h-full flex-col">
-                <div className="relative h-32 overflow-hidden">
+                <div className="relative h-40 overflow-hidden">
                   <PlateArt hue={p.hue} seed={300 + i} className="absolute inset-0 h-full w-full transition duration-700 group-hover:scale-105" />
+                  <Photo name={p.id} alt={p.name} bare className="!absolute inset-0" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" aria-hidden="true" />
                   <span className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/30 backdrop-blur" aria-hidden="true">
                     <Icon className="h-5 w-5" />
@@ -232,6 +243,172 @@ export function TourismSection({ lang }: { lang: HeritageLang }) {
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+
+/* ── Jasharët: Adem Jashari dhe Epopeja e Prekazit ──────────────────────── */
+
+export function JashariSection({ lang }: { lang: HeritageLang }) {
+  const sq = lang === 'sq';
+  return (
+    <section id="hx-jashari" aria-labelledby="hx-jashari-h" className="hx-uck-hero hx-grain relative isolate scroll-mt-24 overflow-hidden rounded-[28px]">
+      <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-[320px_1fr] lg:p-12">
+        <div className="space-y-4">
+          <Photo name="adem-jashari" alt="Adem Jashari" position="top" className="aspect-[4/5] w-full rounded-2xl ring-1 ring-white/20" />
+          <dl className="grid grid-cols-2 gap-2">
+            {JASHARI_FACTS.map(f => (
+              <div key={f.k} className="rounded-xl border border-white/12 bg-white/[0.06] p-3">
+                <dt className="hx-serif text-lg font-black text-[#ff4d63]">{f.k}</dt>
+                <dd className="text-[11px] leading-snug text-slate-300">{f.v[lang]}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <div className="space-y-6">
+          <header className="space-y-2">
+            <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{sq ? 'Komandanti Legjendar' : 'The Legendary Commander'}</p>
+            <h2 id="hx-jashari-h" className="hx-serif text-3xl font-black leading-[1.02] sm:text-5xl">Adem Jashari <span className="text-[#ff4d63]">·</span> {sq ? 'Epopeja e Prekazit' : 'The Prekaz Epic'}</h2>
+            <p className="max-w-2xl text-[15px] leading-relaxed text-slate-300">
+              {sq
+                ? 'Ademi nuk iku. Mbrojti shtëpinë, familjen dhe tokën e tij kundër një ushtrie me tanke, deri në frymën e fundit. Ai dhe familja e tij u bënë themeli mbi të cilin u ngrit lufta çlirimtare e një populli.'
+                : 'Adem did not run. He defended his home, his family and his land against an army with tanks, to his last breath. He and his family became the foundation on which a people’s war of liberation was built.'}
+            </p>
+          </header>
+          <ol className="space-y-3">
+            {PREKAZ_BEATS.map(b => (
+              <li key={b.date + b.title.sq} className="grid gap-1 rounded-2xl border border-white/12 bg-white/[0.05] p-4 sm:grid-cols-[110px_1fr] sm:gap-4">
+                <p className="hx-serif text-lg font-black text-[#ff4d63]">{b.date}</p>
+                <div>
+                  <p className="font-black">{b.title[lang]}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-slate-300">{b.body[lang]}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="flex flex-wrap gap-4 text-[11px] font-bold">
+            {[[JASHARI_SOURCE, 'Adem Jashari'], [PREKAZ_SOURCE, 'Attack on Prekaz']].map(([href, label]) => (
+              <a key={href} href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#ff8a98] hover:underline">{sq ? 'Burimi' : 'Source'}: {label}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
+            ))}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── Përgjegjësia: Serbia, dhe shifrat e dhunës seksuale ────────────────── */
+
+const TONE: Record<string, string> = { finding: '#1e6b4a', estimate: '#8a5a0b', record: '#1c3a8c' };
+
+export function AccountabilitySection({ lang }: { lang: HeritageLang }) {
+  const sq = lang === 'sq';
+  const cols = [
+    { side: 'intl' as const, title: sq ? 'Ndërkombëtarisht' : 'Internationally', lead: sq ? 'Gjykata, organizata dhe parlamente' : 'Courts, organisations and parliaments' },
+    { side: 'kosova' as const, title: sq ? 'Nga Kosova' : 'From Kosovo', lead: sq ? 'Gjykatat, prokuroria dhe ligjet e vendit' : 'The country’s courts, prosecutors and laws' },
+  ];
+  return (
+    <section id="hx-serbia" aria-labelledby="hx-serbia-h" className="scroll-mt-24 space-y-6">
+      <header className="max-w-3xl space-y-2">
+        <p className="hx-eyebrow">{sq ? 'Drejtësi për viktimat' : 'Justice for the victims'}</p>
+        <h2 id="hx-serbia-h" className="hx-serif text-3xl font-black leading-tight sm:text-5xl" style={{ color: 'var(--hx-ink)' }}>
+          {sq ? 'Akuzat ndaj Serbisë së Millosheviqit' : 'The case against Milošević’s Serbia'}
+        </h2>
+        <p className="hx-ink-2 text-[15px] leading-relaxed">
+          {sq
+            ? 'Fushata e vitit 1998–1999 ishte e organizuar nga shteti: dëbime masive, vrasje civilësh, djegie shtëpish dhe dhunë seksuale si armë. Kjo nuk është mendim — janë konstatime gjyqësore, shifra të dokumentuara dhe akte zyrtare. Çdo rresht ka burim dhe tregon sa e fortë është prova.'
+            : 'The 1998–1999 campaign was organised by the state: mass expulsions, killings of civilians, house burnings and sexual violence as a weapon. This is not opinion — these are court findings, documented figures and official acts. Every line has a source and shows how strong the proof is.'}
+        </p>
+      </header>
+
+      <div className="hx-card overflow-hidden">
+        <div className="flex items-center gap-2 border-b px-5 py-3 hx-rule" style={{ background: 'color-mix(in srgb, var(--hx-brass) 7%, var(--hx-card))' }}>
+          <HeartHandshake className="h-4 w-4 hx-brass" aria-hidden="true" />
+          <h3 className="hx-eyebrow !tracking-[0.16em]">{sq ? 'Sa gra e burra u dhunuan? Shifrat e dokumentuara' : 'How many were raped? The documented figures'}</h3>
+        </div>
+        <ul className="grid divide-y hx-rule md:grid-cols-3 md:divide-x md:divide-y-0">
+          {SEXUAL_VIOLENCE_COUNTS.map(c => (
+            <li key={c.value} className="space-y-2 p-5">
+              <p className="hx-serif text-3xl font-black leading-none hx-brass sm:text-4xl">{c.value}</p>
+              <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--hx-ink)' }}>{c.label[lang]}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: TONE[c.strength] }}>{STRENGTH_LABEL[c.strength][lang]}</p>
+              {c.caveat && <p className="hx-ink-3 text-xs leading-relaxed">{c.caveat[lang]}</p>}
+              <a href={c.source} target="_blank" rel="noreferrer" className="hx-ink-3 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider hover:underline">{c.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
+            </li>
+          ))}
+        </ul>
+        <p className="hx-ink-3 border-t px-5 py-3 text-xs leading-relaxed hx-rule">
+          {sq
+            ? 'Shifra e saktë nuk ekziston: shumica e të mbijetuarave heshtën nga frika dhe stigma. Ky arkiv nuk publikon emra, foto apo detaje të akteve dhe nderon çdo të mbijetuar. Mbështetja është në fund të kapitullit përkatës.'
+            : 'No exact figure exists: most survivors stayed silent out of fear and stigma. This archive publishes no names, photos or details of the acts and honours every survivor. Support information is at the end of the relevant chapter.'}
+        </p>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {cols.map(col => (
+          <div key={col.side} className="space-y-3">
+            <div>
+              <h3 className="hx-serif text-2xl font-black" style={{ color: 'var(--hx-ink)' }}>{col.title}</h3>
+              <p className="hx-ink-3 text-xs font-semibold">{col.lead}</p>
+            </div>
+            <ul className="space-y-3">
+              {CHARGES.filter(c => c.side === col.side).map(c => (
+                <li key={c.id} className="hx-card relative overflow-hidden p-5">
+                  <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1" style={{ background: TONE[c.strength] }} />
+                  <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: TONE[c.strength] }}>{STRENGTH_LABEL[c.strength][lang]}</p>
+                  <h4 className="hx-serif mt-1 text-lg font-black leading-snug" style={{ color: 'var(--hx-ink)' }}>{c.title[lang]}</h4>
+                  <p className="hx-ink-2 mt-1.5 text-sm leading-relaxed">{c.body[lang]}</p>
+                  <a href={c.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider hover:underline">{c.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <p className="flex items-start gap-2 text-xs hx-ink-3"><Quote className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />{sq ? 'Konstatimet gjyqësore vlejnë për personat e dënuar; aktakuzat dhe vlerësimet janë shënuar si të tilla. Krimet dokumentohen kushdo qoftë autori.' : 'Court findings apply to the persons convicted; indictments and estimates are labelled as such. Crimes are documented whoever committed them.'}</p>
+    </section>
+  );
+}
+
+/* ── Pse ta vizitosh Kosovën ────────────────────────────────────────────── */
+
+export function WhyVisitSection({ lang }: { lang: HeritageLang }) {
+  const sq = lang === 'sq';
+  return (
+    <section aria-labelledby="hx-why" className="space-y-8">
+      <header className="max-w-3xl space-y-2">
+        <p className="hx-eyebrow">{sq ? 'Mikpritja, traditat, njerëzit' : 'Hospitality, traditions, people'}</p>
+        <h2 id="hx-why" className="hx-serif text-3xl font-black leading-tight sm:text-5xl" style={{ color: 'var(--hx-ink)' }}>{sq ? 'Pse ta vizitosh Kosovën' : 'Why visit Kosovo'}</h2>
+      </header>
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {WHY_VISIT.map((w, i) => (
+          <li key={w.id} className="hx-card p-5">
+            <p className="hx-year text-4xl leading-none">{String(i + 1).padStart(2, '0')}</p>
+            <h3 className="hx-serif mt-3 text-lg font-black leading-snug" style={{ color: 'var(--hx-ink)' }}>{w.title[lang]}</h3>
+            <p className="hx-ink-2 mt-1.5 text-sm leading-relaxed">{w.body[lang]}</p>
+          </li>
+        ))}
+      </ul>
+      <div>
+        <h3 className="hx-eyebrow mb-3">{sq ? 'Shtatë qytete' : 'Seven cities'}</h3>
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {CITIES.map(c => (
+            <li key={c.id} className="hx-plate group">
+              <div className="relative h-36">
+                <PlateArt hue={CITIES.indexOf(c) * 45 + 200} seed={500 + CITIES.indexOf(c)} className="absolute inset-0 h-full w-full" />
+                <Photo name={`qyteti-${c.id}`} alt={c.name} bare className="!absolute inset-0 transition duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden="true" />
+                <p className="hx-serif absolute bottom-3 left-4 text-2xl font-black text-white">{c.name}</p>
+              </div>
+              <div className="p-4">
+                <p className="hx-brass text-[10px] font-black uppercase tracking-wider">{c.tag[lang]}</p>
+                <p className="hx-ink-2 mt-1 text-sm leading-relaxed">{c.body[lang]}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
