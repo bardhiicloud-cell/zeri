@@ -20,7 +20,7 @@ import CookieConsentBanner, { CookiePreferencesButton } from './components/Cooki
 const Dashboard = React.lazy(() => import('./pages/Dashboard.tsx'));
 const DetailedRegistryPage = React.lazy(() => import('./pages/DetailedRegistryPage.tsx'));
 const TrackIdPage = React.lazy(() => import('./pages/TrackIdPage'));
-const MyReportsPage = React.lazy(() => import('./pages/MyReportsPage'));
+const ReportsHubPage = React.lazy(() => import('./pages/ReportsHubPage'));
 const LajmeroPage = React.lazy(() => import('./pages/LajmeroPage'));
 const MyModerationPage = React.lazy(() => import('./pages/MyModerationPage'));
 const VerificationRequestPage = React.lazy(() => import('./pages/VerificationRequestPage'));
@@ -140,7 +140,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/detailed-registry': 'Regjistri i Raporteve',
   '/regjistri': 'Regjistri i Raporteve',
   '/registry': 'Regjistri i Raporteve',
-  '/trackid': 'Gjej Raportin Tim',
+  '/trackid': 'Raportet e mia',
   '/lajmero': 'Lajmëro',
   '/moderimi-im': 'Moderimi i llogarisë sime',
   '/verifikimi': 'Kërko verifikimin',
@@ -871,8 +871,10 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/forum" element={<Navigate to="/" replace />} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
-              <Route path="/trackid" element={<TrackIdPage />} />
-              <Route path="/raportet-e-mia" element={<MyReportsPage />} />
+              {/* One page for "Raportet e mia" and the Track ID search; the full history stays at /trackid/detaje. */}
+              <Route path="/trackid" element={<ReportsHubPage />} />
+              <Route path="/trackid/detaje" element={<TrackIdPage />} />
+              <Route path="/raportet-e-mia" element={<ReportsHubPage />} />
               <Route path="/lajmero" element={<LajmeroPage />} />
               <Route path="/moderimi-im" element={<MyModerationPage />} />
               <Route path="/verifikimi" element={<VerificationRequestPage />} />
@@ -928,8 +930,9 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="forum" element={<Navigate to="/" replace />} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
-              <Route path="trackid" element={<TrackIdPage />} />
-              <Route path="raportet-e-mia" element={<MyReportsPage />} />
+              <Route path="trackid" element={<ReportsHubPage />} />
+              <Route path="trackid/detaje" element={<TrackIdPage />} />
+              <Route path="raportet-e-mia" element={<ReportsHubPage />} />
               <Route path="lajmero" element={<LajmeroPage />} />
               <Route path="moderimi-im" element={<MyModerationPage />} />
               <Route path="verifikimi" element={<VerificationRequestPage />} />
