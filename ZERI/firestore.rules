@@ -142,7 +142,9 @@ service cloud.firestore {
     }
 
     function isGuest() {
-      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+      // Anonymous Auth, or a guest session the server signed in with a custom token (server/guestSession.ts).
+      return isAuthenticated() && (request.auth.token.firebase.sign_in_provider == 'anonymous'
+        || request.auth.token.get('guest', false) == true);
     }
 
     /**

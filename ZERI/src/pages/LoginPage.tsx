@@ -7,9 +7,10 @@ import { ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, Chev
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult, getUserRole } from '../lib/firebase';
-import { getOrCreateGuestUser } from '../lib/session';
 import { PROFILE_SYNC_FAILED, profileSyncError, syncOrCreateProfile } from '../lib/authSync';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signInAnonymously, GoogleAuthProvider } from 'firebase/auth';
+import toast from 'react-hot-toast';
+import { signInAsGuest } from '../lib/guestSession';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { canAccessAdmin } from '../lib/adminPermissions';
 import { homeForRole } from '../lib/roleHome';
@@ -306,14 +307,12 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  try {
-                    await signInAnonymously(auth);
-                    navigate('/');
-                  } catch (err: any) {
-                    const localGuest = getOrCreateGuestUser();
-                    useStore.getState().setCurrentUser(localGuest);
-                    navigate('/');
+                  const guest = await signInAsGuest();
+                  if (guest.ok === false) {
+                    toast.error(guest.reason);
+                    return;
                   }
+                  navigate('/');
                 }}
                 className={`${authGhostBtn} mt-3`}
               >

@@ -19,6 +19,7 @@ import { SearchPalette, useGlobalSearch } from './GlobalSearch';
 import { AnnouncementBanner } from '../AnnouncementBanner.tsx';
 import { BroadcastPopup, BroadcastStrip } from '../BroadcastLayer';
 import { canAccessAdmin } from '../../lib/adminPermissions';
+import GuidedTour from '../GuidedTour';
 
 /** Shown inside the shell while a lazily loaded page downloads. */
 function PageLoading() {
@@ -222,6 +223,7 @@ export function AppLayout() {
           >
             <Suspense fallback={<PageLoading />}>
               <Outlet />
+              <GuidedTour />
             </Suspense>
           </div>
           <BroadcastPopup />

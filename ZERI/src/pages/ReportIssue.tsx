@@ -961,7 +961,7 @@ export default function ReportIssue() {
           
           <div className="space-y-6 md:space-y-8">
             <div>
-               <div className="border-2 border-dashed border-slate-300 dark:border-white/20 p-4 md:p-8 flex flex-col items-center justify-center bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800/50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors relative h-40 sm:h-56 md:h-72 group cursor-pointer overflow-hidden mb-4 rounded-2xl">
+               <div data-tour="report-upload" className="border-2 border-dashed border-slate-300 dark:border-white/20 p-4 md:p-8 flex flex-col items-center justify-center bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800/50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors relative h-40 sm:h-56 md:h-72 group cursor-pointer overflow-hidden mb-4 rounded-2xl">
                  <div className="w-12 h-12 md:w-20 md:h-20 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl flex items-center justify-center mb-3 md:mb-6 group-hover:-translate-y-2 transition-transform">
                    <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900" />
                  </div>
@@ -1011,6 +1011,7 @@ export default function ReportIssue() {
             )}
 
             <button 
+              data-tour="report-continue"
               onClick={() => {
                 if (mediaItems.length === 0) {
                   setMediaError(true);
@@ -1107,7 +1108,7 @@ export default function ReportIssue() {
               </button>
               <h1 className="text-[26px] sm:text-[34px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-2  uppercase leading-none">{dt(`Specifikat e`)}<br className="hidden md:block" />{dt(`Rastit`)}<span className="text-indigo-600">.</span></h1>
             </div>
-            <button type="button" onClick={analyzeWithAI} className="flex items-center justify-center gap-2 text-xs md:text-xs uppercase font-bold tracking-widest bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 hover:bg-neutral-200 text-[var(--color-text)] dark:text-white px-4 md:px-5 py-2.5 md:py-3 border border-slate-200/60 dark:border-white/10 rounded-xl transition-colors whitespace-nowrap group w-full md:w-auto">
+            <button type="button" data-tour="report-ai" onClick={analyzeWithAI} className="flex items-center justify-center gap-2 text-xs md:text-xs uppercase font-bold tracking-widest bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 hover:bg-neutral-200 text-[var(--color-text)] dark:text-white px-4 md:px-5 py-2.5 md:py-3 border border-slate-200/60 dark:border-white/10 rounded-xl transition-colors whitespace-nowrap group w-full md:w-auto">
                <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:text-indigo-600" /> {isAnalyzing ? 'Po përpunohet...' : 'Krijim me AI'}
             </button>
           </div>
@@ -1140,7 +1141,7 @@ export default function ReportIssue() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 border border-slate-200/60 dark:border-white/10 rounded-xl">
-              <div>
+              <div data-tour="report-topic">
                 <label htmlFor="report-topic-category" className="mb-2 block border-l-2 border-indigo-600 pl-3 text-xs font-bold tracking-wide text-[var(--color-text)] dark:text-white">
                   {dt('Kategoria e raportimit')}
                 </label>
@@ -1167,7 +1168,7 @@ export default function ReportIssue() {
                   {dt('Kjo temë ndihmon kërkimin, hartën dhe statistikat; zgjedhja e institucionit poshtë përcakton adresimin e raportit.')}
                 </p>
               </div>
-              <div className="relative" ref={categoryDropdownRef}>
+              <div className="relative" ref={categoryDropdownRef} data-tour="report-sector">
                 <label className="flex items-center gap-2 text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-3">{dt(`Sektori / Ministria (Kërko Problemin)`)}
                   {isAnalyzing && <span className="flex h-2 w-2 relative ml-2"><span className="animate-ping absolute inline-flex h-full w-full bg-indigo-600 opacity-75"></span><span className="relative inline-flex h-2 w-2 bg-indigo-600"></span></span>}
                 </label>
@@ -1186,7 +1187,7 @@ export default function ReportIssue() {
                       setIsCategoryDropdownOpen(true);
                       if(errors.category) setErrors({...errors, category: ''});
                     }}
-                    placeholder={(t as any)('report_step2_category_ph') + " ose kërko problemin (psh. rrugë, mbeturina)..."}
+                    placeholder={dt('Zgjidhni sektorin ose kërkoni problemin (psh. rrugë, mbeturina)...')}
                     className="w-full outline-none bg-transparent placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] placeholder:normal-case placeholder:font-normal"
                   />
                   <ChevronRight className={cn("w-4 h-4 text-[var(--color-text-muted)] transition-transform", isCategoryDropdownOpen && "rotate-90")} />
@@ -1289,14 +1290,14 @@ export default function ReportIssue() {
                 }}
                 className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold mb-1 appearance-none uppercase text-xs md:text-xs tracking-wider text-[var(--color-text)] dark:text-white", errors.municipality ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
               >
-                <option value="">{t('map_filter_city')}</option>
+                <option value="">{dt('Zgjidhni komunën')}</option>
                 {KOSOVO_MUNICIPALITIES.map(m => (
                   <option key={m} value={m}>{m.toUpperCase()}</option>
                 ))}
               </select>
               {errors.municipality && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mb-4 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.municipality}</p>}
 
-              <div className="flex justify-between items-center mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3 relative">
+              <div data-tour="report-location" className="flex justify-between items-center mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3 relative">
                   <div>
                     <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide">{dt(`Koordinatat / Adresa`)}</label>
                     <p className="text-[10px] text-indigo-600 mt-1 uppercase tracking-widest font-bold max-w-[200px] md:max-w-none">{dt(`Kliko tek GPS ose në hartë për të ndarë lokacionin saktësisht!`)}</p>
@@ -1412,7 +1413,7 @@ export default function ReportIssue() {
 
             <div className="flex flex-col gap-4 pt-6 md:pt-8 border-t-2 border-slate-900 mt-8 md:mt-10">
               {(!currentUser || currentUser?.role === 'guest') && !isAnonymous && (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 p-6 md:p-8 border border-slate-200/60 dark:border-white/10 rounded-xl bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 relative mt-4">
+                 <div data-tour="report-identity" className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 p-6 md:p-8 border border-slate-200/60 dark:border-white/10 rounded-xl bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 relative mt-4">
                    <div className="absolute -top-4 left-4 md:left-6 px-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide py-1">{dt(`Identifikimi Subjektit`)}</div>
                    <div>
                      <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-2">{dt(`Emri dhe Mbiemri`)}</label>
@@ -1441,7 +1442,7 @@ export default function ReportIssue() {
                  </div>
               )}
               
-              <label className="flex items-center gap-4 cursor-pointer select-none bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 p-4 md:p-5 border-2 border-slate-200/60 dark:border-white/10 hover:border-slate-900 transition-colors mt-2 md:mt-4">
+              <label data-tour="report-anon" className="flex items-center gap-4 cursor-pointer select-none bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 p-4 md:p-5 border-2 border-slate-200/60 dark:border-white/10 hover:border-slate-900 transition-colors mt-2 md:mt-4">
                 <input type="checkbox" checked={isAnonymous} onChange={e => setIsAnonymous(e.target.checked)} className="w-5 h-5 md:w-6 md:h-6 border border-slate-200/60 dark:border-white/10 rounded-xl text-[var(--color-text)] dark:text-white focus:ring-slate-900 transition-all rounded-xl" />
                 <span className="text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide">{dt(`Kërkoj statusin anonim në proces`)}</span>
               </label>
@@ -1468,6 +1469,7 @@ export default function ReportIssue() {
             <div className="pt-6 md:pt-8">
               <button 
                 type="submit"
+                data-tour="report-submit"
                 disabled={isSubmitting}
                 className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-slate-900 text-white p-4 md:p-6 font-bold transition-colors tracking-wide text-xs md:text-sm border-2 border-transparent hover:border-slate-900 disabled:opacity-70 disabled:cursor-not-allowed"
               >

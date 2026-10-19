@@ -70,7 +70,8 @@ import { GlobalAlert } from './components/GlobalAlert';
 import { SeriousAnnouncementPopup } from './components/SeriousAnnouncementPopup';
 
 import { auth, db } from './lib/firebase';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { isGuestFirebaseUser, signInAsGuest } from './lib/guestSession';
 import { canReadAllReports, startPublicReports } from './lib/publicReportsApi';
 import { registerGuest } from './lib/guestApi';
 import { doc, getDoc, collection, onSnapshot, query, orderBy, setDoc, getDocs, limit, where } from 'firebase/firestore';
@@ -374,7 +375,8 @@ export default function App() {
           // pressed F5 was thrown out. Wait for the restore to settle first.
           await auth.authStateReady();
           if (!auth.currentUser) {
-            await signInAnonymously(auth);
+            const guest = await signInAsGuest();
+            if (guest.ok === false) throw new Error(guest.reason);
           }
         } catch (error: any) {
           const code: string = error?.code || '';
@@ -468,10 +470,10 @@ export default function App() {
           try {
             const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
             let userData: any;
-            if (userDoc.exists() && !(firebaseUser.isAnonymous && typeof userDoc.data().guestNumber !== 'number')) {
+            if (userDoc.exists() && !(isGuestFirebaseUser(firebaseUser) && typeof userDoc.data().guestNumber !== 'number')) {
               userData = userDoc.data();
               setCurrentUser(userData);
-            } else if (firebaseUser.isAnonymous) {
+            } else if (isGuestFirebaseUser(firebaseUser)) {
               // A guest gets their number and profile from the server (Mysafir-0000001, …): the
               // database rules refuse a guest writing their own profile from the browser.
               userData = await registerGuest(firebaseUser);
@@ -482,7 +484,7 @@ export default function App() {
                 id: firebaseUser.uid,
                 name: firebaseUser.displayName || 'Përdorues i Panjohur',
                 email: firebaseUser.email || '',
-                role: firebaseUser.isAnonymous ? 'guest' : 'citizen',
+                role: isGuestFirebaseUser(firebaseUser) ? 'guest' : 'citizen',
                 points: 0,
                 badges: [],
                 isVerified: firebaseUser.emailVerified || false,

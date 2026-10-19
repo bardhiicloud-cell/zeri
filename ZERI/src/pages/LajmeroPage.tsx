@@ -165,7 +165,7 @@ export default function LajmeroPage() {
               </div>
             ))}
             {media.length < MAX_MEDIA && (
-              <button type="button" onClick={() => fileRef.current?.click()} className="flex h-24 w-32 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-xs font-bold text-slate-500 hover:border-blue-500 dark:border-white/20"><ImagePlus className="h-5 w-5" aria-hidden="true" />{dt('Shto')}</button>
+              <button type="button" data-tour="tip-media" onClick={() => fileRef.current?.click()} className="flex h-24 w-32 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-xs font-bold text-slate-500 hover:border-blue-500 dark:border-white/20"><ImagePlus className="h-5 w-5" aria-hidden="true" />{dt('Shto')}</button>
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple className="hidden" onChange={e => void addFiles(e.target.files)} />
@@ -189,7 +189,7 @@ export default function LajmeroPage() {
         </fieldset>
 
         {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">{error}</p>}
-        <button type="submit" disabled={busy} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-6 text-base font-black text-white hover:bg-blue-800 disabled:opacity-50">
+        <button type="submit" data-tour="tip-submit" disabled={busy} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-6 text-base font-black text-white hover:bg-blue-800 disabled:opacity-50">
           {busy && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}{dt('Dërgo lajmin')}
         </button>
       </form>
