@@ -1,3 +1,5 @@
+import { sectorByName } from './sectorCatalog';
+
 export interface AccountabilityProfile {
   institution: string;
   level: 'Komunale' | 'Qendrore' | 'Publike' | 'Siguri';
@@ -23,6 +25,16 @@ const profiles: Array<{ matches: string[]; profile: AccountabilityProfile }> = [
 ];
 
 export function getAccountabilityProfile(category = ''): AccountabilityProfile {
+  // A category chosen from the sector catalog carries its own body and deadline.
+  const entry = sectorByName(category);
+  if (entry) {
+    return {
+      institution: entry.institution === 'Komuna - Zyra përkatëse' ? `Komuna - ${entry.office}` : entry.institution,
+      level: entry.level,
+      responseHours: entry.responseHours,
+      office: entry.office,
+    };
+  }
   const normalized = category.toLowerCase();
   return profiles.find(item => item.matches.some(match => normalized.includes(match)))?.profile || {
     institution: 'Komuna - Zyra përkatëse',

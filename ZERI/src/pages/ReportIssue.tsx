@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { UrgentLevel } from '../types';
 import { cn } from '../lib/utils';
 import { getAccountabilityDueDate, getAccountabilityProfile } from '../lib/accountability';
+import { SECTOR_CATALOG, LEVEL_LABEL, checkLocation, nearestMunicipality, sectorByName, sectorLabel, suggestSectors } from '../lib/sectorCatalog';
 
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
@@ -212,6 +213,10 @@ function LocationMarker({ position, setPosition, setAddress, setMunicipality, pr
               setMunicipality(exactCommune); 
             }
           }
+          if (!city || !mapToKosovoMunicipality(city)) {
+            const near = nearestMunicipality(lat, lng);
+            if (near && near.km < 25) setMunicipality(near.name);
+          }
           if (preventSearchRef) preventSearchRef.current = true;
           setAddress(data.display_name);
         }
@@ -344,56 +349,8 @@ export default function ReportIssue() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Kategoritë e plota - Nivel qendror dhe lokal me fjalë kyçe për kërkim të lehtë
-  const defaultCategories = [
-    // Rrugët dhe Infrastruktura
-    { name: "Komuna - Drejtoria e Infrastrukturës (Rrugë lokale, Gropa, Asfaltim në qytet/fshat)", group: "Infrastruktura dhe Rrugët", keywords: "rrugë, gropë, grop, asfalt, trotuar, dëmtime, kubëza, baltë, pluhur, shtruar, ndërtim, infrastrukturë, lagje, fshat, rrug, rruga" },
-    { name: "Ministria e Infrastrukturës (Rrugë magjistrale, Autostrada, Rrugë rajonale)", group: "Infrastruktura dhe Rrugët", keywords: "rrugë, autostradë, shpronësim, magjistrale, nacionale, rrug, rruga, ura, hekurudha, ndërtim, infrastrukturë" },
-    
-    // Shëndetësia
-    { name: "Komuna - QKMF / Ambulancat lokale (Shëndetësia primare)", group: "Shëndetësia", keywords: "spital, mjekësi, barna, ambulancë, qkmf, mjek, shëndet, vizitë, mjeku i familjes, lokal, komuna" },
-    { name: "Ministria e Shëndetësisë / SHSKUK (QKUK, Spitalet Rajonale)", group: "Shëndetësia", keywords: "spital, qkuk, shskuk, operacion, emergjencë, pacient, barna, shëndetësi, nivel qendror" },
-
-    // Arsimi
-    { name: "Komuna - Drejtoria e Arsimit (Kopshte, Shkolla fillore dhe të mesme)", group: "Arsimi dhe Shkolla", keywords: "shkollë, kopsht, çerdhe, arsim, nxënës, mësues, klasa, fillore, mesme, shkolla" },
-    { name: "Ministria e Arsimit, Shkencës dhe Teknologjisë (Universitetet, Kurrikulat)", group: "Arsimi dhe Shkolla", keywords: "fakultet, universitet, diplomë, libër, student, edukim, arsimi i lartë, MASHT" },
-
-    // Uji, Rryma, dhe Mbeturinat (Këto zakonisht i ngatërrojnë njerëzit)
-    { name: "Ujësjellësi Rajonal - KRU (Mungesë uji, Gyp i pëlcitur, Faturim)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "ujë, pijshëm, gyp, kru, reduktim, ndërprerje, faturë, pusetë, rrjedhje, ujësjellës, kanalizim, ujt, uj, uji" },
-    { name: "Komuna - Kanalizimi lokal dhe Ujërat e zeza (Zgjerim rrjeti, Bllokim i madh)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "kanalizim, ujë i zi, pusetë, erë, bllokim, shpërthim, rrjedhje, fecale, ujrat e zeza, komuna" },
-    
-    { name: "KEDS / KESCO (Ndërprerje e rrymës, Kabllo e rrezikshme, Fatura)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "rrymë, dritë, keds, kesco, trafo, kabllo, ndërprerje, faturë, shtyllë, defekt, energji, prishje, rryma, tension" },
-    { name: "Komuna - Ndriçimi Publik (Llamba të djegura në rrugë, Errësirë)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "dritë, ndriçim, llambë, errësirë, shtyllë, djegur, publik, rrugë, poça, dritat" },
-
-    { name: "Kompania 'Pastrimi' (Vonesa në mbledhjen e bërllokut/mbeturinave)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "mbeturina, bërllok, pastrimi, kontejner, kamion, erë, pastrim, mbetje, berrllok" },
-    { name: "Komuna - Deponi Ilegale, Ndotje e natyrës, dhe Mjedisi", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "mbeturina, bërllok, deponi, ilegale, hedhje, natyrë, lumë, pyll, papastërti, mjedis, komuna" },
-
-    // Siguria, Policia dhe Emergjencat
-    { name: "Policia e Kosovës / Siguria Publike (Krim, Aksident, Prishje e rendit)", group: "Siguria, Policia dhe Emergjencat", keywords: "polici, krim, vjedhje, aksident, rrahje, siguri, rrezik, patrollë, armë, rendi, qetësia" },
-    { name: "Inspekcioni Komunal (Zhurmë në lokale, Tregje, Ndërtime pa leje)", group: "Siguria, Policia dhe Emergjencat", keywords: "inspektor, treg, çmim, zhurmë, orar, market, ushqim, skaduar, muzikë, kafiteri, lokal, ndërtim, pa leje, uzurpim, inspeksioni" },
-    { name: "Zjarrfikësit dhe Shpëtimi", group: "Siguria, Policia dhe Emergjencat", keywords: "zjarr, zjarrfikës, tym, djegie, shpëtim, aksident, emergjencë, pyll" },
-
-    // Shërbime tjera Komunale dhe Qendrore
-    { name: "Komuna - Qentë endacakë & Kafshët e rrezikshme", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "qen, endacak, kafshë, rrezik, sulm, kafshim, strehimore, mace, rrugë, qent" },
-    { name: "Komuna - Transporti Publik (Urbanët, Stacionet, Vonesat)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "autobus, transport, publik, orar, stacion, urban, biletë, vonesë, cilësi, udhëtar, autobusi" },
-    { name: "Komuna - Parqet, Hapësirat e gjelbra, Drunjtë (Mirëmbajtja)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "ambient, park, dru, prerje, dëmtim, natyrë, gjelbërim, bar, park, pyll, drunj" },
-    { name: "Komuna - Qasja për Personat me Aftësi të Kufizuara (Rampa, Barrierat)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "qasje, PAK, aftësi, kufizuar, karrocë, shkallë, rampë, pengesë, trotuar" },
-    
-    // Institucionet Qendrore (Nivel Shtetëror)
-    { name: "Ministria e Punëve të Brendshme (Pasaporta, Letërnjoftime, Gjendja Civile)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "dokumente, pasaportë, letërnjoftim, kufiri, MPB, patentë shofer, vula" },
-    { name: "Ministria e Drejtësisë (Gjykatat, Prokuroria, Noteria)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "gjykatë, prokurori, burg, avokat, drejtësi, ligj, dënim, korrupsion, hak, noter" },
-    { name: "Ministria e Industrisë dhe Tregtisë / MINT (Mbrojtja e Konsumatorit)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "industri, tregti, biznes, inspektorat qendror, çmime, konsumator, fabrikë, naftë, doganë" },
-    { name: "Ministria e Financave, Punës dhe Transfereve (ATK, Dogana, Pensionet)", group: "Shërbime të Tjera (Lokal dhe Qendror)", keywords: "financa, para, tatim, atk, dogana, punë, pagë, pension, social, ndihmë, skema sociale" },
-    { name: "BESA / KESH (Energjia elektrike, defekt në linja, shpërndarje)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "besa, kesh, energji, rrymë, elektrike, defekt, shpërndarje, linja, transformator" },
-    { name: "Telecom Kosovo / Vala (Internet, Telefon fiks, TV kabel)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "telecom, vala, internet, wifi, fiks, tv, kabel, telefon, signal" },
-    { name: "Posta e Kosovës (Dërgesa, Posta e shpejtë, Paket)", group: "Shërbimet Publike (Kompani & Agjenci)", keywords: "posta, dërgesa, paket, shpejtë, post, korrespondencë, dokument" },
-    { name: "Komuna - Shërbimet Sociale (Ndihma, Vaksinim, Assistencë)", group: "Shërbimen Qytetare", keywords: "ndihmë, sociale, social, pension, vaksinim, bamirësi, familje" },
-    { name: "Agjencia e Pronarëzimit të Kosovës (Akte pronash, Hiri, Noter)", group: "Shërbimen Qytetare", keywords: "pronë, apartament, vula, hiri, noter, titull, pasurie" },
-    { name: "Agjencia e Zhvillimit të Biznesit (Regjistrimi, Leje tregti)", group: "Shërbimen Qytetare", keywords: "biznes, regjistrim, tregti, leje, kompani, nipt" },
-    { name: "Agjencia e Mbrotjes së Konsumatorit (Çmime, Skauda)", group: "Shërbimen Qytetare", keywords: "konsumator, çmim, skauda, mbrojtje, super, bazar, kualitet" },
-    { name: "Agjencia Meteorologjake e Kosovës (Parashikimet e motit, Stuhie)", group: "Mjedsi dhe Natyrë", keywords: "meteo, mot, stuhie, reshje, borë, parashikim, klima" },
-    { name: "Komuna - Hapësira e lira për Aktivitete të jashtme", group: "Komuna - Rekreatim", keywords: "park, lirë, aktivitet, jashtme, rekreatim, sport, grimotë" }
-  ];
+  // Every institution of Kosovo by topic and level lives in the sector catalog.
+  const defaultCategories: { name: string; group: string; keywords: string }[] = SECTOR_CATALOG.map(e => ({ name: e.name, group: e.group, keywords: e.keywords }));
 
   const combinedCategories = [...defaultCategories];
   categories.forEach(storeCat => {
@@ -426,6 +383,34 @@ export default function ReportIssue() {
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [coordinates, setCoordinates] = useState<[number, number]>([42.6629, 21.1655]);
+
+  /** Bodies that answer the chosen topic, named after the chosen municipality. */
+  const sectorSuggestions = React.useMemo(
+    () => suggestSectors({ topicId: topicCategory, municipality, text: `${title} ${description}` }),
+    [topicCategory, municipality, title, description]
+  );
+  /** True while `category` was filled by the suggestion, so a new topic may replace it; a manual pick is never overwritten. */
+  const categoryAutoRef = useRef(false);
+  useEffect(() => {
+    if (!topicCategory || sectorSuggestions.length === 0) return;
+    if (category && !categoryAutoRef.current) return;
+    const best = sectorSuggestions[0].entry.name;
+    if (best !== category) {
+      categoryAutoRef.current = true;
+      setCategory(best);
+    }
+  }, [topicCategory, sectorSuggestions]);
+  const pickSector = (name: string) => {
+    categoryAutoRef.current = false;
+    setCategory(name);
+    setCategorySearchTerm('');
+    setIsCategoryDropdownOpen(false);
+    setErrors(prev => (prev.category ? { ...prev, category: '' } : prev));
+  };
+  const locationCheck = React.useMemo(
+    () => checkLocation(coordinates[0], coordinates[1], municipality),
+    [coordinates, municipality]
+  );
 
   useEffect(() => {
     // A report is intentionally session-only until it is submitted.
@@ -637,6 +622,11 @@ export default function ReportIssue() {
     const munErr = validations.isRequired(municipality, 'Komuna');
     if (munErr) newErrors.municipality = munErr;
 
+    if (municipality) {
+      const where = checkLocation(coordinates[0], coordinates[1], municipality);
+      if (where.status === 'outside') newErrors.location = where.message;
+    }
+
     if ((!currentUser || currentUser?.role === 'guest') && !isAnonymous) {
       const nameErr = validations.isRequired(guestName, 'Emri dhe Mbiemri') || validations.minLength(guestName, 3, 'Emri dhe Mbiemri');
       if (nameErr) newErrors.guestName = nameErr;
@@ -671,7 +661,7 @@ export default function ReportIssue() {
       //    only be stored together with a real identity. Guarantee one up front
       //    instead of showing a Track ID for a report that was never persisted.
       const authorUid = await ensureReportSession();
-      if (!authorUid) {
+      if (!authorUid || !auth.currentUser) {
         toast.error(
           'Për të ruajtur raportin nevojitet një sesion aktiv. Kyçuni ose vazhdoni si mysafir (Guest) dhe provoni përsëri — të dhënat e formës ruhen.',
           { duration: 10000 }
@@ -764,13 +754,26 @@ export default function ReportIssue() {
         setSubmitStage(dt(`Duke ngarkuar ${mediaItems.length} foto/video/dokument...`));
       }
       let uploadedCount = 0;
+      const sentBytes = new Map<number, number>();
+      const totalBytes = mediaItems.reduce((sum, m) => sum + m.file.size, 0) || 1;
+      const showProgress = () => {
+        const sent = Array.from(sentBytes.values()).reduce((a, b) => a + b, 0);
+        const pct = Math.min(99, Math.round((sent / totalBytes) * 100));
+        setSubmitStage(dt(`Duke ngarkuar ${mediaItems.length} foto/video/dokument... ${pct}% (${uploadedCount} nga ${mediaItems.length} gati)`));
+      };
       const uploadResults = await Promise.allSettled(
-        mediaItems.map(async (media) => {
-          // One retry: a flaky mobile link is the usual reason a photo or video fails.
-          const send = () => uploadFileToStorage(media.file, 'reports', { userId: authorUid, scope: reportRef.id });
-          const downloadUrl = await send().catch(() => send());
+        mediaItems.map(async (media, index) => {
+          const send = () => uploadFileToStorage(media.file, 'reports', {
+            userId: authorUid,
+            scope: reportRef.id,
+            onProgress: (sent) => { sentBytes.set(index, sent); showProgress(); },
+          });
+          // One retry, but only for a flaky link: a refusal (permissions, format) repeats identically.
+          const downloadUrl = await send().catch((error: Error) =>
+            /refuzua|konfiguruar|plotë/.test(error.message) ? Promise.reject(error) : send());
           uploadedCount += 1;
-          setSubmitStage(dt(`U ngarkuan ${uploadedCount} nga ${mediaItems.length} fajlla...`));
+          sentBytes.set(index, media.file.size);
+          showProgress();
           return {
             url: downloadUrl,
             type: media.type,
@@ -1177,7 +1180,7 @@ export default function ReportIssue() {
                 >
                   <input
                     type="text"
-                    value={isCategoryDropdownOpen ? categorySearchTerm : (category ? dt(category) : '')}
+                    value={isCategoryDropdownOpen ? categorySearchTerm : (category ? (sectorByName(category) ? dt(sectorLabel(sectorByName(category)!, municipality)) : dt(category)) : '')}
                     onChange={(e) => {
                       setCategorySearchTerm(e.target.value);
                       setIsCategoryDropdownOpen(true);
@@ -1210,15 +1213,11 @@ export default function ReportIssue() {
                             <button
                               key={'id' in c ? (c as any).id : c.name}
                               type="button"
-                              onClick={() => {
-                                setCategory(c.name);
-                                setCategorySearchTerm('');
-                                setIsCategoryDropdownOpen(false);
-                                if(errors.category) setErrors({...errors, category: ''});
-                              }}
+                              onClick={() => pickSector(c.name)}
                               className="w-full text-left px-4 py-3 hover:bg-indigo-600/10 border-b last:border-0 border-slate-100 dark:border-white/5 font-bold text-xs text-slate-700 dark:text-[var(--color-text-muted)] transition-colors"
                             >
-                              {dt(c.name)}
+                              {sectorByName(c.name) ? dt(sectorLabel(sectorByName(c.name)!, municipality)) : dt(c.name)}
+                              {sectorByName(c.name) && <span className="ml-2 rounded-full bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{dt(LEVEL_LABEL[sectorByName(c.name)!.level])}</span>}
                               {(c as any).keywords && categorySearchTerm && (c as any).keywords.toLowerCase().includes(categorySearchTerm.toLowerCase()) && !dt(c.name).toLowerCase().includes(categorySearchTerm.toLowerCase()) && (
                                 <span className="block text-[10px] text-neutral-400 font-normal mt-0.5 normal-case">{dt(`Lidhet me kërkimin tuaj`)}</span>
                               )}
@@ -1237,6 +1236,29 @@ export default function ReportIssue() {
                   </div>
                 )}
                 {errors.category && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.category}</p>}
+                {topicCategory && sectorSuggestions.length > 0 && (
+                  <div className="mt-3" data-testid="sector-suggestions">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-1.5">
+                      {municipality ? dt(`Sugjerime për ${municipality}`) : dt('Sugjerime (zgjidhni komunën për adresim të saktë)')}
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {sectorSuggestions.map(({ entry, label, reason }) => (
+                        <button
+                          key={entry.name}
+                          type="button"
+                          onClick={() => pickSector(entry.name)}
+                          aria-pressed={category === entry.name}
+                          className={cn('w-full text-left rounded-xl border px-3 py-2 text-xs transition-colors',
+                            category === entry.name ? 'border-indigo-600 bg-indigo-600/10' : 'border-slate-200 dark:border-white/10 hover:border-indigo-400')}
+                        >
+                          <span className="font-bold text-[var(--color-text)] dark:text-white">{dt(label)}</span>
+                          <span className="ml-2 rounded-full bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{dt(LEVEL_LABEL[entry.level])}</span>
+                          <span className="block text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{dt(reason)} · {dt('Afati i përgjigjes')}: {entry.responseHours}h</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div>
@@ -1347,6 +1369,16 @@ export default function ReportIssue() {
                   </MapContainer>
                 </SafeMapContainer>
               </div>
+              {locationCheck.status !== 'ok' && (
+                <p role="alert" data-field-error className="mb-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{dt(locationCheck.message)}
+                    {locationCheck.status === 'mismatch' && (
+                      <button type="button" onClick={() => setMunicipality(locationCheck.suggested)} className="ml-2 underline">{dt(`Përdor ${locationCheck.suggested}`)}</button>
+                    )}
+                  </span>
+                </p>
+              )}
               <div className="relative">
                 <input 
                    type="text" 

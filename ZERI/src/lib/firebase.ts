@@ -84,6 +84,9 @@ export const db = firestoreConfig?.databaseId
   ? getFirestore(app, firestoreConfig.databaseId)
   : getFirestore(app);
 export const storage = getStorage(app);
+// Fail a dead transfer in half a minute instead of the SDK default of ten minutes.
+storage.maxUploadRetryTime = 30000;
+storage.maxOperationRetryTime = 20000;
 
 if (usePrototypeEmulators) {
   // These fixed loopback endpoints are used only in a Vite development build
@@ -224,7 +227,7 @@ export async function getUserRole(): Promise<string | null> {
 export const uploadFileToStorage = async (
   file: File,
   kind: UploadKind,
-  options?: { userId?: string; scope?: string }
+  options?: { userId?: string; scope?: string; onProgress?: (sent: number, total: number) => void }
 ): Promise<string> => {
   if (!file) throw new Error("Asnjë fajll nuk u dha.");
 
@@ -268,28 +271,73 @@ export const uploadFileToStorage = async (
 
   const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
 
-  const uploadPromise: Promise<string> = (async () => {
-    const snapshot = await uploadTask;
-    return (await getDownloadURL(snapshot.ref)) as string;
-  })();
+  /*
+   * Firebase Storage retries a failing transfer for up to ten minutes by itself, so
+   * a bucket that is missing, blocked by App Check or unreachable looked like an
+   * upload that "never finishes". Two bounds replace that: a stall bound (no byte
+   * moved for STALL_MS) and an overall ceiling. Either one cancels the transfer and
+   * gives the citizen a clear message to retry or send without the file.
+   */
+  const STALL_MS = isVideo ? 45000 : 20000;
+  const overallMs = isVideo ? 180000 : 60000;
 
-  // Generous ceiling: a 10 MB video over a slow mobile link needs far more than
-  // the old 8s, which made normal uploads look like failures.
-  const timeoutMs = isVideo ? 180000 : 60000;
-  const timeoutPromise: Promise<string> = new Promise((_, reject) => {
-    setTimeout(() => {
-      // Stop the transfer so a timed-out upload stops consuming bandwidth.
-      try {
-        uploadTask.cancel();
-      } catch {
-        /* transfer already settled */
-      }
-      reject(new Error(`Ngarkimi i "${file.name}" zgjati shumë. Provoni përsëri.`));
-    }, timeoutMs);
+  return await new Promise<string>((resolve, reject) => {
+    let settled = false;
+    let stallTimer: ReturnType<typeof setTimeout> | undefined;
+    const overallTimer = setTimeout(() => fail(new Error(`Ngarkimi i "${file.name}" zgjati shumë. Provoni përsëri.`)), overallMs);
+    const finish = () => { settled = true; clearTimeout(stallTimer); clearTimeout(overallTimer); };
+    const fail = (error: Error) => {
+      if (settled) return;
+      finish();
+      try { uploadTask.cancel(); } catch { /* transfer already settled */ }
+      reject(error);
+    };
+    const armStall = () => {
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(
+        () => fail(new Error(`Lidhja me ruajtjen e fajllave nuk po përgjigjet (${file.name}). Kontrolloni internetin dhe provoni përsëri.`)),
+        STALL_MS,
+      );
+    };
+    armStall();
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        armStall();
+        options?.onProgress?.(snapshot.bytesTransferred, snapshot.totalBytes);
+      },
+      (error) => fail(new Error(describeStorageError(error, file.name))),
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then(
+          (url) => { if (!settled) { finish(); resolve(url); } },
+          (error) => fail(new Error(describeStorageError(error, file.name))),
+        );
+      },
+    );
   });
-
-  return (await Promise.race([uploadPromise, timeoutPromise])) as string;
 };
+
+/** A citizen-readable reason for a Storage failure (the SDK's own text is English and technical). */
+function describeStorageError(error: unknown, name: string): string {
+  const code = (error as { code?: string } | null)?.code ?? '';
+  switch (code) {
+    case 'storage/unauthorized':
+    case 'storage/unauthenticated':
+      return `Ngarkimi i "${name}" u refuzua: sesioni ose lejet e ruajtjes nuk e lejuan. Rifreskoni faqen dhe provoni përsëri.`;
+    case 'storage/retry-limit-exceeded':
+    case 'storage/network-request-failed':
+      return `Lidhja u ndërpre gjatë ngarkimit të "${name}". Provoni përsëri.`;
+    case 'storage/quota-exceeded':
+      return 'Hapësira e ruajtjes është e plotë; njoftoni administratorin.';
+    case 'storage/bucket-not-found':
+    case 'storage/project-not-found':
+      return 'Vendi ku ruhen fotot nuk është i konfiguruar; njoftoni administratorin.';
+    case 'storage/canceled':
+      return `Ngarkimi i "${name}" u ndalua.`;
+    default:
+      return `Ngarkimi i "${name}" dështoi${code ? ` (${code})` : ''}. Provoni përsëri.`;
+  }
+}
 
 /** Uploads a private health attachment and returns its storage path, never a public download token URL. */
 export async function uploadPrivateHealthDocument(file: File, scope = 'registry'): Promise<string> {
