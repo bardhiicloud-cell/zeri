@@ -11,9 +11,10 @@ import { translationLanguageFor } from './seo';
 type SupportedLanguage = SupportedLanguageCode;
 
 /**
- * Translations are generated (scripts/build-i18n.ts) into one JSON file per
- * language and fetched only for the language a visitor reads. Albanian is the
- * source language and needs no table, so dt() returns the original text for it.
+ * Translations live in src/lib/i18n/locales (one JSON file per language,
+ * maintained with scripts/i18n.ts) and are fetched only for the language a
+ * visitor reads. Albanian is the source language and needs no table, so dt()
+ * returns the original text for it.
  * Until a table has loaded, dt() also returns the Albanian original.
  */
 type Table = Record<string, string>;
@@ -21,7 +22,7 @@ type Table = Record<string, string>;
 // module and have no browser to fetch for, so there the lookup stays empty.
 let tableLoaders: Record<string, () => Promise<Table>> = {};
 try {
-  tableLoaders = import.meta.glob<Table>('./i18n/generated/*.json', { import: 'default' });
+  tableLoaders = import.meta.glob<Table>('./i18n/locales/*.json', { import: 'default' });
 } catch {
   // not running under Vite
 }
@@ -41,7 +42,7 @@ export function ensureTranslationTables(language: string): Promise<void> {
   if (!isSupportedLanguage(language)) return Promise.resolve();
   const lang = translationLanguageFor(language);
   if (lang === DEFAULT_LANGUAGE || tables.has(lang)) return Promise.resolve();
-  const loader = tableLoaders[`./i18n/generated/${lang}.json`];
+  const loader = tableLoaders[`./i18n/locales/${lang}.json`];
   if (!loader) return Promise.resolve();
   let loading = tablesLoading.get(lang);
   if (!loading) {
@@ -62,7 +63,7 @@ export function ensureTranslationTables(language: string): Promise<void> {
 export function translationTablesReady(language: string): boolean {
   if (!isSupportedLanguage(language)) return true;
   const lang = translationLanguageFor(language);
-  return lang === DEFAULT_LANGUAGE || tables.has(lang) || !tableLoaders[`./i18n/generated/${lang}.json`];
+  return lang === DEFAULT_LANGUAGE || tables.has(lang) || !tableLoaders[`./i18n/locales/${lang}.json`];
 }
 
 const isSupported = (value: string | null): value is SupportedLanguage =>
@@ -77,7 +78,7 @@ const isSupported = (value: string | null): value is SupportedLanguage =>
  *
  * The per-language tables already apply the source precedence (public pages,
  * added languages, site gap-fills, UI labels, the original six, then Albanian);
- * see scripts/build-i18n.ts. A miss returns the input text itself.
+ * see scripts/i18n.ts. A miss returns the input text itself.
  */
 export function dt(text: string, forcedLang?: string): string {
   if (!text) return text;

@@ -34,6 +34,7 @@ jobs:
       # React Hooks rules over all of src. New violations fail the build; files with older findings are
       # listed as warnings in eslint.hooks.config.js and must only shrink.
       - run: npx eslint -c eslint.hooks.config.js src
+      - run: npm run i18n:check
       - run: npm test
       - run: npm run build
       - name: Dependency audit (report only)
