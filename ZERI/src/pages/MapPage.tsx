@@ -238,7 +238,7 @@ export default function MapPage() {
 
       return legendFilters[report.urgency] !== false;
     });
-  }, [reports, currentUser, selectedMunicipality, selectedNeighborhood, activeFilter, selectedTopic, legendFilters]);
+  }, [reports, selectedMunicipality, selectedNeighborhood, activeFilter, selectedTopic, legendFilters]);
 
   /** Only reports with real coordinates can be drawn. */
   const mappableReports = useMemo(

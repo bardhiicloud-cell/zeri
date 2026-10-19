@@ -58,8 +58,8 @@ async function fetchPublicReportsDirect(max = 100): Promise<PublicFeedPage> {
     firestore.limit(300),
   ));
   const items = snap.docs.map((d) => {
-    const r = normalizeStoredReport(d.id, d.data()) as Report & Record<string, any>;
-    const loc = (r.location ?? {}) as Record<string, any>;
+    const r = normalizeStoredReport(d.id, d.data()) as Report & Record<string, unknown> & { isAnonymous?: boolean; upvotes?: number; commentsCount?: number; resolvedImage?: string; responsibleInstitution?: string };
+    const loc = (r.location ?? {}) as { lat?: unknown; lng?: unknown; municipality?: unknown };
     return {
       id: r.id,
       trackingId: r.trackingId,
@@ -97,7 +97,6 @@ export async function fetchPublicReports(options: { cursor?: string | null; limi
     response = await fetch(`/api/v1/public/reports${query ? `?${query}` : ''}`, { signal: options.signal });
   } catch (error) {
     if ((error as { name?: string })?.name === 'AbortError') throw error;
-    response = null;
   }
   const body = response?.ok ? await response.json().catch(() => null) : null;
   if (!body || !Array.isArray(body.items)) {
