@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ImageOff } from 'lucide-react';
+import { Camera } from 'lucide-react';
 
 /**
  * A photograph from /public/heritage/photos/<name>.jpg. When the file is not there (or fails to load)
@@ -16,7 +16,7 @@ export function Photo({ name, alt, credit, className = '', position = 'center', 
   return (
     <div className={`hx-photo ${className}`}>
       {failed
-        ? <span className="hx-photo-fallback" aria-hidden="true"><ImageOff className="h-7 w-7" /></span>
+        ? <span className="hx-photo-fallback" aria-hidden="true"><Camera className="h-6 w-6" /></span>
         : <img src={`/heritage/photos/${name}.${ext}`} alt={alt} loading="lazy" decoding="async" style={{ objectPosition: position }} onError={() => setFailed(true)} />}
       {credit && !failed && <span className="absolute bottom-1 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold text-white/85">© {credit}</span>}
     </div>
