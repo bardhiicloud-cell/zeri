@@ -7,7 +7,8 @@ import { coordinatesToCell } from '../../lib/municipalityNormalizer';
 import { hasAnalyticsConsent, onConsentChange } from '../../lib/consent';
 
 /** Statuses that still need institutional action. */
-const OPEN_STATUSES = new Set(['Pending Review', 'Approved', 'Assigned', 'In Progress']);
+// Only reviewer-accepted reports: a pending one is not yet public information.
+const OPEN_STATUSES = new Set(['Approved', 'Assigned', 'In Progress']);
 
 /**
  * Minimum number of open problems in the same ~1.1 km cell before the citizen is

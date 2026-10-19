@@ -7,14 +7,14 @@ services:
     rootDir: ZERI
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: CLUSTER_WORKERS
         value: "1"
       - key: ALLOWED_ORIGINS
-        value: https://zeriqytetarve.com
+        value: https://zeriqytetarve.com,https://www.zeriqytetarve.com,https://gen-lang-client-0907710011.web.app,https://gen-lang-client-0907710011.firebaseapp.com
       - key: PUBLIC_APP_URL
         value: https://zeriqytetarve.com
       - key: FIREBASE_PROJECT_ID

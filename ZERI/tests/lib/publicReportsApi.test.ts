@@ -22,13 +22,21 @@ describe('who gets the full collection', () => {
 });
 
 describe('mergeOwnReports', () => {
-  it('puts the viewer\'s own reports among the feed, newest first, own copy winning', () => {
+  it('puts the viewer\'s own accepted reports among the feed, newest first, own copy winning', () => {
     const merged = mergeOwnReports(
       [report('a', '2026-01-03T00:00:00Z', { authorId: '' }), report('b', '2026-01-01T00:00:00Z')],
-      [report('a', '2026-01-03T00:00:00Z', { authorId: 'me' }), report('mine', '2026-01-02T00:00:00Z', { status: 'Pending Review' })],
+      [report('a', '2026-01-03T00:00:00Z', { authorId: 'me', status: 'Approved' }), report('mine', '2026-01-02T00:00:00Z', { status: 'In Progress' })],
     );
     expect(merged.map(r => r.id)).toEqual(['a', 'mine', 'b']);
     expect(merged[0].authorId).toBe('me');
+  });
+
+  it('never shows a report still waiting for review, or rejected, as if it were public', () => {
+    const merged = mergeOwnReports(
+      [report('b', '2026-01-01T00:00:00Z', { status: 'Approved' })],
+      [report('pending', '2026-01-02T00:00:00Z', { status: 'Pending Review' }), report('no', '2026-01-03T00:00:00Z', { status: 'Rejected' }), report('draft', '2026-01-04T00:00:00Z', { status: 'Draft' })],
+    );
+    expect(merged.map(r => r.id)).toEqual(['b']);
   });
 });
 
@@ -52,8 +60,8 @@ describe('fetchPublicReports', () => {
     expect(page).toEqual({ items: [{ id: 'a' }], nextCursor: '2026-01-01T00:00:00.000Z' });
   });
 
-  it('turns a failed response into an error instead of an empty list', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 500 })));
-    await expect(fetchPublicReports()).rejects.toThrow(/500/);
+  it('a later page without the API is empty rather than an error (the database read has no cursor)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 503 })));
+    await expect(fetchPublicReports({ cursor: '2026-02-01T00:00:00.000Z' })).resolves.toEqual({ items: [], nextCursor: null });
   });
 });

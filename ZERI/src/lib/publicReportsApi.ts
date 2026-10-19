@@ -33,16 +33,80 @@ export interface PublicFeedPage {
   nextCursor: string | null;
 }
 
+/** Statuses a reviewer has accepted; the same list the server feed uses (server/publicReports.ts). */
+export const PUBLIC_FEED_STATUSES = ['Approved', 'Assigned', 'In Progress', 'Overdue', 'Resolved', 'Closed'] as const;
+
+export function isAcceptedForPublic(status: unknown): boolean {
+  return (PUBLIC_FEED_STATUSES as readonly string[]).includes(String(status ?? ''));
+}
+
+const coarse = (value: unknown): number => {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return Math.round(n * 100) / 100;
+};
+
+/**
+ * The feed read straight from the database, for when the API server is not there.
+ * Only accepted reports, and only the fields the server's allow-list would publish:
+ * no author id, no street address, coordinates rounded to ~1 km.
+ */
+async function fetchPublicReportsDirect(max = 100): Promise<PublicFeedPage> {
+  const [{ db }, firestore] = await Promise.all([import('./firebase'), import('firebase/firestore')]);
+  const snap = await firestore.getDocs(firestore.query(
+    firestore.collection(db, 'reports'),
+    firestore.where('status', 'in', [...PUBLIC_FEED_STATUSES]),
+    firestore.limit(300),
+  ));
+  const items = snap.docs.map((d) => {
+    const r = normalizeStoredReport(d.id, d.data()) as Report & Record<string, any>;
+    const loc = (r.location ?? {}) as Record<string, any>;
+    return {
+      id: r.id,
+      trackingId: r.trackingId,
+      title: r.title,
+      description: r.description,
+      category: r.category,
+      topicCategory: r.topicCategory,
+      urgency: r.urgency,
+      status: r.status,
+      createdAt: r.createdAt,
+      resolvedAt: r.resolvedAt,
+      resolvedImage: r.resolvedImage,
+      images: Array.isArray(r.images) ? r.images : [],
+      media: Array.isArray(r.media) ? r.media : [],
+      timeline: r.timeline,
+      upvotes: r.upvotes ?? 0,
+      commentsCount: r.commentsCount ?? 0,
+      authorId: '',
+      authorName: r.isAnonymous ? 'Qytetar Anonim' : 'Qytetar',
+      isAnonymous: true,
+      responsibleInstitution: r.responsibleInstitution,
+      location: { lat: coarse(loc.lat), lng: coarse(loc.lng), address: '', municipality: String(loc.municipality ?? '') },
+    } as unknown as Report;
+  }).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, max);
+  return { items, nextCursor: null };
+}
+
 export async function fetchPublicReports(options: { cursor?: string | null; limit?: number; signal?: AbortSignal } = {}): Promise<PublicFeedPage> {
   const params = new URLSearchParams();
   if (options.limit) params.set('limit', String(options.limit));
   if (options.cursor) params.set('cursor', options.cursor);
   const query = params.toString();
-  const response = await fetch(`/api/v1/public/reports${query ? `?${query}` : ''}`, { signal: options.signal });
-  if (!response.ok) throw new Error(`Raportimet nuk u ngarkuan (${response.status}).`);
-  const body = await response.json();
+  let response: Response | null = null;
+  try {
+    response = await fetch(`/api/v1/public/reports${query ? `?${query}` : ''}`, { signal: options.signal });
+  } catch (error) {
+    if ((error as { name?: string })?.name === 'AbortError') throw error;
+    response = null;
+  }
+  const body = response?.ok ? await response.json().catch(() => null) : null;
+  if (!body || !Array.isArray(body.items)) {
+    // No usable API: the database itself, filtered the same way. A later page has no direct equivalent.
+    if (options.cursor) return { items: [], nextCursor: null };
+    return fetchPublicReportsDirect(options.limit ?? 100);
+  }
   return {
-    items: Array.isArray(body.items) ? (body.items as Report[]) : [],
+    items: body.items as Report[],
     nextCursor: typeof body.nextCursor === 'string' ? body.nextCursor : null,
   };
 }
@@ -68,10 +132,15 @@ export function normalizeStoredReport(id: string, data: Record<string, unknown>)
   } as Report;
 }
 
-/** The feed with the viewer's own reports on top of it; a viewer's own copy wins, newest first. */
+/**
+ * The feed with the viewer's own *accepted* reports on top of it; a viewer's own copy
+ * wins, newest first. A report still waiting for review (or rejected) is NOT merged:
+ * it used to appear on the author's own map and feed as if it were already public,
+ * which read as "published without approval". It stays on "Raportet e mia".
+ */
 export function mergeOwnReports(feed: Report[], own: Report[]): Report[] {
   const byId = new Map<string, Report>(feed.map(report => [report.id, report]));
-  for (const report of own) byId.set(report.id, report);
+  for (const report of own) if (isAcceptedForPublic(report.status)) byId.set(report.id, report);
   return [...byId.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 

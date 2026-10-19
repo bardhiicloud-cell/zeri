@@ -4,6 +4,7 @@
  * Nothing here changes a status locally: screens re-read after the server answers.
  */
 import { describeApiFailure, requireAdminToken } from './adminApi';
+import { API_UNAVAILABLE_MESSAGE } from './apiBase';
 import type { AssignmentStatus, PriorityLevel, PriorityRules, ReportAction, ReportQueue, TaskKind, WorkflowRole } from './reportWorkflow';
 
 async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
@@ -26,6 +27,8 @@ async function call<T>(path: string, init?: { method?: string; body?: unknown })
     error.code = (body as { code?: string } | null)?.code;
     throw error;
   }
+  // An answer that is not the API's JSON (a static page, an empty body) is not a result.
+  if (body === null || typeof body !== 'object') throw new Error(API_UNAVAILABLE_MESSAGE);
   return body as T;
 }
 

@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APPCHECK_PROVIDER?: 'v3' | 'enterprise';
   /** Optional fixed debug token for local development; unset prints a fresh one to the console. */
   readonly VITE_FIREBASE_APPCHECK_DEBUG_TOKEN?: string;
+  /** Address of the Express API when it is not served from the same origin, e.g. https://zeri-api.onrender.com. */
+  readonly VITE_API_BASE?: string;
 }
 
 interface ImportMeta {
