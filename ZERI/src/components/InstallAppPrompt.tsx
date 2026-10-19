@@ -8,7 +8,7 @@ function IosSteps() {
   return (
     <ol className="mt-2 space-y-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
       <li className="flex items-center gap-2"><Share className="h-4 w-4 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />{dt('Shtyp butonin Ndaj (Share) në shfletues')}</li>
-      <li className="flex items-center gap-2"><PlusSquare className="h-4 w-4 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />{dt('Zgjidh “Shto në ekranin kryesor” (Add to Home Screen)')}</li>
+      <li className="flex items-center gap-2"><PlusSquare className="h-4 w-4 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />{dt('Zgjidh “Shto në ekranin kryesor” (Add to Home Screen), pastaj Shto')}</li>
     </ol>
   );
 }
@@ -102,6 +102,21 @@ export function InstallAppBanner() {
 
         {!inAppBrowser && (
           <div className="mt-3 flex items-center gap-2">
+            {needsManual && (
+              <button
+                type="button"
+                onClick={() => {
+                  // iOS has no direct "Add to Home Screen" API; the share sheet is the closest we can open for them.
+                  if (typeof navigator.share === 'function') {
+                    void navigator.share({ title: document.title, url: window.location.origin + '/?source=pwa' }).catch(() => undefined);
+                  }
+                }}
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 text-sm font-extrabold text-white"
+              >
+                <Share className="h-4 w-4" aria-hidden="true" />
+                {dt('Hap menynë Ndaj')}
+              </button>
+            )}
             <button type="button" onClick={close} className="min-h-11 rounded-xl px-4 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10">
               {dt('Jo tani')}
             </button>
