@@ -101,7 +101,7 @@ export default function AdminPanel({ variant = 'admin' }: { variant?: ConsoleVar
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 title-serif">{dt(`Qasje e Mohuar`)}</h1>
           <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{dt(`Kjo faqe është rreptësisht e rezervuar për stafin e autorizuar dhe administratorët e sistemit.`)}</p>
-          <button onClick={() => window.location.href = '#/login'} className="mt-8 px-8 py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none transition-all active:scale-95 w-full">{dt(`Kthehu tek Hyrja`)}
+          <button onClick={() => window.location.href = '#/login'} className="mt-8 px-8 py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none transition active:scale-95 w-full">{dt(`Kthehu tek Hyrja`)}
           </button>
         </div>
       </div>
@@ -329,7 +329,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
           <button
             type="button"
             aria-label={dt(`Mbyll menunë`)}
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 md:backdrop-blur-sm"
             onClick={() => setIsDrawerOpen(false)}
           />
           <div className="relative h-full w-72 max-w-[85vw] bg-slate-950 shadow-2xl">

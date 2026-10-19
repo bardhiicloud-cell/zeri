@@ -102,7 +102,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 bg-slate-900/60 dark:bg-black/60 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 bg-slate-900/60 dark:bg-black/60 md:backdrop-blur-md">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -149,7 +149,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-[1rem] px-4 py-2.5 text-sm outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-[1rem] px-4 py-2.5 text-sm outline-none transition"
                   />
                 </div>
 

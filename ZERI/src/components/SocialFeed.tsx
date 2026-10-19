@@ -158,7 +158,7 @@ export default function SocialFeed() {
                 value={newPostContent}
                 onChange={e => setNewPostContent(e.target.value)}
                 placeholder={`Çfarë keni në mendje rreth këtyre sondazheve, ${currentUser.name}?`}
-                className="w-full min-h-[100px] p-3 bg-neutral-50 border border-slate-200/60 rounded-xl resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-400"
+                className="w-full min-h-[100px] p-3 bg-neutral-50 border border-slate-200/60 rounded-xl resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-slate-400"
               />
               <div className="flex justify-end">
                 <button
@@ -277,7 +277,7 @@ export default function SocialFeed() {
                         value={newCommentContent[post.id] || ''}
                         onChange={e => setNewCommentContent(prev => ({ ...prev, [post.id]: e.target.value }))}
                         placeholder={dt(`Shkruaj një koment...`)}
-                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-full text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-full text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                       />
                       <button 
                         type="submit"

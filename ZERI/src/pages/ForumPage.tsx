@@ -65,112 +65,11 @@ import { DirectMessagesModal } from '../components/forum/DirectMessagesModal';
 import { ReelsViewer, type ReelsSource } from '../components/forum/ReelsViewer';
 import { ReelComposer } from '../components/forum/ReelComposer';
 import { CreateMenuSheet, type CreateAction } from '../components/forum/CreateMenuSheet';
-import { FORUM_MUNICIPALITIES } from '../lib/constants';
 
-// Static forum data lives in src/lib/constants.ts on purpose: a page module that
-// exports plain values alongside its component breaks Vite's React Fast Refresh
-// boundary ("Could not Fast Refresh ... export is incompatible").
-const FORUM_CATEGORIES = [
-  { id: 'all', name: 'Të Gjitha' },
-  { id: 'infrastrukture', name: 'Infrastrukturë', color: 'bg-blue-500' },
-  { id: 'mjedis', name: 'Mjedis & Pemë', color: 'bg-emerald-500' },
-  { id: 'arsim', name: 'Arsim & Shkolla', color: 'bg-amber-500' },
-  { id: 'transport', name: 'Transport & Trafik', color: 'bg-rose-500' },
-  { id: 'kulture', name: 'Kulturë & Rini', color: 'bg-purple-500' },
-  { id: 'shendetesi', name: 'Shëndetësi', color: 'bg-teal-500' },
-  { id: 'siguri', name: 'Siguri Qytetare', color: 'bg-indigo-500' }
-];
-
-const KOSOVO_MUNICIPALITIES = FORUM_MUNICIPALITIES;
-
-interface CommentReply {
-  id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  content: string;
-  createdAt: string;
-}
-
-interface ForumComment {
-  id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  content: string;
-  createdAt: string;
-  replies?: CommentReply[];
-  likes?: string[];
-}
-
-interface PostPollOption {
-  id: string;
-  text: string;
-  votes: string[];
-}
-
-interface PostPoll {
-  question: string;
-  options: PostPollOption[];
-  totalVotes: number;
-}
-
-interface Post {
-  id: string;
-  authorId: string;
-  authorName: string;
-  authorEmail?: string;
-  authorAvatar?: string;
-  authorRole: string;
-  authorBadge?: string;
-  content: string;
-  imageUrl?: string;
-  category?: string;
-  neighborhood?: string;
-  poll?: PostPoll;
-  quotedPost?: {
-    id: string;
-    authorName: string;
-    authorAvatar?: string;
-    authorBadge?: string;
-    content: string;
-    imageUrl?: string;
-    createdAt?: any;
-  };
-  isApproved?: boolean;
-  isHidden?: boolean;
-  likes: string[];
-  reposts?: string[];
-  reactions?: Record<string, string[]>;
-  isAd?: boolean;
-  adLink?: string;
-  /** Post audience: 'public' everywhere, 'followers' only to people who follow the author. Legacy posts have no field and are treated as public. */
-  visibility?: 'public' | 'followers';
-  comments: ForumComment[];
-  aiSentiment?: {
-    positivePct: number;
-    negativePct: number;
-    neutralPct: number;
-    summaryText: string;
-  };
-  /** Impressions, counted server-side once per account. */
-  viewCount?: number;
-  /** Set by the server when the author edits the text. */
-  editedAt?: any;
-  /** Set by the server on soft delete; the post is hidden from the feed and restorable for 30 days. */
-  deletedAt?: any;
-  /** Counted by the server redirect, once per visitor per day. */
-  adClicks?: number;
-  createdAt: any;
-}
-
-
-
-
-// No placeholder institutions or topics: only real accounts and real posts are shown.
-const DEFAULT_OFFICIAL_PROFILES: any[] = [];
-
-const DEFAULT_TRENDS: any[] = [];
+import {
+  DEFAULT_OFFICIAL_PROFILES, DEFAULT_TRENDS, FORUM_CATEGORIES, KOSOVO_MUNICIPALITIES,
+  type CommentReply, type ForumComment, type Post, type PostPoll, type PostPollOption,
+} from '../lib/forumPageTypes';
 
 export default function ForumPage() {
   const navigate = useNavigate();
@@ -1212,7 +1111,7 @@ export default function ForumPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/30 p-4 backdrop-blur-[2px]"
+              className="fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/30 p-4 md:backdrop-blur-[2px]"
             >
               <motion.div
                 initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -1551,7 +1450,7 @@ export default function ForumPage() {
                   <button
                     type="button"
                     onClick={() => setIsDMModalOpen(true)}
-                    className="relative shrink-0 px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="relative shrink-0 px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                     title={dt('Hap bisedat e mesazheve private')}
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
@@ -1662,7 +1561,7 @@ export default function ForumPage() {
                               setAdModalPostContent(undefined);
                               setIsAdRequestModalOpen(true);
                             }}
-                            className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-full transition-all flex items-center gap-1.5"
+                            className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-full transition flex items-center gap-1.5"
                             title="Kërko reklamim me pagesë bankare (IBAN)"
                           >
                             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -1694,7 +1593,7 @@ export default function ForumPage() {
                           <button
                           onClick={handleCreatePost}
                           disabled={isSubmitting || (!newPostContent.trim() && newPostImages.length === 0 && !pollQuestion)}
-                          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-black rounded-full transition-all shadow-md shadow-blue-600/20 active:scale-95"
+                          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-black rounded-full transition shadow-md shadow-blue-600/20 active:scale-95"
                         >
                           {scheduleAt ? dt('Planifiko') : dt(`Posto`)}
                         </button>
@@ -1906,7 +1805,7 @@ export default function ForumPage() {
                               e.stopPropagation();
                               handleToggleFollow(post.authorId, post.authorName);
                             }}
-                            className={`ml-auto px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                            className={`ml-auto px-3 py-1 rounded-full text-xs font-bold transition ${
                               followedUserIds.includes(post.authorId)
                                 ? 'bg-transparent border border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-slate-300 hover:text-rose-500 hover:border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30'
                                 : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:bg-blue-600 dark:hover:bg-blue-500 dark:hover:text-white shadow-xs'
@@ -1952,7 +1851,7 @@ export default function ForumPage() {
                                     hasVoted
                                       ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 text-blue-600 dark:text-blue-400 font-black'
                                       : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 hover:border-blue-400 font-bold'
-                                  } border rounded-xl py-2.5 px-4 text-xs transition-all text-left flex justify-between relative overflow-hidden`}
+                                  } border rounded-xl py-2.5 px-4 text-xs transition text-left flex justify-between relative overflow-hidden`}
                                 >
                                   <div className="absolute left-0 top-0 bottom-0 bg-blue-100/70 dark:bg-blue-500/20 transition-all duration-300" style={{ width: `${percentage}%` }} />
                                   <span className="relative z-10 flex items-center gap-1.5">
@@ -2025,7 +1924,7 @@ export default function ForumPage() {
                           </button>
                           <button
                             onClick={() => handleOpenQuoteModal(post)}
-                            className="text-[10px] font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/20 transition-all cursor-pointer"
+                            className="text-[10px] font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/20 transition cursor-pointer"
                             title="Riposto me citat"
                           >
                             + Citat
@@ -2251,7 +2150,7 @@ export default function ForumPage() {
                                     <button
                                       onClick={() => handleAddComment(post.id)}
                                       disabled={!newCommentContent.trim() || isSubmitting}
-                                      className="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-full transition-all shadow-xs"
+                                      className="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-full transition shadow-xs"
                                     >
                                       {dt(`Përgjigju`)}
                                     </button>
@@ -2388,7 +2287,7 @@ export default function ForumPage() {
                          type="button"
                          onClick={() => handleToggleFollow(profile.id, profile.name)}
                          aria-pressed={followedUserIds.includes(profile.id)}
-                         className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all shrink-0 flex items-center gap-1.5 ${
+                         className={`px-4 py-1.5 text-xs font-bold rounded-full transition shrink-0 flex items-center gap-1.5 ${
                            followedUserIds.includes(profile.id)
                              ? 'bg-transparent border border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-slate-300 hover:text-rose-500 hover:border-rose-300'
                              : 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 shadow-xs'
@@ -2424,11 +2323,11 @@ export default function ForumPage() {
              )}
 
              <div className="text-xs text-slate-400 dark:text-slate-500 flex flex-wrap gap-x-3 gap-y-2 px-2 mt-1">
-               <a href="#" className="hover:underline transition-all">{dt('Privatësia')}</a>
-               <a href="#" className="hover:underline transition-all">Kushtet</a>
-               <a href="#" className="hover:underline transition-all">Reklamimi</a>
-               <a href="#" className="hover:underline transition-all">Rreth Nesh</a>
-               <a href="#" className="hover:underline transition-all">{dt('Aksesueshmëria')}</a>
+               <a href="#" className="hover:underline transition">{dt('Privatësia')}</a>
+               <a href="#" className="hover:underline transition">Kushtet</a>
+               <a href="#" className="hover:underline transition">Reklamimi</a>
+               <a href="#" className="hover:underline transition">Rreth Nesh</a>
+               <a href="#" className="hover:underline transition">{dt('Aksesueshmëria')}</a>
                <span className="w-full mt-1">© 2026 Zëri Qytetarëve</span>
              </div>
           </div>
@@ -2578,7 +2477,7 @@ export default function ForumPage() {
       {/* Quote Repost Modal */}
       {isQuoteModalOpen && quoteTargetPost && (
         <AnimatePresence>
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 md:backdrop-blur-sm p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -2630,7 +2529,7 @@ export default function ForumPage() {
                 <button
                   onClick={handleCreateQuotePost}
                   disabled={isSubmitting}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 cursor-pointer"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-600/20 cursor-pointer"
                 >
                   {isSubmitting ? 'Po publikohet...' : 'Publiko Citatin'}
                 </button>

@@ -382,7 +382,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
       </section>
 
       {isComposerOpen && (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/90 p-0 backdrop-blur-md sm:p-5" onClick={resetComposer}>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/90 p-0 md:backdrop-blur-md sm:p-5" onClick={resetComposer}>
           <input
             ref={fileInputRef}
             type="file"
@@ -520,7 +520,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
 
                 {/* Text editing mode — scrim, live input, colour dots and size. */}
                 {editingText && (
-                  <div className="absolute inset-0 z-30 flex flex-col bg-black/65 backdrop-blur-sm">
+                  <div className="absolute inset-0 z-30 flex flex-col bg-black/65 md:backdrop-blur-sm">
                     <div className="flex items-center justify-between p-3">
                       <span className="text-xs font-bold text-white/60">{textOverlay.length}/180</span>
                       <button type="button" onClick={() => setEditingText(false)} className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-black text-black">

@@ -20,7 +20,6 @@ const TARGETS = [
   'src/pages/KontaktPage.tsx',
   'src/pages/ProjektetPage.tsx',
   'src/pages/RrethProjektitPage.tsx',
-  'src/pages/InstitutionalUpdatesPage.tsx',
   // News: the categories, demo articles and page chrome all carry Albanian
   // copy that citizens read, so the news surface has to translate too.
   'src/lib/demoNews.ts',

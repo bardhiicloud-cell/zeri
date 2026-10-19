@@ -1,7 +1,7 @@
-import heroCityImg from '../assets/images/hero_city_modern_1789826592815.jpg';
-import gjilanImg from '../assets/images/gjilan_cleaning_1789827148688.jpg';
-import dardaniaImg from '../assets/images/dardania_lighting_1789827134761.jpg';
-import conferenceImg from '../assets/images/mapl_conference_1789827163506.jpg';
+import heroCityImg from '../assets/images/hero_city_modern_1789826592815.webp';
+import gjilanImg from '../assets/images/gjilan_cleaning_1789827148688.webp';
+import dardaniaImg from '../assets/images/dardania_lighting_1789827134761.webp';
+import conferenceImg from '../assets/images/mapl_conference_1789827163506.webp';
 
 const remoteHeroImages = [
   'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1800&q=85',

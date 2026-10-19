@@ -113,7 +113,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           exit={{ opacity: 0 }} 
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-900/60 md:backdrop-blur-sm"
           onClick={onClose}
         />
         <motion.div 
@@ -149,7 +149,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
           <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
             <button 
               onClick={onClose}
-              className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-xl"
+              className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:shadow-xl"
             >{dt(`E Kuptova dhe Pajtohem`)}
             </button>
           </div>

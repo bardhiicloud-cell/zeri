@@ -21,7 +21,7 @@ import { Report } from '../types';
 import { KosovoDashboardMap } from '../components/KosovoDashboardMap';
 import { useLanguage } from '../lib/LanguageContext';
 import toast from 'react-hot-toast';
-import DashboardOriginalBackup from './DashboardOriginalBackup';
+import DashboardFeed from './DashboardFeed';
 import { MunicipalityShield } from '../components/MunicipalityShield';
 import { getMunicipalityHeroImage } from '../lib/municipalityHeroImages';
 import { getMunicipalityPhoto } from '../lib/municipalityPhotos';
@@ -74,12 +74,12 @@ export default function Dashboard() {
               localStorage.setItem('dashboard_view_mode', 'screenshot');
               toast.success("U kthye në pamjen 100% identike!");
             }}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-white transition-all text-[11px]"
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-white transition text-[11px]"
           >
             Kthe te Pamja Kryesore ↗
           </button>
         </div>
-        <DashboardOriginalBackup />
+        <DashboardFeed />
       </div>
     );
   }
@@ -222,7 +222,7 @@ export default function Dashboard() {
               aria-label={headerLabels.search}
             />
           </div>
-          <button type="submit" disabled={!topSearchQuery.trim()} className="luxury-cta inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-4 py-2.5 text-xs font-black text-white transition-all duration-200 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100">
+          <button type="submit" disabled={!topSearchQuery.trim()} className="luxury-cta inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-4 py-2.5 text-xs font-black text-white transition duration-200 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100">
             <Search className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{headerLabels.action}</span>
           </button>
@@ -274,7 +274,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => navigate('/raporto')}
-                  className="luxury-cta inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-3.5 py-2 text-xs font-extrabold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98]"
+                  className="luxury-cta inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-3.5 py-2 text-xs font-extrabold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98]"
                 >
                   <PenSquare className="w-3.5 h-3.5" />
                   <span>{dt('Raporto një problem')}</span>
@@ -285,7 +285,7 @@ export default function Dashboard() {
                   onClick={() => {
                     document.getElementById('recent-reports-table')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="luxury-pill inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-white/20 px-3.5 py-2 text-xs font-bold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+                  className="luxury-pill inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-white/20 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-white/10 active:scale-[0.98]"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span>{dt('Shiko raportimet')}</span>
@@ -296,21 +296,21 @@ export default function Dashboard() {
             {/* Right Side: 3 Stacked Horizontal Items (Exact from Screenshot) */}
             <div className="flex flex-col gap-2 w-full sm:w-auto shrink-0 xl:absolute xl:right-4 xl:top-4 rtl:xl:left-4 rtl:xl:right-auto">
 
-              <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition-all min-w-[170px]">
+              <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
                   <Users className="w-3 h-3" />
                 </div>
                 <span className="text-[11px] font-bold">{dt('Qytetarët raportojnë')}</span>
               </div>
 
-              <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition-all min-w-[170px]">
+              <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
                   <Building2 className="w-3 h-3" />
                 </div>
                 <span className="text-[11px] font-bold">{dt('Institucionet veprojnë')}</span>
               </div>
 
-              <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition-all min-w-[170px]">
+              <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0">
                   <Heart className="w-3 h-3" />
                 </div>
@@ -595,7 +595,7 @@ export default function Dashboard() {
                       {dt('Shpreh mendimin tënd për çështje të rëndësishme.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 transition-all group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -617,7 +617,7 @@ export default function Dashboard() {
                       {dt('Votoni në sondazhet e hapura.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 transition-all group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -639,7 +639,7 @@ export default function Dashboard() {
                       {dt('Ndiq statusin e rastit me Track ID.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 transition-all group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -661,7 +661,7 @@ export default function Dashboard() {
                       {dt('Ndihmo në rastet ku nevojitet mbështetje.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 transition-all group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -704,7 +704,7 @@ export default function Dashboard() {
                       document.getElementById('recent-reports-table')?.scrollIntoView({ behavior: 'smooth' });
                       toast.success(`U zgjodh Komuna e ${muni.name}`);
                     }}
-                    className="p-2 bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-slate-700/80 rounded-xl border border-slate-100 dark:border-white/5 transition-all text-center flex flex-col items-center gap-1 cursor-pointer group"
+                    className="p-2 bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-slate-700/80 rounded-xl border border-slate-100 dark:border-white/5 transition text-center flex flex-col items-center gap-1 cursor-pointer group"
                   >
                     <div className="w-7 h-7 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <MunicipalityShield name={muni.name} code={muni.code} />
@@ -862,7 +862,7 @@ export default function Dashboard() {
 
           <Link 
             to="/statistikat"
-            className="px-6 py-3 bg-[#1e3a8a] hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shrink-0"
+            className="px-6 py-3 bg-[#1e3a8a] hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-2 transition hover:scale-105 active:scale-95 shrink-0"
           >
             <span>{dt('Të dhënat e hapura')}</span>
             <ArrowRight className="w-4 h-4" />

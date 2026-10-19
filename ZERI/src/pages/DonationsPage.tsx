@@ -226,11 +226,11 @@ const ITEMS_PER_PAGE = 6;
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{dt(`Titulli i Rastit *`)}</label>
-                <input required value={newApplication.title} onChange={e => setNewApplication({...newApplication, title: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none transition-all" placeholder={dt(`psh. Ndihmë për fëmijën...`)} />
+                <input required value={newApplication.title} onChange={e => setNewApplication({...newApplication, title: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none transition" placeholder={dt(`psh. Ndihmë për fëmijën...`)} />
               </div>
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{dt(`Kategoria *`)}</label>
-                <select value={newApplication.category} onChange={e => setNewApplication({...newApplication, category: e.target.value as any})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:focus:bg-slate-800 outline-none transition-all">
+                <select value={newApplication.category} onChange={e => setNewApplication({...newApplication, category: e.target.value as any})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:focus:bg-slate-800 outline-none transition">
                   {/*
                     `semundje` is in the DonationCause union and in the public
                     filter row, but it was missing from this select — so an
@@ -247,7 +247,7 @@ const ITEMS_PER_PAGE = 6;
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{dt(`Përshkrimi i Rastit *`)}</label>
-                <textarea required value={newApplication.description} onChange={e => setNewApplication({...newApplication, description: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none min-h-[120px] transition-all" placeholder={dt(`Shpjegoni detajet e rastit paktën disa rreshta...`)}></textarea>
+                <textarea required value={newApplication.description} onChange={e => setNewApplication({...newApplication, description: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none min-h-[120px] transition" placeholder={dt(`Shpjegoni detajet e rastit paktën disa rreshta...`)}></textarea>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{dt(`Foto ose video (video deri në 600 KB; fotoja ngjishet automatikisht) *`)}</label>
@@ -350,7 +350,7 @@ const ITEMS_PER_PAGE = 6;
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{dt(`Link Për Donacion (Opsionale)`)}</label>
-                <input type="url" value={newApplication.donationUrl} onChange={e => setNewApplication({...newApplication, donationUrl: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none transition-all" placeholder={dt(`https://gofund.me/...`)} />
+                <input type="url" value={newApplication.donationUrl} onChange={e => setNewApplication({...newApplication, donationUrl: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none transition" placeholder={dt(`https://gofund.me/...`)} />
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium">{dt(`Nëse keni një fushatë të hapur në GoFundMe, KosovaCharity apo rrjete tjera`)}</p>
               </div>
             </div>
@@ -429,7 +429,7 @@ const ITEMS_PER_PAGE = 6;
           <button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={activePage === 1}
-            className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
+            className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
             aria-label={dt('Faqja e mëparshme')}
           >
             <ChevronLeft className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -449,7 +449,7 @@ const ITEMS_PER_PAGE = 6;
                 <button
                   key={`page-${page}`}
                   onClick={() => setCurrentPage(Number(page))}
-                  className={`min-w-[40px] h-[40px] px-2 flex items-center justify-center rounded-xl font-extrabold font-mono text-sm transition-all focus:outline-none cursor-pointer ${
+                  className={`min-w-[40px] h-[40px] px-2 flex items-center justify-center rounded-xl font-extrabold font-mono text-sm transition focus:outline-none cursor-pointer ${
                     isCurrent
                       ? 'bg-rose-600 text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-rose-600/10'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10 hover:bg-slate-50 dark:bg-slate-900 hover:border-slate-350'
@@ -464,7 +464,7 @@ const ITEMS_PER_PAGE = 6;
           <button
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={activePage === totalPages}
-            className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
+            className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
             aria-label={dt('Faqja tjetër')}
           >
             <ChevronRight className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -495,7 +495,7 @@ const ITEMS_PER_PAGE = 6;
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 md:backdrop-blur-md"
             onClick={() => setSelectedCause(null)}
             role="dialog"
             aria-modal="true"

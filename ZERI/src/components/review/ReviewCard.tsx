@@ -140,7 +140,7 @@ export default function ReviewCard({ report, role, onTransition, onMarkImage, ma
                       onFocus={() => setHoveredImage(url)}
                       onBlur={() => setHoveredImage(null)}
                       aria-label={dt('Zmadho fotografinë')}
-                      className={`block h-24 w-24 overflow-hidden rounded-xl border-2 transition-all ${isMarked
+                      className={`block h-24 w-24 overflow-hidden rounded-xl border-2 transition ${isMarked
                           ? 'border-rose-400 opacity-45'
                           : 'border-slate-200 hover:border-blue-500 dark:border-white/10'
                         }`}

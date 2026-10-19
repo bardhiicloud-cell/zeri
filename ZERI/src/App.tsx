@@ -313,7 +313,6 @@ export default function App() {
       try {
         const donationSnap = await getDocs(collection(db, "donationCauses"));
         if (donationSnap.empty && initialDonationCauses.length > 0) {
-          console.log("Seeding donationCauses...");
           initialDonationCauses.forEach(async (cause) => {
             try {
               await setDoc(doc(db, "donationCauses", cause.id), cause);
@@ -330,7 +329,6 @@ export default function App() {
       try {
         const adsSnap = await getDocs(collection(db, "ads"));
         if (adsSnap.empty && initialAds.length > 0) {
-          console.log("Seeding ads...");
           initialAds.forEach(async (ad) => {
             try {
               await setDoc(doc(db, "ads", ad.id), ad);

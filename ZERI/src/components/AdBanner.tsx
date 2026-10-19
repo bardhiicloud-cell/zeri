@@ -244,7 +244,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
 
   const baseStyle = cn(
     // `isolate` keeps the -z-10 surface behind the creative but above the page.
-    "bg-slate-50 dark:bg-slate-800 relative isolate group overflow-hidden flex flex-col justify-center cursor-pointer transition-all duration-300",
+    "bg-slate-50 dark:bg-slate-800 relative isolate group overflow-hidden flex flex-col justify-center cursor-pointer transition duration-300",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
     pos === 'floating'
        ? "border border-slate-200/60 dark:border-white/10"
@@ -384,7 +384,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
         aria-label={dt('Kërkesë për Reklamim')}
         className={cn(
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
-          "relative overflow-hidden group border border-slate-200/80 dark:border-white/5 bg-slate-50/40 dark:bg-slate-900/20 backdrop-blur-xl rounded-xl transition-all duration-300 cursor-pointer flex flex-col justify-center",
+          "relative overflow-hidden group border border-slate-200/80 dark:border-white/5 bg-slate-50/40 dark:bg-slate-900/20 backdrop-blur-xl rounded-xl transition duration-300 cursor-pointer flex flex-col justify-center",
           "hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-lg hover:shadow-slate-200/20 dark:hover:shadow-black/20 hover:border-blue-200/80 dark:hover:border-blue-900/40",
           isCompact ? "p-3 sm:p-4" : "p-4",
           widthClass,
@@ -525,7 +525,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
       {/* Direct Ad Inquiry Modal */}
       {showInquiryModal && (
         <div
-          className="fixed inset-0 z-[99999] flex items-end justify-center overflow-y-auto bg-slate-900/60 p-0 backdrop-blur-md animate-in fade-in duration-200 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[99999] flex items-end justify-center overflow-y-auto bg-slate-900/60 p-0 md:backdrop-blur-md animate-in fade-in duration-200 sm:items-center sm:p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setShowInquiryModal(false);
           }}
@@ -633,7 +633,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="min-h-11 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-black tracking-wide flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all active:scale-95"
+                  className="min-h-11 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-black tracking-wide flex items-center gap-2 shadow-md shadow-blue-500/20 transition active:scale-95"
                 >
                   <Send className="w-4 h-4 rtl:-scale-x-100" aria-hidden="true" />
                   <span>{isSubmitting ? dt('Po dërgohet...') : dt('Dërgo Kërkesën')}</span>

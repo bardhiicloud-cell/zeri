@@ -1,4 +1,4 @@
-const photoUrls = import.meta.glob('../assets/municipalities/*.jpg', {
+const photoUrls = import.meta.glob('../assets/municipalities/*.webp', {
   eager: true,
   import: 'default',
   query: '?url',
@@ -25,5 +25,5 @@ export function getMunicipalitySlug(name: string): string | undefined {
 
 export function getMunicipalityPhoto(name: string, mode: MunicipalityPhotoMode): string | undefined {
   const slug = SLUGS[name];
-  return slug ? photoUrls[`../assets/municipalities/${slug}-${mode}.jpg`] : undefined;
+  return slug ? photoUrls[`../assets/municipalities/${slug}-${mode}.webp`] : undefined;
 }

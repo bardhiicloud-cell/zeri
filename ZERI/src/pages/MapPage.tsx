@@ -349,7 +349,7 @@ export default function MapPage() {
             <button 
               onClick={() => setIsHudOpen(!isHudOpen)}
               className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ml-1",
+                "w-10 h-10 rounded-xl flex items-center justify-center transition shrink-0 ml-1",
                 isHudOpen ? "bg-rose-600 text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-rose-600/20" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
               )}
             >
@@ -382,7 +382,7 @@ export default function MapPage() {
         </button>
 
         {/* Main Controls Panel (Desktop) */}
-        <div className="bg-slate-900/90 dark:bg-black/80 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300 overflow-hidden pointer-events-auto">
+        <div className="bg-slate-900/90 dark:bg-black/80 backdrop-blur-3xl border border-white/20 dark:border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition duration-300 overflow-hidden pointer-events-auto">
           <div className="p-5 border-b border-white/10 bg-transparent relative">
             <div className="flex items-center gap-3 text-white">
               <div className="w-10 h-10 bg-neutral-100 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center shrink-0">
@@ -411,7 +411,7 @@ export default function MapPage() {
                     <select 
                       value={selectedMunicipality}
                       onChange={(e) => handleMunicipalityChange(e.target.value)}
-                      className="w-full pl-9 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition-all focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
+                      className="w-full pl-9 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
                     >
                       <option value="">{t('map_all_kosovo')} ({KOSOVO_MUNICIPALITIES.length})</option>
                       {KOSOVO_MUNICIPALITIES.map(m => (
@@ -428,7 +428,7 @@ export default function MapPage() {
                   id="map-topic-filter"
                   value={selectedTopic}
                   onChange={event => setSelectedTopic(event.target.value)}
-                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition-all focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide"
+                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide"
                 >
                   <option value="">{dt('Të gjitha temat')}</option>
                   {REPORT_TOPICS.map(topic => <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>)}
@@ -444,7 +444,7 @@ export default function MapPage() {
                     <select 
                       value={selectedNeighborhood}
                       onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition-all focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
+                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
                     >
                       <option value="">{dt(`TË GJITHA LAGJET`)} ({currentNeighborhoods.length})</option>
                       {currentNeighborhoods.map(n => (
@@ -458,7 +458,7 @@ export default function MapPage() {
               <div className="flex gap-2">
                  <button
                     onClick={() => setMapTheme(getNextMapTheme(mapTheme))}
-                    className="flex-1 py-3 bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-white tracking-wide hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-white tracking-wide hover:bg-white/20 transition flex items-center justify-center gap-2"
                   >
                     {mapTheme === 'dark' && <><Sun className="w-4 h-4" /> {t('map_theme_day').toUpperCase()}</>}
                     {mapTheme === 'light' && <><Layers className="w-4 h-4" />{dt(`SATELIT`)}</>}
@@ -466,7 +466,7 @@ export default function MapPage() {
                   </button>
                   <button
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="flex-1 py-3 bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-white tracking-wide hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-white tracking-wide hover:bg-white/20 transition flex items-center justify-center gap-2"
                   >
                     {isFullscreen ? <><Minimize className="w-4 h-4" /> {t('map_minimize').toUpperCase()}</> : <><Maximize className="w-4 h-4" /> {t('map_fullscreen').toUpperCase()}</>}
                   </button>
@@ -478,7 +478,7 @@ export default function MapPage() {
                      key={f}
                      onClick={() => setActiveFilter(f)} 
                      className={cn(
-                       "py-2 text-xs font-bold tracking-normal transition-all",
+                       "py-2 text-xs font-bold tracking-normal transition",
                        activeFilter === f ? 'bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-rose-600' : 'text-white hover:bg-white/10'
                      )}
                    >
@@ -521,7 +521,7 @@ export default function MapPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsHudOpen(false)}
-            className="lg:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] cursor-pointer"
+            className="lg:hidden fixed inset-0 bg-slate-900/60 md:backdrop-blur-sm z-[10000] cursor-pointer"
           />
         )}
       </AnimatePresence>
@@ -565,7 +565,7 @@ export default function MapPage() {
                     key={f}
                     onClick={() => setActiveFilter(f)}
                     className={cn(
-                      "py-3 font-bold text-xs sm:text-sm tracking-wide rounded-2xl transition-all active:scale-[0.98] w-full flex items-center justify-center gap-2 border",
+                      "py-3 font-bold text-xs sm:text-sm tracking-wide rounded-2xl transition active:scale-[0.98] w-full flex items-center justify-center gap-2 border",
                       activeFilter === f ? 'bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-black dark:text-white border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'
                     )}
                   >
@@ -585,7 +585,7 @@ export default function MapPage() {
                   <select 
                     value={selectedNeighborhood}
                     onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                    className="w-full px-4 py-3.5 bg-black/40 border border-white/10 rounded-2xl font-bold text-white text-sm outline-none cursor-pointer tracking-wide focus:border-white focus:ring-1 focus:ring-white transition-all appearance-none"
+                    className="w-full px-4 py-3.5 bg-black/40 border border-white/10 rounded-2xl font-bold text-white text-sm outline-none cursor-pointer tracking-wide focus:border-white focus:ring-1 focus:ring-white transition appearance-none"
                   >
                     <option value="">{dt(`TË GJITHA LAGJET`)} ({currentNeighborhoods.length})</option>
                     {currentNeighborhoods.map(n => (
@@ -670,7 +670,7 @@ export default function MapPage() {
 
       {/* Floating Center Ad Banner */}
       {isAdVisible && (
-        <div className="absolute inset-0 z-[500] flex items-center justify-center p-4 sm:p-6 pointer-events-none bg-black/40 backdrop-blur-sm">
+        <div className="absolute inset-0 z-[500] flex items-center justify-center p-4 sm:p-6 pointer-events-none bg-black/40 md:backdrop-blur-sm">
           <div className="pointer-events-auto relative bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full animate-in zoom-in-95 duration-300 overflow-hidden flex flex-col">
             <div className="p-3 bg-neutral-50 dark:bg-slate-900/50 border-b border-neutral-100 flex items-center justify-between z-10 shrink-0">
               <div className="flex items-center gap-2">
@@ -815,7 +815,7 @@ export default function MapPage() {
                     setSelectedReportId(activePreviewReport.id);
                     setActivePreviewReport(null);
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm dark:shadow-none hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none"
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm dark:shadow-none hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none"
                 >
                   <Activity className="w-4 h-4" />
                   {t('map_details')}

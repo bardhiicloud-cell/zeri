@@ -15,7 +15,6 @@ if (typeof window !== 'undefined') {
     const msgString = String(message);
     const event = new CustomEvent('app-global-alert', { detail: msgString });
     window.dispatchEvent(event);
-    console.log('[GlobalAlert Intercepted]:', msgString);
   };
 }
 

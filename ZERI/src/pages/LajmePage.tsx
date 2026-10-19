@@ -549,7 +549,7 @@ export default function LajmePage() {
                     onClick={() => selectRailItem(item)}
                     aria-pressed={on}
                     className={cn(
-                      'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-all active:scale-[0.97]',
+                      'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition active:scale-[0.97]',
                       on
                         ? 'border-slate-900 bg-slate-900 text-white shadow-sm dark:border-white dark:bg-white dark:text-slate-900'
                         : 'border-slate-200 bg-white/80 text-slate-600 backdrop-blur hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white'

@@ -65,7 +65,7 @@ export default function AdminForum() {
           type="button"
           onClick={() => setForumTab('posts')}
           className={cn(
-            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition',
             forumTab === 'posts'
               ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800',
@@ -77,7 +77,7 @@ export default function AdminForum() {
           type="button"
           onClick={() => setForumTab('stories')}
           className={cn(
-            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition',
             forumTab === 'stories'
               ? 'bg-fuchsia-600 text-white shadow-md shadow-fuchsia-600/25'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800',
@@ -89,7 +89,7 @@ export default function AdminForum() {
           type="button"
           onClick={() => setForumTab('reels')}
           className={cn(
-            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition',
             forumTab === 'reels'
               ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800',
@@ -101,7 +101,7 @@ export default function AdminForum() {
           type="button"
           onClick={() => setForumTab('reports')}
           className={cn(
-            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition',
             forumTab === 'reports'
               ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800',
@@ -134,7 +134,7 @@ export default function AdminForum() {
             placeholder={dt(`Kërko postime ose autorë...`)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
           />
         </div>
       </div>

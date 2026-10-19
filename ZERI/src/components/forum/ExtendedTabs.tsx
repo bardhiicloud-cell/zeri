@@ -192,11 +192,11 @@ export const GroupsTab = ({ requireAuth, currentUser }: { requireAuth: () => boo
         <form onSubmit={handleCreateGroup} className="space-y-6 max-w-2xl">
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Emri i Grupit`)}</label>
-            <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={dt(`psh. Zhvilluesit Kosovarë`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-medium" />
+            <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={dt(`psh. Zhvilluesit Kosovarë`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition font-medium" />
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dt(`Përshkrimi i Grupit`)}</label>
-            <textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={dt(`Përshkruani qëllimin e këtij grupi...`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[120px] resize-none text-sm" />
+            <textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={dt(`Përshkruani qëllimin e këtij grupi...`)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition min-h-[120px] resize-none text-sm" />
           </div>
           <button type="submit" disabled={!newGroupName.trim()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50">{dt(`Krijo Grupin`)}</button>
         </form>
@@ -218,7 +218,7 @@ export const GroupsTab = ({ requireAuth, currentUser }: { requireAuth: () => boo
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">{activeGroup.members?.length || 1}{dt(`anëtarë • Krijuar nga`)} {activeGroup.creatorName}</p>
             </div>
           </div>
-          <button onClick={() => handleJoinGroup(activeGroup)} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm dark:shadow-none ${isMember ? 'bg-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+          <button onClick={() => handleJoinGroup(activeGroup)} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-sm dark:shadow-none ${isMember ? 'bg-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
             {isMember ? 'Largohu nga Grupi' : 'Bashkohu me Grupin'}
           </button>
         </div>
@@ -331,7 +331,7 @@ export const GroupsTab = ({ requireAuth, currentUser }: { requireAuth: () => boo
         {groups.map(g => {
           const isMember = g.members?.includes(currentUser?.id);
           return (
-            <div key={g.id} className="border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 hover:border-blue-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-all cursor-pointer bg-slate-50 dark:bg-slate-800/50 group flex flex-col" onClick={() => setActiveGroup(g)}>
+            <div key={g.id} className="border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 hover:border-blue-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition cursor-pointer bg-slate-50 dark:bg-slate-800/50 group flex flex-col" onClick={() => setActiveGroup(g)}>
               <div className="flex items-start gap-4 mb-3">
                 <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 shadow-sm dark:shadow-none">
                   <Users className="w-6 h-6" />

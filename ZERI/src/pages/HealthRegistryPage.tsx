@@ -769,7 +769,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           <div className="pt-1">
                             <div 
                               onClick={() => void openHealthDocument(c)}
-                              className="group cursor-pointer p-2 bg-slate-50 dark:bg-zinc-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-between transition-all"
+                              className="group cursor-pointer p-2 bg-slate-50 dark:bg-zinc-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-between transition"
                             >
                               <div className="flex items-center gap-2.5">
                                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 dark:border-zinc-700 dark:bg-zinc-900">
@@ -824,7 +824,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           {/* Njofto Spitalin */}
                           <button
                             onClick={() => handleOpenHospitalModal(c)}
-                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                             title={dt('Njofto Spitalin ose QKMF-në për këtë rast')}
                           >
                             <Send className="w-3 h-3" />
@@ -838,7 +838,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                                 href={/^https?:\/\//i.test(c.donationUrl) ? c.donationUrl : '#'}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 group"
+                                className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 group"
                                 title={dt('Kontribo me donacion përmes GoFundMe për këtë pacient')}
                               >
                                 <Heart className="w-3 h-3 fill-white/80 text-white group-hover:scale-110 transition-transform" />
@@ -856,7 +856,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           ) : (
                             <button
                               onClick={() => handleOpenGoFundMeModal(c)}
-                              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
                               title={dt('Vendos linkun e GoFundMe për të mbledhur donacione')}
                             >
                               <Heart className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
@@ -928,7 +928,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
 
               <button
                 onClick={handleExportCSV}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-all"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition"
               >
                 <Download className="w-4 h-4" />
                 <span>{dt('Shkarko Tabelën (CSV)')}</span>
@@ -1070,7 +1070,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
       {/* REGISTRATION MODAL WITH PHOTO UPLOAD (z-[9999] TO PREVENT ANY GLITCHES) */}
       <AnimatePresence>
         {isRegisterModalOpen && (
-          <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[9999] bg-black/70 md:backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1122,7 +1122,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
       {/* HOSPITAL NOTIFICATION MODAL */}
       <AnimatePresence>
         {hospitalModalCase && hospitalInfo && (
-          <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[9999] bg-black/70 md:backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1227,7 +1227,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   type="button"
                   disabled={isNotifyingHospital}
                   onClick={handleConfirmHospitalNotify}
-                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/20 active:scale-95 transition-all"
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/20 active:scale-95 transition"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isNotifyingHospital ? 'Duke regjistruar...' : 'Konfirmo Njoftimin e Spitalit'}</span>
@@ -1241,7 +1241,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
       {/* PHOTO PREVIEW MODAL */}
       <AnimatePresence>
         {previewPhoto && (
-          <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-black/85 md:backdrop-blur-md flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1283,7 +1283,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
       {/* GOFUNDME MODAL */}
       <AnimatePresence>
         {goFundMeModalCase && (
-          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[9999] bg-black/60 md:backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1358,7 +1358,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   <button
                     type="submit"
                     disabled={isSavingGoFundMe}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <Heart className="w-3.5 h-3.5 fill-white" />
                     <span>{isSavingGoFundMe ? 'Po ruhet...' : 'Ruaj Linkun'}</span>

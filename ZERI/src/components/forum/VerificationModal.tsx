@@ -111,7 +111,7 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[12000] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-[12000] flex items-end justify-center bg-black/60 md:backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div role="dialog" aria-modal="true" aria-label={dt('Verifikimi')} className="max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl dark:bg-zinc-900">
         <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-6 pt-8 text-white">
           <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25">

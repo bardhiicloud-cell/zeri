@@ -23,7 +23,7 @@ Metoda: `tsc`, 1244 teste, `vite build` para/pas, shfletues i vërtetë (Chromiu
 
 ### Shpejtësia / lëvizja
 1. **`firebase` chunk 735 kB** ngarkohet në çdo hyrje, edhe për vizitorin anonim. `App.tsx` importon `firebase/firestore`, `auth` direkt. Ulje e mundshme: ngarkim i vonuar i Firestore pas pikturës së parë.
-2. **CSS 423 kB (54 kB gzip)** në një skedar. Pjesa më e madhe vjen nga "guard"-et globale për natën me selektorë `[class*="hover:bg-…"]` (~100 rreshta) që kompensojnë çiftet `dark:` të harruara. Zgjidhja reale: një token surface/hover i vetëm në komponentë, pastaj fshirja e guard-eve.
+2. **CSS 421 kB (54 kB gzip)** — *korrigjim:* fillimisht e fajësova për "guard"-et e natës, por matja tregon se ato zënë vetëm ~2 kB; pjesa tjetër është Tailwind (751 rregulla `dark:`) dhe Leaflet. 54 kB gzip është e arsyeshme, nuk ka ndreqje të vlefshme këtu.
 3. **296 `transition-all`** dhe **172 `backdrop-blur`**. `transition-all` animon edhe `width/height/margin` (layout); `backdrop-blur` në elemente të mëdhenj sticky/fixed është kostoja kryesore e scroll-it në telefona të dobët. Rekomandim: `transition-all` → `transition-colors|transform|opacity`, dhe blur vetëm te bottom-dock, header dhe modal.
 4. **Imazhe të pa-optimizuara**: `src/assets` = 38 MB, disa JPG 0,9–1,1 MB (`hero_city_modern`, `gjilan_cleaning`, `festa_qytetit_ad`, `dardania_lighting`, `malisheve-day`, `istog-day`). Konvertim në WebP/AVIF + `srcset` do t'i çonte në 80–150 kB.
 5. **`<main key={language}>`** ri-montohet gjithë faqen kur ndërrohet gjuha — i qëllimshëm (rifreskon tekstet), por humb gjendjen e formularëve. Pas ngarkimit të tabelave dalja është e shpejtë, ndaj mund të zëvendësohet me rindërtim vetëm të pemës së tekstit.
@@ -50,3 +50,22 @@ Metoda: `tsc`, 1244 teste, `vite build` para/pas, shfletues i vërtetë (Chromiu
 3. Ndaj `transition-all` dhe kufizo `backdrop-blur`.
 4. Bashko portën e moshës + cookies.
 5. Lazy-load Firestore pas pikturës së parë.
+
+
+## 4. Kalimi i dytë (ndreqjet e gjetjeve të hapura)
+
+| Gjetja | Statusi |
+|---|---|
+| Imazhe 0,9–1,1 MB | **U ndreq.** 76 JPG → WebP (max 1600 px, q70): `src/assets` **39,1 → 9,9 MB**; importet dhe `import.meta.glob` të përditësuara. Rruga `'/src/assets/...'` e hardkoduar (punonte vetëm në dev) u zëvendësua me import të vërtetë. |
+| `transition-all` | **244 nga 296** → `transition` (ngjyra, hije, transform, opacity). 52 mbeten qëllimisht: animojnë gjerësi/lartësi/pozicion. |
+| `backdrop-blur` | **56 mbivendosje ekrani të plotë** (`inset-0` + sfond i errët) kanë blur vetëm në desktop (`md:`); mobile mbetet pa blur, ku kostoja e GPU-së është më e lartë. Header-at/dock-u e ruajnë blur-in. |
+| Dy bllokues + modal i tretë në vizitën e parë | **U ndreq.** Cookies tani është kartë kompakte mbi dock-un (jo bllokuese, pa backdrop, pa mbyllje scroll-i); modal i plotë vetëm te "Menaxho preferencat". Prompt-i i vendndodhjes pret derisa mosha të kalohet dhe cookies të vendosen (`src/lib/ageGate.ts`). |
+| Tekste të papërkthyera në portën e moshës | **U ndreq**: 4 tekste të portës + 6 tekste të kategorive të cookies (EN, DE, BS, HR, SR, TR, FR, IT; gjuhët e tjera bien te shqipja si më parë). |
+| `DashboardOriginalBackup.tsx` | **Riemërtuar** `DashboardFeed.tsx`. |
+| Paketa `motion` | **Hequr** nga `package.json` dhe lockfile. |
+| 5 `console.log` + skript një-përdorimësh në `src` | **Hequr.** |
+| Kod i vdekur | **12 skedarë pa asnjë referencë (kod, teste, serveri) u fshinë:** `TopBar`, `AIAssistantWidget`, `NotificationsMenu`, `AdminChat`, `AdminOfficialProfiles`, `AdminCategories`, `WorkConsole`, `AIAssistantPage`, `InstitutionalUpdatesPage`, `workFactQueue`, `firestoreUtils`, `newsTranslation`. |
+| `ForumPage.tsx` 2668 rreshta | **Pjesërisht.** Tipet dhe listat statike dolën në `src/lib/forumPageTypes.ts`. **Zbulim i rëndësishëm:** rruga `/forum` bën `Navigate` te `/` (App.tsx:872, 931), pra gjithë Forumi (ForumPage + ~40 komponentë `forum/*`) nuk arrihet nga përdoruesit. Nuk e fshiva — është vendim produkti (e fikur përkohësisht apo e hequr?). Ndarja e komponentit 2500-rreshtash pa teste sjelljeje do ishte rrezik pa përfitim për përdoruesin. |
+| `AdminAgents.tsx` / `store.ts` të mëdhenj | **Të pandryshuar** — ndarja pa teste sjelljeje është rrezik; rekomandohet kur të ketë ndryshim funksional aty. |
+| 240 `any` | **Të pandryshuar.** Zëvendësimi masiv me tipe të sakta pa ndikim në sjellje kërkon kalim skedar-pas-skedari; `tsc` kalon pastër. |
+| Firebase chunk 735 kB | **Nuk e ndryshova.** 67 skedarë dhe `App.tsx` e përdorin sinkronisht për auth/Firestore në nisje; ngarkimi i vonuar do ndryshonte rendin e inicializimit të autentikimit dhe nuk mund ta verifikoj pa backend. Ngarkohet paralelisht (`modulepreload`) dhe ruhet me cache `immutable`. |
