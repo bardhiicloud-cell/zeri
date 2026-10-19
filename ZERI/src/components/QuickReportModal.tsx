@@ -117,7 +117,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 md:backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -145,7 +145,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
                   required 
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition"
                   placeholder={dt(`Çfarë problemi keni hasur?`)}
                 />
               </div>
@@ -157,7 +157,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
                   required
                   value={topicCategory}
                   onChange={e => setTopicCategory(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition"
                 >
                   <option value="">{dt('Zgjidhni temën kryesore')}</option>
                   {REPORT_TOPICS.map(topic => <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>)}
@@ -170,7 +170,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
                     id="quick-report-sector"
                     value={category}
                     onChange={e => setCategory(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition"
                   >
                     <option>{dt('Infrastrukturë')}</option>
                     <option>{dt('Mbeturina')}</option>
@@ -188,7 +188,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   rows={3}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition-all resize-none"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 focus:bg-white dark:bg-slate-900 focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none transition resize-none"
                   placeholder={dt(`Jepni më shumë detaje...`)}
                 ></textarea>
               </div>
@@ -227,7 +227,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
               <button 
                 type="submit" 
                 disabled={isSubmitting || !title || !description}
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none text-sm"
+                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none text-sm"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

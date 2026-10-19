@@ -216,7 +216,7 @@ export function SearchPalette({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={close}
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 md:backdrop-blur-sm"
           />
 
           <motion.div

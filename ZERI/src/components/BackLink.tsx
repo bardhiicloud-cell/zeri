@@ -22,7 +22,7 @@ export function BackLink({ to = '/', onClick, label = 'Platforma', className }: 
   const classes = cn(
     'group inline-flex h-11 items-center gap-1 rounded-full border border-slate-200/70 bg-white/90 py-0 pl-2.5 pr-4',
     'text-[15px] font-semibold tracking-tight text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.25)]',
-    'backdrop-blur-xl backdrop-saturate-150 transition-all hover:bg-white active:scale-[0.97]',
+    'backdrop-blur-xl backdrop-saturate-150 transition hover:bg-white active:scale-[0.97]',
     'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25',
     'dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15',
     className

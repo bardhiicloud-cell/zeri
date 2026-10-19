@@ -106,7 +106,7 @@ export function QuickAccessGrid() {
               <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-black/5 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md', card.iconClassName)}>
                 <card.icon className="h-5 w-5" />
               </div>
-              <div className="rounded-full border border-slate-200/80 bg-white/80 p-1.5 text-slate-400 shadow-sm backdrop-blur-sm transition-all group-hover:border-blue-200 group-hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-500 dark:group-hover:border-blue-500/50 dark:group-hover:text-blue-400">
+              <div className="rounded-full border border-slate-200/80 bg-white/80 p-1.5 text-slate-400 shadow-sm backdrop-blur-sm transition group-hover:border-blue-200 group-hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-500 dark:group-hover:border-blue-500/50 dark:group-hover:text-blue-400">
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </div>
             </div>

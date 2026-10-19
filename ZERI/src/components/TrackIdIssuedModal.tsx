@@ -32,7 +32,7 @@ export function TrackIdIssuedModal({ trackingId, title, note, onClose }: TrackId
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="trackid-issued-title">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="trackid-issued-title">
       <div className="relative w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-7 text-center shadow-2xl dark:border-emerald-500/30 dark:bg-slate-900">
         <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10">
           <X className="h-5 w-5" aria-hidden="true" />

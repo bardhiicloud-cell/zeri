@@ -255,12 +255,12 @@ export default function AdminUsers() {
          <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto hide-scrollbar">
            <button 
              onClick={() => { setActiveTab('citizen'); setCurrentPage(1); }}
-             className={cn("px-4 py-2 font-bold text-xs rounded-xl uppercase tracking-wider transition-all whitespace-nowrap", activeTab === 'citizen' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300')}
+             className={cn("px-4 py-2 font-bold text-xs rounded-xl uppercase tracking-wider transition whitespace-nowrap", activeTab === 'citizen' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300')}
            >{dt(`Qytetarët`)}
            </button>
            <button 
              onClick={() => { setActiveTab('staff'); setCurrentPage(1); }}
-             className={cn("px-4 py-2 font-bold text-xs rounded-xl uppercase tracking-wider transition-all whitespace-nowrap", activeTab === 'staff' ? 'bg-white dark:bg-slate-900 text-indigo-700 shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300')}
+             className={cn("px-4 py-2 font-bold text-xs rounded-xl uppercase tracking-wider transition whitespace-nowrap", activeTab === 'staff' ? 'bg-white dark:bg-slate-900 text-indigo-700 shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300')}
            >{dt(`Stafi Administrues`)}
            </button>
          </div>
@@ -272,7 +272,7 @@ export default function AdminUsers() {
               placeholder={dt(`Kërko...`)}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium placeholder:text-slate-400 focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium placeholder:text-slate-400 focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition"
             />
          </div>
          {selectedIds.size > 0 && (
@@ -337,7 +337,7 @@ export default function AdminUsers() {
       )}
 
       {/* USER TABLE */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-none hover:shadow transition-all duration-300 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-none hover:shadow transition duration-300 overflow-hidden">
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-left whitespace-nowrap min-w-[800px]">
             <thead>

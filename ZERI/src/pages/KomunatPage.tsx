@@ -394,7 +394,7 @@ export default function KomunatPage() {
             return (
               <div
                 key={muni.name}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between overflow-hidden group"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition duration-300 flex flex-col justify-between overflow-hidden group"
               >
                 <div>
                   {/* Photo header: real daytime photo in light mode, night photo in dark mode */}
@@ -525,7 +525,7 @@ export default function KomunatPage() {
                     </button>
                     <button
                       onClick={() => navigate(`/raporto?komuna=${encodeURIComponent(muni.name)}`)}
-                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition cursor-pointer"
                     >
                       {dt('Raporto')}
                     </button>

@@ -558,7 +558,7 @@ export default function AdminAgents() {
         </div>
         <button
           onClick={handleOpenCreate}
-          className="px-5 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none shadow-rose-600/30 text-sm cursor-pointer whitespace-nowrap self-stretch sm:self-auto justify-center"
+          className="px-5 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold flex items-center gap-2 transition active:scale-95 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none shadow-rose-600/30 text-sm cursor-pointer whitespace-nowrap self-stretch sm:self-auto justify-center"
         >
           <Plus className="w-4 h-4" />{dt(`Shto Agent të Ri`)}
         </button>
@@ -570,7 +570,7 @@ export default function AdminAgents() {
           <button
             onClick={() => setViewSection('agents')}
             className={cn(
-              "px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer",
+              "px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition cursor-pointer",
               viewSection === 'agents'
                 ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
                 : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
@@ -583,7 +583,7 @@ export default function AdminAgents() {
           <button
             onClick={() => setViewSection('monitoring')}
             className={cn(
-              "px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer",
+              "px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition cursor-pointer",
               viewSection === 'monitoring'
                 ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
                 : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
@@ -677,7 +677,7 @@ export default function AdminAgents() {
                 placeholder={dt(`Kërko agentin...`)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all"
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
               />
             </div>
           </div>
@@ -697,7 +697,7 @@ export default function AdminAgents() {
                     key={agent.id}
                     onClick={() => setSelectedAgentId(agent.id)}
                     className={cn(
-                      "p-4 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
+                      "p-4 rounded-xl border transition cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
                       isSelected
                         ? "bg-rose-50/50 border-rose-300 ring-2 ring-rose-500/10"
                         : "bg-slate-50 dark:bg-slate-800 border-slate-200/60 dark:border-white/10 hover:bg-slate-100/50"
@@ -758,7 +758,7 @@ export default function AdminAgents() {
                           e.stopPropagation();
                           setSelectedAgentId(agent.id);
                         }}
-                        className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl hover:border-slate-300 text-slate-500 dark:text-slate-400 hover:text-rose-600 transition-all shadow-sm dark:shadow-none"
+                        className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl hover:border-slate-300 text-slate-500 dark:text-slate-400 hover:text-rose-600 transition shadow-sm dark:shadow-none"
                         title={dt(`Shiko Detajet dhe Historikun`)}
                       >
                         <Eye className="w-4 h-4" />
@@ -768,7 +768,7 @@ export default function AdminAgents() {
                           e.stopPropagation();
                           handleOpenEdit(agent);
                         }}
-                        className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl hover:border-slate-300 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-all shadow-sm dark:shadow-none"
+                        className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl hover:border-slate-300 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition shadow-sm dark:shadow-none"
                         title={dt(`Edito Agentin`)}
                       >
                         <Edit3 className="w-4 h-4" />
@@ -778,7 +778,7 @@ export default function AdminAgents() {
                           e.stopPropagation();
                           handleDeleteAgent(agent.id, agent.email);
                         }}
-                        className="p-1.5 bg-rose-50 border border-rose-200 rounded-2xl hover:border-rose-300 text-rose-500 hover:text-rose-600 transition-all shadow-sm dark:shadow-none"
+                        className="p-1.5 bg-rose-50 border border-rose-200 rounded-2xl hover:border-rose-300 text-rose-500 hover:text-rose-600 transition shadow-sm dark:shadow-none"
                         title={dt(`Fshi Agentin`)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -837,7 +837,7 @@ export default function AdminAgents() {
                 <button
                   onClick={() => setAgentTab('info')}
                   className={cn(
-                    "pb-2 text-xs font-bold tracking-widest uppercase transition-all border-b-2",
+                    "pb-2 text-xs font-bold tracking-widest uppercase transition border-b-2",
                     agentTab === 'info' ? "border-rose-600 text-rose-600" : "border-transparent text-slate-400 hover:text-slate-500 dark:text-slate-400"
                   )}
                 >{dt(`Informacioni Gjeneral`)}
@@ -845,7 +845,7 @@ export default function AdminAgents() {
                 <button
                   onClick={() => setAgentTab('reports')}
                   className={cn(
-                    "pb-2 text-xs font-bold tracking-widest uppercase transition-all border-b-2",
+                    "pb-2 text-xs font-bold tracking-widest uppercase transition border-b-2",
                     agentTab === 'reports' ? "border-rose-600 text-rose-600" : "border-transparent text-slate-400 hover:text-slate-500 dark:text-slate-400"
                   )}
                 >{dt(`Aktiviteti dhe Raportet`)}
@@ -974,7 +974,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('reports')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('reports' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -992,7 +992,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('categories')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('categories' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1017,7 +1017,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('support')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('support')
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1034,7 +1034,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('support')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('support')
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1052,7 +1052,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('donations')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('donations' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1070,7 +1070,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('ads')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('ads' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1088,7 +1088,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('forum')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('forum' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1106,7 +1106,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('polls')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('polls' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1124,7 +1124,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('notifications')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('notifications' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1142,7 +1142,7 @@ export default function AdminAgents() {
                     <button
                       onClick={handleToggleBan}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition-all cursor-pointer",
+                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.isBanned
                           ? "bg-rose-600 text-white border-rose-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none"
                           : "bg-slate-100 dark:bg-slate-800/50 text-rose-600 border-slate-200/60 dark:border-white/10"
@@ -1174,7 +1174,7 @@ export default function AdminAgents() {
 
                 <button
                   onClick={handleSaveNotes}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-3 rounded-xl text-[11px] uppercase tracking-wider transition-all cursor-pointer shadow-sm dark:shadow-none shadow-amber-500/10 text-center"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-3 rounded-xl text-[11px] uppercase tracking-wider transition cursor-pointer shadow-sm dark:shadow-none shadow-amber-500/10 text-center"
                 >{dt(`Ruaj Shënimin e Administratorit`)}
                 </button>
               </div>
@@ -1194,7 +1194,7 @@ export default function AdminAgents() {
                     </div>
                   ) : (
                     agentLogs.map(log => (
-                      <div key={log.id} className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-xl text-xs flex flex-col gap-1 hover:border-slate-200/60 dark:border-white/10 transition-all">
+                      <div key={log.id} className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-xl text-xs flex flex-col gap-1 hover:border-slate-200/60 dark:border-white/10 transition">
                         <div className="flex justify-between items-center">
                           <span className="font-extrabold text-slate-800 dark:text-slate-200 dark:text-slate-200">{log.action}</span>
                           <span className="text-[9px] font-mono text-slate-400">
@@ -1244,7 +1244,7 @@ export default function AdminAgents() {
                       );
 
                       return (
-                        <div key={report.id} className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl flex flex-col gap-2 hover:border-rose-300 transition-all shadow-sm dark:shadow-none">
+                        <div key={report.id} className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl flex flex-col gap-2 hover:border-rose-300 transition shadow-sm dark:shadow-none">
                           <div className="flex justify-between items-start gap-4">
                             <div>
                               <span className="font-extrabold text-slate-900 dark:text-white text-sm">{report.title}</span>
@@ -1548,7 +1548,7 @@ export default function AdminAgents() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsFormOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/60 md:backdrop-blur-sm"
             />
 
             <motion.div
@@ -1564,7 +1564,7 @@ export default function AdminAgents() {
                 </div>
                 <button
                   onClick={() => setIsFormOpen(false)}
-                  className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all active:scale-95"
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition active:scale-95"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
@@ -1580,7 +1580,7 @@ export default function AdminAgents() {
                     placeholder={dt(`p.sh. Agim Selimi`)}
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition-all text-slate-800 dark:text-slate-200 dark:text-slate-200"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition text-slate-800 dark:text-slate-200 dark:text-slate-200"
                   />
                 </div>
 
@@ -1593,7 +1593,7 @@ export default function AdminAgents() {
                     placeholder={dt(`p.sh. approval@ks.com`)}
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition-all text-slate-800 dark:text-slate-200 dark:text-slate-200"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition text-slate-800 dark:text-slate-200 dark:text-slate-200"
                   />
                 </div>
 
@@ -1621,7 +1621,7 @@ export default function AdminAgents() {
                       placeholder={dt(`min. 8 shenja, shkronja + numra`)}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2.5 pr-11 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition-all text-slate-800 dark:text-slate-200"
+                      className="w-full px-4 py-2.5 pr-11 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition text-slate-800 dark:text-slate-200"
                     />
                     {/*
                       Masked by default, with an explicit reveal.
@@ -1658,7 +1658,7 @@ export default function AdminAgents() {
                     placeholder={dt(`p.sh. +383 44 111 222`)}
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition-all text-slate-800 dark:text-slate-200 dark:text-slate-200"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white dark:bg-slate-900 transition text-slate-800 dark:text-slate-200 dark:text-slate-200"
                   />
                 </div>
 
@@ -1698,7 +1698,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('reports')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <FileText className="w-4 h-4 text-rose-500" />
@@ -1737,7 +1737,7 @@ export default function AdminAgents() {
                         key={key}
                         type="button"
                         onClick={() => togglePermission(key)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all hover:border-slate-300 dark:bg-slate-900 ${formData.permissions.includes(key as any)
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition hover:border-slate-300 dark:bg-slate-900 ${formData.permissions.includes(key as any)
                             ? 'border-slate-300 bg-white dark:border-slate-600'
                             : 'border-slate-200/60 bg-white dark:border-white/10'
                           }`}
@@ -1761,7 +1761,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('categories')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <Map className="w-4 h-4 text-teal-500" />
@@ -1781,7 +1781,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('support')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <RadioTower className="w-4 h-4 text-sky-500" />
@@ -1801,7 +1801,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('chat')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <MessageSquareMore className="w-4 h-4 text-pink-500" />
@@ -1821,7 +1821,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('donations')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <Heart className="w-4 h-4 text-indigo-500" />
@@ -1841,7 +1841,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('ads')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <Megaphone className="w-4 h-4 text-amber-500" />
@@ -1861,7 +1861,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('forum')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <MessageSquare className="w-4 h-4 text-emerald-500" />
@@ -1881,7 +1881,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('polls')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <Vote className="w-4 h-4 text-purple-500" />
@@ -1901,7 +1901,7 @@ export default function AdminAgents() {
                     <button
                       type="button"
                       onClick={() => togglePermission('notifications')}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition-all hover:border-slate-300"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 text-left transition hover:border-slate-300"
                     >
                       <span className="flex items-center gap-3">
                         <Bell className="w-4 h-4 text-yellow-500" />
@@ -1929,7 +1929,7 @@ export default function AdminAgents() {
                     type="button"
                     onClick={() => setFormData({ ...formData, isBanned: !formData.isBanned })}
                     className={cn(
-                      "px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all",
+                      "px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider transition",
                       formData.isBanned 
                         ? "bg-rose-100 text-rose-700 border border-rose-200"
                         : "bg-emerald-100 text-emerald-700 border border-emerald-200"
@@ -1943,12 +1943,12 @@ export default function AdminAgents() {
                   <button
                     type="button"
                     onClick={() => setIsFormOpen(false)}
-                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all text-center cursor-pointer"
+                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition text-center cursor-pointer"
                   >{dt(`Anulo`)}
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs transition-all text-center cursor-pointer shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none shadow-rose-600/20"
+                    className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs transition text-center cursor-pointer shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none shadow-rose-600/20"
                   >
                     {editingAgentId ? 'Ruaj Ndryshimet' : 'Krijo Llogarinë'}
                   </button>

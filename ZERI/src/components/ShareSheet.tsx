@@ -81,7 +81,7 @@ export function ShareSheet({
             exit={{ opacity: 0 }}
             onClick={onClose}
             aria-label={dt('Mbyll')}
-            className="absolute inset-0 cursor-default bg-slate-950/70 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-slate-950/70 md:backdrop-blur-sm"
           />
 
           <motion.div
@@ -120,7 +120,7 @@ export function ShareSheet({
                 <button
                   type="button"
                   onClick={handleNative}
-                  className="mb-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-black text-white transition-all hover:brightness-110 active:scale-[0.98]"
+                  className="mb-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-black text-white transition hover:brightness-110 active:scale-[0.98]"
                 >
                   <Share2 className="h-4 w-4" aria-hidden="true" />
                   {dt('Hap menunë e shpërndarjes')}

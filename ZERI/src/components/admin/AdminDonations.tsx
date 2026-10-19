@@ -103,7 +103,7 @@ export default function AdminDonations({ extended }: { extended?: boolean }) {
             placeholder={dt(`Kërko Titull ose ID...`)}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-2xl text-sm font-medium focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+            className="w-full md:w-64 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-2xl text-sm font-medium focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition"
           />
           <div className="flex gap-2">
             {!isAdding && (

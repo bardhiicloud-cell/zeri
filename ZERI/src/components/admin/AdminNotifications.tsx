@@ -272,7 +272,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
   }, [items]);
 
   const inputCls =
-    'w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all';
+    'w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition';
 
   return (
     <div className="space-y-6 max-w-full mx-auto">
@@ -303,7 +303,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
           <button
             onClick={() => (isCreating && !editingId ? closeForm() : openCreate())}
             className={cn(
-              'flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-sm transition-all rounded-xl shadow-sm dark:shadow-none hover:shadow active:scale-95 w-full sm:w-auto',
+              'flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-sm transition rounded-xl shadow-sm dark:shadow-none hover:shadow active:scale-95 w-full sm:w-auto',
               isCreating && !editingId
                 ? 'bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100'
                 : 'bg-slate-900 text-white hover:bg-slate-800 border border-slate-800',
@@ -499,7 +499,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
             placeholder={dt('Kërko me fjalë kyçe...')}
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium placeholder:text-slate-400 outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl text-sm font-medium placeholder:text-slate-400 outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
           />
         </div>
 
@@ -556,7 +556,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
                     exit={{ opacity: 0, scale: 0.95 }}
                     key={n.id}
                     className={cn(
-                      'bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 shadow-sm dark:shadow-none hover:shadow transition-all relative group flex flex-col items-start gap-3',
+                      'bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 shadow-sm dark:shadow-none hover:shadow transition relative group flex flex-col items-start gap-3',
                       isSelected && 'ring-2 ring-indigo-500',
                       state === 'draft' && 'opacity-90',
                     )}

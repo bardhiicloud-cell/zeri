@@ -172,7 +172,7 @@ export function StatCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'group flex w-full flex-col rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all hover:shadow-md dark:border-white/10 dark:bg-slate-900',
+        'group flex w-full flex-col rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition hover:shadow-md dark:border-white/10 dark:bg-slate-900',
         FOCUS_RING
       )}
     >

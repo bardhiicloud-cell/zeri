@@ -122,7 +122,7 @@ export default function ForumProfileTab({
           <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-3">
               <div className="h-24 w-24 shrink-0 rounded-full bg-white p-1 shadow-lg dark:bg-zinc-900 sm:h-28 sm:w-28">
-                <img
+                <img loading="lazy" decoding="async"
                   src={currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=1d4ed8&color=fff`}
                   alt={`Profili i ${currentUser.name}`}
                   className="h-full w-full rounded-full object-cover"
@@ -246,7 +246,7 @@ export default function ForumProfileTab({
                   <div className="flex flex-wrap gap-2">
                     {notFollowedBack.map(person => (
                       <div key={person.id} className="flex items-center gap-1.5 rounded-full bg-white px-2 py-1 dark:bg-zinc-900">
-                        <img src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1d4ed8&color=fff`} className="h-6 w-6 rounded-full" alt="" />
+                        <img loading="lazy" decoding="async" src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1d4ed8&color=fff`} className="h-6 w-6 rounded-full" alt="" />
                         <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{person.name}</span>
                         <button
                           type="button"
@@ -270,7 +270,7 @@ export default function ForumProfileTab({
                 <ul className="divide-y divide-slate-100 dark:divide-zinc-800">
                   {filtered.map(person => (
                     <li key={person.id} className="flex items-center gap-3 py-2.5">
-                      <img src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1d4ed8&color=fff`} className="h-10 w-10 rounded-full object-cover" alt="" />
+                      <img loading="lazy" decoding="async" src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1d4ed8&color=fff`} className="h-10 w-10 rounded-full object-cover" alt="" />
                       <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900 dark:text-white">{person.name}</span>
                       <button
                         type="button"
@@ -297,7 +297,7 @@ export default function ForumProfileTab({
                   <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {suggestions.map(person => (
                       <div key={person.id} className="flex w-36 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-slate-200 p-3 text-center dark:border-zinc-800">
-                        <img src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1d4ed8&color=fff`} className="h-12 w-12 rounded-full object-cover" alt="" />
+                        <img loading="lazy" decoding="async" src={person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1d4ed8&color=fff`} className="h-12 w-12 rounded-full object-cover" alt="" />
                         <span className="w-full truncate text-xs font-bold text-slate-900 dark:text-white">{person.name}</span>
                         <span className="text-[10px] text-slate-500">{person.followers} followers</span>
                         <button
@@ -330,7 +330,7 @@ export default function ForumProfileTab({
         {activeProfileTab === 'posts' && showReels && stories.map(story => (
           <div key={story.id} className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-slate-200 dark:bg-zinc-900">
             {story.isPhoto ? (
-              <img src={story.mediaUrl} className="w-full h-full object-cover" alt="" />
+              <img loading="lazy" decoding="async" src={story.mediaUrl} className="w-full h-full object-cover" alt="" />
             ) : (
               <video src={story.mediaUrl} className="w-full h-full object-cover" />
             )}
@@ -342,7 +342,7 @@ export default function ForumProfileTab({
         ))}
         {activePosts.map(post => (
           <button key={post.id} type="button" onClick={() => setActiveTab('feed')} aria-label={post.content?.slice(0, 90) || 'Hap postimin'} className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left dark:border-zinc-800 dark:bg-zinc-900">
-            {post.imageUrl ? <img src={post.imageUrl} className="h-full w-full object-cover" alt="" /> : <span className="line-clamp-6 p-3 text-xs leading-relaxed text-slate-700 dark:text-slate-200">{post.content}</span>}
+            {post.imageUrl ? <img loading="lazy" decoding="async" src={post.imageUrl} className="h-full w-full object-cover" alt="" /> : <span className="line-clamp-6 p-3 text-xs leading-relaxed text-slate-700 dark:text-slate-200">{post.content}</span>}
             <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-bold text-white"><Heart className="h-3 w-3" />{post.likes?.length || 0}</span>
           </button>
         ))}

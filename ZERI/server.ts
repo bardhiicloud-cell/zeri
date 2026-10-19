@@ -547,7 +547,7 @@ async function startServer() {
         defaultSrc: ["'self'"],
         // www.google.com/recaptcha and www.gstatic.com/recaptcha: Firebase App Check attestation.
         scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://apis.google.com", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
-        // Google Fonts is requested from index.css, so the stylesheet host must be allowed.
+        // Google Fonts is linked from index.html, so the stylesheet host must be allowed.
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
         // Map tiles (*.tile.openstreetmap.org, mt*.google.com), ad banners, hero photos

@@ -45,7 +45,7 @@ export default function NotFoundPage() {
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition-all hover:brightness-110 sm:w-auto"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-5 py-2.5 text-xs font-black text-white transition hover:brightness-110 sm:w-auto"
           >
             <Home className="h-4 w-4" aria-hidden="true" />
             {dt('Kthehu te Ballina')}

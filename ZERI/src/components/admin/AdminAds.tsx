@@ -396,7 +396,7 @@ export default function AdminAds() {
           <button 
             onClick={() => setActiveTab('active')}
             className={cn(
-              "flex-1 xl:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold transition-all rounded-xl shadow-sm flex items-center justify-center gap-2", 
+              "flex-1 xl:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold transition rounded-xl shadow-sm flex items-center justify-center gap-2", 
               activeTab === 'active' 
                 ? "bg-slate-900 text-white dark:bg-rose-600" 
                 : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -409,7 +409,7 @@ export default function AdminAds() {
           <button 
             onClick={() => setActiveTab('create')}
             className={cn(
-              "flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-all rounded-xl shadow-sm", 
+              "flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition rounded-xl shadow-sm", 
               activeTab === 'create' 
                 ? "bg-rose-600 text-white" 
                 : "bg-white dark:bg-slate-900 text-rose-600 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40"
@@ -422,7 +422,7 @@ export default function AdminAds() {
           <button 
             onClick={() => setActiveTab('settings')}
             className={cn(
-              "flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-all rounded-xl shadow-sm", 
+              "flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition rounded-xl shadow-sm", 
               activeTab === 'settings' 
                 ? "bg-slate-900 text-white dark:bg-rose-600" 
                 : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -435,7 +435,7 @@ export default function AdminAds() {
           <button 
             onClick={() => setActiveTab('requests')}
             className={cn(
-              "flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition-all rounded-xl shadow-sm", 
+              "flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold transition rounded-xl shadow-sm", 
               activeTab === 'requests' 
                 ? "bg-slate-900 text-white dark:bg-rose-600" 
                 : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -874,7 +874,7 @@ export default function AdminAds() {
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
                   placeholder={dt(`psh. Auto Servis Prishtina - Ofertë Speciale`)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 focus:bg-white text-slate-900 dark:text-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 focus:bg-white text-slate-900 dark:text-white transition font-medium"
                 />
               </div>
 
@@ -887,7 +887,7 @@ export default function AdminAds() {
                   value={formData.targetUrl}
                   onChange={e => setFormData({ ...formData, targetUrl: e.target.value })}
                   placeholder={dt(`https://biznesi-juaj.com ose linku i rrjeteve sociale`)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 focus:bg-white text-slate-900 dark:text-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 focus:bg-white text-slate-900 dark:text-white transition font-medium"
                 />
               </div>
             </div>
@@ -902,7 +902,7 @@ export default function AdminAds() {
                 <select
                   value={formData.target}
                   onChange={e => setFormData({ ...formData, target: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition font-medium"
                 >
                   <option value="Nacionale">{dt(`⭐ Shtrirje Nacionale (Të gjitha Komunat)`)}</option>
                   <optgroup label={dt(`Komunat Specifike të Kosovës:`)}>
@@ -920,7 +920,7 @@ export default function AdminAds() {
                 <select
                   value={formData.section}
                   onChange={e => setFormData({ ...formData, section: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition font-medium"
                 >
                   <option value="all">{dt(`🌐 Në të gjithë Website (Global)`)}</option>
                   <option value="ballina">{dt(`Ballina (Kreu Kryesor)`)}</option>
@@ -956,7 +956,7 @@ export default function AdminAds() {
                 <select 
                   value={formData.position} 
                   onChange={e => { setFormData({ ...formData, position: e.target.value as any }); setFileCheck(null); }} 
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition font-medium"
                 >
                   <option value="top">{getAdPositionLabel('top')}</option>
                   <option value="article">{getAdPositionLabel('article')}</option>
@@ -975,7 +975,7 @@ export default function AdminAds() {
                 <select
                   value={formData.mediaType}
                   onChange={e => { setFormData({ ...formData, mediaType: e.target.value as any, mediaUrl: '' }); setFileCheck(null); }}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-rose-500 text-slate-900 dark:text-white transition font-medium"
                 >
                   <option value="image">{dt(`Imazh (JPG / PNG / WebP)`)}</option>
                   <option value="video">{dt(`Video (MP4 / WebM)`)}</option>
@@ -1114,7 +1114,7 @@ export default function AdminAds() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-black tracking-wide uppercase shadow-sm transition-all active:scale-95"
+                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-black tracking-wide uppercase shadow-sm transition active:scale-95"
               >
                 {saving ? dt('Po publikohet...') : pendingRequest ? dt('Aprovo dhe publiko') : dt(`Publiko Reklamën`)}
               </button>
@@ -1309,7 +1309,7 @@ export default function AdminAds() {
 
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white text-xs font-black tracking-wider uppercase transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                  className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white text-xs font-black tracking-wider uppercase transition shadow-sm flex items-center gap-2 active:scale-95"
                 >
                   <Save className="w-4 h-4" />
                   <span>{dt(`Ruaj Ndryshimet`)}</span>
@@ -1457,7 +1457,7 @@ export default function AdminAds() {
 
       {/* EDIT MODAL FOR QUICK CHANGES */}
       {editingAd && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 md:backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}

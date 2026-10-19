@@ -187,7 +187,7 @@ export function ForumProfileModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 md:backdrop-blur-md">
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -201,14 +201,14 @@ export function ForumProfileModal({
               <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
                 <button
                   onClick={shareProfile}
-                  className="p-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md border border-white/20 transition-all cursor-pointer"
+                  className="p-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md border border-white/20 transition cursor-pointer"
                   title={dt(`Shpërndaj profilin`)}
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md border border-white/20 transition-all cursor-pointer"
+                  className="p-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md border border-white/20 transition cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -224,7 +224,7 @@ export function ForumProfileModal({
               <div className="flex justify-between items-end -mt-12 mb-3">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-[2rem] p-1 bg-gradient-to-tr from-blue-500 via-indigo-500 to-pink-500 shadow-2xl">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=3b82f6&color=fff`}
                       alt={authorName}
                       className="w-full h-full rounded-[1.25rem] object-cover bg-slate-800"
@@ -242,7 +242,7 @@ export function ForumProfileModal({
                         onClose();
                         onOpenDM({ id: authorId, name: authorName, avatar: authorAvatar });
                       }}
-                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 rounded-2xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                       title={dt('Dërgo Mesazh Privat')}
                     >
                       <MessageSquare className="w-4 h-4 text-blue-400" />
@@ -251,7 +251,7 @@ export function ForumProfileModal({
                   )}
                   <button
                     onClick={toggleFollow}
-                    className={`px-5 py-2.5 rounded-2xl font-black text-xs transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-5 py-2.5 rounded-2xl font-black text-xs transition shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] flex items-center gap-1.5 cursor-pointer ${
                       followed
                         ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                         : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-600/30'
@@ -331,7 +331,7 @@ export function ForumProfileModal({
               {canView && <div className="flex border-b border-slate-800 font-extrabold text-xs">
                 <button 
                   onClick={() => setActiveTab('reels')} 
-                  className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                  className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition cursor-pointer ${
                     activeTab === 'reels' ? 'border-rose-500 text-rose-400' : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -339,7 +339,7 @@ export function ForumProfileModal({
                 </button>
                 <button 
                   onClick={() => setActiveTab('debates')} 
-                  className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                  className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition cursor-pointer ${
                     activeTab === 'debates' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -347,7 +347,7 @@ export function ForumProfileModal({
                 </button>
                 <button 
                   onClick={() => setActiveTab('bio')} 
-                  className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                  className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 border-b-2 transition cursor-pointer ${
                     activeTab === 'bio' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -428,7 +428,7 @@ export function ForumProfileModal({
               {/* Action Button: Ad request */}
               <button 
                 onClick={handleAdvertiseRequest} 
-                className="w-full mt-2 py-3 bg-gradient-to-r from-indigo-900/60 to-purple-900/60 hover:from-indigo-900 hover:to-purple-900 text-indigo-200 font-extrabold rounded-2xl transition-all border border-indigo-700/50 flex items-center justify-center gap-2 text-xs cursor-pointer shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none"
+                className="w-full mt-2 py-3 bg-gradient-to-r from-indigo-900/60 to-purple-900/60 hover:from-indigo-900 hover:to-purple-900 text-indigo-200 font-extrabold rounded-2xl transition border border-indigo-700/50 flex items-center justify-center gap-2 text-xs cursor-pointer shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none"
               >
                 <Megaphone className="w-4 h-4 text-indigo-400" />{dt(`Reklamo apo Sponzorizo me këtë Krijues`)}
               </button>

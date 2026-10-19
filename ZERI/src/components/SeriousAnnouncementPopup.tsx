@@ -90,7 +90,7 @@ export function SeriousAnnouncementPopup() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/70 p-4 md:backdrop-blur-sm"
           role="alertdialog"
           aria-modal="true"
           aria-label={settings?.popupTitle || 'Njoftim i platformës'}

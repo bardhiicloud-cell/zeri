@@ -5,7 +5,7 @@ export function Card({ className, children, ...props }: React.HTMLAttributes<HTM
   return (
     <div 
       className={cn(
-        "bg-(--color-surface) dark:bg-(--color-surface-dark) border border-(--color-border-soft) dark:border-white/10 rounded-(--radius-card) shadow-(--shadow-control) hover:shadow-(--shadow-surface) transition-all overflow-hidden",
+        "bg-(--color-surface) dark:bg-(--color-surface-dark) border border-(--color-border-soft) dark:border-white/10 rounded-(--radius-card) shadow-(--shadow-control) hover:shadow-(--shadow-surface) transition overflow-hidden",
         className
       )}
       {...props}

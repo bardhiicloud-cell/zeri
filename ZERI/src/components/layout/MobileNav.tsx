@@ -311,7 +311,7 @@ export function MobileNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-950/55 md:backdrop-blur-md"
             />
             <div className="absolute inset-x-0 bottom-0 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+5.5rem)]">
               {/* Eight actions: on a short phone the list scrolls instead of running off the top. */}
@@ -363,7 +363,7 @@ export function MobileNav() {
               exit={{ opacity: 0 }}
               onClick={close}
               aria-label={dt('Mbyll menunë')}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/60 md:backdrop-blur-sm"
             />
 
             <motion.div

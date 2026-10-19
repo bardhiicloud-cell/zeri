@@ -56,7 +56,10 @@ export default defineConfig(({mode}) => {
           manualChunks: {
             'vendor': ['react', 'react-dom', 'react-router-dom', 'zustand'],
             'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-            'ui': ['lucide-react', 'framer-motion', 'recharts', 'leaflet', 'react-leaflet']
+            // Charts and maps are deliberately NOT listed: only a few lazy pages
+            // use them, and naming them here made every first visit download
+            // ~500 kB of Leaflet and Recharts before the home page could paint.
+            'ui': ['lucide-react', 'framer-motion']
           }
         }
       },

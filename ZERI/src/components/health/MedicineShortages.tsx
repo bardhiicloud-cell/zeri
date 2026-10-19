@@ -156,7 +156,7 @@ export function MedicineShortages() {
   };
 
   const inputCls =
-    'w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all';
+    'w-full px-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition';
 
   return (
     <div className="space-y-6">
@@ -176,7 +176,7 @@ export function MedicineShortages() {
             type="button"
             onClick={() => setShowForm((v) => !v)}
             className={cn(
-              'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all',
+              'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition',
               showForm
                 ? 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:border-rose-900/50'
                 : 'bg-blue-700 text-white hover:bg-blue-800',

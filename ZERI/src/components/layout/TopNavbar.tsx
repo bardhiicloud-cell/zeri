@@ -201,7 +201,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
 
         <Link
           to="/raporto"
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-3 text-xs font-black text-white transition-all hover:brightness-110"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-3 text-xs font-black text-white transition hover:brightness-110"
         >
           <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
           <span className="hidden sm:inline">{dt('Raporto')}</span>

@@ -20,3 +20,10 @@ idp_config.json
 
 # Firebase CLI deploy cache (written by firebase deploy)
 .firebase/
+
+# Scratch output that kept getting committed (one-off scripts write these)
+*.err
+__pycache__/
+tmp-*
+qa*.png
+_*.png
