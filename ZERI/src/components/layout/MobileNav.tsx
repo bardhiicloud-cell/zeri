@@ -77,7 +77,7 @@ const SCOPE_SHORTCUTS = ['Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 
 /** Module groups, mirroring the desktop sidebar's vocabulary. */
 const GROUP_SPECS: { id: string; title: string; hrefs: string[] }[] = [
   { id: 'primary', title: 'Kryesore', hrefs: ['/', '/raporto', '/raportet-e-mia', '/harta', '/detailed-registry', '/lajme'] },
-  { id: 'kosova', title: 'Kosova & Historia', hrefs: ['/kosova', '/kosova/historia', '/kosova/pavaresia', '/historia-e-uck'] },
+  { id: 'kosova', title: 'Kosova & Historia', hrefs: ['/kosova'] },
   { id: 'participate', title: 'Pjesëmarrja qytetare', hrefs: ['/Idea', '/sondazhet', '/projektet'] },
   {
     id: 'services',
