@@ -95,6 +95,7 @@
     "vitest": "^3.2.7"
   },
   "overrides": {
-    "playwright-core": "1.56.1"
+    "playwright-core": "1.56.1",
+    "@grpc/grpc-js": "^1.14.6"
   }
 }
