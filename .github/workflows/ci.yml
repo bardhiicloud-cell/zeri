@@ -35,7 +35,7 @@ jobs:
       # listed as warnings in eslint.hooks.config.js and must only shrink.
       - run: npx eslint -c eslint.hooks.config.js src
       - run: npm run i18n:check
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
       - run: npm run check:bundle
       - name: Dependency audit (high and critical block)

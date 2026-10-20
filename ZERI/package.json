@@ -15,6 +15,7 @@
     "i18n:missing": "tsx scripts/i18n.ts missing",
     "i18n:import": "tsx scripts/i18n.ts import",
     "test": "vitest run tests/server tests/lib",
+    "test:coverage": "vitest run tests/server tests/lib --coverage --coverage.include='server/**' --coverage.include='src/lib/**' --coverage.reporter=text-summary --coverage.thresholds.lines=45 --coverage.thresholds.functions=65 --coverage.thresholds.branches=85",
     "test:e2e": "playwright test",
     "test:workflow": "firebase emulators:exec --config firebase.workflow-test.json --only firestore,auth --project demo-zeri-workflow \"vitest run --no-file-parallelism tests/emulator/reportWorkflow.routes.test.ts tests/emulator/staffAccounts.test.ts\"",
     "test:rules": "firebase emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-zeri-rules \"vitest run --no-file-parallelism tests/rules tests/emulator --exclude tests/emulator/staffAccounts.test.ts\"",
