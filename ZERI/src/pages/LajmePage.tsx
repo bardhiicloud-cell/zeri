@@ -430,7 +430,7 @@ export default function LajmePage() {
         />
 
         {/* Filter bar: stays on screen while the reader scrolls. Nothing to filter on an empty feed. */}
-        {allNews.length > 0 && <div className="sticky top-16 z-20 rounded-2xl border border-slate-200 bg-white/90 px-3 pt-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
+        {allNews.length > 0 && <div className="sticky top-16 z-20 rounded-2xl border border-slate-200 bg-white px-3 pt-3 shadow-sm md:bg-white/90 md:backdrop-blur-xl dark:border-white/10 dark:bg-slate-900 md:dark:bg-slate-900/90">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
             <div role="tablist" aria-label={dt('Lloji i publikimit')} className="flex shrink-0 rounded-xl bg-slate-100 p-1 dark:bg-white/10">
               {streamOptions.map(({ id, label, count }) => {
@@ -552,7 +552,7 @@ export default function LajmePage() {
                       'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition active:scale-[0.97]',
                       on
                         ? 'border-slate-900 bg-slate-900 text-white shadow-sm dark:border-white dark:bg-white dark:text-slate-900'
-                        : 'border-slate-200 bg-white/80 text-slate-600 backdrop-blur hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white'
+                        : 'border-slate-200 bg-white/80 text-slate-600 md:backdrop-blur hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white'
                     )}
                   >
                     {item.kind === 'local' && <MapPin className={cn('h-3.5 w-3.5', on ? '' : 'text-rose-500')} aria-hidden="true" />}
@@ -840,7 +840,7 @@ export default function LajmePage() {
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
                         />
                       )}
-                      <span className="absolute left-3 top-3 rounded-md bg-slate-950/85 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur">
+                      <span className="absolute left-3 top-3 rounded-md bg-slate-950/85 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white md:backdrop-blur">
                         {dt('Reklamë')}
                       </span>
                       {!isLivePromotion && (
@@ -923,7 +923,7 @@ export default function LajmePage() {
                     without stretching.
                   */}
                   <img src={news.imageUrl} alt="" loading="lazy" decoding="async" />
-                  <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">{dt(news.category)}</span>
+                  <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white md:backdrop-blur">{dt(news.category)}</span>
                   {news.isDemo && (
                     <span className="absolute right-3 top-3 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-900">
                       Demo
@@ -1116,7 +1116,7 @@ export default function LajmePage() {
 
         {activeArticle && (
           <div ref={readerRef} role="dialog" aria-modal="true" aria-label={activeArticle.title} className="fixed inset-0 z-[100] overflow-y-auto bg-slate-50 dark:bg-slate-950">
-            <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-slate-950/95">
+            <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 md:backdrop-blur dark:border-white/10 dark:bg-slate-950/95">
               <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[3px] bg-transparent">
                 <div className="h-full bg-gradient-to-r from-blue-600 via-violet-500 to-rose-500" style={{ width: `${readProgress}%` }} />
               </div>
@@ -1145,7 +1145,7 @@ export default function LajmePage() {
                   <div className="mb-4 flex flex-wrap items-center gap-2.5 text-xs font-bold">
                     <span className="rounded bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide">{dt(activeArticle.category)}</span>
                     {activeArticle.isDemo && <span className="rounded-full border border-amber-300/60 bg-amber-300/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">{dt('Shembull demo · jo lajm real')}</span>}
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 py-1 pl-1.5 pr-3 backdrop-blur"><MunicipalityShield name={activeArticle.municipality} size="sm" />{activeArticle.municipality}</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 py-1 pl-1.5 pr-3 md:backdrop-blur"><MunicipalityShield name={activeArticle.municipality} size="sm" />{activeArticle.municipality}</span>
                   </div>
                   <h1 className="max-w-4xl font-serif text-3xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{activeArticle.title}</h1>
                   <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-200">
@@ -1225,8 +1225,8 @@ export default function LajmePage() {
                     <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100">{dt('Raportojeni dhe ndiqeni me Track-ID derisa të zgjidhet.')}</p>
                     <div className="mt-5 flex flex-wrap gap-3">
                       <Link to="/raporto" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-xs font-black text-[#0b2b57] transition hover:bg-blue-50">{dt('Raporto një problem')} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
-                      <Link to="/lajmero" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold backdrop-blur transition hover:bg-white/20">{dt('Lajmëro: dërgo një lajm')}</Link>
-                      <Link to="/harta" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold backdrop-blur transition hover:bg-white/20">{dt('Shiko hartën')}</Link>
+                      <Link to="/lajmero" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold md:backdrop-blur transition hover:bg-white/20">{dt('Lajmëro: dërgo një lajm')}</Link>
+                      <Link to="/harta" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-xs font-bold md:backdrop-blur transition hover:bg-white/20">{dt('Shiko hartën')}</Link>
                     </div>
                   </section>
 
