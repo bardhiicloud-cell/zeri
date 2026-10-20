@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { applyReportsLockdown } from '../../scripts/reportsLockdownRules';
+import { applyReportsLockdown, revertReportsLockdown } from '../../scripts/reportsLockdownRules';
 
-const live = readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8').replace(/\r\n/g, '\n');
+// firestore.rules may already be locked down; the transform is tested against the open version either way.
+const live = revertReportsLockdown(readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'));
 
 describe('reports lockdown transform', () => {
   const locked = applyReportsLockdown(live);
@@ -26,13 +27,14 @@ describe('reports lockdown transform', () => {
     expect(live.slice(0, oldStart) + live.slice(oldEnd)).toBe(locked.slice(0, newStart) + locked.slice(newEnd));
   });
 
+  it('is a no-op on rules that are already locked down, and revert undoes it', () => {
+    expect(applyReportsLockdown(locked)).toBe(locked);
+    expect(revertReportsLockdown(locked)).toBe(live);
+  });
+
   it('refuses to guess when the rules changed shape', () => {
     expect(() => applyReportsLockdown('rules_version = "2";')).toThrow(/exactly once/);
     expect(() => applyReportsLockdown(live + '\n' + live)).toThrow(/exactly once/);
-  });
-
-  it('is idempotent in intent: applying it to its own output is refused, not doubled', () => {
-    expect(() => applyReportsLockdown(locked)).toThrow(/exactly once/);
   });
 
   it('the rules the new client relies on stay defined', () => {
