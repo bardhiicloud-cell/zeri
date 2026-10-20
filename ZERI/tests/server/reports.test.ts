@@ -69,7 +69,7 @@ describe('parseReportInput', () => {
     expect(parsed({ topicCategory: 'x'.repeat(41) }).topicCategory).toBe('');
   });
 
-  it('keeps only https media, at most thirteen (10 photos + 3 videos), and never emits an undefined path', () => {
+  it('keeps only https media, at most sixteen (the form limit), and never emits an undefined path', () => {
     const report = parsed({
       media: [
         { type: 'image', url: 'https://ok.example/1.jpg' },
@@ -86,7 +86,7 @@ describe('parseReportInput', () => {
     expect(report.media[1].type).toBe('video');
 
     const many = parsed({ media: Array.from({ length: 20 }, (_, i) => ({ url: `https://x.example/${i}.jpg` })) });
-    expect(many.media.length).toBe(13);
+    expect(many.media.length).toBe(16);
   });
 
   it('masks the name of an anonymous report whatever the client sent', () => {
@@ -152,6 +152,16 @@ describe('buildReportDocument', () => {
     expect(doc.timeline).toHaveLength(1);
     expect(doc.timeline[0]).toMatchObject({ status: 'Pending Review', updatedBy: 'Sistemi', source: 'system' });
     expect(doc.createdAt).toBe('<server-timestamp>');
+  });
+
+  it('keeps audio and documents as themselves, with their name, size and mime type', () => {
+    const report = parsed({ media: [
+      { type: 'document', url: 'https://x/a.pdf', name: 'prove.pdf', sizeBytes: 2048, mimeType: 'application/pdf' },
+      { type: 'audio', url: 'https://x/a.mp3' },
+      { type: 'weird', url: 'https://x/a.jpg' },
+    ] });
+    expect(report.media.map(item => item.type)).toEqual(['document', 'audio', 'image']);
+    expect(report.media[0]).toMatchObject({ name: 'prove.pdf', sizeBytes: 2048, mimeType: 'application/pdf' });
   });
 
   it('derives images from image media only', () => {
