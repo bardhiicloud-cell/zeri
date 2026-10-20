@@ -303,7 +303,7 @@ function NavBarLink({ link, active }: { link: NavLinkDef; active: boolean }) {
       className={cn(
         'flex min-h-9 items-center rounded-lg px-3 text-xs font-bold transition-colors',
         active
-          ? 'text-(--color-brand-primary) dark:text-blue-300'
+          ? 'text-(--color-brand-primary)'
           : 'text-slate-600 hover:bg-slate-50 hover:text-(--color-brand-primary) dark:text-slate-300 dark:hover:bg-slate-800'
       )}
     >

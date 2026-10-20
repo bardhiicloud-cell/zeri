@@ -332,7 +332,7 @@ export default function MapPage() {
               <Search className="w-5 h-5" />
             </div>
             <div className="flex-1 relative h-10">
-              <select aria-label={dt('Komuna')}
+              <select 
                 value={selectedMunicipality}
                 onChange={(e) => handleMunicipalityChange(e.target.value)}
                 className="absolute inset-0 w-full h-full bg-transparent font-bold text-[var(--color-text)] dark:text-[var(--color-surface)] text-sm outline-none tracking-wide cursor-pointer appearance-none px-2 z-10"
@@ -348,8 +348,6 @@ export default function MapPage() {
             </div>
             <button 
               onClick={() => setIsHudOpen(!isHudOpen)}
-              aria-label={isHudOpen ? dt('Mbyll filtrat') : dt('Hap filtrat')}
-              aria-expanded={isHudOpen}
               className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center transition shrink-0 ml-1",
                 isHudOpen ? "bg-rose-600 text-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none shadow-rose-600/20" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
@@ -373,8 +371,6 @@ export default function MapPage() {
         {/* Toggle Button for Desktop */}
         <button 
           onClick={() => setIsHudOpen(!isHudOpen)}
-          aria-label={isHudOpen ? dt('Mbyll panelin e hartës') : dt('Hap panelin e hartës')}
-          aria-expanded={isHudOpen}
           className={cn(
             "absolute z-[1001] transition-all duration-500 pointer-events-auto flex items-center justify-center shadow-xl backdrop-blur-md",
             isHudOpen 
@@ -413,7 +409,6 @@ export default function MapPage() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <select 
-                      aria-label={dt('Komuna')}
                       value={selectedMunicipality}
                       onChange={(e) => handleMunicipalityChange(e.target.value)}
                       className="w-full pl-9 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
@@ -447,7 +442,6 @@ export default function MapPage() {
                   </label>
                   <div className="relative">
                     <select 
-                      aria-label={dt('Lagjet e Qytetit')}
                       value={selectedNeighborhood}
                       onChange={(e) => setSelectedNeighborhood(e.target.value)}
                       className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
@@ -485,7 +479,7 @@ export default function MapPage() {
                      onClick={() => setActiveFilter(f)} 
                      className={cn(
                        "py-2 text-xs font-bold tracking-normal transition",
-                       activeFilter === f ? 'bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-rose-700 dark:text-rose-400' : 'text-white hover:bg-white/10'
+                       activeFilter === f ? 'bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-rose-600' : 'text-white hover:bg-white/10'
                      )}
                    >
                      {getUrgencyTranslation(f)}
@@ -505,7 +499,7 @@ export default function MapPage() {
              <div className="w-2 h-2 bg-[#10B981] animate-pulse" />
              <span className="text-xs font-bold text-slate-300 tracking-wider">{t('active_reports')}</span>
            </div>
-           <span className="text-2xl font-black text-white drop-shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">{filteredReports.length} <span className="text-slate-400 text-xs font-bold tracking-normal">
+           <span className="text-2xl font-black text-white drop-shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">{filteredReports.length} <span className="text-neutral-500 dark:text-slate-400 text-xs font-bold tracking-normal">
              {t('nav_report')}
            </span></span>
         </div>
@@ -589,7 +583,6 @@ export default function MapPage() {
                 </label>
                 <div className="relative">
                   <select 
-                    aria-label={dt('Lagjet e Qytetit')}
                     value={selectedNeighborhood}
                     onChange={(e) => setSelectedNeighborhood(e.target.value)}
                     className="w-full px-4 py-3.5 bg-black/40 border border-white/10 rounded-2xl font-bold text-white text-sm outline-none cursor-pointer tracking-wide focus:border-white focus:ring-1 focus:ring-white transition appearance-none"
@@ -751,8 +744,6 @@ export default function MapPage() {
                     key={report.id}
                     position={[lat, lng]}
                     icon={createCustomIcon(report.urgency)}
-                    title={report.title || report.category}
-                    alt={report.title || report.category}
                     eventHandlers={{ click: () => setActivePreviewReport(report) }}
                   />
                 );

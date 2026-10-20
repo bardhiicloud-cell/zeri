@@ -8,14 +8,9 @@
     "prototype:server": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node scripts/start-prod.cjs",
-    "check:bundle": "node scripts/check-bundle.mjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "i18n:check": "tsx scripts/i18n.ts check",
-    "i18n:missing": "tsx scripts/i18n.ts missing",
-    "i18n:import": "tsx scripts/i18n.ts import",
     "test": "vitest run tests/server tests/lib",
-    "test:e2e": "playwright test",
     "test:workflow": "firebase emulators:exec --config firebase.workflow-test.json --only firestore,auth --project demo-zeri-workflow \"vitest run --no-file-parallelism tests/emulator/reportWorkflow.routes.test.ts tests/emulator/staffAccounts.test.ts\"",
     "test:rules": "firebase emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-zeri-rules \"vitest run --no-file-parallelism tests/rules tests/emulator --exclude tests/emulator/staffAccounts.test.ts\"",
     "claims:sync": "tsx scripts/sync-claims.ts",
@@ -61,11 +56,9 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
     "@firebase/rules-unit-testing": "^5.0.2",
-    "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -91,8 +84,5 @@
     "typescript-eslint": "^8.59.2",
     "vite": "^6.2.3",
     "vitest": "^3.2.7"
-  },
-  "overrides": {
-    "playwright-core": "1.56.1"
   }
 }

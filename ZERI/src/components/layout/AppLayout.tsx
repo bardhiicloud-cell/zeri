@@ -1,11 +1,15 @@
 import { dt } from '@/src/lib/dt';
 import { InstallAppBanner } from '../InstallAppPrompt';
-import { Suspense, lazy, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../../lib/store';
 import { useLanguage } from '../../lib/LanguageContext';
 import { NetworkStatus } from './NetworkStatus';
 import { NearbyAlerts } from './NearbyAlerts';
+import { LeaderboardModal } from '../LeaderboardModal';
+import { UserProfileModal } from '../UserProfileModal.tsx';
+import { QuickReportModal } from '../QuickReportModal';
+import { LocationDetectorModal } from '../LocationDetectorModal';
 import { WelcomeTour } from '../WelcomeTour';
 import { AppFooter } from '../AppFooter.tsx';
 import AdBanner from '../AdBanner.tsx';
@@ -17,24 +21,6 @@ import { AnnouncementBanner } from '../AnnouncementBanner.tsx';
 import { BroadcastPopup, BroadcastStrip } from '../BroadcastLayer';
 import { canAccessAdmin } from '../../lib/adminPermissions';
 import GuidedTour from '../GuidedTour';
-
-/*
- * Modals opened by a tap are separate chunks: none of them is needed to paint the
- * first page. They stay mounted after the first open so closing still animates.
- */
-const LeaderboardModal = lazy(() => import('../LeaderboardModal').then((m) => ({ default: m.LeaderboardModal })));
-const UserProfileModal = lazy(() => import('../UserProfileModal.tsx').then((m) => ({ default: m.UserProfileModal })));
-const QuickReportModal = lazy(() => import('../QuickReportModal').then((m) => ({ default: m.QuickReportModal })));
-const LocationDetectorModal = lazy(() => import('../LocationDetectorModal').then((m) => ({ default: m.LocationDetectorModal })));
-
-/** True from the first time `open` is true onwards, so a lazy modal mounts on demand and stays. */
-function useEverOpened(open: boolean): boolean {
-  const [ever, setEver] = useState(open);
-  useEffect(() => {
-    if (open) setEver(true);
-  }, [open]);
-  return ever || open;
-}
 
 /** Shown inside the shell while a lazily loaded page downloads. */
 function PageLoading() {
@@ -69,9 +55,6 @@ export function AppLayout() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isQuickReportOpen, setIsQuickReportOpen] = useState(false);
-  const profileMounted = useEverOpened(isProfileModalOpen);
-  const leaderboardMounted = useEverOpened(isLeaderboardOpen);
-  const quickReportMounted = useEverOpened(isQuickReportOpen);
 
   const searchState = useGlobalSearch();
 
@@ -149,9 +132,7 @@ export function AppLayout() {
         Overlays. They are siblings of the grid, never children of it, so they
         cannot claim a grid track no matter how they position themselves.
       */}
-      <Suspense fallback={null}>
-        <LocationDetectorModal />
-      </Suspense>
+      <LocationDetectorModal />
       <WelcomeTour />
 
       <div className="pointer-events-none fixed left-0 right-0 top-0 z-[9999]">
@@ -264,11 +245,9 @@ export function AppLayout() {
       */}
       <SearchPalette {...searchState} />
 
-      <Suspense fallback={null}>
-        {leaderboardMounted && <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />}
-        {profileMounted && <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />}
-        {quickReportMounted && <QuickReportModal isOpen={isQuickReportOpen} onClose={() => setIsQuickReportOpen(false)} />}
-      </Suspense>
+      <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+      <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+      <QuickReportModal isOpen={isQuickReportOpen} onClose={() => setIsQuickReportOpen(false)} />
     </div>
   );
 }
