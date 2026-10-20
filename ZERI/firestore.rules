@@ -213,6 +213,19 @@ service cloud.firestore {
     // ──────────────────────────────────────────────
     // Reports collection
     // ──────────────────────────────────────────────
+    // Who to call about a report. Guests give a name and a phone number; those never
+    // go on the world-readable report above. Staff and the author can read them,
+    // nobody edits them from the client, and the server writes them with the Admin SDK.
+    match /reportPrivate/{reportId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.authorId == request.auth.uid);
+      allow create: if canAct()
+                    && request.resource.data.authorId == request.auth.uid
+                    && request.resource.data.keys().hasOnly(['authorId', 'name', 'phone', 'createdAt'])
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 120
+                    && request.resource.data.phone is string && request.resource.data.phone.size() <= 40;
+      allow update, delete: if false;
+    }
+
     match /reports/{reportId} {
       // Anyone can look up a report by Track ID (public tracking).
       // PII (email) is not exposed in the TrackIdPage response.

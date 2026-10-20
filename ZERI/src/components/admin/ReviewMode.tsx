@@ -20,6 +20,7 @@ import { routeReport } from '../../lib/routingExport';
 import { contactRefFor, ensureContact } from '../../lib/routingContacts';
 import { sendReportEmail } from '../../lib/institutionMailApi';
 import type { ClassifyChange } from '../../lib/reportClassifyApi';
+import { contactLine, useReportContact } from '../../lib/useReportContact';
 import { askConfirm, askReason } from '../../lib/dialogs';
 
 /**
@@ -119,6 +120,7 @@ export default function ReviewMode({
       ...(saved.municipality ? { location: { ...baseCurrent.location, municipality: saved.municipality } } : {}),
     } as Report;
   }, [baseCurrent, classified]);
+  const contact = useReportContact(current?.id);
   const routed = useMemo(() => (current ? routeReport(current) : null), [current]);
   const images = current ? photos[current.id] ?? current.images ?? [] : [];
   const progress = reviewProgress(ids, handled);
@@ -435,7 +437,7 @@ export default function ReviewMode({
                 <Fact label={dt('Urgjenca')} value={String(current.urgency)} />
                 <Fact label={dt('Komuna')} value={current.location?.municipality} />
                 <Fact label={dt('Dërguar')} value={when(current.createdAt)} />
-                <Fact label={dt('Raportuesi')} value={current.isAnonymous ? dt('Anonim') : current.authorName} />
+                <Fact label={dt('Raportuesi')} value={current.isAnonymous ? dt('Anonim') : contactLine(contact, current.authorName)} />
                 <Fact label={dt('Institucioni')} value={current.responsibleInstitution} />
               </dl>
               {current.location?.address && (

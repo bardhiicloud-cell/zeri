@@ -751,6 +751,12 @@ export default function ReportIssue() {
         return;
       }
 
+      // Guests leave a name and a phone so staff can reach them. They go to the private
+      // `reportPrivate` document, never onto the public report.
+      const guestContact = (!currentUser || currentUser.role === 'guest') && !isAnonymous && (guestName.trim() || guestPhone.trim())
+        ? { name: guestName.trim().slice(0, 120), phone: guestPhone.trim().slice(0, 40) }
+        : null;
+
       const reportData: any = {
         title,
         description,
@@ -762,7 +768,8 @@ export default function ReportIssue() {
         images: [],
         media: [],
         authorId: authorUid,
-        authorName: isAnonymous ? 'Qytetar Anonim' : (currentUser?.name || guestName || 'Anonim'),
+        // A guest's real name stays out of the public report (see reportPrivate below).
+        authorName: isAnonymous ? 'Qytetar Anonim' : (currentUser?.name || 'Qytetar'),
         isAnonymous,
         createdAt: new Date().toISOString(),
         ...(aiInsights ? { 
@@ -911,6 +918,7 @@ export default function ReportIssue() {
               media: reportData.media,
               isAnonymous: reportData.isAnonymous === true,
               authorName: reportData.authorName ?? '',
+              ...(guestContact ? { contactName: guestContact.name, contactPhone: guestContact.phone } : {}),
               // The server mints the Track ID; the report id only makes a retry idempotent.
               clientReportId: reportRef.id,
               aiCategoryScore: reportData.aiCategoryScore,
@@ -958,6 +966,12 @@ export default function ReportIssue() {
           ...reportData,
           createdAt: serverTimestamp() // native firebase timestamp
         }), 45000, 'Ruajtja zgjati shumë.');
+        if (guestContact) {
+          // Best effort: the report is already stored; a refused contact write must not undo it.
+          await withTimeout(setDoc(doc(db, 'reportPrivate', reportRef.id), {
+            authorId: authorUid, ...guestContact, createdAt: serverTimestamp(),
+          }), 15000, 'timeout').catch(() => undefined);
+        }
       } catch (e) {
         const landed = await withTimeout(getDocFromServer(reportRef), 10000, 'timeout')
           .then(snap => snap.exists() ? (snap.data() as { trackingId?: string }) : null)

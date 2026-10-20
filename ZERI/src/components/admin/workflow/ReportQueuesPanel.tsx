@@ -17,6 +17,7 @@ import { cropReportPhoto, removeReportPhoto } from '../../../lib/reportMediaApi'
 import PhotoCropper from '../PhotoCropper';
 import type { ReportAction } from '../../../lib/reportWorkflow';
 import { directAdvance, directCounts, directQueue, directReject, directReopen, directReport, isApiUnavailableError } from '../../../lib/workflowDirect';
+import { contactLine, useReportContact } from '../../../lib/useReportContact';
 import { askConfirm, askReason } from '../../../lib/dialogs';
 
 /* ------------------------------------------------------------------ */
@@ -418,6 +419,7 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
 
 function DirectReportDrawer({ reportId, onClose, onChanged }: { reportId: string; onClose: () => void; onChanged: () => void }) {
   const [report, setReport] = useState<Record<string, any> | null>(null);
+  const contact = useReportContact(reportId);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -479,7 +481,7 @@ function DirectReportDrawer({ reportId, onClose, onChanged }: { reportId: string
                 <div><dt className="text-xs text-slate-500">{dt('Komuna')}</dt><dd className="font-semibold">{report.location?.municipality || '—'}</dd></div>
                 <div><dt className="text-xs text-slate-500">{dt('Kategoria')}</dt><dd className="font-semibold">{report.category || '—'}</dd></div>
                 <div><dt className="text-xs text-slate-500">{dt('Urgjenca')}</dt><dd className="font-semibold">{report.urgency || '—'}</dd></div>
-                <div><dt className="text-xs text-slate-500">{dt('Raportuesi')}</dt><dd className="font-semibold">{report.isAnonymous ? dt('Anonim') : (report.authorName || '—')}</dd></div>
+                <div><dt className="text-xs text-slate-500">{dt('Raportuesi')}</dt><dd className="font-semibold">{report.isAnonymous ? dt('Anonim') : contactLine(contact, report.authorName)}</dd></div>
                 <div className="col-span-2"><dt className="text-xs text-slate-500">{dt('Adresa')}</dt><dd className="font-semibold">{report.location?.address || '—'}</dd></div>
               </dl>
               <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm text-slate-800 dark:bg-white/5 dark:text-slate-100">{report.description}</p>

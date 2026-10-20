@@ -95,6 +95,15 @@ describe('parseReportInput', () => {
     expect(report.authorName).toBe(ANONYMOUS_AUTHOR_NAME);
   });
 
+  it('keeps a guest\'s name and phone as private contact, trimmed, and drops them for anonymous reports', () => {
+    const open = parsed({ contactName: '  Filan Fisteku ', contactPhone: '+383 44 111 222' });
+    expect(open.contact).toEqual({ name: 'Filan Fisteku', phone: '+383 44 111 222' });
+    expect(open.authorName).toBe('Arta');
+    const anon = parsed({ isAnonymous: true, contactName: 'Filan', contactPhone: '044' });
+    expect(anon.contact).toEqual({ name: '', phone: '' });
+    expect(parsed({ contactPhone: '9'.repeat(100) }).contact.phone).toHaveLength(40);
+  });
+
   it('accepts a well-formed tracking id and ignores a malformed one', () => {
     expect(parsed({ trackingId: 'zq-20261011-abcdef123456' }).requestedTrackingId).toBe('ZQ-20261011-ABCDEF123456');
     expect(parsed({ trackingId: '<b>x</b>' }).requestedTrackingId).toBe('');

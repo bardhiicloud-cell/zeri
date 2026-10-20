@@ -50,8 +50,8 @@ Notat janë 1–10. Çdo numër vjen nga një matje ose nga kodi i lexuar; ku nu
 | 3. Dialogë native (36 + 12 jashtë adminit) | **U ndreq.** `lib/dialogs.ts` + `DialogHost`: dialog i stilizuar, i përkthyer (`dt`), i qasshëm (`alertdialog`, Esc, fokus), butoni i kuq për fshirje, arsyeja me minimum shenjash e treguar. Të gjitha thirrjet kaluan te `askConfirm`/`askReason`. |
 | 4. Tekste 8–10 px | **U ndreq** në panel dhe në tre konsolat e roleve: minimumi tani 11 px. |
 | 6. Dokumentimi | **U përditësua** `PRODUCTION_CHECKLIST.md` (pohimet e pasakta u korrigjuan, të hapurat u shënuan). |
-| 1. Raportet `read: if true` / emri i mysafirit | **Mbetet e hapur me qëllim.** Ndryshimi prek 20 vende leximi në klient dhe rregullat; duhet vendim dhe provë me emulator. |
-| 2. Telefoni i mysafirit nuk ruhet | **Mbetet e hapur** — varet nga vendimi te nr. 1 (ku ruhet privatisht). |
+| 1+2. Emri dhe telefoni i mysafirit | **U ndreq pjesërisht.** Emri i vërtetë dhe telefoni i mysafirit tani shkojnë te dokumenti privat `reportPrivate/{id}` (serveri e shkruan me Admin SDK; rruga rezervë e klientit e shkruan vetë), jo te raporti publik, ku del vetëm "Qytetar". Stafi e sheh "Emri · telefoni" te Rishikimi dhe te sirtari i raportit. Rregulla: lexon stafi dhe autori; klienti krijon vetëm të vetin, pa redaktim/fshirje. Testi i serverit kalon; testi i rregullave `tests/rules/reportPrivate.rules.test.ts` është shkruar por **nuk u ekzekutua** (emulatori nuk shkarkohet në këtë mjedis). |
+| 1b. `reports` ende `read: if true` | **Mbetet e hapur:** raportet e vjetra mbajnë emrin në `authorName` dhe leximi publik direkt ende lejohet. Ekziston `scripts/reportsLockdownRules.ts` (me test) për ta mbyllur; aplikohet pasi faqet publike të lexojnë vetëm nga API. |
 | 5, 7. Skedarë gjigantë, `any` | Mbeten; janë rifaktorim i madh pa ndryshim sjelljeje, jo për t'u bërë në një kalim. |
 
 Verifikuar: `tsc` pastër · 1267/1267 teste · testet që simulonin `window.confirm` u kaluan te `lib/dialogs`.
