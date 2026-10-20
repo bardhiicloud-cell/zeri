@@ -87,7 +87,7 @@ export default function UckArchivePage() {
 
   return (
     <div data-no-translate className="hx hx-page hx-uck -mx-3 -my-3 sm:-mx-5 sm:-my-4 lg:-mx-8">
-      <div className="mx-auto max-w-[1280px] space-y-8 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 pb-28 pt-4 sm:space-y-8 sm:px-6 lg:px-8 lg:pt-6">
         <Crumbs items={[
           { to: '/', label: t('home') }, { to: '/kosova', label: t('kosovo') },
           ...(section ? [{ to: '/historia-e-uck', label: t('uckTitle') }, { label: section.title[lang] }] : [{ label: t('uckTitle') }]),
@@ -147,7 +147,7 @@ export default function UckArchivePage() {
             </ol>
           </nav>
 
-          <div className="min-w-0 space-y-8">
+          <div className="min-w-0 space-y-6 sm:space-y-8">
             {!section && (
               <>
                 <LiberationSection lang={lang} />

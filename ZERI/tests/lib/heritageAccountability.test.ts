@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CHARGES, SEXUAL_VIOLENCE_COUNTS } from '../../src/lib/heritage/accountability';
 import { PREKAZ_BEATS } from '../../src/lib/heritage/jashari';
 import { CITIES, WHY_VISIT } from '../../src/lib/heritage/welcome';
-import { PLAYLIST, hasEmbed, searchUrl } from '../../src/lib/heritage/playlist';
+import { PLAYLIST } from '../../src/lib/heritage/playlist';
 
 describe('accountability data', () => {
   it('every figure and charge has a https source and both languages', () => {
@@ -22,8 +22,7 @@ describe('accountability data', () => {
     expect(CITIES.length).toBe(7);
     for (const w of WHY_VISIT) expect(w.body.sq && w.body.en).toBeTruthy();
     expect(new Set(PLAYLIST.map((t) => t.id)).size).toBe(PLAYLIST.length);
-    for (const t of PLAYLIST) if (t.videoId) expect(t.videoId).toMatch(/^[\w-]{11}$/);
-    expect(searchUrl(PLAYLIST[0])).toContain('youtube.com/results');
-    expect(typeof hasEmbed()).toBe('boolean');
+    expect(PLAYLIST).toHaveLength(5);
+    for (const t of PLAYLIST) expect(t.videoId).toMatch(/^[\w-]{11}$/);
   });
 });

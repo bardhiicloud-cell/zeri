@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ExternalLink, Music2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
+import { Music2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import type { HeritageLang } from '../../lib/heritage/types';
-import { PLAYLIST, hasEmbed, searchUrl, type Track } from '../../lib/heritage/playlist';
+import { PLAYLIST, type Track } from '../../lib/heritage/playlist';
 
 type Phase = 'hidden' | 'invite' | 'dock';
 const KEY = 'hx-uck-music';
@@ -41,9 +41,9 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
   const failed = useRef(0);
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
-  const embed = hasEmbed(tracks) && !blocked;
-  const queue = embed ? tracks.filter((t) => t.videoId) : tracks;
-  const track = queue[index % queue.length];
+  const queue = tracks.filter((t) => t.videoId);
+  const embed = queue.length > 0 && !blocked;
+  const track = queue[index % Math.max(queue.length, 1)];
 
   useEffect(() => {
     if (read()) return;
@@ -122,8 +122,8 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
             <span className="hx-eq flex h-4 items-end gap-0.5" data-paused={!playing}><span /><span /><span /></span>
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black">{track.title}</p>
-            <p className="truncate text-xs text-white/65">{track.artist}</p>
+            <p className="truncate text-sm font-black">{track?.title}</p>
+            <p className="truncate text-xs text-white/65">{track?.artist}</p>
           </div>
           {embed ? (
             <>
@@ -134,9 +134,7 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
               <button type="button" onClick={() => step(1)} aria-label={sq ? 'Kënga tjetër' : 'Next track'} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"><SkipForward className="h-4 w-4" /></button>
             </>
           ) : (
-            <a href={searchUrl(track)} target="_blank" rel="noreferrer" aria-label={sq ? 'Hap në YouTube' : 'Open on YouTube'} className="flex h-11 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-black text-[#160a0c]">
-              <Play className="h-4 w-4" aria-hidden="true" />YouTube<ExternalLink className="h-3 w-3" aria-hidden="true" />
-            </a>
+            <p className="max-w-[9rem] text-right text-[11px] leading-tight text-white/65">{sq ? 'Muzika s’mund të luhet tani.' : 'Music can’t play right now.'}</p>
           )}
           <button type="button" onClick={close} aria-label={sq ? 'Mbyll muzikën' : 'Close the music'} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"><X className="h-5 w-5" /></button>
         </div>
