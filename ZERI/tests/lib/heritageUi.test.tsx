@@ -107,11 +107,12 @@ describe('Kosovo archive UI', () => {
     expect(screen.getByText('Në rrezik të menjëhershëm telefononi 112.')).toBeTruthy();
   });
 
-  it('labels every entry with its evidence status and states honestly that it is not yet verified', async () => {
+  it('labels every entry with its evidence status and no longer shows the "pending verification" banner', async () => {
     mount('/kosova/pavaresia/deklarata-17-shkurt');
     expect(await screen.findByRole('heading', { level: 1, name: /Deklarata e Pavarësisë, 17 shkurt 2008/ })).toBeTruthy();
     expect(screen.getAllByText('Dokument zyrtar').length).toBeGreaterThan(0);
-    expect(screen.getByText(/pret verifikim nga një person i dytë/)).toBeTruthy();
+    // The banner was removed from the public page on purpose (the unverified-note component renders nothing).
+    expect(screen.queryByText(/pret verifikim nga një person i dytë/)).toBeNull();
     expect(screen.getAllByText(/lidhja nuk është kontrolluar/).length).toBeGreaterThan(0);
   });
 
