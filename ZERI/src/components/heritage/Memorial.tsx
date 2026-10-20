@@ -22,7 +22,7 @@ const initials = (name: string) => name.split(/[\s-]+/).filter(Boolean).slice(0,
 export function LiberationSection({ lang }: { lang: HeritageLang }) {
   return (
     <section aria-labelledby="hx-lib" className="hx-uck-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
-      <div className="space-y-6 p-6 sm:p-10">
+      <div className="space-y-5 p-5 sm:space-y-6 sm:p-10">
         <header className="max-w-3xl space-y-3">
           <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{lang === 'sq' ? 'E vërteta e luftës' : 'The truth of the war'}</p>
           <h2 id="hx-lib" className="hx-serif text-3xl font-black leading-[1.02] text-white sm:text-5xl">
@@ -36,13 +36,13 @@ export function LiberationSection({ lang }: { lang: HeritageLang }) {
         </header>
         <ol className="grid gap-3 md:grid-cols-2">
           {LIBERATION_POINTS.map((p, i) => (
-            <li key={p.sourceLabel + i} className="rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur">
+            <li key={p.sourceLabel + i} className="rounded-2xl border border-white/12 bg-white/[0.06] p-4 backdrop-blur sm:p-5">
               <p className="flex items-start gap-3">
                 <span className="hx-serif w-8 shrink-0 text-2xl font-black leading-none text-[#ff4d63]">{String(i + 1).padStart(2, '0')}</span>
                 <span className="hx-serif text-lg font-black leading-snug text-white">{p.title[lang]}</span>
               </p>
-              <p className="mt-2 pl-11 text-sm leading-relaxed text-slate-300">{p.body[lang]}</p>
-              <a href={p.source} target="_blank" rel="noreferrer" className="mt-3 ml-11 inline-flex items-center gap-1 text-[11px] font-bold text-[#ff8a98] hover:underline">
+              <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:pl-11">{p.body[lang]}</p>
+              <a href={p.source} target="_blank" rel="noreferrer" className="mt-3 sm:ml-11 inline-flex items-center gap-1 text-[11px] font-bold text-[#ff8a98] hover:underline">
                 <Scale className="h-3.5 w-3.5" aria-hidden="true" />{p.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             </li>
@@ -58,9 +58,9 @@ export function LiberationSection({ lang }: { lang: HeritageLang }) {
 function MartyrCard({ m, lang }: { m: Martyr; lang: HeritageLang }) {
   const age = ageAtDeath(m.born, m.died);
   return (
-    <li className="hx-card relative flex gap-4 overflow-hidden p-4 sm:p-5">
+    <li className="hx-card relative flex gap-3 overflow-hidden p-4 pl-5 sm:gap-4 sm:p-5">
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#c8102e] via-[#111] to-[#c8102e]" />
-      <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#c8102e]" style={{ background: 'radial-gradient(circle at 30% 25%, #3a0a12, #0b0b12)' }}>
+      <span className="relative flex h-14 w-14 shrink-0 sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#c8102e]" style={{ background: 'radial-gradient(circle at 30% 25%, #3a0a12, #0b0b12)' }}>
         <span aria-hidden="true" className="hx-serif text-lg font-black text-white/90">{initials(m.name)}</span>
         <Photo name={`dheshmor-${m.id}`} alt={m.name} bare className="!absolute inset-0 !bg-transparent" />
       </span>
@@ -104,7 +104,7 @@ export function MartyrsSection({ lang }: { lang: HeritageLang }) {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl space-y-2">
           <p className="hx-eyebrow">{lang === 'sq' ? 'Lavdi dëshmorëve' : 'Glory to the martyrs'}</p>
-          <h2 id="hx-martyrs" className="hx-serif text-3xl font-black leading-tight sm:text-4xl" style={{ color: 'var(--hx-ink)' }}>
+          <h2 id="hx-martyrs" className="hx-serif text-[1.75rem] font-black leading-tight sm:text-4xl" style={{ color: 'var(--hx-ink)' }}>
             {lang === 'sq' ? 'Dëshmorët e kombit' : 'The nation’s martyrs'}
           </h2>
           <p className="hx-ink-2 text-sm leading-relaxed">
@@ -154,7 +154,7 @@ export function FamiliesSection({ lang }: { lang: HeritageLang }) {
         {LEGENDARY_FAMILIES.map((f, i) => (
           <li key={f.id} className={i === 0 ? 'md:col-span-2' : ''}>
             <article className="hx-plate flex h-full flex-col sm:flex-row">
-              <div className="relative h-28 shrink-0 sm:h-auto sm:w-40">
+              <div className="relative aspect-[16/10] shrink-0 sm:aspect-auto sm:h-auto sm:w-44">
                 <PlateArt hue={i === 0 ? 0 : 20 + i * 30} seed={200 + i} className="absolute inset-0 h-full w-full" />
                 <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
                   <Users className="h-10 w-10 text-white/80" />
@@ -223,7 +223,7 @@ export function TourismSection({ lang }: { lang: HeritageLang }) {
           return (
             <li key={p.id}>
               <article className="hx-plate group flex h-full flex-col">
-                <div className="relative h-40 overflow-hidden">
+                <div className="relative aspect-[16/10] overflow-hidden">
                   <PlateArt hue={p.hue} seed={300 + i} className="absolute inset-0 h-full w-full transition duration-700 group-hover:scale-105" />
                   <Photo name={p.id} alt={p.name} bare className="!absolute inset-0" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" aria-hidden="true" />
@@ -254,9 +254,9 @@ export function JashariSection({ lang }: { lang: HeritageLang }) {
   const sq = lang === 'sq';
   return (
     <section id="hx-jashari" aria-labelledby="hx-jashari-h" className="hx-uck-hero hx-grain relative isolate scroll-mt-24 overflow-hidden rounded-[28px]">
-      <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-[320px_1fr] lg:p-12">
+      <div className="grid gap-6 p-5 sm:gap-8 sm:p-10 lg:grid-cols-[320px_minmax(0,1fr)] lg:p-12">
         <div className="space-y-4">
-          <Photo name="adem-jashari" alt="Adem Jashari" position="top" className="aspect-[4/5] w-full rounded-2xl ring-1 ring-white/20" />
+          <Photo name="adem-jashari" alt="Adem Jashari" position="top" className="mx-auto aspect-[4/5] w-full max-w-[280px] rounded-2xl ring-1 ring-white/20 lg:max-w-none" />
           <dl className="grid grid-cols-2 gap-2">
             {JASHARI_FACTS.map(f => (
               <div key={f.k} className="rounded-xl border border-white/12 bg-white/[0.06] p-3">
@@ -395,7 +395,7 @@ export function WhyVisitSection({ lang }: { lang: HeritageLang }) {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {CITIES.map(c => (
             <li key={c.id} className="hx-plate group">
-              <div className="relative h-36">
+              <div className="relative aspect-[16/10]">
                 <PlateArt hue={CITIES.indexOf(c) * 45 + 200} seed={500 + CITIES.indexOf(c)} className="absolute inset-0 h-full w-full" />
                 <Photo name={`qyteti-${c.id}`} alt={c.name} bare className="!absolute inset-0 transition duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden="true" />

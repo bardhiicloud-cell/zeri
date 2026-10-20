@@ -23,8 +23,8 @@ const UI = {
   uckTitle: { sq: 'Historia e UÇK-së', en: 'History of the KLA' },
   uckKicker: { sq: 'Arkiv historik', en: 'Historical archive' },
   uckLead: {
-    sq: 'Një arkiv i veçantë për kontekstin, kronologjinë 1998–1999, civilët, të zhdukurit, drejtësinë dhe dokumentet — me burim, datë dhe status prove për çdo pohim të ndjeshëm.',
-    en: 'A dedicated archive of context, the 1998–1999 timeline, civilians, the missing, justice and documents — with a source, a date and an evidentiary status for every sensitive claim.',
+    sq: 'Nderim për luftëtarët, dëshmorët dhe familjet që e çuan Kosovën drejt lirisë — kronologjia 1998–1999, ngjarjet, të zhdukurit, drejtësia dhe dokumentet, çdo pohim me burim dhe datë.',
+    en: 'In honour of the fighters, martyrs and families who carried Kosovo to freedom — the 1998–1999 timeline, events, the missing, justice and documents, every claim with a source and a date.',
   },
   chapters: { sq: 'Kapitujt', en: 'Chapters' },
   trustTitle: { sq: 'Si e ndërtojmë besimin', en: 'How we earn trust' },

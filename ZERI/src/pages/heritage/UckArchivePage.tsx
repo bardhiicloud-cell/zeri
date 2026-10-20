@@ -87,7 +87,7 @@ export default function UckArchivePage() {
 
   return (
     <div data-no-translate className="hx hx-page hx-uck -mx-3 -my-3 sm:-mx-5 sm:-my-4 lg:-mx-8">
-      <div className="mx-auto max-w-[1280px] space-y-8 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 pb-28 pt-4 sm:space-y-8 sm:px-6 lg:px-8 lg:pt-6">
         <Crumbs items={[
           { to: '/', label: t('home') }, { to: '/kosova', label: t('kosovo') },
           ...(section ? [{ to: '/historia-e-uck', label: t('uckTitle') }, { label: section.title[lang] }] : [{ label: t('uckTitle') }]),
@@ -95,21 +95,26 @@ export default function UckArchivePage() {
 
         {/* Masthead */}
         <header className="hx-uck-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
-          <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-10 sm:p-10 lg:p-12">
+          <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-10 sm:p-10 lg:p-12">
             {!section && (
               <img src="/heritage/emblema-uck.webp" alt={lang === 'sq' ? 'Emblema e UÇK-së' : 'KLA emblem'} width={150} height={170}
-                className="h-32 w-auto max-w-none shrink-0 self-start object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,.6)] sm:h-44" />
+                className="h-24 w-auto max-w-none shrink-0 self-start object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,.6)] sm:h-44" />
             )}
             <div className="space-y-4">
-              <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{section ? `${t('uckKicker')} · ARK-1998/99 · ${section.numeral}` : (lang === 'sq' ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army')}</p>
-              <h1 className="hx-serif max-w-3xl text-[clamp(2.4rem,6vw,4.4rem)] font-black leading-[0.98] text-white">
+              <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{section ? `${lang === 'sq' ? 'Kapitulli' : 'Chapter'} ${section.numeral}` : (lang === 'sq' ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army')}</p>
+              <h1 className="hx-serif max-w-3xl text-[clamp(1.9rem,7vw,4.4rem)] font-black leading-[1.02] [overflow-wrap:anywhere] text-white">
                 {section ? section.title[lang] : <>UÇK <span className="text-[#ff4d63]">—</span> {lang === 'sq' ? 'Lufta e pastër' : 'A just war'}</>}
               </h1>
+              {!section && (
+                <p className="hx-tribute inline-block rounded-full px-4 py-1.5 text-xs font-black tracking-wide text-white sm:text-sm">
+                  {lang === 'sq' ? 'Lavdi dëshmorëve · Nderim e mirënjohje përjetë' : 'Glory to the martyrs · Honour and gratitude forever'}
+                </p>
+              )}
               {!section && <div className="h-1 w-24 rounded-full bg-gradient-to-r from-[#c8102e] to-white/80" aria-hidden="true" />}
               <p className="max-w-2xl text-base leading-relaxed text-slate-200">
                 {section ? section.lead[lang] : (lang === 'sq'
-                  ? 'Lufta e një populli për të mbrojtur familjen, tokën dhe lirinë. Dëshmorët, familjet legjendare dhe faktet që e tregojnë — çdo datë me burim.'
-                  : 'A people’s war to defend family, land and freedom. The martyrs, the legendary families and the facts that tell it — every date with a source.')}
+                  ? 'Ata që e lanë shtëpinë, familjen dhe rininë për t’i dhënë Kosovës lirinë. Luftëtarët e UÇK-së, dëshmorët e kombit dhe familjet që sakrifikuan gjithçka — një borxh nderi që e mbajmë për jetë, çdo datë me burim.'
+                  : 'Those who left home, family and youth to give Kosovo its freedom. The fighters of the KLA, the nation’s martyrs and the families who sacrificed everything — a debt of honour we carry for life, every date with a source.')}
               </p>
               {!section && (
                 <nav aria-label={lang === 'sq' ? 'Në këtë faqe' : 'On this page'} className="flex flex-wrap gap-2 pt-1">
@@ -122,9 +127,9 @@ export default function UckArchivePage() {
           </div>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8">
           {/* Chapter index */}
-          <nav aria-label={t('chapters')} className="lg:sticky lg:top-24 lg:self-start">
+          <nav aria-label={t('chapters')} className="min-w-0 lg:sticky lg:top-24 lg:self-start">
             <ol className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:px-0 lg:pb-0">
               {UCK_SECTIONS.map((s) => {
                 const active = s.id === section?.id;
@@ -142,7 +147,7 @@ export default function UckArchivePage() {
             </ol>
           </nav>
 
-          <div className="min-w-0 space-y-8">
+          <div className="min-w-0 space-y-6 sm:space-y-8">
             {!section && (
               <>
                 <LiberationSection lang={lang} />
@@ -154,7 +159,6 @@ export default function UckArchivePage() {
                 <section className="hx-card space-y-3 p-6 sm:p-8" aria-labelledby="hx-method">
                   <h2 id="hx-method" className="hx-eyebrow flex items-center gap-2"><ShieldAlert className="h-4 w-4" aria-hidden="true" />{t('method')}</h2>
                   <p className="hx-serif text-xl font-bold leading-snug" style={{ color: 'var(--hx-ink)' }}>{t('methodBody')}</p>
-                  <p className="hx-ink-3 text-xs">{t('cmsHint')}</p>
                 </section>
 
                 {keyFigures.length > 0 && (

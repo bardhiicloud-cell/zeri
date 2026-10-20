@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ExternalLink, Music2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
+import { Music2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import type { HeritageLang } from '../../lib/heritage/types';
-import { PLAYLIST, hasEmbed, searchUrl, type Track } from '../../lib/heritage/playlist';
+import { PLAYLIST, type Track } from '../../lib/heritage/playlist';
 
 type Phase = 'hidden' | 'invite' | 'dock';
 const KEY = 'hx-uck-music';
@@ -37,11 +37,13 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
   const [phase, setPhase] = useState<Phase>('hidden');
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const failed = useRef(0);
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
-  const embed = hasEmbed(tracks);
-  const queue = embed ? tracks.filter((t) => t.videoId) : tracks;
-  const track = queue[index % queue.length];
+  const queue = tracks.filter((t) => t.videoId);
+  const embed = queue.length > 0 && !blocked;
+  const track = queue[index % Math.max(queue.length, 1)];
 
   useEffect(() => {
     if (read()) return;
@@ -66,9 +68,15 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
         events: {
           onReady: (e: { target: YTPlayer }) => { e.target.playVideo(); setPlaying(true); },
           onStateChange: (e: { data: number }) => {
-            if (e.data === 1) setPlaying(true);
+            if (e.data === 1) { failed.current = 0; setPlaying(true); }
             if (e.data === 2) setPlaying(false);
             if (e.data === 0) setIndex((i) => (i + 1) % queue.length);
+          },
+          // 2/5/100/101/150: the owner blocks embedding or the video is gone — try the next one, stop after a full lap
+          onError: () => {
+            failed.current += 1;
+            if (failed.current >= queue.length) { setBlocked(true); setPlaying(false); return; }
+            setIndex((i) => (i + 1) % queue.length);
           },
         },
       });
@@ -87,23 +95,24 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
   return (
     <div className="hx-dock" role="region" aria-label={sq ? 'Muzika e luftës' : 'Music of the war'}>
       {phase === 'invite' && (
-        <div className="hx-dock-card p-4 sm:p-5">
-          <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#c8102e] text-white"><Music2 className="h-5 w-5" aria-hidden="true" /></span>
+        <div className="hx-dock-card p-3 sm:p-5">
+          <div className="flex items-center gap-3 sm:items-start">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c8102e] text-white sm:h-11 sm:w-11 sm:rounded-2xl"><Music2 className="h-5 w-5" aria-hidden="true" /></span>
             <div className="min-w-0 flex-1">
-              <p className="hx-serif text-lg font-black leading-snug">
-                {sq ? 'A do ta përjetosh muzikën e luftës së pastër të Ushtrisë Çlirimtare të Kosovës?' : 'Would you like to experience the music of the Kosovo Liberation Army’s just war?'}
+              <p className="hx-serif text-[15px] font-black leading-snug sm:text-lg">
+                {sq ? 'Dëgjo muzikën e luftës së lirisë' : 'Listen to the music of the war of freedom'}
               </p>
-              <p className="mt-1 text-xs text-white/65">{sq ? 'Luhet nga YouTube. Mund ta ndalosh kur të duash.' : 'Plays from YouTube. You can stop it at any time.'}</p>
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={start} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#c8102e] px-4 text-sm font-black text-white transition hover:bg-[#e0132f]">
-                  <Play className="h-4 w-4" aria-hidden="true" />{sq ? 'Po, luaje' : 'Yes, play it'}
-                </button>
-                <button type="button" onClick={decline} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/25 px-4 text-sm font-bold text-white/85 transition hover:bg-white/10">
-                  {sq ? 'Jo, faleminderit' : 'No, thanks'}
-                </button>
-              </div>
+              <p className="mt-0.5 hidden text-xs text-white/65 sm:block">{sq ? 'Luhet nga YouTube. Mund ta ndalosh kur të duash.' : 'Plays from YouTube. You can stop it at any time.'}</p>
             </div>
+            <button type="button" onClick={decline} aria-label={sq ? 'Jo, faleminderit' : 'No, thanks'} className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 hover:bg-white/10 sm:hidden"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="mt-2.5 flex gap-2 sm:mt-3">
+            <button type="button" onClick={start} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#c8102e] px-4 text-sm font-black text-white transition hover:bg-[#e0132f]">
+              <Play className="h-4 w-4" aria-hidden="true" />{sq ? 'Po, luaje' : 'Yes, play it'}
+            </button>
+            <button type="button" onClick={decline} className="hidden min-h-11 items-center justify-center rounded-xl border border-white/25 px-4 text-sm font-bold text-white/85 transition hover:bg-white/10 sm:inline-flex">
+              {sq ? 'Jo, faleminderit' : 'No, thanks'}
+            </button>
           </div>
         </div>
       )}
@@ -113,8 +122,8 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
             <span className="hx-eq flex h-4 items-end gap-0.5" data-paused={!playing}><span /><span /><span /></span>
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black">{track.title}</p>
-            <p className="truncate text-xs text-white/65">{track.artist}</p>
+            <p className="truncate text-sm font-black">{track?.title}</p>
+            <p className="truncate text-xs text-white/65">{track?.artist}</p>
           </div>
           {embed ? (
             <>
@@ -125,9 +134,7 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
               <button type="button" onClick={() => step(1)} aria-label={sq ? 'Kënga tjetër' : 'Next track'} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"><SkipForward className="h-4 w-4" /></button>
             </>
           ) : (
-            <a href={searchUrl(track)} target="_blank" rel="noreferrer" aria-label={sq ? 'Hap në YouTube' : 'Open on YouTube'} className="flex h-11 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-black text-[#160a0c]">
-              <Play className="h-4 w-4" aria-hidden="true" />YouTube<ExternalLink className="h-3 w-3" aria-hidden="true" />
-            </a>
+            <p className="max-w-[9rem] text-right text-[11px] leading-tight text-white/65">{sq ? 'Muzika s’mund të luhet tani.' : 'Music can’t play right now.'}</p>
           )}
           <button type="button" onClick={close} aria-label={sq ? 'Mbyll muzikën' : 'Close the music'} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"><X className="h-5 w-5" /></button>
         </div>
