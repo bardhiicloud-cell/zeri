@@ -17,11 +17,21 @@ import { getAccountabilityDueDate, getAccountabilityProfile } from '../src/lib/a
 export const URGENCY_LEVELS = ['E ulët', 'Mesatare', 'E lartë', 'Kritike'] as const;
 export type Urgency = (typeof URGENCY_LEVELS)[number];
 
+export const MEDIA_TYPES = ['image', 'video', 'audio', 'document'] as const;
+
 export interface ReportMedia {
-  type: 'image' | 'video';
+  type: (typeof MEDIA_TYPES)[number];
   url: string;
   path?: string;
+  name?: string;
+  sizeBytes?: number;
+  mimeType?: string;
 }
+
+/** Storage download URLs are https; the local emulator (development only) serves plain http on loopback. */
+const isStorageUrl = (url: string): boolean =>
+  url.startsWith('https://') ||
+  (process.env.NODE_ENV !== 'production' && /^http:\/\/(127\.0\.0\.1|localhost):\d+\//.test(url));
 
 export interface ParsedReport {
   title: string;
@@ -90,15 +100,22 @@ export function parseReportInput(body: unknown): ParseResult {
 
   const isAnonymous = input.isAnonymous === true;
 
-  // Media URLs are Storage download URLs - accept only https.
-  type RawMedia = { type?: unknown; url?: unknown; path?: unknown };
-  const media: ReportMedia[] = (Array.isArray(input.media) ? (input.media as RawMedia[]).slice(0, 13) : [])
-    .filter((item) => item && typeof item.url === 'string' && item.url.startsWith('https://'))
-    .map((item) => ({
-      type: item.type === 'video' ? ('video' as const) : ('image' as const),
-      url: String(item.url).slice(0, 2048),
-      ...(item.path ? { path: String(item.path).slice(0, 512) } : {}),
-    }));
+  // Media URLs are Storage download URLs. The client sends photos, videos, audio and
+  // documents; each keeps its own type (a PDF used to be stored as an "image").
+  type RawMedia = { type?: unknown; url?: unknown; path?: unknown; name?: unknown; sizeBytes?: unknown; mimeType?: unknown };
+  const media: ReportMedia[] = (Array.isArray(input.media) ? (input.media as RawMedia[]).slice(0, 16) : [])
+    .filter((item) => item && typeof item.url === 'string' && isStorageUrl(item.url))
+    .map((item) => {
+      const size = Number(item.sizeBytes);
+      return {
+        type: (MEDIA_TYPES as readonly string[]).includes(String(item.type)) ? (item.type as ReportMedia['type']) : ('image' as const),
+        url: String(item.url).slice(0, 2048),
+        ...(item.path ? { path: String(item.path).slice(0, 512) } : {}),
+        ...(typeof item.name === 'string' && item.name ? { name: item.name.slice(0, 200) } : {}),
+        ...(Number.isFinite(size) && size > 0 ? { sizeBytes: Math.round(size) } : {}),
+        ...(typeof item.mimeType === 'string' && item.mimeType ? { mimeType: item.mimeType.slice(0, 100) } : {}),
+      };
+    });
 
   const requested = text(input.trackingId, 40).toUpperCase();
 

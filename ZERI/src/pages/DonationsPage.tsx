@@ -198,7 +198,7 @@ const ITEMS_PER_PAGE = 6;
           title={dt(`Njerëzit Me Nevojë`)}
           subtitle={dt(`Fushata ndihme të miratuara nga administratori i platformës. Donacionet nuk kalojnë përmes kësaj faqeje: çdo fushatë të çon te faqja e saj e jashtme.`)}
           actions={<>
-            <button type="button" onClick={() => setIsApplying(true)} className="au-btn au-btn-light"><PlusCircle className="h-4 w-4" aria-hidden="true" />{dt(`Aplikoni Për Rast Ndihme`)}</button>
+            <button type="button" data-tour="donation-apply" onClick={() => setIsApplying(true)} className="au-btn au-btn-light"><PlusCircle className="h-4 w-4" aria-hidden="true" />{dt(`Aplikoni Për Rast Ndihme`)}</button>
             {scopedCauses.length > 0 && <a href="#fushatat" className="au-btn au-btn-glass">{dt('Shiko fushatat')}</a>}
           </>}
           aside={scopedCauses.length > 0 ? <AuraStats items={[{ value: scopedCauses.length, label: dt('Miratuar për publikim') }]} /> : undefined}
@@ -363,7 +363,7 @@ const ITEMS_PER_PAGE = 6;
       )}
 
       {/* Categories */}
-      <div id="fushatat" className="au-rail mb-4 scroll-mt-20" role="group" aria-label={dt('Kategoritë')}>
+      <div id="fushatat" data-tour="donation-causes" className="au-rail mb-4 scroll-mt-20" role="group" aria-label={dt('Kategoritë')}>
         {categories.map((cat) => (
           <button key={cat.id} type="button" aria-pressed={activeCategory === cat.id} onClick={() => handleCategoryChange(cat.id)} className="au-chip">
             <cat.icon className="h-3.5 w-3.5" aria-hidden="true" />

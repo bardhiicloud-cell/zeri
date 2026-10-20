@@ -321,7 +321,7 @@ export default function Dashboard() {
   React.useEffect(() => {
     const targetMuni = selectedMunicipality || detectedCity || 'Prishtinë';
     loadAINews(targetMuni);
-    // Deliberately re-runs only when the municipality changes, not on every render of loadAINews.
+    // loadAINews is redefined on every render; the news reloads when the place changes, not on each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMunicipality, detectedCity]);
 

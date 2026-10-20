@@ -8,19 +8,23 @@ interface BeforeInstallPromptEvent extends Event {
 export type InstallPlatform = 'native' | 'ios-safari' | 'ios-other' | 'in-app' | 'none';
 
 const STATE_KEY = 'zeri_install_state_v2';
-// Each refusal pushes the next offer further away: 3 days, 2 weeks, then 2 months.
-const BACKOFF_DAYS = [3, 14, 60];
-const MAX_DISMISSALS = BACKOFF_DAYS.length + 1;
-
 interface InstallState {
   visits: number;
   lastVisitDay: string;
+  /** Kept for older saved states: any earlier refusal also means "do not ask again". */
   dismissals: number;
   dismissedAt: number;
   installed: boolean;
+  /** The automatic offer was shown once. It is never shown again; the footer button stays. */
+  offered: boolean;
 }
 
-const EMPTY_STATE: InstallState = { visits: 0, lastVisitDay: '', dismissals: 0, dismissedAt: 0, installed: false };
+const EMPTY_STATE: InstallState = { visits: 0, lastVisitDay: '', dismissals: 0, dismissedAt: 0, installed: false, offered: false };
+
+/** One question, once: installed, already offered, or refused in the past all end the automatic offers. */
+export function mayOffer(state: Pick<InstallState, 'installed' | 'offered' | 'dismissals'>): boolean {
+  return !state.installed && !state.offered && state.dismissals === 0;
+}
 
 function readState(): InstallState {
   try {
@@ -93,10 +97,8 @@ export function useInstallApp() {
   const needsManual = !standalone && (platform === 'ios-safari' || platform === 'ios-other');
   const inAppBrowser = !standalone && platform === 'in-app';
 
-  const waitDays = BACKOFF_DAYS[Math.min(state.dismissals, BACKOFF_DAYS.length) - 1] ?? 0;
-  const coolingDown = state.dismissals > 0 && Date.now() - state.dismissedAt < waitDays * 86_400_000;
   // Offer only to people who are engaged: a returning visitor, or one who stayed a while (the sheet's own timer).
-  const shouldOffer = !state.installed && state.dismissals < MAX_DISMISSALS && !coolingDown;
+  const shouldOffer = mayOffer(state);
   const returning = state.visits >= 2;
 
   const install = useCallback(async () => {
@@ -110,13 +112,18 @@ export function useInstallApp() {
     return outcome;
   }, []);
 
+  /** Records that the offer was made. It does not re-render: the sheet that is open stays open. */
+  const markOffered = useCallback(() => {
+    writeState({ offered: true });
+  }, []);
+
   const dismiss = useCallback(() => {
-    writeState({ dismissals: readState().dismissals + 1, dismissedAt: Date.now() });
+    writeState({ offered: true, dismissals: readState().dismissals + 1, dismissedAt: Date.now() });
     force((n) => n + 1);
   }, []);
 
   return {
     standalone, platform, canPrompt, needsManual, inAppBrowser,
-    canInstall: canPrompt || needsManual, shouldOffer, returning, install, dismiss,
+    canInstall: canPrompt || needsManual, shouldOffer, returning, install, dismiss, markOffered,
   };
 }
