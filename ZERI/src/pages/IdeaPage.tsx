@@ -1,12 +1,11 @@
 import { BackLink } from '../components/BackLink';
 import React, { useState } from 'react';
-import { ArrowDown, ArrowLeft, CheckCircle2, Lightbulb, Send, Loader2, Target, Users, MapPinned } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowDown, CheckCircle2, Lightbulb, Send, Loader2, Target, Users, MapPinned } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { postPublic } from '../lib/publicSubmit';
 import AdBanner from '../components/AdBanner';
 import { AuraPage, AuraHero, AuraNote, AuraOrbit } from '../components/aura/Aura';
-import { cn } from '../lib/utils';
 
 import { dt } from '@/src/lib/dt';
 const ideaCategories = [

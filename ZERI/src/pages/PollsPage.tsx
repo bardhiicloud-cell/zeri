@@ -1,12 +1,9 @@
-import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { dt } from '@/src/lib/dt';
 import { AuraOrbit, AuraHero, AuraStats } from '../components/aura/Aura';
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Vote, CheckCircle2, AlertCircle, BarChart3, Clock, Lock, ShieldCheck, Calendar, TrendingUp, Users, Info, ChevronRight, Share2, ChevronDown, Trophy } from 'lucide-react';
+import { Vote, CheckCircle2, BarChart3, Clock, Lock, ShieldCheck, TrendingUp, Users, Share2, ChevronDown, Trophy } from 'lucide-react';
 import { cn } from '../lib/utils';
 import toast from 'react-hot-toast';
 import AdBanner from '../components/AdBanner.tsx';

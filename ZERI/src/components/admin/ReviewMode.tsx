@@ -12,7 +12,7 @@ import CaseThreadPanel from './CaseThreadPanel';
 import HandoverHistoryPanel from './HandoverHistoryPanel';
 import { loadTeamOverview } from '../../lib/teamOverviewApi';
 import { addNote, escalateReport, loadCase, requestInfo, resolveEscalation, type CaseThread } from '../../lib/reportCaseApi';
-import { assignReport, claimReport, releaseReport, type Holder } from '../../lib/reportAssignmentApi';
+import { assignReport, releaseReport, type Holder } from '../../lib/reportAssignmentApi';
 import { useStore } from '../../lib/store';
 import { useStaffDirectory } from '../../lib/useCitizenDirectory';
 import ReviewRouting from './ReviewRouting';

@@ -1,10 +1,8 @@
 import {
   DEFAULT_LANGUAGE,
-  isSupportedLanguage,
-  LANGUAGE_STORAGE_KEY,
-  readStoredLanguage,
+  isSupportedLanguage, readStoredLanguage,
   SUPPORTED_LANGUAGES,
-  type SupportedLanguageCode,
+  type SupportedLanguageCode
 } from './languageConstants';
 import { translationLanguageFor } from './seo';
 

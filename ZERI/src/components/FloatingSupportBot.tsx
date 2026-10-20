@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, CheckCircle2, Headphones, MessageCircle, Send, X } from 'lucide-react';
 import { arrayUnion, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';

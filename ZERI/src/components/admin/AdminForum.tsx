@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../../lib/store';
 import { db } from '../../lib/firebase';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, limit } from 'firebase/firestore';

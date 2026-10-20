@@ -1,5 +1,5 @@
 import type { Report } from '../types';
-import { DECISION_KINDS, decide, patchFor, type DecisionKind } from './decisionRules';
+import { DECISION_KINDS, decide, patchFor } from './decisionRules';
 import { TRANSITIONS, availableTransitions, type Transition } from './approvalPipeline';
 
 /**

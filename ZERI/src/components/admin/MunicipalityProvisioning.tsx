@@ -18,9 +18,7 @@
 import { useState } from 'react';
 import { dt } from '../../lib/dt';
 import { useStore } from '../../lib/store';
-import { auth } from '../../lib/firebase';
 import { requireAdminToken, describeApiFailure } from '../../lib/adminApi';
-import { useCitizenDirectory } from '../../lib/useCitizenDirectory';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import MunicipalityAccountManager from './MunicipalityAccountManager';
 import { EDITORIAL_FIREWALL_CLAUSE, MUNICIPALITY_MAY, MUNICIPALITY_MAY_NOT } from '../../lib/editorialFirewall';

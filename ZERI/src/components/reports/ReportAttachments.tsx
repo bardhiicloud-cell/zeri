@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Download, FileText, Film, Image as ImageIcon, Music, X } from 'lucide-react';
 import type { MediaItem } from '@/src/types';

@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 import {
-  ChevronDown, PlusCircle, FileText, LogIn, LogOut, ShieldAlert,
-  Globe, Sun, Moon, Menu, Check, Home, UserRound,
+  PlusCircle, FileText, LogIn, LogOut, ShieldAlert,
+  Globe, Sun, Moon, Menu, Check, Home, UserRound
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { TOP_NAV, LEGAL_NAV, type NavLink as NavLinkDef } from '../../lib/navigation';
 import { canAccessAdmin } from '../../lib/adminPermissions';
-import { isSpecificScope } from '../../lib/municipalityScope';
 import { useThemePreference } from '../../lib/themePreference';
 import { ResponseNotificationsBell } from '../NewNewsBadge';
 

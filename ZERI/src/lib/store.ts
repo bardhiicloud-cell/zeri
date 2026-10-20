@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Report, User, Poll, IssueStatus, ChatSession, ChatMessage, LiveMessage, Comment, Category, ReportTimelineEvent, AppNotification, AuditLog } from '../types';
+import { Report, User, Poll, IssueStatus, ChatSession, LiveMessage, Comment, Category, ReportTimelineEvent, AppNotification, AuditLog } from '../types';
 // Referenced through the bundler rather than as a literal path, so Vite copies
 // the file into dist/assets with a content hash. A '/src/...' string resolves in
 // the dev server and 404s in production.
@@ -8,6 +8,7 @@ import { MUNICIPALITY_STORAGE_KEY, hasPersistedScope, normalizeScope, readPersis
 import { applyTransition } from './adminApi';
 import { canAccessAdmin } from './adminPermissions';
 import { stageOf, type Transition } from './approvalPipeline';
+import { DEMO_CITIZEN_USER, DEMO_REPORTS } from './demoData';
 
 /**
  * A write that fails must say so. These actions used to log to the console and
@@ -34,7 +35,6 @@ function notifyDonationWriteFailed(error: unknown): void {
 }
 
 export { DEMO_CITIZEN_USER, DEMO_REPORTS, DEMO_PUBLIC_POSTS } from './demoData';
-import { DEMO_CITIZEN_USER, DEMO_REPORTS, DEMO_PUBLIC_POSTS } from './demoData';
 
 export type ReportsLoadStatus = 'loading' | 'ready' | 'error';
 

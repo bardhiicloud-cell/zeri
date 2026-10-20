@@ -1,4 +1,3 @@
-import { dt } from '@/src/lib/dt';
 import { isAcceptedForPublic } from '../lib/publicReportsApi';
 import React, { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, ZoomControl } from 'react-leaflet';
@@ -17,7 +16,7 @@ import ReportDetailModal from '../components/ReportDetailModal.tsx';
 import { Report } from '../types';
 import { useLanguage } from '../lib/LanguageContext';
 import toast from 'react-hot-toast';
-import { getNextMapTheme, MAP_TILE_LAYERS, type MapTheme, KOSOVO_OVERVIEW_CENTER, KOSOVO_OVERVIEW_ZOOM } from '../lib/mapTiles';
+import { getNextMapTheme, MAP_TILE_LAYERS, KOSOVO_OVERVIEW_CENTER, KOSOVO_OVERVIEW_ZOOM } from '../lib/mapTiles';
 import { HeatmapLayer, type HeatPoint } from '../components/map/HeatmapLayer';
 import { MapUpdater } from '../components/map/MapUpdater';
 import { createUrgencyMarkerIcon, URGENCY_COLORS, configureDefaultLeafletIcons } from '../components/map/mapMarkerIcons';

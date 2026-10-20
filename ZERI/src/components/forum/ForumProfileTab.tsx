@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, Timestamp, limit } from 'firebase/firestore';
 import { BarChart3, Film, Trash2, Grid, Heart, Bookmark, Play, Plus, Settings, ShieldCheck, Sparkles, Users, UserMinus, UserPlus, Search as SearchIcon } from 'lucide-react';

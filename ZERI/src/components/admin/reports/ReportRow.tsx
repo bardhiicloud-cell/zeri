@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle2, Mail, MapPin, Trash2, UserPlus } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../../lib/utils';

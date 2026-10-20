@@ -8,7 +8,7 @@ import {
   getRedirectResult,
   AuthProvider,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore, doc, getDoc } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import type { FirebaseStorage } from 'firebase/storage';
 import appletConfig from '../../firebase-applet-config.json';
 

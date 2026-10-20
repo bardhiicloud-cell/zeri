@@ -29,9 +29,8 @@ import ReportTasksPanel from '../components/admin/workflow/ReportTasksPanel';
 import ReportQueuesPanel from '../components/admin/workflow/ReportQueuesPanel';
 import { isSpecificScope, scopeKey, ALL_SCOPE } from '../lib/municipalityScope';
 import {
-  Inbox, ClipboardList, Activity, ScrollText, Scale, Search, ArrowRight,
-  AlertTriangle, CheckCircle2, Clock, MapPin, CircleDot, Flame, FileText,
-  ShieldCheck, Ban, TrendingUp,
+  Inbox, ClipboardList, Activity, ScrollText, Scale, AlertTriangle, CheckCircle2, Clock, MapPin, FileText,
+  ShieldCheck, Ban, TrendingUp
 } from 'lucide-react';
 
 type Tab = 'inbox' | 'mine' | 'performance' | 'history' | 'policy';

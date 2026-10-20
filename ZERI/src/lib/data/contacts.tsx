@@ -1,5 +1,4 @@
-import { Phone, Search, Building, ShieldAlert, HeartPulse, Shield, TreePine, GraduationCap, Gavel, FileText, Globe, Landmark, Factory, Briefcase, Car, Users, HandCoins, Sprout, Zap, Droplet, Scale, LifeBuoy } from 'lucide-react';
-import React from 'react';
+import { Building, ShieldAlert, HeartPulse, Shield, TreePine, GraduationCap, Gavel, Globe, Landmark, Factory, Briefcase, Users, HandCoins, Sprout, Zap, Droplet, Scale, LifeBuoy } from 'lucide-react';
 
 export const Trunk = (props: any) => (
   <svg

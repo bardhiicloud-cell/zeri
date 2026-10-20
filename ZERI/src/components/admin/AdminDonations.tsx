@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useStore, DonationCause } from '../../lib/store';
 import { Heart, Plus, Trash2, Link as LinkIcon, Image, Type, Edit3, Download } from 'lucide-react';
 import DecisionBar from './DecisionBar';

@@ -32,14 +32,12 @@ import {
 } from '../lib/moderationCenter';
 import {
   collectActorAudit,
-  touchedSubjects,
-  classifyActionKind,
-  AUDIT_WINDOWS,
+  touchedSubjects, AUDIT_WINDOWS,
   WINDOW_LABELS,
   ACTION_KIND_LABELS,
   ACTION_KIND_TONES,
   type AuditWindow,
-  type ActionKind,
+  type ActionKind
 } from '../lib/actorAudit';
 import { BAD_WORDS } from '../lib/moderation';
 import { roleLabel } from '../lib/adminPermissions';
