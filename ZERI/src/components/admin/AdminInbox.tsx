@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useInboxReports } from '../../lib/useInboxReports';
 import {
-  CheckCircle2, ChevronRight, ClipboardCheck, FileText, Headphones, Heart, HeartPulse, Megaphone, Pill, Send,
+  CheckCircle2, ChevronRight, ClipboardCheck, Newspaper, FileText, Headphones, Heart, HeartPulse, Megaphone, Pill, Send,
 } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
@@ -12,6 +12,7 @@ import { isSpecificScope, normalizeScope, recordMatchesScope, scopeKey } from '.
 import {
   INBOX_KINDS,
   adRequestItem,
+  newsTipItem,
   muniRequestItem,
   chatItem,
   countByKind,
@@ -48,6 +49,7 @@ const KIND_ICON: Record<InboxKind, React.ComponentType<{ className?: string; 'ar
   donation: Heart,
   adrequest: Megaphone,
   munirequest: Send,
+  newstip: Newspaper,
 };
 
 const PAGE = 50;
@@ -71,6 +73,8 @@ export default function AdminInbox({
       support: canAccessSection(currentUser, 'support'),
       donations: canAccessSection(currentUser, 'donations'),
       ads: canAccessSection(currentUser, 'ads'),
+      // The newsTips rules read only for the newsroom and the owner; other roles reach tips through the API panel.
+      news: currentUser?.role === 'newsadmin' || currentUser?.role === 'superadmin',
     }),
     [currentUser]
   );
@@ -86,6 +90,7 @@ export default function AdminInbox({
     health: access.health,
     support: access.support,
     ads: access.ads,
+    news: access.news,
   });
 
   // Deadlines and waiting times move without any data changing.
@@ -118,8 +123,9 @@ export default function AdminInbox({
     if (access.support) sources.chats.forEach(raw => push(chatItem(raw)));
     if (access.donations) donationCauses.forEach(cause => push(donationItem({ ...cause } as never)));
     if (access.ads) sources.adRequests.forEach(raw => push(adRequestItem(raw)));
+    if (access.news) sources.newsTips.forEach(raw => push(newsTipItem(raw)));
     return items;
-  }, [access, reports, donationCauses, sources.workFacts, sources.muniRequests, sources.health, sources.shortages, sources.chats, sources.adRequests, now]);
+  }, [access, reports, donationCauses, sources.workFacts, sources.muniRequests, sources.health, sources.shortages, sources.chats, sources.adRequests, sources.newsTips, now]);
 
   // The header's municipality scope applies here too. Items that belong to no
   // municipality (chats, donation appeals) are national and always stay.

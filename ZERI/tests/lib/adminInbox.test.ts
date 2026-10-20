@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   adRequestItem,
   muniRequestItem,
+  newsTipItem,
   chatItem,
   countByKind,
   donationItem,
@@ -204,5 +205,15 @@ describe('muniRequestItem', () => {
   it('treats a removal request as more urgent, and skips anything already decided', () => {
     expect(muniRequestItem({ id: 'm2', status: 'pending', kind: 'request_removal' })?.urgency).toBe('high');
     for (const status of ['accepted', 'declined', 'published']) expect(muniRequestItem({ id: 'm3', status })).toBeNull();
+  });
+});
+
+describe('newsTipItem', () => {
+  it('lists a citizen news tip nobody has picked up, and drops the ones already handled', () => {
+    const tip = { id: 't1', status: 'submitted', title: 'Rrugë e mbyllur pa lajmërim', category: 'Infrastrukturë', municipality: 'Pejë', createdAt: ago(5) };
+    const item = newsTipItem(tip);
+    expect(item).toMatchObject({ key: 'newstip:t1', kind: 'newstip', section: 'workflow', municipality: 'Pejë', urgency: 'normal' });
+    expect(item?.subtitle).toBe('Infrastrukturë · Pejë');
+    for (const status of ['in_review', 'published', 'rejected']) expect(newsTipItem({ ...tip, status })).toBeNull();
   });
 });

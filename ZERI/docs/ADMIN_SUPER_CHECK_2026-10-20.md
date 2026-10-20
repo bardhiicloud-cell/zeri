@@ -12,7 +12,7 @@ Notat janë 1–10. Çdo numër vjen nga një matje ose nga kodi i lexuar; ku nu
 | 1 | Arkitektura dhe navigimi | **9** | Menuja është e dhënë (`navConfig`), e grupuar sipas shpeshtësisë, me kërkim "shko te…", lidhje të thella (`adminDeepLink`) dhe module të bashkuara pa humbur rrugë/leje. Çdo seksion është chunk i vetë. |
 | 2 | Lejet dhe rolet (RBAC) | **9** | 9 role, matricë e gjeneruar nga kodi i serverit dhe e mbrojtur me test (`permissionsMatrix.test`). Rrugët e adminit kalojnë `requireAuth` + `requireAdmin`/`requireSection`; refuzimet regjistrohen. |
 | 3 | Workflow i raportimeve | **9** | Fazat, claim, aprovim/refuzim me arsye, eskalim, caktim, afate (SLA), historik dorëzimi, ngarkesa e ekipit, shkurtore tastiere. ~20 teste të punës (`workflow*`, `reportQueue`, `reviewQueue`…). |
-| 4 | Workflow i kërkesave të tjera (donacione, shëndetësi, lajme, reklama) | **8** | Qendër e përbashkët aprovimi me veprime masive. Mungon një pamje e vetme "çka ngec më gjatë" ndër të gjitha llojet. |
+| 4 | Workflow i kërkesave të tjera (donacione, shëndetësi, lajme, reklama) | **8** | Qendër e përbashkët aprovimi me veprime masive. Korrigjim: Kutia e Punës ekziston dhe i radhit të gjitha llojet sipas pritjes; boshllëku i vërtetë ishte që lajmet nga qytetarët ("Lajmero") mungonin aty — u shtuan. |
 | 5 | Përshkrimet dhe udhëzuesit | **9** | "Si punon" për çdo seksion (qëllimi, hapat, rregullat që zbaton serveri, ku vazhdon puna), me test që e ndalon shtimin e seksionit pa udhëzues. Shënime sipas rolit. |
 | 6 | Dizajni vizual dhe UX | **7** | Konsistent (token-a, modalitet dritë/natë: 3112 variante `dark:`). Dobët: **313 tekste 8–10 px**, 36 `window.confirm/prompt/alert` jashtë stilit të panelit. |
 | 7 | Aksesueshmëria | **7** | 141 `aria-label`, 20 dialogë `role/aria-modal`, 110 vende me fokus të dukshëm, 117 objektiva prekjeje ≥ 40 px. Teksti 8–10 px dhe dialogët native janë pika e dobët. |
@@ -55,3 +55,5 @@ Notat janë 1–10. Çdo numër vjen nga një matje ose nga kodi i lexuar; ku nu
 | 5, 7. Skedarë gjigantë, `any` | Mbeten; janë rifaktorim i madh pa ndryshim sjelljeje, jo për t'u bërë në një kalim. |
 
 Verifikuar: `tsc` pastër · 1267/1267 teste · testet që simulonin `window.confirm` u kaluan te `lib/dialogs`.
+
+| Boshllëk funksional: lajmet e qytetarëve nuk ishin te Kutia e Punës | **U ndreq.** Lloj i ri `newstip` ("Lajme nga qytetarët"): del te Kutia e Punës për rolet që i lexojnë rregullat (`newsadmin`, `superadmin`), me test. |

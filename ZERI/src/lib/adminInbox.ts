@@ -15,7 +15,7 @@ import type { AdminSection } from './adminPermissions';
  * citizen's identity is not shown on a report row.
  */
 
-export type InboxKind = 'report' | 'workfact' | 'health' | 'shortage' | 'chat' | 'donation' | 'adrequest' | 'munirequest';
+export type InboxKind = 'report' | 'workfact' | 'health' | 'shortage' | 'chat' | 'donation' | 'adrequest' | 'munirequest' | 'newstip';
 
 export type InboxUrgency = 'critical' | 'high' | 'normal';
 
@@ -54,6 +54,7 @@ export const INBOX_KINDS: Record<InboxKind, { label: string; section: AdminSecti
   donation: { label: 'Donacione', section: 'donations' },
   adrequest: { label: 'Kërkesa reklamash', section: 'ads' },
   munirequest: { label: 'Kërkesa komunash', section: 'workfacts' },
+  newstip: { label: 'Lajme nga qytetarët', section: 'workflow' },
 };
 
 /** Firestore Timestamps, `{seconds}` objects and ISO strings all appear in the data. */
@@ -220,6 +221,23 @@ export function adRequestItem(raw: Raw): InboxItem | null {
     urgency: 'normal',
     createdAt: toIso(raw.createdAt),
     section: 'ads',
+  };
+}
+
+/** A news tip a citizen sent through "Lajmero" that no editor has picked up yet. */
+export function newsTipItem(raw: Raw): InboxItem | null {
+  if (raw.status !== 'submitted') return null;
+  return {
+    key: `newstip:${raw.id}`,
+    kind: 'newstip',
+    recordId: raw.id,
+    title: clip(raw.title, 90) || 'Lajm nga qytetari',
+    subtitle: [raw.category, raw.municipality].filter(Boolean).join(' · '),
+    reason: 'Lajm i ri pret redaksinë',
+    municipality: raw.municipality ? String(raw.municipality) : undefined,
+    urgency: 'normal',
+    createdAt: toIso(raw.createdAt),
+    section: 'workflow',
   };
 }
 
