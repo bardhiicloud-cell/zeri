@@ -7,7 +7,6 @@ import { useLanguage } from '../../lib/LanguageContext';
 import { NetworkStatus } from './NetworkStatus';
 import { NearbyAlerts } from './NearbyAlerts';
 import { InstallPrompt } from './InstallPrompt';
-import { WelcomeTour } from '../WelcomeTour';
 import { AppFooter } from '../AppFooter.tsx';
 import AdBanner from '../AdBanner.tsx';
 import { TopNavbar } from './TopNavbar.tsx';
@@ -152,7 +151,6 @@ export function AppLayout() {
       <Suspense fallback={null}>
         <LocationDetectorModal />
       </Suspense>
-      <WelcomeTour />
 
       <div className="pointer-events-none fixed left-0 right-0 top-0 z-[9999]">
         <NetworkStatus />

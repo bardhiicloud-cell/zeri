@@ -165,6 +165,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     <li key={item.href}>
                       <Link
                         to={item.href}
+                        data-tour-menu={item.href}
                         onClick={onNavigate}
                         aria-current={active ? 'page' : undefined}
                         title={collapsed ? dt(item.label) : undefined}
