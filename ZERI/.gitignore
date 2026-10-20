@@ -29,3 +29,5 @@ qa*.png
 _*.png
 
 _translation_problems.json
+test-results/
+playwright-report/

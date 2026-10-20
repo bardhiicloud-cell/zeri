@@ -222,7 +222,7 @@ export default function Dashboard() {
               aria-label={headerLabels.search}
             />
           </div>
-          <button type="submit" disabled={!topSearchQuery.trim()} className="luxury-cta inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-4 py-2.5 text-xs font-black text-white transition duration-200 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100">
+          <button type="submit" disabled={!topSearchQuery.trim()} aria-label={headerLabels.action} className="luxury-cta inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-4 py-2.5 text-xs font-black text-white transition duration-200 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100">
             <Search className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{headerLabels.action}</span>
           </button>
@@ -466,7 +466,7 @@ export default function Dashboard() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={dt('Tabela e raportimeve')}>
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -903,7 +903,7 @@ export default function Dashboard() {
           </nav>
 
           {/* Right: Copyright */}
-          <div className="text-[11px] text-slate-500 font-medium text-center md:text-right leading-relaxed">
+          <div className="text-[11px] text-slate-400 font-medium text-center md:text-right leading-relaxed">
             {dt('© 2026 Zëri i Qytetarëve. Të gjitha të drejtat janë të rezervuara.')}
           </div>
 
