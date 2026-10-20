@@ -36,3 +36,12 @@ function mount() {
 const urlLanguage = parseLocalePath(window.location.pathname).language;
 const initialLanguage = urlLanguage !== 'sq' ? urlLanguage : readStoredLanguage();
 ensureTranslationTables(initialLanguage).catch(() => undefined).finally(mount);
+
+// Installable app + offline fallback. Production only: a service worker in dev would serve stale modules.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* installability is an enhancement; the site works without it */
+    });
+  });
+}

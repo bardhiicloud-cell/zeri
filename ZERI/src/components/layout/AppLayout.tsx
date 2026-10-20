@@ -6,6 +6,7 @@ import { useStore } from '../../lib/store';
 import { useLanguage } from '../../lib/LanguageContext';
 import { NetworkStatus } from './NetworkStatus';
 import { NearbyAlerts } from './NearbyAlerts';
+import { InstallPrompt } from './InstallPrompt';
 import { LeaderboardModal } from '../LeaderboardModal';
 import { UserProfileModal } from '../UserProfileModal.tsx';
 import { QuickReportModal } from '../QuickReportModal';
@@ -140,6 +141,7 @@ export function AppLayout() {
       </div>
 
       {!isForumPage && !isNewsPage && <NearbyAlerts />}
+      <InstallPrompt />
 
       {/*
         The top bar exists on desktop only. On mobile the brand, the search and
