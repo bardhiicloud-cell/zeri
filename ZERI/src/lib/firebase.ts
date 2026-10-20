@@ -180,7 +180,7 @@ let redirectFlowStarted = false;
 export async function signInWithGoogle(provider: AuthProvider): Promise<import('firebase/auth').UserCredential> {
   try {
     return await signInWithPopup(auth, provider);
-  } catch (err: any) {
+  } catch (err) {
     const code = err?.code || '';
     const userCancelled =
       code === 'auth/popup-closed-by-user' ||

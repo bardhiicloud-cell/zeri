@@ -64,7 +64,7 @@ function WorkFactsQueue() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setItems(Array.isArray(data.items) ? data.items : []);
-    } catch (e: any) {
+    } catch (e) {
       setError(e.message || 'Ngarkimi dështoi.');
       setItems([]);
     } finally {
@@ -87,7 +87,7 @@ function WorkFactsQueue() {
       // Remove from the current list: it no longer belongs to this tab.
       setItems((prev) => prev.filter((i) => i.id !== id));
       toast.success(decision === 'confirmed' ? dt('Faktet u verifikuan.') : dt('Faktet u refuzuan.'));
-    } catch (e: any) {
+    } catch (e) {
       toast.error(e.message || dt('Vendimi nuk u ruajt.'));
     } finally {
       setBusyId('');
@@ -297,7 +297,7 @@ function MunicipalRequestsQueue() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setItems(Array.isArray(data.items) ? data.items : []);
-    } catch (e: any) {
+    } catch (e) {
       setError(e.message || 'Ngarkimi dështoi.');
       setItems([]);
     } finally {

@@ -121,7 +121,7 @@ export default function AdminVideos() {
     try {
       const url = await uploadFileToStorage(file, 'reports', { scope: 'videos' });
       setForm((f) => (kind === 'video' ? { ...f, videoUrl: url } : { ...f, imageUrl: url }));
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err?.message || dt('Ngarkimi dështoi.'));
     } finally {
       setUploading(null);

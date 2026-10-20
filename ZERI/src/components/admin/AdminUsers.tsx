@@ -52,7 +52,7 @@ export default function AdminUsers() {
       const { sendPasswordResetEmail } = await import('firebase/auth');
       await sendPasswordResetEmail(auth, email);
       alert(`Email me udhëzimet e qasjes u dërgua me sukses tek: ${email}`);
-    } catch (e: any) {
+    } catch (e) {
       alert('Gabim gjatë dërgimit të emailit: ' + e.message);
     }
   };

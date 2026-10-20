@@ -165,7 +165,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
           promoted: rows.filter((r) => isPromotionActive(r)).length,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] posts failed:', error?.message);
       return res.status(500).json({ error: 'Postimet nuk u ngarkuan.' });
     }
@@ -200,7 +200,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       await batch.commit();
       deps.audit(`debate.posts.${action}`, req, { count: results.filter((r) => r.result === 'done').length, ids: ids.slice(0, 20), reason: clip(req.body?.reason, 300) || null });
       return res.json({ results });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] bulk failed:', error?.message);
       return res.status(500).json({ error: 'Veprimi nuk u krye.' });
     }
@@ -234,7 +234,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       });
       deps.audit('debate.post.promote', req, { id, days });
       return res.json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] promote failed:', error?.message);
       return res.status(500).json({ error: 'Promovimi nuk u ruajt.' });
     }
@@ -250,7 +250,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
           .map((doc) => ({ reason: String(doc.data().reason ?? 'other'), note: clip(doc.data().note, 300), atMs: millis(doc.data().at) }))
           .sort((a, b) => b.atMs - a.atMs),
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] reports failed:', error?.message);
       return res.status(500).json({ error: 'Raportimet nuk u ngarkuan.' });
     }
@@ -285,7 +285,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       if (outcome === 'missing') return res.status(404).json({ error: 'Postimi nuk u gjet.' });
       if (outcome === 'duplicate') return res.status(409).json({ error: 'E keni raportuar tashmë këtë postim.' });
       return res.status(201).json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[FORUM] report failed:', error?.message);
       return res.status(500).json({ error: 'Raportimi nuk u dërgua.' });
     }
@@ -317,7 +317,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
         })
         .sort((a, b) => b.createdAtMs - a.createdAtMs);
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] ad requests failed:', error?.message);
       return res.status(500).json({ error: 'Kërkesat nuk u ngarkuan.' });
     }
@@ -334,7 +334,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       await ref.update({ status, debateNote: clip(req.body?.note, 300), handledBy: req.user?.uid ?? null, handledAt: FieldValue.serverTimestamp() });
       deps.audit('debate.adRequest.status', req, { id, status });
       return res.json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] ad status failed:', error?.message);
       return res.status(500).json({ error: 'Statusi nuk u ruajt.' });
     }
@@ -367,7 +367,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       });
       deps.audit('debate.ad.create', req, { id: ref.id, days });
       return res.status(201).json({ ok: true, id: ref.id });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] ad create failed:', error?.message);
       return res.status(500).json({ error: 'Reklama nuk u publikua.' });
     }
@@ -395,7 +395,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       if (outcome === 'verified') return res.status(409).json({ error: 'Llogaria juaj është tashmë e verifikuar.' });
       if (outcome === 'pending') return res.status(409).json({ error: 'Keni një kërkesë në pritje.' });
       return res.status(201).json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] verification request failed:', error?.message);
       return res.status(500).json({ error: 'Kërkesa nuk u dërgua.' });
     }
@@ -416,7 +416,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       const items = snap.docs.map((doc) => ({ uid: doc.id, name: clip(doc.data().name, 120), reason: clip(doc.data().reason, 600), link: doc.data().link ?? null, status: doc.data().status, note: doc.data().note ?? '', createdAtMs: millis(doc.data().createdAt) }))
         .sort((a, b) => a.createdAtMs - b.createdAtMs);
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] verification queue failed:', error?.message);
       return res.status(500).json({ error: 'Kërkesat nuk u ngarkuan.' });
     }
@@ -447,7 +447,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       if (!done) return res.status(409).json({ error: 'Kërkesa nuk është më në pritje.' });
       deps.audit(`debate.verification.${decision}`, req, { uid });
       return res.json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] verification decision failed:', error?.message);
       return res.status(500).json({ error: 'Vendimi nuk u ruajt.' });
     }
@@ -464,7 +464,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
         untilMs: doc.data().verifiedUntil ? millis(doc.data().verifiedUntil) : null,
       }));
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] verified list failed:', error?.message);
       return res.status(500).json({ error: 'Lista nuk u ngarkua.' });
     }
@@ -487,7 +487,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       }
       deps.audit(`debate.verified.${action}`, req, { uid });
       return res.json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] verified action failed:', error?.message);
       return res.status(500).json({ error: 'Veprimi nuk u krye.' });
     }
@@ -520,7 +520,7 @@ export function registerDebateAdminRoutes(app: Express, deps: DebateAdminDeps): 
       };
       statsCache = { at: Date.now(), value };
       return res.json(value);
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] stats failed:', error?.message);
       return res.status(500).json({ error: 'Statistikat nuk u ngarkuan.' });
     }

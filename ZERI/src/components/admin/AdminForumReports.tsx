@@ -56,7 +56,7 @@ export default function AdminForumReports() {
       await updateDoc(doc(db, 'forumReports', row.id), { status: 'closed', resolvedBy: staffId, resolvedAt: serverTimestamp() });
       setRows((prev) => prev.filter((r) => r.id !== row.id));
       toast.success(deleteComment ? dt('Komenti u fshi.') : dt('Raportimi u mbyll.'));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || dt('Veprimi dështoi.'));
     } finally {
       setBusy(null);

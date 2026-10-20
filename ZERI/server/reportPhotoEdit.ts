@@ -127,7 +127,7 @@ export function registerPhotoEditRoutes(app: Express, deps: PhotoEditDeps): void
       res.setHeader('Cache-Control', 'private, no-store');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       return res.send(bytes);
-    } catch (error: any) {
+    } catch (error) {
       console.error('[REPORTS] photo read failed:', error?.message);
       return res.status(500).json({ error: 'Fotoja nuk u lexua.' });
     }
@@ -191,7 +191,7 @@ export function registerPhotoEditRoutes(app: Express, deps: PhotoEditDeps): void
 
       deps.audit('report.media.crop', req, { reportId, from: url.slice(0, 300), to: path });
       return res.json({ ok: true, url: newUrl, images: nextImages });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[REPORTS] crop failed:', error?.message);
       return res.status(500).json({ error: 'Fotoja e prerë nuk u ruajt.' });
     }
@@ -237,7 +237,7 @@ export function registerPhotoEditRoutes(app: Express, deps: PhotoEditDeps): void
       await batch.commit();
       deps.audit('report.media.uncrop', req, { reportId, restored: String(original.url ?? '').slice(0, 300) });
       return res.json({ ok: true, images: nextImages });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[REPORTS] uncrop failed:', error?.message);
       return res.status(500).json({ error: 'Origjinali nuk u rikthye.' });
     }

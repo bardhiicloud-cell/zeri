@@ -141,7 +141,7 @@ export default function LoginPage() {
         } else {
           setError(t('login_error_invalid'));
         }
-      } catch (err: any) {
+      } catch (err) {
         /**
          * One generic message for every failure mode.
          *
@@ -220,7 +220,7 @@ export default function LoginPage() {
         permissions: userData.permissions,
         isBanned: userData.isBanned,
       });
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
         // The citizen closed the window themselves; not an error worth a banner.
       } else if (err?.code === 'auth/popup-blocked') {

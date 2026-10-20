@@ -194,7 +194,7 @@ export async function reportReel(reelId: string, reason: ReelReportReason, detai
       reelId, reporterId: uid, reason, details: cleaned, status: 'open', createdAt: serverTimestamp(),
     });
     return 'sent';
-  } catch (error: any) {
+  } catch (error) {
     // Overwriting an existing report is an update, which rules refuse for non-staff.
     if (error?.code === 'permission-denied') return 'duplicate';
     throw error;

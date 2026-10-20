@@ -107,7 +107,7 @@ export function registerForumSocialRoutes(app: Express, deps: ForumSocialDeps): 
       });
       if (result.status === 404) return res.status(404).json({ error: 'Postimi nuk u gjet.' });
       return res.json({ viewCount: result.viewCount, counted: result.counted });
-    } catch (error: any) {
+    } catch (error) {
       // Two simultaneous requests from one account: the second create() fails, which is the guarantee.
       if (isAlreadyExists(error)) return res.json({ counted: false });
       console.error('[FORUM] view failed:', error?.message);
@@ -130,7 +130,7 @@ export function registerForumSocialRoutes(app: Express, deps: ForumSocialDeps): 
         };
       }
       return res.json({ ids: verifiedCache.ids });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[FORUM] verified ids failed:', error?.message);
       return res.json({ ids: [] });
     }
@@ -152,7 +152,7 @@ export function registerForumSocialRoutes(app: Express, deps: ForumSocialDeps): 
         status: (request.data()?.status as VerificationStatus | undefined) ?? 'none',
         priceEur: VERIFICATION_PRICE_EUR,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[FORUM] verification status failed:', error?.message);
       return res.status(500).json({ error: 'Statusi nuk u ngarkua.' });
     }
@@ -187,7 +187,7 @@ export function registerForumSocialRoutes(app: Express, deps: ForumSocialDeps): 
       });
       deps.audit('forum.verification.request', req, { plan: VERIFICATION_PLAN });
       return res.status(201).json({ status: 'pending', priceEur: VERIFICATION_PRICE_EUR });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[FORUM] verification request failed:', error?.message);
       return res.status(500).json({ error: 'Kërkesa nuk u dërgua. Provoni përsëri.' });
     }
@@ -209,7 +209,7 @@ export function registerForumSocialRoutes(app: Express, deps: ForumSocialDeps): 
         };
       });
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[ADMIN] verification list failed:', error?.message);
       return res.status(500).json({ error: 'Lista nuk u ngarkua.' });
     }
@@ -246,7 +246,7 @@ export function registerForumSocialRoutes(app: Express, deps: ForumSocialDeps): 
       }
       deps.audit(`forum.verification.${decision}`, req, { targetUid: uid });
       return res.json({ ok: true, decision });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[ADMIN] verification decision failed:', error?.message);
       return res.status(500).json({ error: 'Vendimi nuk u ruajt.' });
     }

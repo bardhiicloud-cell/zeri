@@ -85,7 +85,7 @@ export function registerAdminReportRoutes(app: Express, deps: AdminReportDeps): 
           if (!hidden) items.push(presentReport(id, data, principal));
         }
         return res.json({ items, nextCursor: null, total: items.length });
-      } catch (error: any) {
+      } catch (error) {
         console.error('[REPORTS] code lookup failed:', error?.message);
         return res.status(500).json({ error: 'Raporti nuk u gjet. Provoni përsëri.' });
       }
@@ -140,7 +140,7 @@ export function registerAdminReportRoutes(app: Express, deps: AdminReportDeps): 
       const nextCursor = hasMore && last && cursorValue !== null ? encodeCursor({ value: cursorValue, id: last.id }) : null;
 
       return res.json({ items, nextCursor, total });
-    } catch (error: any) {
+    } catch (error) {
       // `failed-precondition` means a composite index is missing: say so, because
       // it is a deployment gap, not a bad request.
       const missingIndex = error?.code === 9 || /index/i.test(String(error?.message ?? ''));

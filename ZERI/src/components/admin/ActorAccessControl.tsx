@@ -146,7 +146,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
       if (!response.ok) throw new Error(describeApiFailure(response.status, result));
       toast.success(label);
       onChanged?.();
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Ndryshimi nuk u ruajt.'));
     } finally {
       setIsBusy(false);
@@ -203,7 +203,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
       }
       toast.success(nextBanned ? dt('Llogaria u pezullua.') : dt('Llogaria u riaktivizua.'));
       onChanged?.();
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Statusi nuk u ndryshua.'));
     } finally {
       setIsBusy(false);
@@ -226,7 +226,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
       toast.success(dt('Fjalëkalimi u vendos; sesionet e vjetra u revokuan.'));
       setNewPassword('');
       setShowPasswordField(false);
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Fjalëkalimi nuk u vendos.'));
     } finally {
       setIsBusy(false);
