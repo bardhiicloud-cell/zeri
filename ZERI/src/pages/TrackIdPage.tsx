@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import {
   AlertTriangle, ArrowRight, BadgeCheck, Building2, Calendar, CheckCircle2, ChevronDown, ChevronUp, Clock3,
   Copy, FileSearch, Hourglass, Link2, Loader2, Lock, MapPin, MessageSquareText, Search, ShieldCheck, ShieldOff,
-  Tag, WifiOff, X, XCircle, ClipboardPaste,
+  Tag, WifiOff, XCircle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
@@ -173,27 +173,12 @@ export default function TrackIdPage() {
                 aria-invalid={Boolean(fieldError)}
                 aria-describedby={fieldError ? 'track-id-error' : 'track-id-help'}
                 className={cn(
-                  'h-14 w-full rounded-2xl border-2 bg-slate-50 pl-12 pr-14 font-mono text-base font-bold tracking-wide text-slate-900 outline-none transition focus:ring-4 dark:bg-slate-800 dark:text-white',
+                  'h-14 w-full rounded-2xl border-2 bg-slate-50 pl-12 pr-4 font-mono text-base font-bold tracking-wide text-slate-900 outline-none transition focus:ring-4 dark:bg-slate-800 dark:text-white',
                   fieldError
                     ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15'
                     : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/15 dark:border-white/10',
                 )}
               />
-              {input ? (
-                <button type="button" onClick={() => { setInput(''); setFieldError(null); }} aria-label={dt('Pastro')} className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700">
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard?.readText().then(text => { const id = normalizeTrackingId(text); if (id) { setInput(id); void search(id); } }, () => toast.error(dt('Nuk u lexua clipboard-i. Ngjitni ID-në me dorë.')))}
-                  aria-label={dt('Ngjit ID-në')}
-                  title={dt('Ngjit ID-në')}
-                  className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-blue-700 dark:hover:bg-slate-700"
-                >
-                  <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
-                </button>
-              )}
             </div>
             <button
               type="submit"
