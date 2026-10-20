@@ -7,7 +7,8 @@ import { UserPlus, ShieldAlert, Phone, ArrowLeft, Mail, Lock, User, CheckCircle2
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
-import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
+import { isGuestFirebaseUser } from '../lib/guestSession';
 import { PROFILE_SYNC_FAILED, profileSyncError, syncOrCreateProfile } from '../lib/authSync';
 import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
@@ -85,7 +86,19 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      // A guest keeps their uid (reports, Mysafir number): the email sign-in is linked to the
+      // guest account. If that is not possible, an ordinary new account is created.
+      const guestUser = auth.currentUser && isGuestFirebaseUser(auth.currentUser) ? auth.currentUser : null;
+      let userCredential;
+      try {
+        userCredential = guestUser
+          ? await linkWithCredential(guestUser, EmailAuthProvider.credential(email.trim(), password))
+          : await createUserWithEmailAndPassword(auth, email.trim(), password);
+      } catch (linkError: any) {
+        const code = linkError?.code || '';
+        if (!guestUser || code === 'auth/email-already-in-use' || code === 'auth/weak-password' || code === 'auth/too-many-requests' || code === 'auth/network-request-failed') throw linkError;
+        userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      }
       const user = userCredential.user;
       const token = await user.getIdToken();
 
@@ -179,7 +192,21 @@ export default function RegisterPage() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const credential = await signInWithGoogle(provider);
+      // A guest links Google to their own account so the uid, reports and number stay theirs;
+      // when that Google account already exists, or linking is not possible, sign in the usual way.
+      const guestUser = auth.currentUser && isGuestFirebaseUser(auth.currentUser) ? auth.currentUser : null;
+      let credential;
+      if (guestUser) {
+        try {
+          credential = await linkWithPopup(guestUser, provider);
+        } catch (linkError: any) {
+          const code = linkError?.code || '';
+          if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' || code === 'auth/popup-blocked') throw linkError;
+          credential = await signInWithGoogle(provider);
+        }
+      } else {
+        credential = await signInWithGoogle(provider);
+      }
       const user = credential.user;
       // Registration needs the server to create the profile; a failure is reported with its real cause.
       await finishGoogle(user);

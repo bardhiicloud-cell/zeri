@@ -1066,6 +1066,25 @@ app.post('/api/v1/auth/sync', requireAuth, async (req, res) => {
       await userRef.set(newUser);
       return res.status(201).json({ message: 'User synced successfully', user: newUser });
     }
+    // A guest who registers keeps the same uid, so their reports and Mysafir number stay theirs:
+    // the browser links the new email/Google sign-in to the guest account, then calls this.
+    // Only a profile that is still a guest is upgraded, and only to the ordinary role.
+    const existing = doc.data() as { role?: string; guestNumber?: number } | undefined;
+    if (existing?.role === 'guest' && user.email) {
+      if (typeof dateOfBirth === 'string' && dateOfBirth.length > 0 && !validateDateOfBirth(dateOfBirth)) {
+        return res.status(400).json({ error: 'Datëlindja nuk është e vlefshme — duhet të keni të paktën 16 vjet.' });
+      }
+      const upgraded = {
+        email: user.email,
+        name: name || user.email.split('@')[0],
+        dateOfBirth: typeof dateOfBirth === 'string' && validateDateOfBirth(dateOfBirth) ? dateOfBirth : null,
+        role: 'user',
+        isVerified: user.claims.email_verified === true,
+        upgradedFromGuestAt: FieldValue.serverTimestamp(),
+      };
+      await userRef.set(upgraded, { merge: true });
+      return res.status(200).json({ message: 'Guest upgraded', upgraded: true, user: { ...existing, ...upgraded, upgradedFromGuestAt: undefined } });
+    }
     return res.status(200).json({ message: 'User already exists', user: doc.data() });
   } catch (error: any) {
     console.error(error);
