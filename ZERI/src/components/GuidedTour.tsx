@@ -216,10 +216,10 @@ export default function GuidedTour() {
         </div>
         <p className="mt-1.5 text-xs leading-relaxed text-slate-700 dark:text-slate-300" aria-live="polite">
           {dt(step.body)}
-          {!box && <span className="mt-1 block font-semibold text-slate-500">{dt('Ky element shfaqet në pamjen tjetër ose te menuja.')}</span>}
+          {!box && <span className="mt-1 block font-semibold text-slate-500 dark:text-slate-400">{dt('Ky element shfaqet në pamjen tjetër ose te menuja.')}</span>}
         </p>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-bold text-slate-500">{index + 1} / {steps.length}</span>
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{index + 1} / {steps.length}</span>
           <div className="flex gap-2">
             {index > 0 && (
               <button type="button" onClick={() => go(-1)} className="min-h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 dark:border-white/10 dark:text-slate-200">{dt('Mbrapa')}</button>
