@@ -73,7 +73,7 @@ Kriter: mbulim ≥ 70% në `server/` dhe `src/lib`; E2E për rrjedhat kritike; `
 - [ ] E2E për rrjedhat kritike me llogari: regjistrim, raportim, gjurmim, moderim, pagesë, fshirje GDPR (kërkon emulator Firebase)
 - [x] Prag mbulimi në CI (`npm run test:coverage`: rreshta 45%, funksione 65%, degë 85%; vetëm testet pa emulator, ndaj `server/` del 34% sepse rrugët mbulohen nga testet me emulator). Duhet të rritet drejt 70%
 - [ ] Heqja e `any` (98 skedarë)
-- [ ] ESLint në gjithë `src` dhe `server`
+- [x] Ratchet ESLint për gjithë `src` dhe `server` (`npm run check:lint`): asnjë rregull nuk mund të rritet; 826 → 616 gabime (160 `no-unused-vars`, 358 `no-explicit-any`, 73 rregulla hooks, 25 të tjera)
 
 ## WS9: Siguria dhe operimi (8.5 → 10)
 Kriter: `npm audit` bllokues; monitorim me alarme; backup i testuar.
