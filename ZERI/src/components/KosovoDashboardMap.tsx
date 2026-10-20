@@ -156,8 +156,6 @@ function ReportMarker({
       ref={markerRef}
       position={[point.lat, point.lng]}
       icon={createPinIcon(point.status)}
-      title={point.category}
-      alt={point.category}
     >
       <Popup closeButton={false} className="dashboard-popup-clean">
         <div 
@@ -340,7 +338,6 @@ export function KosovoDashboardMap({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Kategoria')}</label>
               <div className="relative">
                 <select 
-                  aria-label={dt('Kategoria')}
                   value={selectedCategory} 
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
@@ -363,7 +360,6 @@ export function KosovoDashboardMap({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Statusi')}</label>
               <div className="relative">
                 <select 
-                  aria-label={dt('Statusi')}
                   value={selectedStatus} 
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
@@ -387,7 +383,6 @@ export function KosovoDashboardMap({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Komuna')}</label>
               <div className="relative">
                 <select 
-                  aria-label={dt('Komuna')}
                   value={selectedMunicipality} 
                   onChange={(e) => onMunicipalityChange && onMunicipalityChange(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
@@ -410,7 +405,6 @@ export function KosovoDashboardMap({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dt('Urgjenca')}</label>
               <div className="relative">
                 <select 
-                  aria-label={dt('Urgjenca')}
                   value={selectedUrgency} 
                   onChange={(e) => setSelectedUrgency(e.target.value)}
                   className="w-full appearance-none text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg pl-3 pr-6 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-2xs"
@@ -513,7 +507,7 @@ export function KosovoDashboardMap({
           </div>
 
           {/* OSM attribution is mandatory; kept compact so the card layout is preserved. */}
-          <div className="absolute bottom-3 right-3 z-[1000] pointer-events-none text-[8px] font-medium text-slate-600 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/10">
+          <div className="absolute bottom-3 right-3 z-[1000] pointer-events-none text-[8px] font-medium text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/10">
             &copy; OpenStreetMap
           </div>
 

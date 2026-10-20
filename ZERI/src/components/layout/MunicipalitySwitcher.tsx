@@ -132,7 +132,7 @@ export function MunicipalitySwitcher({ collapsed = false, inline = false }: { co
             {!collapsed && (
               <>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[8px] font-black uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">
+                  <span className="block text-[8px] font-black uppercase tracking-[0.12em] text-slate-400">
                     {dt('Komuna aktive')}
                   </span>
                   <span

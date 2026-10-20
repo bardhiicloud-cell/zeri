@@ -136,7 +136,7 @@ export const authGhostBtn =
 
 export function AuthDivider({ children }: { children: React.ReactNode }) {
   return (
-    <div className="my-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+    <div className="my-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">
       <span className="h-px flex-1 bg-white/10" />{children}<span className="h-px flex-1 bg-white/10" />
     </div>
   );

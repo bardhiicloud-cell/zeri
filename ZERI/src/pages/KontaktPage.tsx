@@ -125,7 +125,7 @@ export default function KontaktPage() {
 
       {/* Emergency numbers: compact, always first. */}
       <section aria-labelledby="emergency-title" className="au-tile p-4 sm:p-5">
-        <h2 id="emergency-title" className="flex items-center gap-2 text-[13px] font-semibold text-rose-700 dark:text-rose-400">
+        <h2 id="emergency-title" className="flex items-center gap-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400">
           <AlertTriangle className="h-4 w-4" aria-hidden="true" /> {dt('Në rrezik? Telefononi menjëherë, mos shkruani këtu.')}
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -137,7 +137,7 @@ export default function KontaktPage() {
           ].map(c => (
             <a key={c.num} href={`tel:${c.num}`} aria-label={`${dt('Telefono')} ${c.num} — ${dt(c.title)}`}
               className="au-tile-link flex items-center gap-3 rounded-xl border border-[var(--au-line)] bg-[var(--au-card-2)] px-3 py-2.5">
-              <span className="text-[20px] font-semibold tabular-nums text-rose-700 dark:text-rose-400">{c.num}</span>
+              <span className="text-[20px] font-semibold tabular-nums text-rose-600 dark:text-rose-400">{c.num}</span>
               <span className="text-[12px] leading-tight au-sub">{dt(c.title)}</span>
             </a>
           ))}
