@@ -577,6 +577,13 @@ export function MobileNav() {
                     <p className="mt-0.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
                       {dt('Ndiqni raportimet tuaja dhe merrni njoftime për përgjigjet.')}
                     </p>
+                    <p className="mt-2 rounded-lg bg-white/70 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:bg-white/5 dark:text-slate-200" data-testid="guest-id">
+                      {dt('ID-ja juaj')}:{' '}
+                      <span className="font-black text-blue-700 dark:text-blue-300">
+                        {(currentUser as { guestLabel?: string } | null)?.guestLabel
+                          ?? (currentUser?.name?.startsWith('Mysafir-') ? currentUser.name : dt('po caktohet…'))}
+                      </span>
+                    </p>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <Link
                         to="/login"
