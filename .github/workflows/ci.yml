@@ -37,6 +37,7 @@ jobs:
       - run: npm run i18n:check
       - run: npm test
       - run: npm run build
+      - run: npm run check:bundle
       - name: Dependency audit (report only)
         run: npm audit --omit=dev || true
 
