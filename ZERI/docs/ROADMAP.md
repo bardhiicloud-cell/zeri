@@ -56,9 +56,11 @@ Kriter: tokens + 10–15 komponentë bazë; asnjë ngjyrë ose hapësirë e shkr
 - [ ] Zëvendësimi gradual i stileve të shpërndara
 
 ## WS6: Aksesueshmëria (6 → 10)
-Kriter: axe-core pa gabime serioze në CI; WCAG 2.2 AA; ⚠️ testim me lexues ekrani dhe përdorues real.
-- [ ] `alt` për çdo imazh, kontrast, fokus i dukshëm, navigim me tastierë
-- [ ] axe-core në Playwright
+Kriter: axe-core pa gabime në CI; WCAG 2.2 AA; ⚠️ testim me lexues ekrani dhe përdorues real.
+- [x] axe-core në Playwright (`e2e/a11y.spec.ts`): 8 faqe × light/dark × desktop/celular = 32 kombinime, 0 shkelje
+- [x] Rregulluar: select/input/buton pa emër, kontrast në 15+ vende, targete të vogla, shënjuesit e hartës
+- [ ] Faqet pas hyrjes (forum, paneli, raportimi i plotë me llogari) nuk janë skanuar ende; kërkojnë llogari testimi
+- [ ] ⚠️ Testim me VoiceOver/TalkBack dhe me përdorues me aftësi të kufizuara
 
 ## WS7: UX i stafit (6.5 → 10)
 Kriter: një panel me pamje sipas rolit; një inbox, një sistem rastesh.
@@ -67,7 +69,8 @@ Kriter: një panel me pamje sipas rolit; një inbox, një sistem rastesh.
 
 ## WS8: Testimi (6 → 10)
 Kriter: mbulim ≥ 70% në `server/` dhe `src/lib`; E2E për rrjedhat kritike; `any` = 0.
-- [ ] Playwright: regjistrim, raportim, gjurmim, moderim, pagesë, fshirje GDPR
+- [x] Playwright në CI (`npm run test:e2e`): 9 faqe pa gabime skripti, ngarkimi i vetëm një gjuhe, porta e moshës + a11y
+- [ ] E2E për rrjedhat kritike me llogari: regjistrim, raportim, gjurmim, moderim, pagesë, fshirje GDPR (kërkon emulator Firebase)
 - [ ] Prag mbulimi në CI
 - [ ] Heqja e `any` (98 skedarë)
 - [ ] ESLint në gjithë `src` dhe `server`
