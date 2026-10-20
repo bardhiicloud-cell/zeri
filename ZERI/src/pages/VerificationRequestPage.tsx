@@ -4,6 +4,7 @@ import { BadgeCheck } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { useStore } from '../lib/store';
 import { myVerificationRequest, requestVerification } from '../lib/debateApi';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 
 /** A citizen asks the debate admin for the verification tick and follows the answer. */
 export default function VerificationRequestPage() {
@@ -28,6 +29,8 @@ export default function VerificationRequestPage() {
   };
 
   return (
+    <>
+      <SubmissionOverlay busy={busy} kind="verify" />
     <main className="mx-auto max-w-xl space-y-4 px-4 py-10">
       <h1 className="flex items-center gap-2 text-2xl font-black text-slate-900 dark:text-white"><BadgeCheck className="h-6 w-6 text-blue-600" aria-hidden="true" />{dt('Kërko verifikimin e llogarisë')}</h1>
       {user.isVerified && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">{dt('Llogaria juaj është e verifikuar.')}</p>}
@@ -46,5 +49,6 @@ export default function VerificationRequestPage() {
         </form>
       )}
     </main>
+    </>
   );
 }

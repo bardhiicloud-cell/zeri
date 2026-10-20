@@ -13,6 +13,7 @@ import { ExternalLink, Heart, Globe, X, PlusCircle, Activity, Home, Utensils, Sh
 import AdBanner from '../components/AdBanner.tsx';
 import { isSpecificScope, recordMatchesScope } from '../lib/municipalityScope';
 import { AuraHero, AuraStats, AuraSection, AuraEmpty, Reveal, AuraOrbit } from '../components/aura/Aura';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 
 /** Applicant-supplied links are only followed when they are plain http(s); `javascript:` and the like become "#". */
 function safeExternalUrl(value: string | undefined): string {
@@ -170,6 +171,8 @@ const ITEMS_PER_PAGE = 6;
   };
 
   return (
+    <>
+      <SubmissionOverlay busy={submitting} kind="donation" />
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -559,5 +562,6 @@ const ITEMS_PER_PAGE = 6;
       
       
     </motion.div>
+    </>
   );
 }
