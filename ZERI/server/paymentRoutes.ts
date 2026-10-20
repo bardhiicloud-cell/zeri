@@ -76,7 +76,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
         adPackagePrices: settings.adPackagePrices,
         methods: { iban: Boolean(settings.iban), paysera: Boolean(paysera()) },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[PAY] config failed:', error?.message);
       return res.status(500).json({ error: 'Cilësimet e pagesës nuk u ngarkuan.' });
     }
@@ -141,7 +141,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
           : null,
         payseraEnabled: Boolean(paysera()),
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[PAY] create order failed:', error?.message);
       return res.status(500).json({ error: 'Kodi i pagesës nuk u krijua. Provoni përsëri.' });
     }
@@ -161,7 +161,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
         orders,
         bank: settings.iban ? { iban: settings.iban, beneficiary: settings.beneficiary, bank: settings.bank, bic: settings.bic, note: settings.note } : null,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[PAY] my orders failed:', error?.message);
       return res.status(500).json({ error: 'Pagesat nuk u ngarkuan.' });
     }
@@ -190,7 +190,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
         }
       );
       return res.json({ url });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[PAY] paysera url failed:', error?.message);
       return res.status(500).json({ error: 'Lidhja me Paysera dështoi.' });
     }
@@ -221,7 +221,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
       const outcome = await confirmOrder(deps.db(), verified.code, { by: null, method: 'paysera', bankReference: 'Paysera' });
       deps.audit('payment.paysera.confirmed', req, { code: verified.code, outcome: outcome.outcome });
       return res.type('text').send('OK');
-    } catch (error: any) {
+    } catch (error) {
       console.error('[PAY] paysera callback failed:', error?.message);
       return res.status(500).type('text').send('error');
     }
@@ -249,7 +249,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
         orders: all.slice(0, 300).map((order) => ({ ...publicOrder(order, now), name: order.name, confirmedBy: order.confirmedBy ?? null })),
         totals,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] payments list failed:', error?.message);
       return res.status(500).json({ error: 'Pagesat nuk u ngarkuan.' });
     }
@@ -279,7 +279,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
         case 'amount_mismatch':
           return res.status(409).json({ error: `Shuma ${outcome.received.toFixed(2)} € nuk përputhet me ${outcome.expected.toFixed(2)} €. Konfirmojeni vetëm nëse e pranoni diferencën.`, expected: outcome.expected });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] confirm failed:', error?.message);
       return res.status(500).json({ error: 'Konfirmimi nuk u ruajt.' });
     }
@@ -294,7 +294,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
       if (result === 'not_found') return res.status(404).json({ error: 'Kodi nuk u gjet.' });
       if (result === 'already_paid') return res.status(409).json({ error: 'Pagesa është konfirmuar; nuk anulohet.' });
       return res.json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] cancel failed:', error?.message);
       return res.status(500).json({ error: 'Anulimi nuk u ruajt.' });
     }
@@ -329,7 +329,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
         kind: orders.get(entry.code)?.kind ?? null,
       }));
       return res.json({ entries, summary: { lines: entries.length, matched: entries.filter((e) => e.outcome === 'match').length } });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] statement failed:', error?.message);
       return res.status(500).json({ error: 'Pasqyra nuk u analizua.' });
     }
@@ -361,7 +361,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
       }
       deps.audit('payment.statement.apply', req, { requested: wanted.size, confirmed: results.filter((r) => r.result === 'confirmed').length });
       return res.json({ results });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] statement apply failed:', error?.message);
       return res.status(500).json({ error: 'Konfirmimet nuk u ruajtën.' });
     }
@@ -371,7 +371,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
     try {
       const settings = await loadPaymentSettings(deps.db());
       return res.json({ settings, paysera: { enabled: Boolean(paysera()), test: paysera()?.test ?? false } });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] settings failed:', error?.message);
       return res.status(500).json({ error: 'Cilësimet nuk u ngarkuan.' });
     }
@@ -384,7 +384,7 @@ export function registerPaymentRoutes(app: Express, deps: PaymentRouteDeps): voi
       await deps.db().collection('paymentConfig').doc('main').set(decision.settings);
       deps.audit('payment.settings.update', req, { ibanSet: Boolean(decision.settings.iban), verificationPriceEur: decision.settings.verificationPriceEur });
       return res.json({ ok: true, settings: decision.settings });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DEBATE] settings save failed:', error?.message);
       return res.status(500).json({ error: 'Cilësimet nuk u ruajtën.' });
     }

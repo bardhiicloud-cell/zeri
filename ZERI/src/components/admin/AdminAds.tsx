@@ -262,7 +262,7 @@ export default function AdminAds() {
       toast.dismiss(tId);
       toast.success(dt('U ngarkua me sukses.'));
       setFormData(prev => ({ ...prev, mediaUrl: url }));
-    } catch (err: any) {
+    } catch (err) {
       toast.dismiss(tId);
       toast.error(err?.message || dt('Gabim gjatë ngarkimit të skedarit.'));
     }

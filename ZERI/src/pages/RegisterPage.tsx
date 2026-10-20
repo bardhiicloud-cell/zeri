@@ -122,7 +122,7 @@ export default function RegisterPage() {
       });
 
       setIsVerifyingOtp(true);
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'auth/email-already-in-use') {
         setError(t('register_error_email_exists'));
       } else if (err?.code === 'auth/weak-password') {
@@ -182,7 +182,7 @@ export default function RegisterPage() {
       const user = credential.user;
       // Registration needs the server to create the profile; a failure is reported with its real cause.
       await finishGoogle(user);
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
         // The user closed the popup; not an error worth a banner.
       } else if (err?.code === 'auth/popup-blocked') {

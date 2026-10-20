@@ -369,7 +369,7 @@ export default function App() {
             const guest = await signInAsGuest();
             if (guest.ok === false) throw new Error(guest.reason);
           }
-        } catch (error: any) {
+        } catch (error) {
           const code: string = error?.code || '';
           // A signed-in user must never be downgraded to guest: this catch can
           // fire after onAuthStateChanged has already restored a real account

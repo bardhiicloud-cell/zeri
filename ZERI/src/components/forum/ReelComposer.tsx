@@ -160,7 +160,7 @@ export function ReelComposer({ author, onClose, onPublished }: ReelComposerProps
       });
       toast.success(dt('Reel-i u publikua.'));
       onPublished(id);
-    } catch (e: any) {
+    } catch (e) {
       const cancelled = e instanceof ExportCancelled || e?.code === 'storage/canceled';
       setPhase(cancelled ? 'idle' : 'error');
       setError(cancelled ? dt('Veprimi u anulua.') : (e?.message || dt('Publikimi dështoi. Provoni përsëri.')));

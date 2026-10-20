@@ -946,7 +946,7 @@ export default function AdminAgents() {
                             toast.success('Fjalëkalimi u vendos dhe sesionet e vjetra u revokuan.');
                             setDirectPassword('');
                             addAuditLog('Agent Password Set', 'success', `Fjalëkalimi u vendos direkt për ${selectedAgent.email}`);
-                          } catch (error: any) {
+                          } catch (error) {
                             toast.error(error.message || 'Fjalëkalimi nuk u vendos.');
                           } finally {
                             setIsSettingPassword(false);

@@ -32,7 +32,7 @@ export function ReportPostSheet({ postId, onClose }: { postId: string; onClose: 
       await reportPost(postId, reason, note.trim());
       toast.success(dt('Faleminderit. Raportimi u dërgua te moderatorët.'));
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || dt('Raportimi nuk u dërgua.'));
     } finally {
       setBusy(false);

@@ -232,7 +232,7 @@ export function registerInstitutionMailRoutes(app: Express, deps: InstitutionMai
       }
       deps.audit(result.ok ? 'report.email.sent' : 'report.email.failed', req, { reportId, outboxId: outboxRef.id, provider: mailer.provider, error: result.ok ? null : result.error });
       return res.status(result.ok ? 201 : 502).json(result.ok ? { id: outboxRef.id, status: 'sent' } : { id: outboxRef.id, status: 'failed', error: result.error });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[MAIL] send failed:', error?.message);
       return res.status(500).json({ error: 'Dërgimi nuk u krye. Provoni përsëri.' });
     }
@@ -253,7 +253,7 @@ export function registerInstitutionMailRoutes(app: Express, deps: InstitutionMai
         .filter(row => !isMunicipality || norm((row as { municipality?: unknown }).municipality) === norm(actor.municipality))
         .sort((a, b) => Date.parse(String(b.at ?? '')) - Date.parse(String(a.at ?? '')));
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[MAIL] history failed:', error?.message);
       return res.status(500).json({ error: 'Historia nuk u lexua.' });
     }
@@ -283,7 +283,7 @@ export function registerInstitutionMailRoutes(app: Express, deps: InstitutionMai
         : { status: 'failed', attempts: FieldValue.increment(1), error: result.error, retryable: result.retryable });
       deps.audit(result.ok ? 'report.email.sent' : 'report.email.failed', req, { outboxId: ref.id, retry: true });
       return res.status(result.ok ? 200 : 502).json({ status: result.ok ? 'sent' : 'failed', ...(result.ok ? {} : { error: result.error }) });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[MAIL] retry failed:', error?.message);
       return res.status(500).json({ error: 'Riprovimi nuk u krye.' });
     }
