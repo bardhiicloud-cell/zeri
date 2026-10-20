@@ -415,7 +415,7 @@ export default function AdminReports({ department, openReportId }: { department?
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newContact.email.trim())) {
-      toast.error('Adresa e emailit nuk duket e vlefshme.');
+      toast.error(dt('Adresa e emailit nuk duket e vlefshme.'));
       return;
     }
     try {
@@ -486,10 +486,10 @@ export default function AdminReports({ department, openReportId }: { department?
     if (!await askConfirm(`${dt('Të fshihet kontakti')} ${contact.name} (${contact.email})?`)) return;
     try {
       await deleteDoc(doc(db, 'reportRoutingContacts', contact.id));
-      toast.success('Kontakti u fshi.');
+      toast.success(dt('Kontakti u fshi.'));
     } catch (error) {
       console.error('Nuk u fshi kontakti:', error);
-      toast.error('Kontakti nuk u fshi.');
+      toast.error(dt('Kontakti nuk u fshi.'));
     }
   };
 

@@ -1,3 +1,4 @@
+import { dt } from '@/src/lib/dt';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Check, ChevronDown, Globe, Search } from 'lucide-react';
 import { useStore } from '../../lib/store';
@@ -98,7 +99,7 @@ export function MunicipalityScopeControl() {
       {isOpen && (
         <div
           role="listbox"
-          aria-label="Komuna aktive e administrimit"
+          aria-label={dt('Komuna aktive e administrimit')}
           className="absolute right-0 top-[calc(100%+6px)] z-40 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900"
         >
           <div className="border-b border-slate-100 p-2 dark:border-white/5">
@@ -108,8 +109,8 @@ export function MunicipalityScopeControl() {
                 ref={searchRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Kërko në 38 komuna…"
-                aria-label="Kërko komunën"
+                placeholder={dt('Kërko në 38 komuna…')}
+                aria-label={dt('Kërko komunën')}
                 className="min-h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-2 text-xs font-semibold text-slate-800 outline-none focus:border-rose-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>

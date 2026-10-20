@@ -172,7 +172,7 @@ export default function AdminVideos() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!await askConfirm('A jeni i sigurt që dëshironi ta fshini këtë video?')) return;
+    if (!await askConfirm(dt('A jeni i sigurt që dëshironi ta fshini këtë video?'))) return;
     try {
       await deleteDoc(doc(db, 'newsArticles', id));
     } catch (err) {

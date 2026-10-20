@@ -78,7 +78,7 @@ export default function AdminMedicineShortages() {
         console.error('Mungesat e barnave nuk u ngarkuan për stafin:', err);
         setLoadError('Të dhënat nuk u ngarkuan. Kontrolloni lejet dhe lidhjen, pastaj provoni përsëri.');
         setLoading(false);
-        toast.error('Mungesat e barnave nuk u ngarkuan.');
+        toast.error(dt('Mungesat e barnave nuk u ngarkuan.'));
       },
     );
   }, []);
@@ -128,7 +128,7 @@ export default function AdminMedicineShortages() {
       toast.success(`Statusi u ndryshua në: ${STATUS_META[status].label}`);
     } catch (err) {
       console.error('Statusi i mungesës nuk u ruajt:', err);
-      toast.error('Statusi nuk u ruajt. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Statusi nuk u ruajt. Kontrolloni lejet dhe provoni përsëri.'));
     }
   };
 
@@ -138,10 +138,10 @@ export default function AdminMedicineShortages() {
       await deleteDoc(doc(db, 'medicineShortages', s.id));
       setItems((prev) => prev.filter((x) => x.id !== s.id));
       if (inspecting?.id === s.id) setInspecting(null);
-      toast.success('Raportimi u fshi.');
+      toast.success(dt('Raportimi u fshi.'));
     } catch (err) {
       console.error('Mungesa nuk u fshi:', err);
-      toast.error('Fshirja dështoi. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Fshirja dështoi. Kontrolloni lejet dhe provoni përsëri.'));
     }
   };
 

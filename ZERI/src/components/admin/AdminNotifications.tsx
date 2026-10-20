@@ -193,7 +193,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
       closeForm();
     } catch (error) {
       console.error('Gabim gjatë ruajtjes së njoftimit', error);
-      toast.error('Njoftimi nuk u ruajt. Provoni përsëri.');
+      toast.error(dt('Njoftimi nuk u ruajt. Provoni përsëri.'));
     } finally {
       setSaving(false);
     }
@@ -202,21 +202,21 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
   const changeState = useCallback(async (id: string, state: NotificationState) => {
     try {
       await setDoc(doc(db, 'notifications', id), { state }, { merge: true });
-      toast.success('Gjendja e njoftimit u ndryshua.');
+      toast.success(dt('Gjendja e njoftimit u ndryshua.'));
     } catch (err) {
       console.error('Gabim gjatë ndryshimit të gjendjes', err);
-      toast.error('Gjendja nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Gjendja nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.'));
     }
   }, []);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!await askConfirm('A jeni i sigurt që dëshironi ta fshini këtë njoftim?')) return;
+    if (!await askConfirm(dt('A jeni i sigurt që dëshironi ta fshini këtë njoftim?'))) return;
     try {
       await deleteDoc(doc(db, 'notifications', id));
-      toast.success('Njoftimi u fshi.');
+      toast.success(dt('Njoftimi u fshi.'));
     } catch (err) {
       console.error('Gabim gjatë fshirjes', err);
-      toast.error('Njoftimi nuk u fshi. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Njoftimi nuk u fshi. Kontrolloni lejet dhe provoni përsëri.'));
     }
   }, []);
 
