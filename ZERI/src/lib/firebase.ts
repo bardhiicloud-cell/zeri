@@ -9,7 +9,7 @@ import {
   AuthProvider,
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, doc, getDoc } from 'firebase/firestore';
-import { connectStorageEmulator, getBlob, getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import type { FirebaseStorage } from 'firebase/storage';
 import appletConfig from '../../firebase-applet-config.json';
 
 const usePrototypeEmulators =
@@ -83,14 +83,33 @@ export const auth = getAuth(app);
 export const db = firestoreConfig?.databaseId
   ? getFirestore(app, firestoreConfig.databaseId)
   : getFirestore(app);
-export const storage = getStorage(app);
+
+/**
+ * Cloud Storage is only needed when someone uploads or opens an attachment, so
+ * its ~130 kB SDK is fetched on first use instead of on every page view. Both
+ * the module and the instance are created once.
+ */
+let storageSdk: Promise<{ sdk: typeof import('firebase/storage'); storage: FirebaseStorage }> | null = null;
+export function loadStorage() {
+  storageSdk ??= import('firebase/storage').then((sdk) => {
+    const storage = sdk.getStorage(app);
+    // Fail a dead transfer in half a minute instead of the SDK default of ten minutes.
+    storage.maxUploadRetryTime = 30000;
+    storage.maxOperationRetryTime = 20000;
+    if (usePrototypeEmulators) sdk.connectStorageEmulator(storage, '127.0.0.1', 9199);
+    return { sdk, storage };
+  }).catch((error) => {
+    storageSdk = null;
+    throw error;
+  });
+  return storageSdk;
+}
 
 if (usePrototypeEmulators) {
   // These fixed loopback endpoints are used only in a Vite development build
   // with the explicit prototype + emulator flags and a demo-* project id.
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
 }
 
 export const isPrototypeEmulatorMode = usePrototypeEmulators;
@@ -224,7 +243,7 @@ export async function getUserRole(): Promise<string | null> {
 export const uploadFileToStorage = async (
   file: File,
   kind: UploadKind,
-  options?: { userId?: string; scope?: string }
+  options?: { userId?: string; scope?: string; onProgress?: (sent: number, total: number) => void }
 ): Promise<string> => {
   if (!file) throw new Error("Asnjë fajll nuk u dha.");
 
@@ -264,32 +283,78 @@ export const uploadFileToStorage = async (
     ? `avatars/${uid}/${uniqueName}`
     : `${kind}/${uid}/${safeScope}/${uniqueName}`;
 
-  const storageRef = ref(storage, fullPath);
+  const { sdk: storageSdkApi, storage } = await loadStorage();
+  const storageRef = storageSdkApi.ref(storage, fullPath);
 
-  const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
+  const uploadTask = storageSdkApi.uploadBytesResumable(storageRef, file, { contentType: file.type });
 
-  const uploadPromise: Promise<string> = (async () => {
-    const snapshot = await uploadTask;
-    return (await getDownloadURL(snapshot.ref)) as string;
-  })();
+  /*
+   * Firebase Storage retries a failing transfer for up to ten minutes by itself, so
+   * a bucket that is missing, blocked by App Check or unreachable looked like an
+   * upload that "never finishes". Two bounds replace that: a stall bound (no byte
+   * moved for STALL_MS) and an overall ceiling. Either one cancels the transfer and
+   * gives the citizen a clear message to retry or send without the file.
+   */
+  const STALL_MS = isVideo ? 45000 : 20000;
+  const overallMs = isVideo ? 180000 : 60000;
 
-  // Generous ceiling: a 10 MB video over a slow mobile link needs far more than
-  // the old 8s, which made normal uploads look like failures.
-  const timeoutMs = isVideo ? 180000 : 60000;
-  const timeoutPromise: Promise<string> = new Promise((_, reject) => {
-    setTimeout(() => {
-      // Stop the transfer so a timed-out upload stops consuming bandwidth.
-      try {
-        uploadTask.cancel();
-      } catch {
-        /* transfer already settled */
-      }
-      reject(new Error(`Ngarkimi i "${file.name}" zgjati shumë. Provoni përsëri.`));
-    }, timeoutMs);
+  return await new Promise<string>((resolve, reject) => {
+    let settled = false;
+    let stallTimer: ReturnType<typeof setTimeout> | undefined;
+    const overallTimer = setTimeout(() => fail(new Error(`Ngarkimi i "${file.name}" zgjati shumë. Provoni përsëri.`)), overallMs);
+    const finish = () => { settled = true; clearTimeout(stallTimer); clearTimeout(overallTimer); };
+    const fail = (error: Error) => {
+      if (settled) return;
+      finish();
+      try { uploadTask.cancel(); } catch { /* transfer already settled */ }
+      reject(error);
+    };
+    const armStall = () => {
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(
+        () => fail(new Error(`Lidhja me ruajtjen e fajllave nuk po përgjigjet (${file.name}). Kontrolloni internetin dhe provoni përsëri.`)),
+        STALL_MS,
+      );
+    };
+    armStall();
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        armStall();
+        options?.onProgress?.(snapshot.bytesTransferred, snapshot.totalBytes);
+      },
+      (error) => fail(new Error(describeStorageError(error, file.name))),
+      () => {
+        storageSdkApi.getDownloadURL(uploadTask.snapshot.ref).then(
+          (url) => { if (!settled) { finish(); resolve(url); } },
+          (error) => fail(new Error(describeStorageError(error, file.name))),
+        );
+      },
+    );
   });
-
-  return (await Promise.race([uploadPromise, timeoutPromise])) as string;
 };
+
+/** A citizen-readable reason for a Storage failure (the SDK's own text is English and technical). */
+function describeStorageError(error: unknown, name: string): string {
+  const code = (error as { code?: string } | null)?.code ?? '';
+  switch (code) {
+    case 'storage/unauthorized':
+    case 'storage/unauthenticated':
+      return `Ngarkimi i "${name}" u refuzua: sesioni ose lejet e ruajtjes nuk e lejuan. Rifreskoni faqen dhe provoni përsëri.`;
+    case 'storage/retry-limit-exceeded':
+    case 'storage/network-request-failed':
+      return `Lidhja u ndërpre gjatë ngarkimit të "${name}". Provoni përsëri.`;
+    case 'storage/quota-exceeded':
+      return 'Hapësira e ruajtjes është e plotë; njoftoni administratorin.';
+    case 'storage/bucket-not-found':
+    case 'storage/project-not-found':
+      return 'Vendi ku ruhen fotot nuk është i konfiguruar; njoftoni administratorin.';
+    case 'storage/canceled':
+      return `Ngarkimi i "${name}" u ndalua.`;
+    default:
+      return `Ngarkimi i "${name}" dështoi${code ? ` (${code})` : ''}. Provoni përsëri.`;
+  }
+}
 
 /** Uploads a private health attachment and returns its storage path, never a public download token URL. */
 export async function uploadPrivateHealthDocument(file: File, scope = 'registry'): Promise<string> {
@@ -306,14 +371,16 @@ export async function uploadPrivateHealthDocument(file: File, scope = 'registry'
   const safeScope = scope.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'registry';
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
   const path = `health/${uid}/${safeScope}/${Date.now()}_${safeName}`;
-  const uploadTask = uploadBytesResumable(ref(storage, path), file, { contentType: file.type });
+  const { sdk, storage } = await loadStorage();
+  const uploadTask = sdk.uploadBytesResumable(sdk.ref(storage, path), file, { contentType: file.type });
   await uploadTask;
   return path;
 }
 
 export async function readPrivateHealthDocument(path: string): Promise<Blob> {
   if (!path.startsWith('health/')) throw new Error('Shtegu i dokumentit shëndetësor nuk është i vlefshëm.');
-  return getBlob(ref(storage, path), MAX_UPLOAD_BYTES.health);
+  const { sdk, storage } = await loadStorage();
+  return sdk.getBlob(sdk.ref(storage, path), MAX_UPLOAD_BYTES.health);
 }
 
 export default app;

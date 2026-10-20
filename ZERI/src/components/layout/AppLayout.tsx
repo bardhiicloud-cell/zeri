@@ -16,6 +16,7 @@ import { SearchPalette, useGlobalSearch } from './GlobalSearch';
 import { AnnouncementBanner } from '../AnnouncementBanner.tsx';
 import { BroadcastPopup, BroadcastStrip } from '../BroadcastLayer';
 import { canAccessAdmin } from '../../lib/adminPermissions';
+import GuidedTour from '../GuidedTour';
 
 /*
  * Modals opened by a tap are separate chunks: none of them is needed to paint the
@@ -243,6 +244,7 @@ export function AppLayout() {
           >
             <Suspense fallback={<PageLoading />}>
               <Outlet />
+              <GuidedTour />
             </Suspense>
           </div>
           <BroadcastPopup />

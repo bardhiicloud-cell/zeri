@@ -70,7 +70,8 @@ describe('reports/{uid}/{scope}/{file} — citizen media', () => {
     await assertSucceeds(uploadBytes(ref(storage, `reports/${A}/r1/iphone.mov`), bytes(20 * MB), { contentType: 'video/quicktime' }));
     await assertSucceeds(uploadBytes(ref(storage, `reports/${A}/r1/long.mp4`), bytes(40 * MB), { contentType: 'video/mp4' }));
     await assertFails(uploadBytes(ref(storage, `reports/${A}/r1/huge.mp4`), bytes(50 * MB + 1), { contentType: 'video/mp4' }));
-  });
+  // 110 MB goes through the emulator in this test: the 5 s default fails on a busy machine.
+  }, 60_000);
 
   it("rejects writing into someone else's prefix, and unauthenticated writes", async () => {
     await assertFails(uploadBytes(ref(asUser(B), `reports/${A}/r1/a.png`), bytes(), { contentType: 'image/png' }));

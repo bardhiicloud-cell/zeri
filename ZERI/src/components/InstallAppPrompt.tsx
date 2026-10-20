@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, Download, Share, X, PlusSquare } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { useInstallApp } from '@/src/lib/useInstallApp';
@@ -34,13 +34,16 @@ export function InstallAppButton() {
 }
 
 /**
+ * Asked exactly once, ever (see mayOffer); the footer button remains for anyone who wants it later.
  * Automatic install on phones. On iPhone/iPad (where the OS forbids any automatic install) a sheet opens by itself, sooner for returning visitors and later for first-timers, installs by itself on Android (the first tap opens the system dialog, no banner), and on iPhone/iPad points at the Share
- * button. Every refusal pushes the next offer further away; once installed it never returns.
+ * button. Once shown it never returns on its own, and neither does it after an install.
  */
 export function InstallAppBanner() {
-  const { canPrompt, needsManual, inAppBrowser, platform, shouldOffer, returning, install, dismiss } = useInstallApp();
+  const { canPrompt, needsManual, inAppBrowser, platform, shouldOffer: mayOfferNow, returning, install, markOffered } = useInstallApp();
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
+  // Decided once, on arrival: recording the offer must not close the sheet that is showing it.
+  const shouldOffer = useRef(mayOfferNow).current;
 
   const eligible = shouldOffer && (needsManual || inAppBrowser);
 
@@ -50,11 +53,13 @@ export function InstallAppBanner() {
     if (!shouldOffer || !canPrompt) return undefined;
     const onTouch = () => {
       document.removeEventListener('pointerup', onTouch, true);
-      void install().then((outcome) => { if (outcome === 'dismissed') dismiss(); });
+      // Asked once: whatever the answer, the system dialog is not opened again.
+      markOffered();
+      void install();
     };
     document.addEventListener('pointerup', onTouch, true);
     return () => document.removeEventListener('pointerup', onTouch, true);
-  }, [shouldOffer, canPrompt, install, dismiss]);
+  }, [shouldOffer, canPrompt, install, markOffered]);
 
   useEffect(() => {
     if (!eligible) return undefined;
@@ -64,15 +69,16 @@ export function InstallAppBanner() {
 
   useEffect(() => {
     if (!ready) return undefined;
+    markOffered();
     const frame = window.requestAnimationFrame(() => setVisible(true));
     return () => window.cancelAnimationFrame(frame);
-  }, [ready]);
+  }, [ready, markOffered]);
 
   if (!ready || !eligible) return null;
 
   const close = () => {
     setVisible(false);
-    window.setTimeout(dismiss, 250);
+    window.setTimeout(() => setReady(false), 250);
   };
 
   return (

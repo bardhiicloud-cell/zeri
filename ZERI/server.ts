@@ -63,6 +63,7 @@ import { registerReportCaseRoutes } from './server/reportCase';
 import { registerTrackLookupRoutes } from './server/trackLookup';
 import { registerPublicReportRoutes } from './server/publicReports';
 import { registerGuestNumberRoutes } from './server/guestNumbers';
+import { registerGuestSessionRoutes } from './server/guestSession';
 import { registerContactRoutes } from './server/contactMessages';
 import { registerPublicSubmissionRoutes } from './server/publicSubmissions';
 import { createMailerFromEnv } from './server/mailer';
@@ -2125,6 +2126,7 @@ registerReportCaseRoutes(app, { requireAuth, db, actingUser, audit });
 registerTrackLookupRoutes(app, { db });
 registerPublicReportRoutes(app, { db });
 registerGuestNumberRoutes(app, { requireAuth, db });
+registerGuestSessionRoutes(app, { createCustomToken: (uid, claims) => authAdmin().createCustomToken(uid, claims) });
 registerContactRoutes(app, { db });
 registerPublicSubmissionRoutes(app, {
   db,
