@@ -1,3 +1,4 @@
+import { dt } from '@/src/lib/dt';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
@@ -79,7 +80,7 @@ export default function AdminHeritage() {
     );
   }
   if (!state) {
-    return <div className="flex h-48 items-center justify-center text-slate-400"><Loader2 className="h-6 w-6 animate-spin" aria-label="Duke ngarkuar" /></div>;
+    return <div className="flex h-48 items-center justify-center text-slate-400"><Loader2 className="h-6 w-6 animate-spin" aria-label={dt('Duke ngarkuar')} /></div>;
   }
 
   const tabs: Array<[Tab, string, React.ReactNode]> = [
@@ -96,7 +97,7 @@ export default function AdminHeritage() {
           <h2 className="text-xl font-black text-slate-900 dark:text-white">Arkivi i Kosovës & Historia e UÇK-së</h2>
           <p className="text-xs text-slate-500">Shënime të strukturuara, burime, rishikim me dy sy, versione dhe regjistër auditimi.</p>
         </div>
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Pjesët e arkivit">
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label={dt('Pjesët e arkivit')}>
           {tabs.map(([id, label, icon]) => (
             <button key={id} role="tab" aria-selected={tab === id} type="button" onClick={() => { setTab(id); setEditing(null); }}
               className={cn(btn, tab === id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300')}>
@@ -155,7 +156,7 @@ function EntryList({ state, onOpen, onReload }: { state: AdminHeritageState; onO
   }, [rows]);
 
   const importAll = async () => {
-    if (!await askConfirm('Të importohen të gjitha tekstet fillestare në CMS si drafte? Teksti publik nuk ndryshon derisa t’i publikoni.')) return;
+    if (!await askConfirm(dt('Të importohen të gjitha tekstet fillestare në CMS si drafte? Teksti publik nuk ndryshon derisa t’i publikoni.'))) return;
     setBusy(true);
     try {
       const r = await heritageAdmin.importSeed();
@@ -169,14 +170,14 @@ function EntryList({ state, onOpen, onReload }: { state: AdminHeritageState; onO
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Kërko titull, ID ose etiketë" aria-label="Kërko shënime" className={cn(inputCls, 'pl-9')} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={dt('Kërko titull, ID ose etiketë')} aria-label={dt('Kërko shënime')} className={cn(inputCls, 'pl-9')} />
         </div>
         <select aria-label="Zona" value={area} onChange={(e) => setArea(e.target.value as HeritageArea | 'all')} className={cn(inputCls, 'w-auto')}>
           <option value="all">Të dyja zonat</option>
           <option value="kosova">Kosova (10 seksione)</option>
           <option value="uck">Historia e UÇK-së</option>
         </select>
-        <select aria-label="Statusi" value={status} onChange={(e) => setStatus(e.target.value as EntryStatus | 'all' | 'seed')} className={cn(inputCls, 'w-auto')}>
+        <select aria-label={dt('Statusi')} value={status} onChange={(e) => setStatus(e.target.value as EntryStatus | 'all' | 'seed')} className={cn(inputCls, 'w-auto')}>
           <option value="all">Çdo status</option>
           {(Object.keys(STATUS_LABELS) as EntryStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]} ({counts[s]})</option>)}
           <option value="seed">Vetëm në paketë, jo ende në CMS ({counts.seed})</option>
@@ -341,7 +342,7 @@ function EntryEditor({ state, initial, onClose, onChanged }: {
             )}
             {state.me.role === 'superadmin' && (model.status === 'draft' || model.status === 'archived') && (
               <button type="button" className={btnDanger} disabled={busy} onClick={async () => {
-                const reason = await askReason('Arsyeja e fshirjes së përhershme:');
+                const reason = await askReason(dt('Arsyeja e fshirjes së përhershme:'));
                 if (!reason) return;
                 await run(async () => { await heritageAdmin.remove(model.id, reason); onClose(); }, 'U fshi.');
               }}><Trash2 className="h-4 w-4" />Fshi</button>
@@ -485,7 +486,7 @@ function EntryEditor({ state, initial, onClose, onChanged }: {
       )}
 
       {dialog && (
-        <div role="dialog" aria-modal="true" aria-label="Konfirmim" className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center" onClick={() => setDialog(null)}>
+        <div role="dialog" aria-modal="true" aria-label={dt('Konfirmim')} className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center" onClick={() => setDialog(null)}>
           <div className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-black">
               {dialog.kind === 'verify' ? 'Verifikimi faktik' : dialog.kind === 'correct' ? 'Korrigjim i dukshëm' : `Kalim në “${STATUS_LABELS[dialog.to]}”`}
@@ -496,7 +497,7 @@ function EntryEditor({ state, initial, onClose, onChanged }: {
               {dialog.kind === 'transition' && (nextMoves(model.status).find((m) => m.to === dialog.to)?.needsReason ? 'Arsyeja është e detyrueshme dhe ruhet në auditim.' : 'Shënim opsional për auditimin.')}
             </p>
             <textarea autoFocus rows={3} className={inputCls} value={dialogText} onChange={(e) => setDialogText(e.target.value)} placeholder={dialog.kind === 'correct' ? 'Korrigjimi (shqip)' : 'Shënimi'} />
-            {dialog.kind === 'correct' && <textarea rows={2} className={inputCls} value={dialogEn} onChange={(e) => setDialogEn(e.target.value)} placeholder="Correction (English)" />}
+            {dialog.kind === 'correct' && <textarea rows={2} className={inputCls} value={dialogEn} onChange={(e) => setDialogEn(e.target.value)} placeholder={dt('Correction (English)')} />}
             <div className="flex justify-end gap-2"><button type="button" className={btnGhost} onClick={() => setDialog(null)}>Anulo</button><button type="button" className={btnPrimary} disabled={busy} onClick={submitDialog}>Konfirmo</button></div>
           </div>
         </div>
@@ -526,7 +527,7 @@ function SourcePicker({ sources, value, onChange }: { sources: HeritageSource[];
           );
         })}
       </div>
-      <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kërko burim për ta shtuar…" aria-label="Kërko burim" />
+      <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={dt('Kërko burim për ta shtuar…')} aria-label={dt('Kërko burim')} />
       {matches.length > 0 && (
         <ul className="rounded-lg border border-slate-200 bg-white text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900">
           {matches.map((s) => (
@@ -550,14 +551,14 @@ function ClaimsEditor({ claims, sources, onChange }: { claims: Claim[]; sources:
       </div>
       {claims.map((c, i) => (
         <div key={c.id + i} className="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-2 dark:border-slate-700">
-          <input className={inputCls} placeholder="Pohimi (shqip) p.sh. 13.535 persona…" value={c.text.sq} onChange={(e) => update(i, { text: { ...c.text, sq: e.target.value } })} />
-          <input className={inputCls} placeholder="Claim (English)" value={c.text.en} onChange={(e) => update(i, { text: { ...c.text, en: e.target.value } })} />
+          <input className={inputCls} placeholder={dt('Pohimi (shqip) p.sh. 13.535 persona…')} value={c.text.sq} onChange={(e) => update(i, { text: { ...c.text, sq: e.target.value } })} />
+          <input className={inputCls} placeholder={dt('Claim (English)')} value={c.text.en} onChange={(e) => update(i, { text: { ...c.text, en: e.target.value } })} />
           <select className={inputCls} value={c.evidence} onChange={(e) => update(i, { evidence: e.target.value as Claim['evidence'] })}>{EVIDENCE_STATUSES.map((s) => <option key={s} value={s}>{EVIDENCE[s].label.sq}</option>)}</select>
-          <input className={inputCls} placeholder="Gjendja më (YYYY-MM-DD)" value={c.asOf} onChange={(e) => update(i, { asOf: e.target.value })} />
-          <select multiple className={cn(inputCls, 'h-24 sm:col-span-2')} aria-label="Burimet e pohimit" value={c.sourceIds} onChange={(e) => update(i, { sourceIds: Array.from(e.target.selectedOptions, (o) => o.value) })}>
+          <input className={inputCls} placeholder={dt('Gjendja më (YYYY-MM-DD)')} value={c.asOf} onChange={(e) => update(i, { asOf: e.target.value })} />
+          <select multiple className={cn(inputCls, 'h-24 sm:col-span-2')} aria-label={dt('Burimet e pohimit')} value={c.sourceIds} onChange={(e) => update(i, { sourceIds: Array.from(e.target.selectedOptions, (o) => o.value) })}>
             {sources.map((s) => <option key={s.id} value={s.id}>{s.publisher} — {s.title}</option>)}
           </select>
-          <input className={cn(inputCls, 'sm:col-span-2')} placeholder="Kujdes / kufizim (metodologji, pse nuk është përfundimtare)" value={c.caveat?.sq ?? ''} onChange={(e) => update(i, { caveat: { sq: e.target.value, en: c.caveat?.en ?? '' } })} />
+          <input className={cn(inputCls, 'sm:col-span-2')} placeholder={dt('Kujdes / kufizim (metodologji, pse nuk është përfundimtare)')} value={c.caveat?.sq ?? ''} onChange={(e) => update(i, { caveat: { sq: e.target.value, en: c.caveat?.en ?? '' } })} />
           <button type="button" className={cn(btnGhost, 'sm:col-span-2 justify-self-end')} onClick={() => onChange(claims.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" />Hiq</button>
         </div>
       ))}
@@ -578,15 +579,15 @@ function MediaEditor({ media, onChange, sensitive }: { media: MediaRef[]; onChan
         <div key={m.id + i} className="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-2 dark:border-slate-700">
           <input className={inputCls} placeholder="https://… (lidhja e skedarit)" value={m.url} onChange={(e) => update(i, { url: e.target.value })} />
           <select className={inputCls} value={m.kind} onChange={(e) => update(i, { kind: e.target.value as MediaRef['kind'] })}><option value="image">Foto</option><option value="video">Video</option><option value="document">Dokument</option><option value="map">Hartë</option></select>
-          <input className={inputCls} placeholder="Tekst alternativ (shqip) — i detyrueshëm" value={m.alt.sq} onChange={(e) => update(i, { alt: { ...m.alt, sq: e.target.value } })} />
-          <input className={inputCls} placeholder="Alt text (English)" value={m.alt.en} onChange={(e) => update(i, { alt: { ...m.alt, en: e.target.value } })} />
-          <input className={inputCls} placeholder="Titulli / përshkrimi (shqip)" value={m.caption.sq} onChange={(e) => update(i, { caption: { ...m.caption, sq: e.target.value } })} />
-          <input className={inputCls} placeholder="Caption (English)" value={m.caption.en} onChange={(e) => update(i, { caption: { ...m.caption, en: e.target.value } })} />
-          <input className={inputCls} placeholder="Kredia (autori / arkivi)" value={m.credit} onChange={(e) => update(i, { credit: e.target.value })} />
+          <input className={inputCls} placeholder={dt('Tekst alternativ (shqip) — i detyrueshëm')} value={m.alt.sq} onChange={(e) => update(i, { alt: { ...m.alt, sq: e.target.value } })} />
+          <input className={inputCls} placeholder={dt('Alt text (English)')} value={m.alt.en} onChange={(e) => update(i, { alt: { ...m.alt, en: e.target.value } })} />
+          <input className={inputCls} placeholder={dt('Titulli / përshkrimi (shqip)')} value={m.caption.sq} onChange={(e) => update(i, { caption: { ...m.caption, sq: e.target.value } })} />
+          <input className={inputCls} placeholder={dt('Caption (English)')} value={m.caption.en} onChange={(e) => update(i, { caption: { ...m.caption, en: e.target.value } })} />
+          <input className={inputCls} placeholder={dt('Kredia (autori / arkivi)')} value={m.credit} onChange={(e) => update(i, { credit: e.target.value })} />
           <select className={inputCls} value={m.rights} onChange={(e) => update(i, { rights: e.target.value as MediaRef['rights'] })}>
             {RIGHTS.map((r) => <option key={r} value={r}>{{ 'public-domain': 'Domen publik', cc: 'Creative Commons', licensed: 'Licencë e blerë', permission: 'Leje e shkruar', unknown: 'E panjohur (bllokon publikimin)' }[r]}</option>)}
           </select>
-          <input className={cn(inputCls, 'sm:col-span-2')} placeholder="Referenca e licencës ose e lejes" value={m.rightsRef} onChange={(e) => update(i, { rightsRef: e.target.value })} />
+          <input className={cn(inputCls, 'sm:col-span-2')} placeholder={dt('Referenca e licencës ose e lejes')} value={m.rightsRef} onChange={(e) => update(i, { rightsRef: e.target.value })} />
           <label className="inline-flex items-center gap-2 text-xs"><input type="checkbox" checked={m.privacyCleared} onChange={(e) => update(i, { privacyCleared: e.target.checked })} />Privatësia e konfirmuar (persona të paraqitur)</label>
           <button type="button" className={cn(btnGhost, 'justify-self-end')} onClick={() => onChange(media.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" />Hiq</button>
         </div>
@@ -607,7 +608,7 @@ function SourcesPanel({ state, onReload }: { state: AdminHeritageState; onReload
   const save = async () => {
     if (!edit?.id) return;
     setBusy(true);
-    try { await heritageAdmin.saveSource(edit as HeritageSource); toast.success('Burimi u ruajt.'); setEdit(null); await onReload(); }
+    try { await heritageAdmin.saveSource(edit as HeritageSource); toast.success(dt('Burimi u ruajt.')); setEdit(null); await onReload(); }
     catch (e) { toast.error((e as Error).message + (e instanceof HeritageApiError && e.fields ? ' ' + Object.values(e.fields).join(' ') : '')); }
     finally { setBusy(false); }
   };
@@ -615,8 +616,8 @@ function SourcesPanel({ state, onReload }: { state: AdminHeritageState; onReload
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <input className={cn(inputCls, 'min-w-[200px] flex-1')} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kërko burim" aria-label="Kërko burim" />
-        <select className={cn(inputCls, 'w-auto')} value={only} onChange={(e) => setOnly(e.target.value as 'all' | 'unchecked')} aria-label="Filtri">
+        <input className={cn(inputCls, 'min-w-[200px] flex-1')} value={q} onChange={(e) => setQ(e.target.value)} placeholder={dt('Kërko burim')} aria-label={dt('Kërko burim')} />
+        <select className={cn(inputCls, 'w-auto')} value={only} onChange={(e) => setOnly(e.target.value as 'all' | 'unchecked')} aria-label={dt('Filtri')}>
           <option value="all">Të gjitha ({state.sources.length})</option><option value="unchecked">Lidhja e pakontrolluar ({state.sources.filter((s) => !s.linkChecked).length})</option>
         </select>
         {state.me.canEdit && <button type="button" className={btnPrimary} onClick={() => setEdit({ id: '', type: 'other', title: '', publisher: '', linkChecked: false })}><Plus className="h-4 w-4" />Burim i ri</button>}
@@ -640,7 +641,7 @@ function SourcesPanel({ state, onReload }: { state: AdminHeritageState; onReload
       </div>
 
       {edit && (
-        <div role="dialog" aria-modal="true" aria-label="Burimi" className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center" onClick={() => setEdit(null)}>
+        <div role="dialog" aria-modal="true" aria-label={dt('Burimi')} className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center" onClick={() => setEdit(null)}>
           <div className="max-h-[90vh] w-full max-w-xl space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-black">{state.sources.some((s) => s.id === edit.id) ? 'Burimi' : 'Burim i ri'}</h3>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -648,7 +649,7 @@ function SourcesPanel({ state, onReload }: { state: AdminHeritageState; onReload
               <Field label="Lloji"><select className={inputCls} value={edit.type} onChange={(e) => setEdit({ ...edit, type: e.target.value as HeritageSource['type'] })}>{SOURCE_TYPES.map((t) => <option key={t} value={t}>{SOURCE_TYPE_LABELS[t].sq}</option>)}</select></Field>
               <Field label="Titulli" className="sm:col-span-2"><input className={inputCls} value={edit.title ?? ''} onChange={(e) => setEdit({ ...edit, title: e.target.value })} /></Field>
               <Field label="Botuesi / institucioni"><input className={inputCls} value={edit.publisher ?? ''} onChange={(e) => setEdit({ ...edit, publisher: e.target.value })} /></Field>
-              <Field label="Data e dokumentit"><input className={inputCls} value={edit.date ?? ''} onChange={(e) => setEdit({ ...edit, date: e.target.value })} placeholder="YYYY-MM-DD" /></Field>
+              <Field label="Data e dokumentit"><input className={inputCls} value={edit.date ?? ''} onChange={(e) => setEdit({ ...edit, date: e.target.value })} placeholder={dt('YYYY-MM-DD')} /></Field>
               <Field label="Lidhja (https://)" className="sm:col-span-2"><input className={inputCls} value={edit.url ?? ''} onChange={(e) => setEdit({ ...edit, url: e.target.value })} /></Field>
               <Field label="Referenca (simbol, nr. çështjeje, arkiv)" className="sm:col-span-2"><input className={inputCls} value={edit.reference ?? ''} onChange={(e) => setEdit({ ...edit, reference: e.target.value })} /></Field>
               <Field label="Shënim" className="sm:col-span-2"><textarea rows={2} className={inputCls} value={edit.note ?? ''} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></Field>
@@ -656,7 +657,7 @@ function SourcesPanel({ state, onReload }: { state: AdminHeritageState; onReload
             </div>
             <div className="flex flex-wrap justify-between gap-2">
               {state.me.canPublish && state.sources.some((s) => s.id === edit.id && s.origin === 'cms') ? (
-                <button type="button" className={btnDanger} disabled={busy} onClick={async () => { try { await heritageAdmin.deleteSource(edit.id!); toast.success('U fshi.'); setEdit(null); await onReload(); } catch (e) { toast.error((e as Error).message); } }}><Trash2 className="h-4 w-4" />Fshi</button>
+                <button type="button" className={btnDanger} disabled={busy} onClick={async () => { try { await heritageAdmin.deleteSource(edit.id!); toast.success(dt('U fshi.')); setEdit(null); await onReload(); } catch (e) { toast.error((e as Error).message); } }}><Trash2 className="h-4 w-4" />Fshi</button>
               ) : <span />}
               <div className="flex gap-2"><button type="button" className={btnGhost} onClick={() => setEdit(null)}>Anulo</button>{state.me.canEdit && <button type="button" className={btnPrimary} disabled={busy} onClick={() => void save()}><Save className="h-4 w-4" />Ruaj</button>}</div>
             </div>
@@ -697,7 +698,7 @@ function SettingsPanel({ state, onReload }: { state: AdminHeritageState; onReloa
     setBusy(true);
     try {
       await heritageAdmin.saveSettings({ ...s, heroRights: s.heroRights as 'unknown', featuredIds: s.featuredIds.split(',').map((x) => x.trim()).filter(Boolean) });
-      toast.success('U ruajt.'); await onReload();
+      toast.success(dt('U ruajt.')); await onReload();
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
   return (

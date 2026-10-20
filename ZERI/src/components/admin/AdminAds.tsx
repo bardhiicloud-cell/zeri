@@ -596,21 +596,21 @@ export default function AdminAds() {
                    <button
                      onClick={() => handleBulkAction('active')}
                      className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors"
-                     title="Aktivizo të zgjedhurat"
+                     title={dt('Aktivizo të zgjedhurat')}
                    >
                      <Play className="w-3.5 h-3.5 inline mr-1" />{dt(`Aktivizo`)}
                    </button>
                    <button
                      onClick={() => handleBulkAction('paused')}
                      className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition-colors"
-                     title="Pauzo të zgjedhurat"
+                     title={dt('Pauzo të zgjedhurat')}
                    >
                      <Pause className="w-3.5 h-3.5 inline mr-1" />{dt(`Pauzo`)}
                    </button>
                    <button
                      onClick={() => handleBulkAction('delete')}
                      className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold transition-colors"
-                     title="Fshi të zgjedhurat"
+                     title={dt('Fshi të zgjedhurat')}
                    >
                      <Trash2 className="w-3.5 h-3.5 inline mr-1" />{dt(`Fshi`)}
                    </button>
@@ -723,11 +723,11 @@ export default function AdminAds() {
                           {/* Stats */}
                           <td className="px-4 py-3 align-middle">
                             <div className="flex items-center gap-3 text-xs">
-                              <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold" title="Shikime">
+                              <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold" title={dt('Shikime')}>
                                 <Eye className="w-3.5 h-3.5 text-slate-400" />
                                 {ad.views || 0}
                               </span>
-                              <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold" title="Klikime">
+                              <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold" title={dt('Klikime')}>
                                 <MousePointerClick className="w-3.5 h-3.5 text-slate-400" />
                                 {ad.clicks || 0}
                               </span>
@@ -780,7 +780,7 @@ export default function AdminAds() {
 
                               {/* Delete */}
                               <button
-                                onClick={async () => { if (await askConfirm('A jeni të sigurt që dëshironi ta fshini këtë reklamë?')) deleteAd(ad.id); }}
+                                onClick={async () => { if (await askConfirm(dt('A jeni të sigurt që dëshironi ta fshini këtë reklamë?'))) deleteAd(ad.id); }}
                                 className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors"
                                 title={dt(`Fshi`)}
                               >
@@ -1442,7 +1442,7 @@ export default function AdminAds() {
                         <button
                           type="button"
                           onClick={async () => {
-                            if (await askConfirm('A dëshironi ta fshini këtë kërkesë?')) await deleteDoc(doc(db, 'adRequests', req.id));
+                            if (await askConfirm(dt('A dëshironi ta fshini këtë kërkesë?'))) await deleteDoc(doc(db, 'adRequests', req.id));
                           }}
                           className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700"
                         >Fshi</button>
