@@ -19,7 +19,6 @@
  */
 import { useMemo, useState } from 'react';
 import { dt } from '../../lib/dt';
-import { auth } from '../../lib/firebase';
 import { requireAdminToken, describeApiFailure } from '../../lib/adminApi';
 import { useCitizenDirectory } from '../../lib/useCitizenDirectory';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';

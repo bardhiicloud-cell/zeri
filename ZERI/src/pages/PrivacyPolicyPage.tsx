@@ -1,6 +1,5 @@
 import { dt } from '@/src/lib/dt';
 import { AuraHero, AuraOrbit } from '../components/aura/Aura';
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Scale, MapPin, Clock, Trash2, Building2, Mail, Eye, Cookie, AlertTriangle } from 'lucide-react';
 import { CookiePreferencesButton } from '../components/CookieConsentBanner';

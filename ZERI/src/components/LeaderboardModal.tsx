@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { useState, useEffect } from 'react';
-import { Award, Trophy, Medal, X, ChevronRight } from 'lucide-react';
+import { Award, Trophy, Medal, X } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { AnimatePresence, motion } from 'framer-motion';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';

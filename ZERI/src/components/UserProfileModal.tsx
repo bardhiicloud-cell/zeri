@@ -9,7 +9,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db, uploadFileToStorage } from '../lib/firebase';
 import { useStore } from '../lib/store';
 import { cn } from '../lib/utils';
-import { ALL_MUNICIPALITIES, ALL_SCOPE, isSpecificScope, scopeKey, searchMunicipalities } from '../lib/municipalityScope';
+import { ALL_SCOPE, isSpecificScope, scopeKey, searchMunicipalities } from '../lib/municipalityScope';
 
 export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const currentUser = useStore(state => state.currentUser);

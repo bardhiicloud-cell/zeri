@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Phone, MessageCircle, Mail, Handshake, Megaphone, Landmark, Smartphone, Zap,
   GraduationCap, HeartPulse, Users, Newspaper, Store, CheckCircle2, LayoutTemplate,
-  PanelTop, Newspaper as ArticleIcon, Rows3, Sidebar, MapPin, ExternalLink, Ruler,
-  ShieldCheck, Languages, Send, BadgeCheck, Upload, Rocket, Film, Image as ImageIcon,
+  PanelTop, Newspaper as ArticleIcon, Rows3, Sidebar, MapPin, ExternalLink, Ruler, Languages, Send, BadgeCheck, Upload, Rocket, Film, Image as ImageIcon
 } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { AuraHero, AuraStats, AuraOrbit } from '../components/aura/Aura';

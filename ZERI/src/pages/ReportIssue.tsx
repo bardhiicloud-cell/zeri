@@ -15,9 +15,6 @@ import { cn } from '../lib/utils';
 import { getAccountabilityDueDate, getAccountabilityProfile } from '../lib/accountability';
 import { SECTOR_CATALOG, LEVEL_LABEL, checkLocation, nearestMunicipality, sectorByName, sectorLabel, suggestSectors } from '../lib/sectorCatalog';
 
-import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 
 import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constants';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
@@ -33,7 +30,7 @@ import { createTrackingId, saveGuestReportHistory } from '../lib/session';
 import { ensureReportSession } from '../lib/reportSession';
 
 
-import { validations, runValidations } from '../lib/validations';
+import { validations } from '../lib/validations';
 import { handleFirebaseError } from '../lib/errorHandler';
 
 // Fix for default Leaflet icon in React

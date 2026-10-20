@@ -3,7 +3,7 @@ import { AuthShell, AuthField, AuthError, AuthDivider, GoogleIcon, authPrimaryBt
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
-import { ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Lock, Mail, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult, getUserRole } from '../lib/firebase';

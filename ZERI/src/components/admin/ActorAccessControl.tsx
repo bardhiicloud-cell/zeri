@@ -18,7 +18,6 @@
  */
 import { useMemo, useState } from 'react';
 import { dt } from '../../lib/dt';
-import { auth } from '../../lib/firebase';
 import { requireAdminToken, describeApiFailure } from '../../lib/adminApi';
 import {
   canAccessSection,
@@ -29,8 +28,8 @@ import {
 } from '../../lib/adminPermissions';
 import type { User } from '../../types';
 import {
-  Shield, ShieldOff, ShieldCheck, KeyRound, Eye, EyeOff, Ban, CheckCircle2,
-  AlertTriangle, Loader2, Save,
+  Shield, ShieldCheck, KeyRound, Eye, EyeOff, Ban, CheckCircle2,
+  AlertTriangle, Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import RemoveAccountDialog from './RemoveAccountDialog';

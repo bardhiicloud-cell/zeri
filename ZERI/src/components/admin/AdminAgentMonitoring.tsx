@@ -1,8 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import { useMemo, useState } from 'react';
 import {
-  Activity, AlertTriangle, BarChart3, CheckCircle2, Clock, Eye, FileText, Filter, Globe,
-  MapPin, RefreshCw, Search, ShieldAlert, TrendingUp, UserCheck, Users, X,
+  Activity, AlertTriangle, BarChart3, Clock, Eye, FileText, Filter, MapPin, RefreshCw, Search, ShieldAlert, UserCheck, Users, X
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { useCitizenDirectory } from '../../lib/useCitizenDirectory';

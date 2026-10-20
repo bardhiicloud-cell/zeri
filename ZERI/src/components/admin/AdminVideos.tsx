@@ -1,7 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Video, Plus, Pencil, Trash2, Search, X, Save, Eye, EyeOff, Upload, Link2, Loader2,
+  Video, Plus, Pencil, Trash2, Search, X, Save, Upload, Link2, Loader2
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';

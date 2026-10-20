@@ -11,7 +11,7 @@
  * are read-only, so the record of who claimed what and when survives even when a
  * claim is rejected.
  */
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { dt } from '../../lib/dt';
 import { auth } from '../../lib/firebase';
 import {

@@ -1,5 +1,4 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, FileText, Cookie, Megaphone, Lock, Scale, AlertTriangle, Eye, CheckCircle2 } from 'lucide-react';
 

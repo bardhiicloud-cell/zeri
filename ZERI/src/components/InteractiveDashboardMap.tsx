@@ -1,14 +1,11 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useStore } from '../lib/store';
 import { Report } from '../types';
-import { formatDistanceToNow } from 'date-fns';
-import { sq } from 'date-fns/locale';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const defaultIcon = L.icon({

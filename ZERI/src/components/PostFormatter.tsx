@@ -1,5 +1,3 @@
-import { dt } from '@/src/lib/dt';
-import React from 'react';
 
 interface PostFormatterProps {
   content: string;
