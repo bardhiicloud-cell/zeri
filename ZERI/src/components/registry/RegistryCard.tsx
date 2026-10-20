@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image as ImageIcon, Layers, MapPin, MessageCircle, Play, Share2, ThumbsUp } from 'lucide-react';
+import { Calendar, Layers, MapPin, MessageCircle, Share2, ThumbsUp, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { sq } from 'date-fns/locale';
 import type { Report } from '../../types';
@@ -41,77 +41,58 @@ export function StatusPill({ status, className }: { status: string; className?: 
   );
 }
 
-/** Photos and videos attached to a report, for the small media badge. */
-export function mediaCount(report: Report): number {
-  const media = report.media?.filter(item => item?.url && (item.type === 'image' || item.type === 'video')).length ?? 0;
-  return media || (report.images?.filter(Boolean).length ?? 0);
-}
-
-/** Pulse-free urgency marker: shown only when it needs attention. */
-export function UrgencyTag({ urgency, dt }: { urgency: string; dt: (text: string) => string }) {
-  if (urgency !== 'Kritike' && urgency !== 'E lartë') return null;
-  return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide', urgency === 'Kritike' ? 'bg-rose-600 text-white' : 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200')}>
-      {dt(urgency)}
-    </span>
-  );
-}
-
-/**
- * One report as a card. The whole card is a single target: the title is a
- * button stretched over the card, so a click anywhere opens the report and
- * keyboard users get exactly one tab stop. Share sits above it.
- */
 export function RegistryCard({ report, dt, onOpen, onShare }: RegistryCardProps) {
   const cover = reportCover(report);
   const topic = getReportTopic(report);
-  const count = mediaCount(report);
+  const critical = report.urgency === 'Kritike' || report.urgency === 'E lartë';
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white transition duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-white/10 dark:bg-slate-900 dark:hover:border-blue-500/50">
-      <div className="relative aspect-[16/10] w-full overflow-hidden sm:aspect-[4/3] bg-slate-100 dark:bg-slate-800">
+    <article className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-white/10 dark:bg-slate-900 dark:hover:border-blue-500/50">
+      <button type="button" onClick={onOpen} aria-label={`${dt('Hap raportimin')} ${report.title}`} className="relative block aspect-[16/10] w-full overflow-hidden bg-slate-100 text-left dark:bg-slate-800">
         {cover?.type === 'image' ? (
           <img src={cover.url} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
         ) : cover?.type === 'video' ? (
           <video src={cover.url} className="h-full w-full object-cover" muted playsInline preload="metadata" aria-label={dt('Video e raportimit')} />
         ) : (
-          <span className="grid h-full w-full place-items-center bg-gradient-to-br from-slate-100 to-blue-50 text-5xl dark:from-slate-800 dark:to-slate-900" aria-hidden="true">
-            {topic?.icon ?? <Layers className="h-10 w-10 text-slate-300" />}
+          <span className="grid h-full w-full place-items-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 text-4xl dark:from-slate-800 dark:via-slate-800 dark:to-slate-900" aria-hidden="true">
+            {topic?.icon ?? <Layers className="h-9 w-9 text-slate-400" />}
           </span>
         )}
-        {cover && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/40 to-transparent" />}
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/55 to-transparent" />
         <StatusPill status={report.status} className="absolute left-3 top-3 border-white/60 bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/90" />
-        {count > 0 && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-slate-950/65 px-2 py-1 text-[11px] font-bold text-white backdrop-blur">
-            {cover?.type === 'video' ? <Play className="h-3 w-3 fill-white" aria-hidden="true" /> : <ImageIcon className="h-3 w-3" aria-hidden="true" />}{count}
-          </span>
+        {critical && (
+          <span className="absolute right-3 top-3 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-sm">{dt(report.urgency)}</span>
         )}
-      </div>
+        <span className="absolute bottom-3 left-3 rounded-md bg-slate-950/70 px-2 py-1 font-mono text-[10px] font-bold text-white backdrop-blur">#{trackingIdOf(report)}</span>
+      </button>
 
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-slate-500 dark:text-slate-400">
-          <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{report.location?.municipality || 'Kosovë'}</span>
-          <span aria-hidden="true">·</span>
-          <span className="truncate">{topic ? `${topic.icon} ${topic.label}` : dt(report.category)}</span>
-          <UrgencyTag urgency={report.urgency} dt={dt} />
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+          {topic && <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-200">{topic.icon} {topic.label}</span>}
+          <span className="max-w-[11rem] truncate text-slate-500 dark:text-slate-400">{dt(report.category)}</span>
         </div>
 
-        <h3 className="mt-2.5 text-lg font-black leading-snug tracking-tight text-slate-950 dark:text-white">
-          <button type="button" onClick={onOpen} aria-label={`${dt('Hap raportimin')} ${report.title}`} className="line-clamp-2 text-left transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-blue-700 dark:group-hover:text-blue-300">{report.title}</button>
+        <h3 className="mt-3 text-lg font-black leading-snug tracking-tight text-slate-950 dark:text-white">
+          <button type="button" onClick={onOpen} className="line-clamp-2 text-left transition-colors group-hover:text-blue-700 dark:group-hover:text-blue-300">{report.title}</button>
         </h3>
-        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{report.description}</p>
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{report.description}</p>
 
-        <div className="mt-auto flex items-center justify-between gap-3 pt-5 text-xs font-bold text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-3.5">
-            <span className="font-mono text-[11px] text-slate-400">#{trackingIdOf(report)}</span>
-            <span className="inline-flex items-center gap-1" title={dt('Pëlqime')}><ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />{report.upvotes || 0}</span>
-            <span className="inline-flex items-center gap-1" title={dt('Komente')}><MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />{report.commentsCount || 0}</span>
+        <dl className="mt-4 space-y-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" /><dd className="min-w-0 truncate">{report.location?.municipality || 'Kosovë'}{report.location?.address ? ` · ${report.location.address}` : ''}</dd></div>
+          {report.responsibleInstitution && <div className="flex items-start gap-2"><Building2 className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" /><dd className="min-w-0 truncate">{dt(report.responsibleInstitution)}</dd></div>}
+          <div className="flex items-start gap-2"><Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" /><dd>{formatReportDate(report.createdAt)}</dd></div>
+        </dl>
+
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-white/10" style={{ marginTop: '1.25rem' }}>
+          <div className="flex items-center gap-4 text-xs font-bold text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1.5" title={dt('Pëlqime')}><ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />{report.upvotes || 0}</span>
+            <span className="inline-flex items-center gap-1.5" title={dt('Komente')}><MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />{report.commentsCount || 0}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <time dateTime={report.createdAt}>{formatReportDate(report.createdAt)}</time>
-            <button type="button" onClick={event => onShare(event, report.title, report.id)} className="relative z-10 grid h-9 w-9 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-slate-800" aria-label={dt('Shpërndaj')} title={dt('Shpërndaj')}>
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={event => onShare(event, report.title, report.id)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-400 hover:text-blue-700 dark:border-white/10" aria-label={dt('Shpërndaj')} title={dt('Shpërndaj')}>
               <Share2 className="h-4 w-4" aria-hidden="true" />
             </button>
+            <button type="button" onClick={onOpen} className="inline-flex h-10 items-center rounded-xl bg-slate-900 px-4 text-xs font-black text-white transition hover:bg-blue-700 dark:bg-white dark:text-slate-900 dark:hover:bg-blue-200">{dt('Hap')}</button>
           </div>
         </div>
       </div>

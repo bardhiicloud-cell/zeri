@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  BarChart3, ChevronDown, ChevronLeft, ChevronRight, Download, FilePlus2, Filter, LayoutGrid, List, Rows3, Search, ShieldCheck,
+  ChevronLeft, ChevronRight, Download, FilePlus2, Filter, LayoutGrid, List, Rows3, Search, ShieldCheck,
   SlidersHorizontal, WifiOff, X, ArrowRight, FileSearch,
 } from 'lucide-react';
 import { useStore } from '../lib/store';
@@ -25,6 +25,7 @@ import { PageHero, heroPrimaryClass, heroSecondaryClass } from '../components/la
 type View = 'cards' | 'list' | 'table';
 type StatusFilter = 'all' | 'open' | 'resolved' | 'critical';
 type SortKey = 'recent' | 'oldest' | 'voted';
+type DrawerSort = 'dash_all' | 'dash_recent' | 'dash_most_voted' | 'dash_critical' | 'dash_resolved';
 type DatePreset = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 const PAGE_SIZES = [12, 24, 48] as const;
@@ -88,7 +89,6 @@ export default function DetailedRegistryPage() {
   const [datePreset, setDatePreset] = useState<DatePreset>(() => (searchParams.get('from') || searchParams.get('to') ? 'custom' : 'all'));
   const [selectedReportId, setSelectedReportId] = useState<string | null>(searchParams.get('report'));
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const [showInsights, setShowInsights] = useState(false);
   const [selectedMunicipality, setSelectedMunicipality] = useState(() => (isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : ''));
 
   // A link that names a municipality wins, and it sets the platform-wide scope
@@ -198,7 +198,7 @@ export default function DetailedRegistryPage() {
 
   const resetFilters = () => {
     setSearchQuery(''); setSelectedTopic(''); setSelectedMunicipality(''); setDateFrom(''); setDateTo('');
-    setDatePreset('all'); setStatusFilter('all'); setSort('recent'); setCurrentPage(1);
+    setDatePreset('all'); setStatusFilter('all'); setSort('recent'); setCurrentPage(1); setIsFilterDrawerOpen(false);
   };
 
   const chips = useMemo(() => {
@@ -216,6 +216,13 @@ export default function DetailedRegistryPage() {
     if (statusFilter !== 'all') list.push({ id: 'status', label: dt(STATUS_FILTERS.find(item => item.id === statusFilter)!.label), onRemove: () => { setStatusFilter('all'); setCurrentPage(1); } });
     return list;
   }, [applyDatePreset, datePreset, dateFrom, dateTo, dt, searchQuery, selectedMunicipality, selectedTopic, statusFilter]);
+
+  const drawerSort: DrawerSort = statusFilter === 'resolved' ? 'dash_resolved' : statusFilter === 'critical' ? 'dash_critical' : sort === 'voted' ? 'dash_most_voted' : 'dash_all';
+  const onDrawerSort = (value: DrawerSort) => {
+    setStatusFilter(value === 'dash_resolved' ? 'resolved' : value === 'dash_critical' ? 'critical' : 'all');
+    setSort(value === 'dash_most_voted' ? 'voted' : 'recent');
+    setCurrentPage(1);
+  };
 
   const downloadCSV = () => {
     const headers = ['Track ID', 'Titulli', 'Tema', 'Kategoria', 'Komuna', 'Adresa', 'Statusi', 'Urgjenca', 'Institucioni', 'Data', 'Pëlqime', 'Lidhja'];
@@ -278,52 +285,52 @@ export default function DetailedRegistryPage() {
       />
 
       {/* Toolbar */}
-      <section aria-label={dt('Kërkimi dhe filtrat')} className="rounded-3xl border border-slate-200/80 bg-white/95 p-3 shadow-lg shadow-slate-900/5 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/95 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <section aria-label={dt('Kërkimi dhe filtrat')} className="space-y-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               type="search"
               value={searchQuery}
               onChange={event => { setSearchQuery(event.target.value); setCurrentPage(1); }}
               placeholder={dt('Kërko raporte, adresa, komuna ose ID...')}
               aria-label={dt('Kërko raporte, adresa ose ID...')}
-              className="h-12 w-full rounded-2xl border border-transparent bg-slate-100 pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-950"
+              className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsFilterDrawerOpen(true)}
-              aria-haspopup="dialog"
-              className={cn('relative inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-black transition lg:flex-none', chips.length > 0 ? 'bg-blue-700 text-white hover:bg-blue-800' : 'bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200')}
+              onClick={() => setIsFilterDrawerOpen(open => !open)}
+              aria-expanded={isFilterDrawerOpen}
+              className={cn('inline-flex min-h-12 items-center gap-2 rounded-2xl border px-4 text-sm font-black transition-colors', isFilterDrawerOpen || chips.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200')}
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
               {dt('Filtra')}
-              {chips.length > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-white px-1 text-[11px] text-blue-800">{chips.length}</span>}
+              {chips.length > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-blue-700 px-1 text-[10px] text-white">{chips.length}</span>}
             </button>
-            <button type="button" onClick={downloadCSV} disabled={filteredReports.length === 0} title={dt('Eksporto CSV')} aria-label={dt('Eksporto CSV')} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-slate-200 text-slate-600 transition hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-300">
-              <Download className="h-4 w-4" aria-hidden="true" />
+            <button type="button" onClick={downloadCSV} disabled={filteredReports.length === 0} className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+              <Download className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">{dt('Eksporto CSV')}</span><span className="sm:hidden">CSV</span>
             </button>
           </div>
         </div>
 
-        <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div role="tablist" aria-label={dt('Statusi')} className="-mx-1 flex gap-1.5 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <div role="tablist" aria-label={dt('Statusi')} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {STATUS_FILTERS.map(item => {
               const active = statusFilter === item.id;
               return (
                 <button key={item.id} type="button" role="tab" aria-selected={active} onClick={() => { setStatusFilter(item.id); setCurrentPage(1); }}
-                  className={cn('inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-xs font-black transition', active ? 'border-blue-700 bg-blue-50 text-blue-800 dark:border-blue-300 dark:bg-blue-400/10 dark:text-blue-200' : 'border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white')}>
+                  className={cn('inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition', active ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700')}>
                   {dt(item.label)}
-                  <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', active ? 'bg-blue-700 text-white dark:bg-blue-300 dark:text-slate-900' : 'bg-slate-100 text-slate-500 dark:bg-slate-800')}>{counts[item.id]}</span>
+                  <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', active ? 'bg-white/20' : 'bg-white text-slate-500 dark:bg-slate-900')}>{counts[item.id]}</span>
                 </button>
               );
             })}
           </div>
-          <div className="flex items-center justify-between gap-2 lg:justify-end">
+          <div className="flex flex-wrap items-center gap-2">
             <label className="sr-only" htmlFor="registry-sort">{dt('Rendit sipas')}</label>
-            <select id="registry-sort" value={sort} onChange={event => { setSort(event.target.value as SortKey); setCurrentPage(1); }} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-blue-500 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+            <select id="registry-sort" value={sort} onChange={event => { setSort(event.target.value as SortKey); setCurrentPage(1); }} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
               {SORTS.map(item => <option key={item.id} value={item.id}>{dt(item.label)}</option>)}
             </select>
             <div role="group" aria-label={dt('Pamja')} className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
@@ -345,16 +352,13 @@ export default function DetailedRegistryPage() {
         dateFrom={dateFrom}
         dateTo={dateTo}
         datePreset={datePreset}
-        status={statusFilter}
-        sort={sort}
-        resultCount={filteredReports.length}
+        activeTab={drawerSort}
         onMunicipalityChange={value => { setSelectedMunicipality(value); setCurrentPage(1); }}
         onTopicChange={value => { setSelectedTopic(value); setCurrentPage(1); }}
         onDatePresetChange={value => { if (value === 'custom') { setDatePreset('custom'); setCurrentPage(1); } else applyDatePreset(value); }}
         onDateFromChange={value => { setDateFrom(value); setDatePreset('custom'); setCurrentPage(1); }}
         onDateToChange={value => { setDateTo(value); setDatePreset('custom'); setCurrentPage(1); }}
-        onStatusChange={value => { setStatusFilter(value); setCurrentPage(1); }}
-        onSortChange={value => { setSort(value); setCurrentPage(1); }}
+        onSortChange={onDrawerSort}
         onReset={resetFilters}
         onClose={() => setIsFilterDrawerOpen(false)}
       />
@@ -367,26 +371,15 @@ export default function DetailedRegistryPage() {
         </div>
       )}
 
-      {!loading && reportsStatus !== 'error' && filteredReports.length > 0 && (
-        <div>
-          <button type="button" onClick={() => setShowInsights(open => !open)} aria-expanded={showInsights} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-slate-600 transition hover:border-blue-400 hover:text-blue-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
-            <BarChart3 className="h-4 w-4" aria-hidden="true" />
-            {showInsights ? dt('Fshih statistikat') : dt('Shfaq statistikat')}
-            <ChevronDown className={cn('h-4 w-4 transition-transform', showInsights && 'rotate-180')} aria-hidden="true" />
-          </button>
-          {showInsights && (
-            <div className="mt-4">
-              <RegistryInsights
-                reports={filteredReports}
-                dt={dt}
-                activeMunicipality={selectedMunicipality}
-                activeTopic={selectedTopic}
-                onMunicipality={value => { setSelectedMunicipality(value); if (value) setUserMunicipality(value); setCurrentPage(1); }}
-                onTopic={value => { setSelectedTopic(value); setCurrentPage(1); }}
-              />
-            </div>
-          )}
-        </div>
+      {!loading && reportsStatus !== 'error' && (
+        <RegistryInsights
+          reports={filteredReports}
+          dt={dt}
+          activeMunicipality={selectedMunicipality}
+          activeTopic={selectedTopic}
+          onMunicipality={value => { setSelectedMunicipality(value); if (value) setUserMunicipality(value); setCurrentPage(1); }}
+          onTopic={value => { setSelectedTopic(value); setCurrentPage(1); }}
+        />
       )}
 
       <section id="registry-results" aria-labelledby="registry-results-title" className="scroll-mt-24 space-y-5">
