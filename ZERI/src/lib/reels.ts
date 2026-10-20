@@ -16,8 +16,8 @@ import {
   type DocumentSnapshot,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import { deleteObject, getDownloadURL, ref, uploadBytes, uploadBytesResumable, type UploadTask } from 'firebase/storage';
-import { auth, db, storage } from './firebase';
+import type { UploadTask } from 'firebase/storage';
+import { auth, db, loadStorage } from './firebase';
 
 /**
  * Reels: short vertical videos that stay on the profile, unlike 24-hour
@@ -252,6 +252,7 @@ export async function publishReel(input: PublishReelInput): Promise<string> {
 
   const safeName = input.file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60) || 'reel';
   const path = `forum_reels/${uid}/${Date.now()}_${safeName}`;
+  const { sdk: { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject }, storage } = await loadStorage();
   const objectRef = ref(storage, path);
   const task = uploadBytesResumable(objectRef, input.file, { contentType: input.file.type });
   input.onTask?.(task);
@@ -266,7 +267,7 @@ export async function publishReel(input: PublishReelInput): Promise<string> {
   });
   const mediaUrl = await getDownloadURL(objectRef);
 
-  let coverRef: ReturnType<typeof ref> | null = null;
+  let coverRef: typeof objectRef | null = null;
   let coverUrl = '';
   let coverPath = '';
   try {
