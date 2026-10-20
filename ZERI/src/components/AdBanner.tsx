@@ -10,35 +10,7 @@ import {
 } from 'lucide-react';
 import { auth, db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import DOMPurify from 'dompurify';
-
-/**
- * Sanitise HTML ad creative before it is injected.
- *
- * This used to call `window.DOMPurify` when present and an identity function
- * otherwise. Nothing ever put DOMPurify on `window`, so the "sanitiser" was a
- * no-op and any ad document with `mediaType: 'html'` rendered as raw HTML on
- * every visitor's page. The import is explicit now, the policy is https-only,
- * and iframes are forced into a sandbox without `allow-same-origin`, so a
- * hostile creative cannot reach the host page's storage or auth session.
- */
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-  if (node.tagName === 'IFRAME') {
-    node.setAttribute('sandbox', 'allow-scripts allow-popups');
-    node.setAttribute('referrerpolicy', 'no-referrer');
-  }
-  if (node.tagName === 'A') {
-    node.setAttribute('rel', 'noopener noreferrer sponsored');
-  }
-});
-
-function sanitizeAdHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['iframe', 'img', 'div', 'span', 'a'],
-    ALLOWED_ATTR: ['src', 'href', 'class', 'width', 'height', 'frameborder', 'allowfullscreen', 'target'],
-    ALLOWED_URI_REGEXP: /^https:/i,
-  });
-}
+const SanitizedAdHtml = React.lazy(() => import('./SanitizedAdHtml'));
 import toast from 'react-hot-toast';
 import { realContactOrEmpty } from '../lib/placeholderContacts';
 
@@ -305,7 +277,11 @@ export default function AdBanner({ position, className, municipality }: AdBanner
         )}
 
         {activeAd.mediaType === 'html' && (
-          <div className="absolute inset-0 w-full h-full overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeAdHtml(activeAd.mediaUrl) }} />
+          <div className="absolute inset-0 w-full h-full overflow-hidden">
+            <React.Suspense fallback={null}>
+              <SanitizedAdHtml html={activeAd.mediaUrl} />
+            </React.Suspense>
+          </div>
         )}
 
         {/* Overlay content only if it's not HTML to ensure text readability */}

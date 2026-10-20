@@ -9,7 +9,7 @@ import {
   AuthProvider,
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, doc, getDoc } from 'firebase/firestore';
-import { connectStorageEmulator, getBlob, getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import type { FirebaseStorage } from 'firebase/storage';
 import appletConfig from '../../firebase-applet-config.json';
 
 const usePrototypeEmulators =
@@ -83,17 +83,33 @@ export const auth = getAuth(app);
 export const db = firestoreConfig?.databaseId
   ? getFirestore(app, firestoreConfig.databaseId)
   : getFirestore(app);
-export const storage = getStorage(app);
-// Fail a dead transfer in half a minute instead of the SDK default of ten minutes.
-storage.maxUploadRetryTime = 30000;
-storage.maxOperationRetryTime = 20000;
+
+/**
+ * Cloud Storage is only needed when someone uploads or opens an attachment, so
+ * its ~130 kB SDK is fetched on first use instead of on every page view. Both
+ * the module and the instance are created once.
+ */
+let storageSdk: Promise<{ sdk: typeof import('firebase/storage'); storage: FirebaseStorage }> | null = null;
+export function loadStorage() {
+  storageSdk ??= import('firebase/storage').then((sdk) => {
+    const storage = sdk.getStorage(app);
+    // Fail a dead transfer in half a minute instead of the SDK default of ten minutes.
+    storage.maxUploadRetryTime = 30000;
+    storage.maxOperationRetryTime = 20000;
+    if (usePrototypeEmulators) sdk.connectStorageEmulator(storage, '127.0.0.1', 9199);
+    return { sdk, storage };
+  }).catch((error) => {
+    storageSdk = null;
+    throw error;
+  });
+  return storageSdk;
+}
 
 if (usePrototypeEmulators) {
   // These fixed loopback endpoints are used only in a Vite development build
   // with the explicit prototype + emulator flags and a demo-* project id.
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
 }
 
 export const isPrototypeEmulatorMode = usePrototypeEmulators;
@@ -267,9 +283,10 @@ export const uploadFileToStorage = async (
     ? `avatars/${uid}/${uniqueName}`
     : `${kind}/${uid}/${safeScope}/${uniqueName}`;
 
-  const storageRef = ref(storage, fullPath);
+  const { sdk: storageSdkApi, storage } = await loadStorage();
+  const storageRef = storageSdkApi.ref(storage, fullPath);
 
-  const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
+  const uploadTask = storageSdkApi.uploadBytesResumable(storageRef, file, { contentType: file.type });
 
   /*
    * Firebase Storage retries a failing transfer for up to ten minutes by itself, so
@@ -308,7 +325,7 @@ export const uploadFileToStorage = async (
       },
       (error) => fail(new Error(describeStorageError(error, file.name))),
       () => {
-        getDownloadURL(uploadTask.snapshot.ref).then(
+        storageSdkApi.getDownloadURL(uploadTask.snapshot.ref).then(
           (url) => { if (!settled) { finish(); resolve(url); } },
           (error) => fail(new Error(describeStorageError(error, file.name))),
         );
@@ -354,14 +371,16 @@ export async function uploadPrivateHealthDocument(file: File, scope = 'registry'
   const safeScope = scope.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'registry';
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
   const path = `health/${uid}/${safeScope}/${Date.now()}_${safeName}`;
-  const uploadTask = uploadBytesResumable(ref(storage, path), file, { contentType: file.type });
+  const { sdk, storage } = await loadStorage();
+  const uploadTask = sdk.uploadBytesResumable(sdk.ref(storage, path), file, { contentType: file.type });
   await uploadTask;
   return path;
 }
 
 export async function readPrivateHealthDocument(path: string): Promise<Blob> {
   if (!path.startsWith('health/')) throw new Error('Shtegu i dokumentit shëndetësor nuk është i vlefshëm.');
-  return getBlob(ref(storage, path), MAX_UPLOAD_BYTES.health);
+  const { sdk, storage } = await loadStorage();
+  return sdk.getBlob(sdk.ref(storage, path), MAX_UPLOAD_BYTES.health);
 }
 
 export default app;
