@@ -22,6 +22,7 @@ import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constant
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { compressImage, looksLikeImage } from '../lib/imageCompress';
+import { uploadReportPhotoViaApi } from '../lib/reportPhotoUpload';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
 import { doc, setDoc, getDocFromServer, collection, serverTimestamp } from 'firebase/firestore';
@@ -289,6 +290,8 @@ export default function ReportIssue() {
    * instead of creating a duplicate when the first try did reach the database.
    */
   const pendingReportIdRef = useRef<string | null>(null);
+  /** Firebase Storage failed once in this visit: photos go straight to the platform server. */
+  const storageFailedRef = useRef(false);
 
   // Warm up while the citizen fills the form: the anonymous session (its uid owns
   // the report and its media) and the check whether /api is usable. Pressing
@@ -823,9 +826,21 @@ export default function ReportIssue() {
             scope: reportRef.id,
             onProgress: (sent) => { sentBytes.set(index, sent); showProgress(); },
           });
-          // One retry, but only for a flaky link: a refusal (permissions, format) repeats identically.
-          const downloadUrl = await send().catch((error: Error) =>
-            /refuzua|konfiguruar|plotë/.test(error.message) ? Promise.reject(error) : send());
+          // When Storage is unusable (not set up, or refusing the file) a photo still goes
+          // through the platform server, which keeps it in Firestore.
+          const viaServer = (original: Error) => media.type === 'image'
+            ? uploadReportPhotoViaApi(media.file, reportRef.id).catch(() => Promise.reject(original))
+            : Promise.reject(original);
+          let downloadUrl: string;
+          if (media.type === 'image' && storageFailedRef.current) {
+            downloadUrl = await viaServer(new Error('Storage nuk është i disponueshëm.'));
+          } else {
+            // One retry for a flaky link, except for a refusal (permissions, format), which repeats
+            // identically, and for photos, which have the server as their second route anyway.
+            downloadUrl = await send()
+              .catch((error: Error) => (media.type === 'image' || /refuzua|konfiguruar|plotë/.test(error.message)) ? Promise.reject(error) : send())
+              .catch((error: Error) => { if (media.type === 'image') storageFailedRef.current = true; return viaServer(error); });
+          }
           uploadedCount += 1;
           sentBytes.set(index, media.file.size);
           showProgress();

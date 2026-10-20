@@ -63,6 +63,7 @@ import { registerReportCaseRoutes } from './server/reportCase';
 import { registerTrackLookupRoutes } from './server/trackLookup';
 import { registerPublicReportRoutes } from './server/publicReports';
 import { registerGuestNumberRoutes } from './server/guestNumbers';
+import { registerReportPhotoRoutes } from './server/reportPhotos';
 import { registerGuestSessionRoutes } from './server/guestSession';
 import { registerContactRoutes } from './server/contactMessages';
 import { registerPublicSubmissionRoutes } from './server/publicSubmissions';
@@ -512,7 +513,7 @@ async function startServer() {
   const defaultJson = express.json({ limit: '1mb' });
   const imageJson = express.json({ limit: '12mb' });
   // A cropped report photo also arrives as an image in JSON (server/reportPhotoEdit.ts).
-  const isImageRoute = (path: string) => path === '/api/analyze-issue' || /^\/api\/v1\/reports\/[^/]+\/media\/crop$/.test(path);
+  const isImageRoute = (path: string) => path === '/api/analyze-issue' || path === '/api/v1/report-photos' || /^\/api\/v1\/reports\/[^/]+\/media\/crop$/.test(path);
   app.use((req, res, next) => (isImageRoute(req.path) ? imageJson : defaultJson)(req, res, next));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
@@ -2144,6 +2145,7 @@ registerReportCaseRoutes(app, { requireAuth, db, actingUser, audit });
 registerTrackLookupRoutes(app, { db });
 registerPublicReportRoutes(app, { db });
 registerGuestNumberRoutes(app, { requireAuth, db });
+registerReportPhotoRoutes(app, { requireAuth, db });
 registerGuestSessionRoutes(app, { createCustomToken: (uid, claims) => authAdmin().createCustomToken(uid, claims) });
 registerContactRoutes(app, { db });
 registerPublicSubmissionRoutes(app, {

@@ -77,3 +77,39 @@ export async function compressImage(file: File): Promise<File> {
     return file;
   }
 }
+
+/**
+ * Shrink a photo until it fits `maxBytes` (JPEG, stepping the size and quality down).
+ * Used for the server-side photo store, which takes far smaller files than Storage.
+ * Returns null when the browser cannot decode the file or no step is small enough.
+ */
+export async function shrinkImageToBytes(file: File, maxBytes: number): Promise<File | null> {
+  if (typeof document === 'undefined') return null;
+  try {
+    const source = await decode(file);
+    try {
+      for (const [side, quality] of [[1600, 0.8], [1280, 0.72], [1024, 0.65], [800, 0.6], [640, 0.55]] as const) {
+        const scale = Math.min(1, side / Math.max(source.width, source.height));
+        const w = Math.max(1, Math.round(source.width * scale));
+        const h = Math.max(1, Math.round(source.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        source.draw(ctx, w, h);
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+        if (blob && blob.size <= maxBytes) {
+          return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+        }
+      }
+      return null;
+    } finally {
+      source.close();
+    }
+  } catch {
+    return null;
+  }
+}
