@@ -113,7 +113,14 @@ export function VerificationNote({ entry, lang }: { entry: HeritageEntry; lang: 
       </p>
     );
   }
-  return null;
+  // The KLA archive is shown to the public without the editorial "awaiting second check" notice.
+  if (entry.area === 'uck') return null;
+  return (
+    <p className="flex items-start gap-2 text-sm" style={{ color: 'var(--hx-warn)' }}>
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>{ui('unverifiedNote', lang)}</span>
+    </p>
+  );
 }
 
 export function EntryMeta({ entry, lang }: { entry: HeritageEntry; lang: HeritageLang }) {
