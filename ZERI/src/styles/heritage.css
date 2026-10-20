@@ -224,7 +224,7 @@
 @media (prefers-reduced-motion: reduce) { .hx-glass, .hx-glass:hover { transition: none; transform: none; } }
 
 /* Music dock */
-.hx-dock { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); z-index: 60; width: min(560px, calc(100vw - 24px)); }
+.hx-dock { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); transform: translateX(-50%); z-index: 60; width: min(560px, calc(100vw - 24px)); }
 @media (min-width: 1024px) { .hx-dock { bottom: 24px; } }
 .hx-dock-card {
   background: rgba(14, 6, 8, .88); backdrop-filter: blur(18px) saturate(1.4); color: #fff;
@@ -235,3 +235,12 @@
 .hx-eq span:nth-child(2) { animation-delay: -.3s; } .hx-eq span:nth-child(3) { animation-delay: -.6s; }
 .hx-eq[data-paused='true'] span { animation-play-state: paused; transform: scaleY(.3); }
 @media (prefers-reduced-motion: reduce) { .hx-eq span { animation: none; } }
+
+/* Mobile polish: breadcrumbs scroll sideways instead of wrapping under the status bar */
+.hx-crumbs { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.hx-crumbs::-webkit-scrollbar { display: none; }
+.hx-page { overflow-x: clip; }
+.hx-tribute { background: linear-gradient(90deg, rgba(200,16,46,.28), rgba(255,255,255,.05)); border: 1px solid rgba(255,255,255,.18); }
+@media (max-width: 639px) {
+  .hx-prose { font-size: 1rem; line-height: 1.7; }
+}
