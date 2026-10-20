@@ -1020,6 +1020,8 @@ app.get('/robots.txt', (_req, res) => {
     'Disallow: /komuna-panel',
     'Disallow: /debatwp',
     'Disallow: /debatiwp',
+    // The read-only public feed the pages render from must stay fetchable by Googlebot; the longer Allow wins.
+    'Allow: /api/v1/public/',
     'Disallow: /api/',
     'Disallow: /login',
     'Disallow: /register',

@@ -3,6 +3,9 @@ Allow: /
 
 # Private/admin surfaces must never be crawled
 Disallow: /admin
+# The read-only public feed the pages render from must stay fetchable, or Googlebot sees empty pages.
+# (The more specific Allow wins over the broader Disallow.)
+Allow: /api/v1/public/
 Disallow: /api/
 Disallow: /login
 Disallow: /register
