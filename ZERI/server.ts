@@ -1020,6 +1020,9 @@ app.get('/robots.txt', (_req, res) => {
     'Disallow: /komuna-panel',
     'Disallow: /debatwp',
     'Disallow: /debatiwp',
+    // The public pages fetch their data from here; Googlebot must be able to, or it renders them empty.
+    'Allow: /api/v1/public/',
+    'Allow: /api/health',
     'Disallow: /api/',
     'Disallow: /login',
     'Disallow: /register',
