@@ -49,6 +49,16 @@ const REWARDS_LIST = [
   { id: 'rew-4', title: 'Biletë për Teatrin/Kinemanë', desc: 'Hyrje për një shfaqje apo film në teatrin/kinemanë publike.', cost: 120 }
 ];
 
+const MUNICIPAL_COORDS: Record<string, { lat: number, lng: number }> = {
+  'Prishtinë': { lat: 42.6629, lng: 21.1655 },
+  'Prizren': { lat: 42.2139, lng: 20.7397 },
+  'Pejë': { lat: 42.6591, lng: 20.2883 },
+  'Gjakovë': { lat: 42.3803, lng: 20.4308 },
+  'Gjilan': { lat: 42.4636, lng: 21.4678 },
+  'Mitrovicë': { lat: 42.8914, lng: 20.8661 },
+  'Ferizaj': { lat: 42.3702, lng: 21.1553 },
+};
+
 export default function Dashboard() {
   const { t, dt, language } = useLanguage();
   const reports = useStore((state) => state.reports);
@@ -79,16 +89,6 @@ export default function Dashboard() {
   const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
   const [realUsers, setRealUsers] = useState<any[]>([]);
   const [weatherData, setWeatherData] = useState<Record<string, { aqi: number, temp: string, status: string, aqiDesc: string }>>({});
-
-  const MUNICIPAL_COORDS: Record<string, { lat: number, lng: number }> = {
-    'Prishtinë': { lat: 42.6629, lng: 21.1655 },
-    'Prizren': { lat: 42.2139, lng: 20.7397 },
-    'Pejë': { lat: 42.6591, lng: 20.2883 },
-    'Gjakovë': { lat: 42.3803, lng: 20.4308 },
-    'Gjilan': { lat: 42.4636, lng: 21.4678 },
-    'Mitrovicë': { lat: 42.8914, lng: 20.8661 },
-    'Ferizaj': { lat: 42.3702, lng: 21.1553 },
-  };
 
   // Live weather & AQI queries
   React.useEffect(() => {
@@ -321,6 +321,8 @@ export default function Dashboard() {
   React.useEffect(() => {
     const targetMuni = selectedMunicipality || detectedCity || 'Prishtinë';
     loadAINews(targetMuni);
+    // Deliberately re-runs only when the municipality changes, not on every render of loadAINews.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMunicipality, detectedCity]);
 
   React.useEffect(() => {
