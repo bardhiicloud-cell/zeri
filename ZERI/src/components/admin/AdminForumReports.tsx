@@ -7,6 +7,7 @@ import { auth, db } from '../../lib/firebase';
 import { useStore } from '../../lib/store';
 import { deleteCommentApi } from '../../lib/forumPostsApi';
 import { REPORT_TARGET_REASONS } from '../../lib/forumReportsApi';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 interface Row {
   id: string; kind: 'comment' | 'user' | 'ad'; targetId: string; postId: string; reason: string; details: string;
@@ -48,7 +49,7 @@ export default function AdminForumReports() {
 
   const close = async (row: Row, deleteComment: boolean) => {
     if (busy) return;
-    if (deleteComment && !window.confirm(dt('Ta fshij këtë koment?'))) return;
+    if (deleteComment && !await askConfirm(dt('Ta fshij këtë koment?'))) return;
     setBusy(row.id);
     try {
       if (deleteComment) await deleteCommentApi(row.postId, row.targetId).catch((e) => { if (e?.status !== 404) throw e; });

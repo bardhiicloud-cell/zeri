@@ -20,6 +20,8 @@ import { routeReport } from '../../lib/routingExport';
 import { contactRefFor, ensureContact } from '../../lib/routingContacts';
 import { sendReportEmail } from '../../lib/institutionMailApi';
 import type { ClassifyChange } from '../../lib/reportClassifyApi';
+import { contactLine, useReportContact } from '../../lib/useReportContact';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /**
  * Review Mode: open a record, check it, act, and move to the next one.
@@ -118,6 +120,7 @@ export default function ReviewMode({
       ...(saved.municipality ? { location: { ...baseCurrent.location, municipality: saved.municipality } } : {}),
     } as Report;
   }, [baseCurrent, classified]);
+  const contact = useReportContact(current?.id);
   const routed = useMemo(() => (current ? routeReport(current) : null), [current]);
   const images = current ? photos[current.id] ?? current.images ?? [] : [];
   const progress = reviewProgress(ids, handled);
@@ -180,9 +183,9 @@ export default function ReviewMode({
     }, current.id, dt('Aprovuar dhe dërguar'));
   };
   const reject = (reason: string) => { if (current) void run(() => onReject(current.id, reason), current.id, dt('Refuzuar')).then(() => setAsk(null)); };
-  const remove = () => {
+  const remove = async () => {
     if (!current || !canDelete || busy) return;
-    if (window.confirm(`${dt('Të fshihet përgjithmonë raporti')} "${current.title}"? ${dt('Ky veprim nuk mund të zhbëhet.')}`)) {
+    if (await askConfirm(`${dt('Të fshihet përgjithmonë raporti')} "${current.title}"? ${dt('Ky veprim nuk mund të zhbëhet.')}`)) {
       void run(() => onDelete(current.id), current.id, dt('Fshirë'));
     }
   };
@@ -274,7 +277,7 @@ export default function ReviewMode({
 
   const closeEscalation = async () => {
     if (!current) return;
-    const reason = window.prompt(dt('Shënim për mbylljen e eskalimit:'));
+    const reason = await askReason(dt('Shënim për mbylljen e eskalimit:'));
     if (!reason) return;
     setBusy(true);
     try {
@@ -408,7 +411,7 @@ export default function ReviewMode({
                 )}
                 {canEditPhotos && photo && (
                   <button type="button" disabled={busy} onClick={() => setAsk({ kind: 'photo', text: '' })} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-500 disabled:opacity-40">
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Hiq foton')} <kbd className="rounded bg-white/20 px-1 text-[10px]">X</kbd>
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Hiq foton')} <kbd className="rounded bg-white/20 px-1 text-[11px]">X</kbd>
                   </button>
                 )}
                 {lastTakenDown && (
@@ -434,7 +437,7 @@ export default function ReviewMode({
                 <Fact label={dt('Urgjenca')} value={String(current.urgency)} />
                 <Fact label={dt('Komuna')} value={current.location?.municipality} />
                 <Fact label={dt('Dërguar')} value={when(current.createdAt)} />
-                <Fact label={dt('Raportuesi')} value={current.isAnonymous ? dt('Anonim') : current.authorName} />
+                <Fact label={dt('Raportuesi')} value={current.isAnonymous ? dt('Anonim') : contactLine(contact, current.authorName)} />
                 <Fact label={dt('Institucioni')} value={current.responsibleInstitution} />
               </dl>
               {current.location?.address && (
@@ -448,7 +451,7 @@ export default function ReviewMode({
                 const mine = holder.assignedToUid && holder.assignedToUid === me?.id;
                 return (
                   <div className="mt-5 rounded-xl border border-slate-200 p-3 dark:border-white/10">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Shqyrtuesi i caktuar')}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt('Shqyrtuesi i caktuar')}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {holder.assignedTo ? (mine ? `${holder.assignedTo} (${dt('ju')})` : holder.assignedTo) : dt('Pa shqyrtues — pret caktimin nga sistemi ose menaxheri')}
                     </p>
@@ -524,7 +527,7 @@ export default function ReviewMode({
             <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
             {canApprove && current.status === 'Pending Review' && !thread?.awaitingInfo && (
               <button type="button" onClick={approve} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40">
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" aria-hidden="true" />} {dt('Aprovo & vazhdo')} <kbd className="rounded bg-white/20 px-1 text-[10px]">A</kbd>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" aria-hidden="true" />} {dt('Aprovo & vazhdo')} <kbd className="rounded bg-white/20 px-1 text-[11px]">A</kbd>
               </button>
             )}
             {canApprove && current.status === 'Pending Review' && !thread?.awaitingInfo && routed?.resolution.primary.sendable && (
@@ -554,7 +557,7 @@ export default function ReviewMode({
             )}
             {canReject && (
               <button type="button" onClick={() => setAsk({ kind: 'reject', text: '' })} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-500 disabled:opacity-40">
-                <XCircle className="h-4 w-4" aria-hidden="true" /> {dt('Refuzo')} <kbd className="rounded bg-white/20 px-1 text-[10px]">R</kbd>
+                <XCircle className="h-4 w-4" aria-hidden="true" /> {dt('Refuzo')} <kbd className="rounded bg-white/20 px-1 text-[11px]">R</kbd>
               </button>
             )}
             {canDelete && (
@@ -586,7 +589,7 @@ export default function ReviewMode({
 function Fact({ label, value }: { label: string; value?: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</dt>
+      <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</dt>
       <dd className="mt-0.5 truncate font-medium text-slate-800 dark:text-slate-100">{value || '—'}</dd>
     </div>
   );

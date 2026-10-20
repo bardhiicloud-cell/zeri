@@ -12,6 +12,7 @@ import { ReelCommentsSheet } from './ReelCommentsSheet';
 import { ReelApiError, deleteReelApi, recordReelViewApi, shareReel, updateReelCaption } from '../../lib/reelsApi';
 import { fetchReelForReview } from '../../lib/reelsSocial';
 import { trackInsight } from '../../lib/forumAnalyticsApi';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /** Where the player gets its reels: the public feed, one author, or one hashtag. */
 export type ReelsSource =
@@ -261,7 +262,7 @@ export function ReelsViewer({
 
   const removeReel = async (reel: Reel) => {
     setMenuFor(null);
-    if (!window.confirm(dt('Ta fshij këtë Reel? Videoja, komentet dhe raportimet fshihen përgjithmonë.'))) return;
+    if (!await askConfirm(dt('Ta fshij këtë Reel? Videoja, komentet dhe raportimet fshihen përgjithmonë.'))) return;
     setBusyOwner(true);
     try {
       await deleteReelApi(reel.id);

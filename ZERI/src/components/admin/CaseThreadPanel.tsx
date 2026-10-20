@@ -25,7 +25,7 @@ export default function CaseThreadPanel({ thread }: { thread: CaseThread | null 
 
   return (
     <section className="mt-5 space-y-2" aria-label={dt('Biseda e raportit')}>
-      <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Biseda e raportit')}</h3>
+      <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt('Biseda e raportit')}</h3>
       {thread.awaitingInfo && (
         <p className="rounded-lg bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-900 dark:bg-sky-500/15 dark:text-sky-200">{dt('Pret përgjigjen e qytetarit. Raporti nuk aprovohet derisa të përgjigjet ose ta vendosni ju.')}</p>
       )}
@@ -41,7 +41,7 @@ export default function CaseThreadPanel({ thread }: { thread: CaseThread | null 
               <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                 {dt(meta.label)}
-                {item.internal && <span className="inline-flex items-center gap-0.5 rounded bg-slate-900 px-1.5 py-0.5 text-[9px] text-white dark:bg-white dark:text-slate-900"><Lock className="h-2.5 w-2.5" aria-hidden="true" />{dt('vetëm stafi')}</span>}
+                {item.internal && <span className="inline-flex items-center gap-0.5 rounded bg-slate-900 px-1.5 py-0.5 text-[11px] text-white dark:bg-white dark:text-slate-900"><Lock className="h-2.5 w-2.5" aria-hidden="true" />{dt('vetëm stafi')}</span>}
                 <span className="ml-auto font-normal text-slate-400">{item.byLabel} · {when(item.at)}</span>
               </div>
               <p className="mt-1 whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300">{item.text}</p>

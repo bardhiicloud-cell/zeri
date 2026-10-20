@@ -1,3 +1,4 @@
+import SubmissionJourney from '../components/SubmissionJourney';
 import { AuraHero, AuraOrbit } from '../components/aura/Aura';
 import { dt } from '@/src/lib/dt';
 import React, { useState, useEffect, useRef, Component } from 'react';
@@ -265,6 +266,7 @@ function getSimulatedIP() {
 }
 
 import { motion } from 'framer-motion';
+import { askConfirm, askReason } from '../lib/dialogs';
 
 export default function ReportIssue() {
   const { t, dt } = useLanguage();
@@ -282,6 +284,8 @@ export default function ReportIssue() {
   const [submittedReportId, setSubmittedReportId] = useState('');
   const startTime = useRef(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Held for a beat after success so the progress reads 100% before the receipt appears.
+  const [finishing, setFinishing] = useState(false);
   /** What the processing screen says is happening right now. */
   const [submitStage, setSubmitStage] = useState('');
   /**
@@ -747,6 +751,12 @@ export default function ReportIssue() {
         return;
       }
 
+      // Guests leave a name and a phone so staff can reach them. They go to the private
+      // `reportPrivate` document, never onto the public report.
+      const guestContact = (!currentUser || currentUser.role === 'guest') && !isAnonymous && (guestName.trim() || guestPhone.trim())
+        ? { name: guestName.trim().slice(0, 120), phone: guestPhone.trim().slice(0, 40) }
+        : null;
+
       const reportData: any = {
         title,
         description,
@@ -758,7 +768,8 @@ export default function ReportIssue() {
         images: [],
         media: [],
         authorId: authorUid,
-        authorName: isAnonymous ? 'Qytetar Anonim' : (currentUser?.name || guestName || 'Anonim'),
+        // A guest's real name stays out of the public report (see reportPrivate below).
+        authorName: isAnonymous ? 'Qytetar Anonim' : (currentUser?.name || 'Qytetar'),
         isAnonymous,
         createdAt: new Date().toISOString(),
         ...(aiInsights ? { 
@@ -805,7 +816,8 @@ export default function ReportIssue() {
         pendingReportIdRef.current = null;
         if (currentUser) addPoints(10);
         localStorage.removeItem('reportDraft');
-        setStep(3);
+        setFinishing(true);
+        window.setTimeout(() => { setStep(3); setFinishing(false); }, 1100);
       };
 
       if (mediaItems.length > 0) {
@@ -861,7 +873,7 @@ export default function ReportIssue() {
         const reasonText = firstReason instanceof Error ? firstReason.message : 'Gabim i panjohur gjatë ngarkimit.';
         console.warn('Media upload failed:', reasonText);
         // Never drop the citizen's evidence silently: they choose to send without it or retry.
-        const sendWithout = window.confirm(
+        const sendWithout = await askConfirm(
           dt(`${failedUploads.length} nga ${mediaItems.length} foto/video nuk u ngarkuan (${reasonText}). Shtypni "OK" për ta dërguar raportin pa to, ose "Anulo" për të provuar përsëri (të dhënat ruhen).`)
         );
         if (!sendWithout) {
@@ -906,6 +918,7 @@ export default function ReportIssue() {
               media: reportData.media,
               isAnonymous: reportData.isAnonymous === true,
               authorName: reportData.authorName ?? '',
+              ...(guestContact ? { contactName: guestContact.name, contactPhone: guestContact.phone } : {}),
               // The server mints the Track ID; the report id only makes a retry idempotent.
               clientReportId: reportRef.id,
               aiCategoryScore: reportData.aiCategoryScore,
@@ -953,6 +966,12 @@ export default function ReportIssue() {
           ...reportData,
           createdAt: serverTimestamp() // native firebase timestamp
         }), 45000, 'Ruajtja zgjati shumë.');
+        if (guestContact) {
+          // Best effort: the report is already stored; a refused contact write must not undo it.
+          await withTimeout(setDoc(doc(db, 'reportPrivate', reportRef.id), {
+            authorId: authorUid, ...guestContact, createdAt: serverTimestamp(),
+          }), 15000, 'timeout').catch(() => undefined);
+        }
       } catch (e) {
         const landed = await withTimeout(getDocFromServer(reportRef), 10000, 'timeout')
           .then(snap => snap.exists() ? (snap.data() as { trackingId?: string }) : null)
@@ -1167,7 +1186,7 @@ export default function ReportIssue() {
         </div>
       )}
 
-      {step === 2 && !isSubmitting && (
+      {step === 2 && !isSubmitting && !finishing && (
         <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl p-4 sm:p-8 shadow-sm dark:shadow-none transition-all duration-300 animate-in fade-in slide-in-from-right-8 duration-500 relative">
           <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 md:px-4 py-1 text-xs md:text-xs font-bold tracking-wide border-b-4 border-l-4 border-slate-900 dark:border-slate-700 rounded-bl-xl rounded-tr-xl">{dt(`Nr: 02`)}
           </div>
@@ -1555,29 +1574,19 @@ export default function ReportIssue() {
         </form>
       )}
 
-      {step === 2 && isSubmitting && (
+      {step === 2 && (isSubmitting || finishing) && (
         <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-[28px] p-8 md:p-16 text-center animate-in zoom-in-95 duration-500 max-w-2xl mx-auto relative overflow-hidden flex flex-col items-center justify-center min-h-[420px]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),transparent_35%),radial-gradient(circle_at_bottom,_rgba(244,63,94,0.12),transparent_40%)]" />
-          <div className="relative z-10">
-            <div className="w-24 h-24 bg-indigo-600/10 border-2 border-indigo-200 rounded-full flex items-center justify-center mx-auto mb-8 relative">
-              <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-              <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-4 uppercase">{dt(`Duke Procesuar`)}</h2>
-            <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto leading-relaxed">{dt(`Raporti juaj po dërgohet në sistem të sigurt. Verifikimi i lokacionit, kategorisë dhe sigurisë po bëhet në kohë reale...`)}</p>
-            {submitStage && (
-              <p role="status" aria-live="polite" className="mt-5 text-sm font-bold text-indigo-700 dark:text-indigo-300">{submitStage}</p>
-            )}
-            <p className="mt-3 text-xs text-slate-500 max-w-md mx-auto">{dt('Mos e mbyllni faqen. Nëse lidhja dështon, forma ruhet dhe merrni mesazh për ta provuar përsëri.')}</p>
-            {canCancel && (
+          <div className="relative z-10 flex w-full flex-col items-center">
+            <h2 className="text-2xl md:text-3xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-3 uppercase">{finishing ? dt('U dërgua') : dt('Duke Procesuar')}</h2>
+            <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto leading-relaxed mb-8">{dt('Raporti juaj po dërgohet te institucioni përgjegjës.')}</p>
+            <SubmissionJourney done={finishing} stage={submitStage} institution={municipality || undefined} />
+            <p className="mt-5 text-xs text-slate-500 max-w-md mx-auto">{dt('Mos e mbyllni faqen. Nëse lidhja dështon, forma ruhet dhe merrni mesazh për ta provuar përsëri.')}</p>
+            {canCancel && !finishing && (
               <button type="button" onClick={cancelSubmit} className="mt-6 px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-700 dark:text-indigo-300 font-bold text-sm">
                 {dt('Po vonon? Ndale dhe provo përsëri')}
               </button>
             )}
-            <div className="mt-8 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-slate-500">
-              <span className="h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
-              <span>Secure workflow</span>
-            </div>
           </div>
         </div>
       )}

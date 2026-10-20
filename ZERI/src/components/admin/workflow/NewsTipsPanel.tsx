@@ -212,10 +212,10 @@ function TipDrawer({ id, onClose, onChanged }: { id: string; onClose: () => void
                     : <img key={i} src={m.url} alt="" className="aspect-[4/3] w-full rounded-xl object-cover" />)}
                 </div>
               )}
-              <p className="whitespace-pre-line rounded-xl bg-slate-50 p-3 text-sm text-slate-800 dark:bg-white/5 dark:text-slate-100"><b className="block text-[10px] uppercase tracking-wider text-slate-400">{dt('Teksti i dërguar')}</b>{tip.body}</p>
+              <p className="whitespace-pre-line rounded-xl bg-slate-50 p-3 text-sm text-slate-800 dark:bg-white/5 dark:text-slate-100"><b className="block text-[11px] uppercase tracking-wider text-slate-400">{dt('Teksti i dërguar')}</b>{tip.body}</p>
               <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 p-3 text-sm dark:border-white/10">
                 {([['Dërguar', when(tip.createdAt)], ['Dërguesi', tip.anonymous ? dt('Anonim') : tip.contactName], ['Email', tip.contactEmail], ['Telefoni', tip.contactPhone]] as const).map(([k, v]) => (
-                  <div key={k}><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt(k)}</dt><dd className="font-medium text-slate-800 dark:text-slate-100">{v || '—'}</dd></div>
+                  <div key={k}><dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt(k)}</dt><dd className="font-medium text-slate-800 dark:text-slate-100">{v || '—'}</dd></div>
                 ))}
               </dl>
               <section>

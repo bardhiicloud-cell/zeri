@@ -3,6 +3,7 @@ import { RotateCcw, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dt } from '@/src/lib/dt';
 import { PostApiError, purgePostApi, restoreDaysLeft, restorePostApi } from '../../lib/forumPostsApi';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 export interface DeletedPost { id: string; content: string; deletedAtMs: number | null }
 
@@ -66,7 +67,7 @@ export function DeletedPostsSheet({ posts, onClose }: Props) {
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Rikthe')}
                   </button>
                   <button type="button" disabled={!!busy}
-                    onClick={() => { if (window.confirm(dt('Ta fshij përgjithmonë? Nuk mund të rikthehet.'))) void run(p.id, () => purgePostApi(p.id), dt('Postimi u fshi përgjithmonë.')); }}
+                    onClick={async () => { if (await askConfirm(dt('Ta fshij përgjithmonë? Nuk mund të rikthehet.'))) void run(p.id, () => purgePostApi(p.id), dt('Postimi u fshi përgjithmonë.')); }}
                     className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 px-3 py-1.5 text-xs font-black text-rose-600 disabled:opacity-50">
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Fshi përgjithmonë')}
                   </button>

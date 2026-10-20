@@ -14,6 +14,7 @@ import {
   type PostRow,
 } from '../../lib/debateApi';
 import { Badge, BulkBar, Empty, ErrorNote, Panel, Spinner, btn, inputClass, useLoad, useSelection } from './ui';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 const FILTERS: ReadonlyArray<{ id: PostFilter; label: string; count?: 'all' | 'reported' | 'hidden' | 'promoted' }> = [
   { id: 'all', label: 'Të gjitha', count: 'all' },
@@ -58,7 +59,7 @@ export function DebatePosts({ initialFilter = 'all', onChanged }: { initialFilte
     const list = [...selection.selected];
     if (list.length === 0) return;
     const destructive = action === 'delete';
-    if (destructive && !window.confirm(`${dt('Fshini përgjithmonë')} ${list.length} ${dt('postime? Ky veprim nuk kthehet.')}`)) return;
+    if (destructive && !await askConfirm(`${dt('Fshini përgjithmonë')} ${list.length} ${dt('postime? Ky veprim nuk kthehet.')}`)) return;
     setBusy(true);
     try {
       const { results } = await bulkPosts(action, list, destructive);

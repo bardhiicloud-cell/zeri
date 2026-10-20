@@ -116,17 +116,17 @@ function WorkRow({
     <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STAGE_TONES[stageOf(report)]}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STAGE_TONES[stageOf(report)]}`}>
             {dt(STAGE_LABELS[stageOf(report)])}
           </span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLORS[report.status] ?? 'bg-slate-100 text-slate-600'}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_COLORS[report.status] ?? 'bg-slate-100 text-slate-600'}`}>
             {report.status}
           </span>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {report.urgency}
           </span>
           {risk !== 'clean' && (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${risk === 'violation' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${risk === 'violation' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
               {risk === 'violation' ? dt('Gjuhë jo e përshtatshme') : dt('E dyshimtë')}
             </span>
           )}
@@ -476,7 +476,7 @@ export default function AgentPanelPage() {
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {me?.municipalities.map((m) => (
-                    <span key={m} className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">{m}</span>
+                    <span key={m} className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">{m}</span>
                   ))}
                 </div>
               )}

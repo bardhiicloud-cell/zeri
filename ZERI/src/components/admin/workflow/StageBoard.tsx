@@ -473,7 +473,7 @@ export function StageBoard({ kind, items, loading, error, check, move, onOpen, o
                       )}
                       {item.owner !== undefined && (
                         item.owner
-                          ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"><span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[8px] text-white" aria-hidden="true">{initials(item.owner)}</span>{item.owner}</span>
+                          ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"><span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[11px] text-white" aria-hidden="true">{initials(item.owner)}</span>{item.owner}</span>
                           : <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-500 dark:bg-white/10 dark:text-slate-400"><UserRound className="h-3 w-3" aria-hidden="true" />{dt('Pa të zot')}</span>
                       )}
                       {item.urgent && <span className="rounded-full bg-rose-100 px-2 py-0.5 font-bold text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">{dt('Urgjente')}</span>}

@@ -213,10 +213,37 @@ service cloud.firestore {
     // ──────────────────────────────────────────────
     // Reports collection
     // ──────────────────────────────────────────────
+    // Who to call about a report. Guests give a name and a phone number; those never
+    // go on the world-readable report above. Staff and the author can read them,
+    // nobody edits them from the client, and the server writes them with the Admin SDK.
+    match /reportPrivate/{reportId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.authorId == request.auth.uid);
+      allow create: if canAct()
+                    && request.resource.data.authorId == request.auth.uid
+                    && request.resource.data.keys().hasOnly(['authorId', 'name', 'phone', 'createdAt'])
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 120
+                    && request.resource.data.phone is string && request.resource.data.phone.size() <= 40;
+      allow update, delete: if false;
+    }
+
     match /reports/{reportId} {
-      // Anyone can look up a report by Track ID (public tracking).
-      // PII (email) is not exposed in the TrackIdPage response.
-      allow read: if true;
+      // Reports are not world-readable. The public site reads the server's allow-listed
+      // feed (GET /api/v1/public/reports) and the Track ID page reads
+      // GET /api/v1/public/track/:id; both go through the Admin SDK.
+      //   - the person who filed it reads their own documents;
+      //   - platform staff and the read-only monitor read all (same flags as isStaff()/isMonitor());
+      //   - a municipality reads only its own, once a reviewer has accepted the report.
+      function canReadReport() {
+        return isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          isStaff() ||
+          isMonitor() ||
+          (isMunicipality() &&
+            resource.data.location.municipality == ownMunicipality() &&
+            isMunicipalityVisibleStatus(resource.data.status))
+        );
+      }
+      allow read: if canReadReport();
 
       // Anyone authenticated can create a report.
       // authorId MUST be the authenticated uid — no spoofing allowed.

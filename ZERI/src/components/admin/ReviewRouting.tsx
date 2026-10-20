@@ -85,7 +85,7 @@ export default function ReviewRouting({ report, canClassify, onClassified }: Rev
   return (
     <section aria-label={dt('Rrugëzimi')} className="mt-5 rounded-xl border border-slate-200 p-3 dark:border-white/10">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
           <MapPinned className="h-3.5 w-3.5" aria-hidden="true" />{dt('Rrugëzimi')}
         </p>
         <ul className="flex flex-wrap gap-1.5 text-[11px] font-bold">
@@ -129,7 +129,7 @@ export default function ReviewRouting({ report, canClassify, onClassified }: Rev
 
       <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm dark:bg-white/5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Përgjigjet')}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt('Përgjigjet')}</p>
           <button type="button" onClick={() => setDirectory(true)} className="min-h-8 text-[11px] font-bold text-blue-700 hover:underline dark:text-blue-300">{dt('Të gjitha kontaktet')}</button>
         </div>
         <p className="mt-0.5 font-bold text-slate-900 dark:text-white">{primary.name}</p>

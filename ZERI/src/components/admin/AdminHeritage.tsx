@@ -13,6 +13,7 @@ import {
   type Claim, type EntryStatus, type HeritageArea, type HeritageEntry, type HeritageSource, type MediaRef,
 } from '../../lib/heritage/types';
 import { checkTransition, nextMoves, publishBlockers, type Actor } from '../../lib/heritage/workflow';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 type Tab = 'entries' | 'sources' | 'log' | 'settings';
 type Row = HeritageEntry & { inCms: boolean; withdrawn?: boolean };
@@ -154,7 +155,7 @@ function EntryList({ state, onOpen, onReload }: { state: AdminHeritageState; onO
   }, [rows]);
 
   const importAll = async () => {
-    if (!window.confirm('Të importohen të gjitha tekstet fillestare në CMS si drafte? Teksti publik nuk ndryshon derisa t’i publikoni.')) return;
+    if (!await askConfirm('Të importohen të gjitha tekstet fillestare në CMS si drafte? Teksti publik nuk ndryshon derisa t’i publikoni.')) return;
     setBusy(true);
     try {
       const r = await heritageAdmin.importSeed();
@@ -200,10 +201,10 @@ function EntryList({ state, onOpen, onReload }: { state: AdminHeritageState; onO
                       {row.date ? ` · ${formatHeritageDate(row.date, 'sq')}` : ''}
                     </p>
                   </div>
-                  <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-black', row.inCms ? STATUS_TONE[row.status] : 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-200')}>
+                  <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-black', row.inCms ? STATUS_TONE[row.status] : 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-200')}>
                     {row.inCms ? STATUS_LABELS[row.status] : 'Paketë'}
                   </span>
-                  <span className={cn('hidden rounded-full px-2 py-0.5 text-[10px] font-black sm:inline', row.verification.state === 'verified' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200' : 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200')}>
+                  <span className={cn('hidden rounded-full px-2 py-0.5 text-[11px] font-black sm:inline', row.verification.state === 'verified' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200' : 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200')}>
                     {row.verification.state === 'verified' ? 'I verifikuar' : 'Pa verifikuar'}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -340,7 +341,7 @@ function EntryEditor({ state, initial, onClose, onChanged }: {
             )}
             {state.me.role === 'superadmin' && (model.status === 'draft' || model.status === 'archived') && (
               <button type="button" className={btnDanger} disabled={busy} onClick={async () => {
-                const reason = window.prompt('Arsyeja e fshirjes së përhershme:');
+                const reason = await askReason('Arsyeja e fshirjes së përhershme:');
                 if (!reason) return;
                 await run(async () => { await heritageAdmin.remove(model.id, reason); onClose(); }, 'U fshi.');
               }}><Trash2 className="h-4 w-4" />Fshi</button>
@@ -629,7 +630,7 @@ function SourcesPanel({ state, onReload }: { state: AdminHeritageState; onReload
                   <p className="text-sm font-bold">{s.title}</p>
                   <p className="text-[11px] text-slate-500">{s.publisher} · {SOURCE_TYPE_LABELS[s.type].sq}{s.date ? ` · ${s.date}` : ''}{s.reference ? ` · ${s.reference}` : ''}</p>
                 </div>
-                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black', s.linkChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800')}>
+                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black', s.linkChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800')}>
                   {s.linkChecked ? `Lidhja u kontrollua ${s.linkCheckedAt ?? ''}` : s.url ? 'Lidhja e pakontrolluar' : 'Pa lidhje'}
                 </span>
               </button>

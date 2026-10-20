@@ -16,6 +16,7 @@ import { NEWS_CATEGORIES } from '../../lib/newsCategories';
 import { DEMO_NEWS } from '../../lib/demoNews';
 import NewsPlacementPreview from './NewsPlacementPreview';
 import { layoutNews } from '../../lib/newsPlacement';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 interface AdminNewsItem {
   id: string;
@@ -290,7 +291,7 @@ export default function AdminNews() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm(dt('A dëshironi ta hiqni këtë lajm?'))) return;
+    if (!await askConfirm(dt('A dëshironi ta hiqni këtë lajm?'))) return;
     await deleteDoc(doc(db, 'newsArticles', id));
     toast.success(dt('Lajmi u hoq.'));
   };
@@ -434,7 +435,7 @@ export default function AdminNews() {
                   >
                     <span className="block text-sm font-black text-slate-900 dark:text-white">{dt(option.title)}</span>
                     <span className="mt-0.5 block text-[11px] leading-snug text-slate-500 dark:text-slate-400">{dt(option.where)}</span>
-                    <span className="mt-1.5 block text-[10px] font-bold text-blue-700 dark:text-blue-300">{dt(option.ratio)}</span>
+                    <span className="mt-1.5 block text-[11px] font-bold text-blue-700 dark:text-blue-300">{dt(option.ratio)}</span>
                   </button>
                 ))}
               </div>
@@ -533,7 +534,7 @@ export default function AdminNews() {
                         />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-xs font-bold text-slate-800 dark:text-slate-100">{report.title}</span>
-                          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                             {report.trackingId && <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono font-bold dark:bg-slate-800">{report.trackingId}</span>}
                             <span>{report.status}</span>
                             {report.urgency === 'Kritike' && <span className="rounded-full bg-rose-100 px-1.5 py-0.5 font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">{dt('Kritike')}</span>}
@@ -563,12 +564,12 @@ export default function AdminNews() {
             />
 
             <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900">
-              <div className="flex items-center gap-1.5 border-b border-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:border-white/10">
+              <div className="flex items-center gap-1.5 border-b border-slate-100 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-slate-400 dark:border-white/10">
                 <Eye className="h-3.5 w-3.5" /> {dt('Si duket për publikun')}
               </div>
               {form.imageUrl && <img src={form.imageUrl} alt="" className="aspect-video w-full object-cover" />}
               <div className="max-h-[28rem] space-y-3 overflow-y-auto p-5">
-                <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider">
                   <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{dt(form.category)}</span>
                   <span className="text-slate-400">{form.municipality === ALL_KOSOVA ? dt('Gjithë Kosova') : form.municipality}</span>
                   <span className="text-slate-300">·</span>
@@ -617,7 +618,7 @@ export default function AdminNews() {
 
       <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+          <span className="mr-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
             <Filter className="h-3.5 w-3.5" aria-hidden="true" />
             {dt('Filtro')}
           </span>

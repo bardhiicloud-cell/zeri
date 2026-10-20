@@ -26,6 +26,7 @@ import { saveGuestReportHistory } from '../lib/session';
 import { TrackIdIssuedModal } from '../components/TrackIdIssuedModal';
 
 import { HealthCase } from '../types';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 export type { HealthCase };
 
 const DISEASE_CATEGORIES: { id: string; name: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -517,6 +518,8 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
   }, [form.municipality]);
 
   return (
+    <>
+      <SubmissionOverlay busy={isSubmitting} kind="health" />
     <div className="au-page min-h-screen pb-20">
       <TrackIdIssuedModal
         trackingId={issuedTrackingId}
@@ -1371,5 +1374,6 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }

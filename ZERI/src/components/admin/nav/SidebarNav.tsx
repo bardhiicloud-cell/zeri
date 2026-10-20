@@ -56,7 +56,7 @@ function Badge({ count, active }: { count: number; active: boolean }) {
   return (
     <span
       className={cn(
-        'ml-auto inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums',
+        'ml-auto inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums',
         active ? 'bg-white/25 text-white' : 'bg-rose-500 text-white'
       )}
       aria-label={`${count} ${dt(`në pritje`)}`}
@@ -184,7 +184,7 @@ export function SidebarNav({
               <p className="text-lg font-bold leading-none tracking-wide text-white">
                 {dt(brand.name)}<span className="text-rose-500">.</span>KS
               </p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{dt(brand.subtitle)}</p>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">{dt(brand.subtitle)}</p>
             </div>
           )}
         </div>
@@ -239,7 +239,7 @@ export function SidebarNav({
           >
             <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="flex-1 text-left">{dt(`Shko te…`)}</span>
-            <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">{shortcutLabel()}</kbd>
+            <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-slate-400">{shortcutLabel()}</kbd>
           </button>
         )}
       </div>
@@ -259,7 +259,7 @@ export function SidebarNav({
                   aria-expanded={isOpen}
                   aria-controls={`admin-nav-${group.id}`}
                   className={cn(
-                    'mb-1 flex min-h-7 w-full items-center justify-between rounded-md px-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors',
+                    'mb-1 flex min-h-7 w-full items-center justify-between rounded-md px-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 transition-colors',
                     group.id === activeGroup ? 'cursor-default' : 'hover:text-slate-300',
                     RING
                   )}
@@ -282,7 +282,7 @@ export function SidebarNav({
       <div className={cn('flex shrink-0 flex-col gap-1.5 border-t border-white/10 p-2')}>
         {consoles.length > 0 && onOpenConsole && !collapsed && (
           <div className="mb-1">
-            <p className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{dt(`Hap si…`)}</p>
+            <p className="px-2.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">{dt(`Hap si…`)}</p>
             <ul className="space-y-0.5">
               {consoles.map(console => (
                 <li key={console.path}>
@@ -293,7 +293,7 @@ export function SidebarNav({
                     className={cn('flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 text-[13px] font-medium text-slate-300 hover:bg-white/5 hover:text-white', RING)}
                   >
                     <span className="truncate">{dt(console.label)}</span>
-                    <span className="ml-auto font-mono text-[10px] text-slate-500">{console.path}</span>
+                    <span className="ml-auto font-mono text-[11px] text-slate-500">{console.path}</span>
                   </button>
                 </li>
               ))}

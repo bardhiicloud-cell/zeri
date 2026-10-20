@@ -21,6 +21,7 @@ import {
   validatePhone,
 } from '../lib/validation';
 import { CheckCircle2 as CheckIcon, X as XIcon } from 'lucide-react';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 
 export default function RegisterPage() {
   usePageMeta('Regjistrohu', 'Krijo llogari qytetari në Zëri Qytetarëve — raporto probleme, ndiq përgjigjet dhe merr pjesë në debat.');
@@ -232,6 +233,8 @@ export default function RegisterPage() {
 
   const strengthColor = passwordCheck.score <= 1 ? 'bg-rose-400' : passwordCheck.score === 2 ? 'bg-amber-400' : 'bg-emerald-400';
   return (
+    <>
+      <SubmissionOverlay busy={loading} kind="register" />
     <AuthShell
       title={isVerifyingOtp ? dt('Verifikimi i Email-it') : dt('Krijo Llogarinë')}
       subtitle={isVerifyingOtp ? dt('Ndiqni udhëzimet e dërguara në email.') : dt("Plotësoni të dhënat për t'u bërë pjesë e platformës.")}
@@ -353,5 +356,6 @@ export default function RegisterPage() {
         </form>
       )}
     </AuthShell>
+    </>
   );
 }

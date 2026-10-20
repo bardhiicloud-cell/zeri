@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Copy, ImagePlus, Loader2, Megaphone, ShieldCheck, X } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 
 /**
  * "Lajmëro": a citizen sends a news tip (corruption, propaganda, anything of public interest)
@@ -111,6 +112,8 @@ export default function LajmeroPage() {
   }
 
   return (
+    <>
+      <SubmissionOverlay busy={busy} kind="news" />
     <div className="mx-auto max-w-3xl px-4 py-10">
       <BackLink to="/lajme" label="Lajmet" className="mb-5" />
       <header className="mb-6 flex items-start gap-3">
@@ -194,5 +197,6 @@ export default function LajmeroPage() {
         </button>
       </form>
     </div>
+    </>
   );
 }

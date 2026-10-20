@@ -119,7 +119,7 @@ export default function DecisionBar({ kind, id, doc, onDecided, extra, hideActio
 
       {asking && (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-white/10 dark:bg-slate-800/60">
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
             {dt(asking.label)} — {dt('arsyeja (ruhet në histori)')}
           </label>
           <textarea

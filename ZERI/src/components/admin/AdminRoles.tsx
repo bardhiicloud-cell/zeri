@@ -135,22 +135,22 @@ function RoleCard({ profile, expanded, onToggle }: {
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-black text-slate-900 dark:text-white">{dt(profile.label)}</span>
-            <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black', style.chip)}>
+            <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black', style.chip)}>
               <BandIcon className="h-3 w-3" />
               {dt(CLEARANCE_LABELS[profile.clearance])}
             </span>
             {profile.fullAccess && (
-              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-black text-white dark:bg-slate-700">
+              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-black text-white dark:bg-slate-700">
                 {dt('Akses i plotë')}
               </span>
             )}
             {!profile.isStaff && (
-              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">
+              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-black text-white">
                 {dt('Klient — jo staf')}
               </span>
             )}
           </span>
-          <span className="mt-1 block font-mono text-[10px] text-slate-400">{profile.role}</span>
+          <span className="mt-1 block font-mono text-[11px] text-slate-400">{profile.role}</span>
           <span className="mt-1.5 block text-xs leading-relaxed text-slate-600 dark:text-slate-300">
             {dt(profile.purpose)}
           </span>
@@ -173,7 +173,7 @@ function RoleCard({ profile, expanded, onToggle }: {
               {SECTION_ORDER.filter((s) => profile.sections.includes(s)).map((section) => (
                 <span
                   key={section}
-                  className="rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300"
+                  className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300"
                 >
                   {dt(SECTION_LABELS[section])}
                 </span>

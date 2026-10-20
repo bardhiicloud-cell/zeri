@@ -280,12 +280,12 @@ export default function MunicipalityAccountManager() {
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   {m.isVerified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
                       <CheckCircle2 className="h-3 w-3" /> {dt('Aktiv')}
                     </span>
                   )}
                   {m.isBanned && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700">
                       <Ban className="h-3 w-3" /> {dt('Pezulluar')}
                     </span>
                   )}
@@ -308,7 +308,7 @@ export default function MunicipalityAccountManager() {
                   </h3>
 
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold text-slate-600 dark:text-slate-300">{dt('Emri i zyrtarit')}</span>
+                    <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Emri i zyrtarit')}</span>
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
@@ -317,7 +317,7 @@ export default function MunicipalityAccountManager() {
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold text-slate-600 dark:text-slate-300">{dt('Email (identiteti i hyrjes — nuk ndryshohet këtu)')}</span>
+                    <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Email (identiteti i hyrjes — nuk ndryshohet këtu)')}</span>
                     <input
                       value={selected.email || '—'}
                       readOnly
@@ -327,7 +327,7 @@ export default function MunicipalityAccountManager() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-bold text-slate-600 dark:text-slate-300">{dt('Telefoni')}</span>
+                      <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Telefoni')}</span>
                       <input
                         value={editPhone}
                         onChange={(e) => setEditPhone(e.target.value)}
@@ -335,7 +335,7 @@ export default function MunicipalityAccountManager() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-bold text-slate-600 dark:text-slate-300">{dt('Komuna')}</span>
+                      <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Komuna')}</span>
                       <select
                         value={editMunicipality}
                         onChange={(e) => setEditMunicipality(e.target.value)}
@@ -348,7 +348,7 @@ export default function MunicipalityAccountManager() {
                   </div>
 
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold text-slate-600 dark:text-slate-300">{dt('Plani i abonimit')}</span>
+                    <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Plani i abonimit')}</span>
                     <select
                       value={editPlan}
                       onChange={(e) => setEditPlan(e.target.value)}
@@ -359,7 +359,7 @@ export default function MunicipalityAccountManager() {
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold text-slate-600 dark:text-slate-300">{dt('Shënim i brendshëm')}</span>
+                    <span className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Shënim i brendshëm')}</span>
                     <textarea
                       value={editNote}
                       onChange={(e) => setEditNote(e.target.value)}
@@ -384,7 +384,7 @@ export default function MunicipalityAccountManager() {
                   <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-indigo-800 dark:text-indigo-300">
                     <KeyRound className="h-3.5 w-3.5" /> {dt('Fjalëkalimi')}
                   </h3>
-                  <p className="text-[10px] leading-relaxed text-slate-500">
+                  <p className="text-[11px] leading-relaxed text-slate-500">
                     {dt('Fjalëkalimi nuk shfaqet kurrë. Vendosni një të ri; sesionet e vjetra revokohen menjëherë.')}
                   </p>
                   <div className="flex gap-2">
@@ -444,7 +444,7 @@ export default function MunicipalityAccountManager() {
                             }`}
                         >
                           <p>{m.text}</p>
-                          <p className="mt-1 text-[9px] opacity-60">{formatWhen(m.createdAt)}</p>
+                          <p className="mt-1 text-[11px] opacity-60">{formatWhen(m.createdAt)}</p>
                         </li>
                       ))}
                     </ul>
@@ -470,7 +470,7 @@ export default function MunicipalityAccountManager() {
                   </div>
                 </div>
 
-                <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400">
+                <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-400">
                   <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" />
                   {dt('Vetëm Super Admini menaxhon llogaritë komunale. Çdo ndryshim regjistrohet në audit log.')}
                 </p>

@@ -44,6 +44,8 @@ export interface ParsedReport {
   lat: number | null;
   lng: number | null;
   authorName: string;
+  /** Name and phone a guest gives so staff can reach them. Stored privately (`reportPrivate`), never on the public report. */
+  contact: { name: string; phone: string };
   isAnonymous: boolean;
   media: ReportMedia[];
   /** A tracking id the client proposed; honoured only if well formed and unused. */
@@ -138,6 +140,7 @@ export function parseReportInput(body: unknown): ParseResult {
       lat: finiteOrNull(location.lat),
       lng: finiteOrNull(location.lng),
       authorName: isAnonymous ? ANONYMOUS_AUTHOR_NAME : text(input.authorName, 120),
+      contact: isAnonymous ? { name: '', phone: '' } : { name: text(input.contactName, 120), phone: text(input.contactPhone, 40) },
       isAnonymous,
       media,
       requestedTrackingId: TRACKING_ID.test(requested) ? requested : '',

@@ -4,6 +4,7 @@ import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import { createAdPost, decideVerification, formatWhen, verificationRequests } from '../../lib/debateApi';
 import { Badge, Empty, ErrorNote, Panel, Spinner, btn, inputClass, useLoad } from './ui';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /** Publish a sponsored post straight into the public debate, with a preview of how it reads. */
 export function DebateAdCreator({ onCreated }: { onCreated?: () => void }) {
@@ -56,7 +57,7 @@ export function DebateVerificationRequests() {
   const [busy, setBusy] = useState('');
 
   const decide = async (uid: string, decision: 'approve' | 'reject') => {
-    const note = decision === 'reject' ? window.prompt(dt('Arsyeja e refuzimit (e lexon personi):')) ?? '' : '';
+    const note = decision === 'reject' ? await askReason(dt('Arsyeja e refuzimit (e lexon personi):')) ?? '' : '';
     if (decision === 'reject' && note.trim().length < 5) return;
     setBusy(uid);
     try {

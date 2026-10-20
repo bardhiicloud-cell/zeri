@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useStore, DonationCause } from '../../lib/store';
 import { Heart, Plus, Trash2, Link as LinkIcon, Image, Type, Edit3, Download } from 'lucide-react';
 import DecisionBar from './DecisionBar';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 export default function AdminDonations({ extended }: { extended?: boolean }) {
   const donationCauses = useStore(state => state.donationCauses);
@@ -203,13 +204,13 @@ export default function AdminDonations({ extended }: { extended?: boolean }) {
               ) : (
                 <img src={cause.mediaUrl} alt={cause.title} className="h-full w-full object-cover" />
               )}
-              <span className="absolute left-2 top-2 rounded bg-white/90 px-2 py-1 text-[10px] font-bold text-slate-900">{cause.category}</span>
+              <span className="absolute left-2 top-2 rounded bg-white/90 px-2 py-1 text-[11px] font-bold text-slate-900">{cause.category}</span>
               <div className="absolute right-2 top-2 flex gap-2">
                 <button onClick={() => handleEdit(cause)} className="rounded bg-slate-900/90 p-1.5 text-white transition hover:bg-slate-900" title={dt(`Ndrysho`)}>
                   <Edit3 className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => { if (window.confirm(dt('Të fshihet përgjithmonë kjo kauzë? Për ta hequr nga publiku mjafton "Refuzo".'))) deleteDonationCause(cause.id); }}
+                  onClick={async () => { if (await askConfirm(dt('Të fshihet përgjithmonë kjo kauzë? Për ta hequr nga publiku mjafton "Refuzo".'))) deleteDonationCause(cause.id); }}
                   className="rounded bg-red-600/90 p-1.5 text-white transition hover:bg-red-600"
                   title={dt(`Fshi përgjithmonë`)}
                 >
@@ -219,7 +220,7 @@ export default function AdminDonations({ extended }: { extended?: boolean }) {
             </div>
             <div className="flex flex-1 flex-col p-5">
               <h3 className="mb-2 font-bold text-slate-900 dark:text-white">{cause.title}</h3>
-              <span className="mb-2 w-max rounded border border-slate-100 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 dark:border-white/5 dark:bg-slate-800">#{cause.id.substring(0, 8)}</span>
+              <span className="mb-2 w-max rounded border border-slate-100 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-400 dark:border-white/5 dark:bg-slate-800">#{cause.id.substring(0, 8)}</span>
               <p className="mb-4 line-clamp-3 text-sm text-neutral-600 dark:text-slate-400">{cause.description}</p>
               <div className="mb-3 flex items-center justify-between text-xs text-slate-400">
                 <span>{new Date(cause.createdAt).toLocaleDateString('sq-AL')}</span>

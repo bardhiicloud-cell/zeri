@@ -101,7 +101,7 @@ export default function TeamOverviewPanel({ onOpenPerson }: TeamOverviewPanelPro
                   <span className="min-w-0">
                     <span className="flex items-center gap-2">
                       <span className="truncate text-sm font-bold text-slate-900 dark:text-white">{agent.name}</span>
-                      {agent.dormant && <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">{dt('I heshtur')}</span>}
+                      {agent.dormant && <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700">{dt('I heshtur')}</span>}
                     </span>
                     <span className="block truncate text-[11px] text-slate-400">{dt('Veprimi i fundit')}: {ago(agent.lastActionAt)}</span>
                   </span>

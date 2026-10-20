@@ -12,6 +12,7 @@ import { STAFF_LIMITS } from '../../lib/loadLimits';
 import AdminForumStories from './AdminForumStories.tsx';
 import AdminReelReports from './AdminReelReports.tsx';
 import AdminForumReports from './AdminForumReports.tsx';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 export default function AdminForum() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -38,7 +39,7 @@ export default function AdminForum() {
   const [view, setView] = useState<'pending' | 'approved' | 'hidden' | 'all'>('pending');
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm(dt('Të fshihet përgjithmonë ky postim? Për ta hequr nga publiku mjafton "Fshih nga publiku".'))) return;
+    if (!await askConfirm(dt('Të fshihet përgjithmonë ky postim? Për ta hequr nga publiku mjafton "Fshih nga publiku".'))) return;
     try {
       await deleteDoc(doc(db, 'forumPosts', id));
       toast.success(dt('Postimi u fshi.'));
@@ -181,15 +182,15 @@ export default function AdminForum() {
                 </td>
                 <td className="px-6 py-4">
                   {stateOf(post) === 'hidden' ? (
-                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 text-[10px] font-bold uppercase tracking-wider">
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 text-[11px] font-bold uppercase tracking-wider">
                        <EyeOff className="w-3 h-3" />{dt(`E fshehur`)}
                      </span>
                   ) : stateOf(post) === 'approved' ? (
-                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[11px] font-bold uppercase tracking-wider">
                        <CheckCircle className="w-3 h-3" />{dt(`Aprovuar`)}
                      </span>
                   ) : (
-                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 text-[11px] font-bold uppercase tracking-wider">
                        <AlertCircle className="w-3 h-3" />{dt(`Në Pritje`)}
                      </span>
                   )}

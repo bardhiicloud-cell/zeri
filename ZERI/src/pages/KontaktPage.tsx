@@ -9,6 +9,7 @@ import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import toast from 'react-hot-toast';
 
 import { dt } from '@/src/lib/dt';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 
 const TOPICS = [
   'Pyetje për platformën',
@@ -112,6 +113,8 @@ export default function KontaktPage() {
   const describedBy = (k: Fields) => (err(k) ? `${k}-error` : undefined);
 
   return (
+    <>
+      <SubmissionOverlay busy={sending} kind="contact" />
     <AuraPage>
       <AuraHero
         visual={<AuraOrbit core={Phone} />}
@@ -253,5 +256,6 @@ export default function KontaktPage() {
         {dt('Kërkoni udhëzime?')} <Link to="/ndihma" className="font-semibold text-[var(--au-accent)]">{dt('Hapni Qendrën e ndihmës')}</Link>
       </p>
     </AuraPage>
+    </>
   );
 }

@@ -11,6 +11,8 @@ export interface TourStep {
   selectors: string[];
   /** Resolve the matched element to its nearest <button>/<a> (an icon inside a button). */
   closestButton?: boolean;
+  /** The target lives in the navigation menu: the tour opens the menu itself instead of sending the visitor to look for it. */
+  inMenu?: boolean;
   title: string;
   body: string;
 }
@@ -39,21 +41,25 @@ export const TOURS: readonly Tour[] = [
       },
       {
         selectors: ['a[href$="/lajmero"]'],
+        inMenu: true,
         title: 'Raporto një lajm',
         body: 'Keni parë diçka që duhet ditur? Dërgojani redaksisë tekstin, foton ose videon. Merrni një kod për ta ndjekur.',
       },
       {
         selectors: ['a[href$="/donacion"]'],
+        inMenu: true,
         title: 'Ndihmë dhe donacione',
         body: 'Nëse keni nevojë për ndihmë, aplikoni për një rast social. Nëse doni të ndihmoni, shihni rastet e verifikuara dhe dhuroni.',
       },
       {
         selectors: ['a[href$="/shendetesia"]'],
+        inMenu: true,
         title: 'Regjistri shëndetësor',
-        body: 'Për persona me sëmundje dhe nevojë për barna që spitalet nuk i kanë. Shënohet lloji i sëmundjes dhe medikamenti, që masat të merren saktë.',
+        body: 'Hapet nga menuja: për persona me sëmundje dhe nevojë për barna që spitalet nuk i kanë. Shënohet lloji i sëmundjes dhe medikamenti, që masat të merren saktë.',
       },
       {
         selectors: ['a[href$="/trackid"]', 'a[href$="/raportet-e-mia"]'],
+        inMenu: true,
         title: 'Ndiqni çdo dërgesë',
         body: 'Çdo raport merr një Track-ID. Futeni këtu për të parë statusin në çdo moment.',
       },
@@ -118,6 +124,118 @@ export const TOURS: readonly Tour[] = [
       { selectors: ['[data-tour="health-register"]'], title: 'Regjistroni një rast', body: 'Për sëmundje, barna që mungojnë ose ndihmë shëndetësore. Shënoni diagnozën, medikamentin e nevojshëm dhe urgjencën. Mund të zgjidhni të mbeteni anonim për publikun.' },
       { selectors: ['[data-tour="health-tabs"]'], title: 'Shikoni sipas llojit', body: 'Ndërroni mes rasteve, barnave që mungojnë dhe statistikave.' },
       { selectors: ['[data-tour="health-filters"]'], title: 'Filtroni', body: 'Sipas komunës dhe urgjencës, që institucionet të marrin masa në vendin e duhur.' },
+    ],
+  },
+  {
+    id: 'map',
+    route: '/harta',
+    label: 'Harta e raportimeve',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Harta e raportimeve', body: 'Harta tregon raportimet sipas vendit. Filtroni sipas komunës dhe kategorisë, pastaj prekni një pikë për detaje.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'news-list',
+    route: '/lajme',
+    label: 'Lajmet',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Lajmet', body: 'Lajmet e verifikuara nga redaksia. Prekni një lajm për ta lexuar të plotë.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'track',
+    route: '/trackid',
+    label: 'Ndiq një raport',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Ndiq një raport', body: 'Futni Track-ID për të parë statusin e raportit. Raportet e dërguara nga kjo pajisje shfaqen këtu vetë.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'stats',
+    route: '/statistikat',
+    label: 'Statistikat',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Statistikat', body: 'Numrat e raportimeve dhe zgjidhjeve, të përditësuar në kohë reale.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'polls',
+    route: '/sondazhet',
+    label: 'Sondazhet',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Sondazhet', body: 'Votoni në çështje publike dhe shihni rezultatet.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'ideas',
+    route: '/Idea',
+    label: 'Banka e ideve',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Banka e ideve', body: 'Propozoni një ide për komunën tuaj; të tjerët mund ta mbështesin.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'contact',
+    route: '/kontakte',
+    label: 'Kontakti',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Kontakti', body: 'Na shkruani këtu. Për ndihmë të menjëhershme përdorni Asistentin e Zërit Qytetar (butoni i rrumbullakët në këtë faqe).' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
+    ],
+  },
+  {
+    id: 'muni',
+    route: '/komunat',
+    label: 'Komunat',
+    steps: [
+      { selectors: ['main h1', 'h1'], title: 'Komunat', body: 'Zgjidhni komunën tuaj për të parë raportet dhe njoftimet e saj.' },
+      {
+        selectors: ['a[href$="/raporto"]', 'a[href$="/shendetesia"]'],
+        inMenu: true,
+        title: 'Menuja',
+        body: 'Nga menuja arrini çdo faqe: raportim, hartë, regjistër shëndetësor, donacione dhe kontakt.',
+      },
     ],
   },
 ];

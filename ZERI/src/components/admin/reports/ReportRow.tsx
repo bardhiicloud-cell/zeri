@@ -91,7 +91,7 @@ export function ReportRow({
           {isUrgent && (
             <span
               className={cn(
-                'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold',
                 report.urgency === 'Kritike'
                   ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
                   : 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300'
@@ -103,7 +103,7 @@ export function ReportRow({
         </span>
 
         <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-          <span className="font-mono text-[10px] font-semibold text-blue-600 dark:text-blue-400">{code}</span>
+          <span className="font-mono text-[11px] font-semibold text-blue-600 dark:text-blue-400">{code}</span>
           {municipality && (
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3 w-3" aria-hidden="true" />
@@ -122,7 +122,7 @@ export function ReportRow({
       </button>
 
       <div className="hidden w-40 shrink-0 flex-col items-start gap-1 sm:flex">
-        <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold', TONE_CLASSES[meta.tone].badge)}>{meta.label}</span>
+        <span className={cn('rounded-full border px-2 py-0.5 text-[11px] font-bold', TONE_CLASSES[meta.tone].badge)}>{meta.label}</span>
         {due.state !== 'none' && (
           <span
             className={cn(

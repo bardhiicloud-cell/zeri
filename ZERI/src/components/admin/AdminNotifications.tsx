@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, limit } from 'firebase/firestore';
 import { PLACEMENTS, PLACEMENT_META, placementsOf, type NotificationPlacement } from '../../lib/notificationPlacements';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /**
  * Admin control centre for the bell's "Njoftime" (general broadcast) channel.
@@ -209,7 +210,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
   }, []);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!window.confirm('A jeni i sigurt që dëshironi ta fshini këtë njoftim?')) return;
+    if (!await askConfirm('A jeni i sigurt që dëshironi ta fshini këtë njoftim?')) return;
     try {
       await deleteDoc(doc(db, 'notifications', id));
       toast.success('Njoftimi u fshi.');
@@ -220,7 +221,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
   }, []);
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`A jeni të sigurt që dëshironi të fshini ${selectedIds.size} njoftime?`)) return;
+    if (!await askConfirm(`A jeni të sigurt që dëshironi të fshini ${selectedIds.size} njoftime?`)) return;
     // Count what really happened: "deleted" must never mean "tried".
     let deleted = 0;
     const kept = new Set<string>();
@@ -292,11 +293,11 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
           <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
             <div className="px-5 py-2 flex flex-col items-center min-w-[6rem]">
               <span className="text-lg font-bold title-serif leading-none text-slate-900 dark:text-white">{publishedCount}</span>
-              <span className="text-[9px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold mt-1">{dt('Aktive')}</span>
+              <span className="text-[11px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold mt-1">{dt('Aktive')}</span>
             </div>
             <div className="px-5 py-2 flex flex-col items-center min-w-[6rem] border-l border-slate-200 dark:border-white/10">
               <span className="text-lg font-bold title-serif leading-none text-slate-900 dark:text-white">{items.length}</span>
-              <span className="text-[9px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold mt-1">{dt('Gjithsej')}</span>
+              <span className="text-[11px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold mt-1">{dt('Gjithsej')}</span>
             </div>
           </div>
 
@@ -347,7 +348,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight title-serif">
                 {editingId ? dt('Modifiko Njoftimin') : dt('Njoftim i Ri i Përgjithshëm')}
               </h3>
-              <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-[6px] text-[10px] font-bold tracking-widest uppercase dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50">
+              <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-[6px] text-[11px] font-bold tracking-widest uppercase dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50">
                 {dt('Transmetim Publik')}
               </span>
             </div>
@@ -444,23 +445,23 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
                     <Bell className="h-4 w-4 shrink-0 text-indigo-600" />
                     <span className="min-w-0 flex-1 truncate"><b>{form.title || dt('Titulli')}</b> · {form.message || dt('Mesazhi')}</span>
                     {form.urgent && <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" />}
-                    <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400">{dt('Zilja')}</span>
+                    <span className="shrink-0 text-[11px] font-bold uppercase text-slate-400">{dt('Zilja')}</span>
                   </div>
                   {form.placements.includes('banner') && (
                     <div className={cn('flex items-center gap-2 rounded-lg border p-2.5 text-xs', form.urgent ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-blue-200 bg-blue-50 text-blue-900')}>
                       <Megaphone className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 truncate"><b>{form.title || dt('Titulli')}</b> {form.message}</span><X className="h-3.5 w-3.5 shrink-0" />
-                      <span className="shrink-0 text-[10px] font-bold uppercase opacity-60">{dt('Banner')}</span>
+                      <span className="shrink-0 text-[11px] font-bold uppercase opacity-60">{dt('Banner')}</span>
                     </div>
                   )}
                   {form.placements.includes('news') && (
                     <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-900">
                       <Newspaper className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 truncate"><b>{form.title || dt('Titulli')}</b> {form.message}</span>
-                      <span className="shrink-0 text-[10px] font-bold uppercase opacity-60">{dt('Krye i Lajmeve')}</span>
+                      <span className="shrink-0 text-[11px] font-bold uppercase opacity-60">{dt('Krye i Lajmeve')}</span>
                     </div>
                   )}
                   {form.placements.includes('popup') && (
                     <div className="mx-auto max-w-xs rounded-2xl border border-slate-200 bg-white p-4 text-xs shadow-lg dark:border-white/10 dark:bg-slate-900">
-                      <p className="text-[10px] font-bold uppercase text-slate-400">{dt('Pop-up')}</p>
+                      <p className="text-[11px] font-bold uppercase text-slate-400">{dt('Pop-up')}</p>
                       <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">{form.title || dt('Titulli')}</p>
                       <p className="mt-1 text-slate-600 dark:text-slate-300">{form.message || dt('Mesazhi')}</p>
                     </div>
@@ -586,22 +587,22 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5 pr-16">
-                      <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border', meta.badge)}>
+                      <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 text-[11px] uppercase font-bold tracking-wide rounded border', meta.badge)}>
                         <StateIcon className="w-3 h-3" />
                         {meta.label}
                       </span>
                       {placementsOf(n).filter(p => p !== 'bell').map(p => (
-                        <span key={p} className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50">{dt(PLACEMENT_META[p].label)}</span>
+                        <span key={p} className="px-2 py-0.5 text-[11px] uppercase font-bold tracking-wide rounded border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50">{dt(PLACEMENT_META[p].label)}</span>
                       ))}
                       {n.expiresAt && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold tracking-wide rounded border bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-white/10">{dt('skadon')} {new Date(n.expiresAt).toLocaleDateString('sq-AL')}</span>
+                        <span className="px-2 py-0.5 text-[11px] font-bold tracking-wide rounded border bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-white/10">{dt('skadon')} {new Date(n.expiresAt).toLocaleDateString('sq-AL')}</span>
                       )}
                       {n.urgent && (
-                        <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50">
+                        <span className="px-2 py-0.5 text-[11px] uppercase font-bold tracking-wide rounded border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50">
                           {dt('Urgjente')}
                         </span>
                       )}
-                      <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-white/10">
+                      <span className="px-2 py-0.5 text-[11px] uppercase font-bold tracking-wide rounded border bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-white/10">
                         {TYPE_LABELS[n.type || 'info']}
                       </span>
                     </div>
@@ -618,7 +619,7 @@ export default function AdminNotifications({ onOpenPublicNews }: { onOpenPublicN
                     </div>
 
                     <div className="flex items-center justify-between w-full border-t border-slate-100 dark:border-white/5 pt-3">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                         {safeRelative(n.createdAt)}
                       </span>
                       {state !== 'published' ? (

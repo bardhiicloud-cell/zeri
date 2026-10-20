@@ -382,7 +382,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
           >
             <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="hidden flex-1 text-left lg:block">{dt(`Shko te…`)}</span>
-            <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 lg:block dark:border-white/10">{shortcutLabel()}</kbd>
+            <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[11px] text-slate-400 lg:block dark:border-white/10">{shortcutLabel()}</kbd>
           </button>
 
           {/* The administrator works on one municipality at a time, and that
@@ -394,7 +394,7 @@ function AdminPanelShell({ variant }: { variant: ConsoleVariant }) {
 
           <div className="hidden flex-col text-right md:flex">
             <span className="max-w-[10rem] truncate text-xs font-bold text-slate-900 dark:text-white">{currentUser.name}</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">{roleLabel(currentUser, language)}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-500">{roleLabel(currentUser, language)}</span>
           </div>
           <div className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-xs font-bold text-rose-400 shadow-xs sm:flex dark:bg-slate-800">
             {currentUser.name.charAt(0)}

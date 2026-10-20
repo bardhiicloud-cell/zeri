@@ -21,6 +21,7 @@ import { useStore, AdCampaign } from '../../lib/store';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 const AD_POSITION_LABELS: Record<string, string> = {
   top: 'Nën navigimin kryesor',
@@ -65,15 +66,15 @@ function AdSpecGuide({ position, mediaType }: { position: string; mediaType: str
   if (!spec) return null;
   return (
     <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100">
-      <div className="flex items-center gap-1.5 font-black uppercase tracking-wider text-[10px] text-blue-700 dark:text-blue-300">
+      <div className="flex items-center gap-1.5 font-black uppercase tracking-wider text-[11px] text-blue-700 dark:text-blue-300">
         <Ruler className="h-3.5 w-3.5" aria-hidden="true" />
         {dt('Specifikimet e kreativit')}
       </div>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
-        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Ideale')}</dt><dd className="font-mono font-bold">{spec.ideal.w} × {spec.ideal.h} px</dd></div>
-        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Minimumi')}</dt><dd className="font-mono font-bold">{spec.min.w} × {spec.min.h} px</dd></div>
-        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Madhësia maks.')}</dt><dd className="font-mono font-bold">{formatMb(AD_MAX_BYTES[kind])}</dd></div>
-        <div><dt className="text-[10px] text-blue-700/80 dark:text-blue-300/80">{dt('Formati')}</dt><dd className="font-bold">{kind === 'video' ? 'MP4 / WebM' : kind === 'gif' ? 'GIF' : 'JPG / PNG / WebP'}</dd></div>
+        <div><dt className="text-[11px] text-blue-700/80 dark:text-blue-300/80">{dt('Ideale')}</dt><dd className="font-mono font-bold">{spec.ideal.w} × {spec.ideal.h} px</dd></div>
+        <div><dt className="text-[11px] text-blue-700/80 dark:text-blue-300/80">{dt('Minimumi')}</dt><dd className="font-mono font-bold">{spec.min.w} × {spec.min.h} px</dd></div>
+        <div><dt className="text-[11px] text-blue-700/80 dark:text-blue-300/80">{dt('Madhësia maks.')}</dt><dd className="font-mono font-bold">{formatMb(AD_MAX_BYTES[kind])}</dd></div>
+        <div><dt className="text-[11px] text-blue-700/80 dark:text-blue-300/80">{dt('Formati')}</dt><dd className="font-bold">{kind === 'video' ? 'MP4 / WebM' : kind === 'gif' ? 'GIF' : 'JPG / PNG / WebP'}</dd></div>
       </dl>
       <p className="mt-2 leading-relaxed text-blue-900/80 dark:text-blue-200/80">
         {dt(spec.where)}. {kind === 'video'
@@ -360,8 +361,8 @@ export default function AdminAds() {
     setSelectedIds(newSet);
   };
 
-  const handleBulkAction = (action: 'active' | 'paused' | 'delete') => {
-    if (!window.confirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} fushata?`)) return;
+  const handleBulkAction = async (action: 'active' | 'paused' | 'delete') => {
+    if (!await askConfirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} fushata?`)) return;
     
     selectedIds.forEach(id => {
       if (action === 'delete') {
@@ -457,7 +458,7 @@ export default function AdminAds() {
         ].map((stat, i) => (
           <div key={i} className={cn("rounded-2xl p-4 sm:p-5 flex flex-col gap-1.5 shadow-sm border", stat.bg, stat.border)}>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black text-slate-500 dark:text-slate-400 tracking-wider">{dt(stat.label)}</span>
+              <span className="text-[11px] uppercase font-black text-slate-500 dark:text-slate-400 tracking-wider">{dt(stat.label)}</span>
               <stat.icon className={cn("w-4 h-4", stat.color)} />
             </div>
             <p className={cn("text-xl sm:text-2xl font-black title-serif mt-1", stat.color)}>{stat.value}</p>
@@ -495,7 +496,7 @@ export default function AdminAds() {
               >
                 <Globe className="w-3.5 h-3.5" />
                 <span>{dt(`Të Gjitha`)}</span>
-                <span className="text-[10px] opacity-75 px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10">{ads.length}</span>
+                <span className="text-[11px] opacity-75 px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10">{ads.length}</span>
               </button>
 
               <button
@@ -508,7 +509,7 @@ export default function AdminAds() {
                 )}
               >
                 <span>{dt(`Nacionale (Kosovë)`)}</span>
-                <span className="text-[10px] opacity-75 px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10">
+                <span className="text-[11px] opacity-75 px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10">
                   {municipalityCounts['Nacionale'] || 0}
                 </span>
               </button>
@@ -531,7 +532,7 @@ export default function AdminAds() {
                   >
                     <span>{m}</span>
                     {count > 0 && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-200/60 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 font-extrabold">
+                      <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-emerald-200/60 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 font-extrabold">
                         {count}
                       </span>
                     )}
@@ -670,22 +671,22 @@ export default function AdminAds() {
                                   <video src={ad.mediaUrl} className="w-full h-full object-cover" muted />
                                 )}
                                 {ad.mediaType === 'html' && (
-                                  <div className="w-full h-full flex items-center justify-center text-[9px] font-mono text-slate-400 font-bold">HTML</div>
+                                  <div className="w-full h-full flex items-center justify-center text-[11px] font-mono text-slate-400 font-bold">HTML</div>
                                 )}
                               </div>
                               <div className="min-w-0">
                                 <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate max-w-xs leading-tight">
                                   {ad.title}
                                   {ad.isPartner && (
-                                    <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 align-middle text-[9px] font-black uppercase text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                    <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] font-black uppercase text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                                       <Handshake className="h-2.5 w-2.5" aria-hidden="true" />{dt('Partner')}
                                     </span>
                                   )}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] text-slate-400 font-mono">ID: {ad.id}</span>
+                                  <span className="text-[11px] text-slate-400 font-mono">ID: {ad.id}</span>
                                   {ad.targetUrl && (
-                                    <a href={ad.targetUrl} target="_blank" rel="noreferrer" className="text-[10px] text-rose-600 hover:underline flex items-center gap-0.5">
+                                    <a href={ad.targetUrl} target="_blank" rel="noreferrer" className="text-[11px] text-rose-600 hover:underline flex items-center gap-0.5">
                                       <ExternalLink className="w-2.5 h-2.5" />{dt(`Linku`)}
                                     </a>
                                   )}
@@ -736,7 +737,7 @@ export default function AdminAds() {
                           {/* Status */}
                           <td className="px-4 py-3 align-middle">
                             <span className={cn(
-                              "text-[10px] font-black uppercase px-2 py-0.5 rounded-full inline-flex items-center gap-1",
+                              "text-[11px] font-black uppercase px-2 py-0.5 rounded-full inline-flex items-center gap-1",
                               ad.status === 'active'
                                 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                                 : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
@@ -779,7 +780,7 @@ export default function AdminAds() {
 
                               {/* Delete */}
                               <button
-                                onClick={() => { if (confirm('A jeni të sigurt që dëshironi ta fshini këtë reklamë?')) deleteAd(ad.id); }}
+                                onClick={async () => { if (await askConfirm('A jeni të sigurt që dëshironi ta fshini këtë reklamë?')) deleteAd(ad.id); }}
                                 className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors"
                                 title={dt(`Fshi`)}
                               >
@@ -1044,7 +1045,7 @@ export default function AdminAds() {
 
                 {formData.mediaUrl && formData.mediaType !== 'html' && (
                   <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-                    <div className="bg-slate-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    <div className="bg-slate-100 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                       {dt('Parapamja')}
                     </div>
                     {formData.mediaType === 'video' ? (
@@ -1097,7 +1098,7 @@ export default function AdminAds() {
                     placeholder={dt('Përshkrim i shkurtër profesional i partnerit: çfarë ofron dhe si u shërben qytetarëve.')}
                     className="w-full rounded-xl border border-amber-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-500 dark:border-amber-900/50 dark:bg-slate-900 dark:text-white"
                   />
-                  <p className="mt-1 text-right text-[10px] text-amber-800/70 dark:text-amber-300/70">{formData.partnerDescription.length}/280</p>
+                  <p className="mt-1 text-right text-[11px] text-amber-800/70 dark:text-amber-300/70">{formData.partnerDescription.length}/280</p>
                 </div>
               )}
             </div>
@@ -1333,7 +1334,7 @@ export default function AdminAds() {
 
               {/* Mock Ad Banner Fallback Render */}
               <div className="border border-slate-200 dark:border-white/10 bg-slate-900 text-white rounded-2xl p-5 relative overflow-hidden shadow-lg">
-                <div className="absolute top-0 right-0 bg-rose-600 text-white px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-bl-xl flex items-center gap-1.5">
+                <div className="absolute top-0 right-0 bg-rose-600 text-white px-3 py-1 text-[11px] font-black uppercase tracking-wider rounded-bl-xl flex items-center gap-1.5">
                   <Sparkles className="w-3 h-3 text-rose-200" />
                   <span>{dt(`Hapësirë e Lirë Reklamuese`)}</span>
                 </div>
@@ -1343,7 +1344,7 @@ export default function AdminAds() {
                     <Building2 className="w-5 h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-extrabold text-rose-400 uppercase tracking-widest block">
+                    <span className="text-[11px] font-extrabold text-rose-400 uppercase tracking-widest block">
                       {dt(`VENDI I REKLAMËS SUAJ`)}
                     </span>
                     <h4 className="text-sm font-black text-white tracking-tight leading-snug mt-0.5">
@@ -1431,7 +1432,7 @@ export default function AdminAds() {
                         <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
                           {req.packageName || 'Kërkesë promovimi'} · {req.packagePrice || ''} · {req.targetMunicipality || 'Kosova'} · {dt('Postimi:')} <strong>{req.postId || req.targetAuthorName || 'I përgjithshëm'}</strong>
                         </p>
-                        <span className={cn('mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase', statusStyle)}>{statusLabel}</span>
+                        <span className={cn('mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-extrabold uppercase', statusStyle)}>{statusLabel}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -1441,7 +1442,7 @@ export default function AdminAds() {
                         <button
                           type="button"
                           onClick={async () => {
-                            if (confirm('A dëshironi ta fshini këtë kërkesë?')) await deleteDoc(doc(db, 'adRequests', req.id));
+                            if (await askConfirm('A dëshironi ta fshini këtë kërkesë?')) await deleteDoc(doc(db, 'adRequests', req.id));
                           }}
                           className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700"
                         >Fshi</button>
@@ -1523,7 +1524,7 @@ export default function AdminAds() {
                     {editingAd.position === 'bottom' && <option value="bottom">{dt('Pozicion i vjetër, shfaqet si kartë strategjike')}</option>}
                     {editingAd.position === 'floating' && <option value="floating">{dt('Fushatë e vjetër, shfaqet në kolonën anësore')}</option>}
                   </select>
-                  <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{dt(AD_POSITION_HELP[editingAd.position] || 'Ky pozicion i vjetër do të shfaqet në hapësirën anësore të faqes.')}</p>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{dt(AD_POSITION_HELP[editingAd.position] || 'Ky pozicion i vjetër do të shfaqet në hapësirën anësore të faqes.')}</p>
                 </div>
               </div>
 

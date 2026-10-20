@@ -126,7 +126,7 @@ export function ReportsToolbar({
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
               {dt(`Filtra`)}
-              {extra > 0 && <span className="rounded-full bg-rose-600 px-1.5 text-[10px] text-white">{extra}</span>}
+              {extra > 0 && <span className="rounded-full bg-rose-600 px-1.5 text-[11px] text-white">{extra}</span>}
             </button>
             {filtersOpen && (
               <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-72 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-white/10 dark:bg-slate-900">
@@ -213,7 +213,7 @@ export function ReportsToolbar({
                     className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <span>{label}</span>
-                    <span className="text-[10px] font-medium text-slate-400">{note}</span>
+                    <span className="text-[11px] font-medium text-slate-400">{note}</span>
                   </button>
                 ))}
               </div>
@@ -271,7 +271,7 @@ export function ReportsToolbar({
               {count && (
                 <span
                   className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+                    'rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums',
                     active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                   )}
                 >

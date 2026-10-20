@@ -13,13 +13,14 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const OPEN_READ = `      // Anyone can look up a report by Track ID (public tracking).
+export const OPEN_READ = `      // Anyone can look up a report by Track ID (public tracking).
       // PII (email) is not exposed in the TrackIdPage response.
       allow read: if true;
 `;
 
-const CLOSED_READ = `      // Reports are not world-readable. The public site reads the server's allow-listed
+export const CLOSED_READ = `      // Reports are not world-readable. The public site reads the server's allow-listed
       // feed (GET /api/v1/public/reports) and the Track ID page reads
       // GET /api/v1/public/track/:id; both go through the Admin SDK.
       //   - the person who filed it reads their own documents;
@@ -41,13 +42,20 @@ const CLOSED_READ = `      // Reports are not world-readable. The public site re
 /** Returns the stricter rules. Throws unless the open rule appears exactly once. */
 export function applyReportsLockdown(rules: string): string {
   const normalized = rules.replace(/\r\n/g, '\n');
+  // Already applied: nothing to do (the rules tests call this on whatever firestore.rules holds).
+  if (normalized.includes(CLOSED_READ)) return normalized;
   const count = normalized.split(OPEN_READ).length - 1;
   if (count !== 1) throw new Error(`Expected the open reports read rule exactly once, found ${count}. The rules changed; update scripts/reportsLockdownRules.ts.`);
   return normalized.replace(OPEN_READ, () => CLOSED_READ);
 }
 
+/** The pre-lockdown rules, rebuilt from locked ones. For tests and for a rollback. */
+export function revertReportsLockdown(rules: string): string {
+  return rules.replace(/\r\n/g, '\n').replace(CLOSED_READ, () => OPEN_READ);
+}
+
 if (process.argv[1] && /reportsLockdownRules\.ts$/.test(process.argv[1].replace(/\\/g, '/'))) {
-  const root = path.resolve(__dirname, '..');
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const source = path.join(root, 'firestore.rules');
   const result = applyReportsLockdown(readFileSync(source, 'utf8'));
   const target = process.argv.includes('--in-place') ? source : path.join(root, 'firestore.reports-lockdown.rules');

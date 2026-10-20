@@ -19,6 +19,7 @@ import { cn } from '../../lib/utils';
 import type { HealthCase } from '../../pages/HealthRegistryPage.tsx';
 import AdminMedicineShortages from './AdminMedicineShortages.tsx';
 import toast from 'react-hot-toast';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 export default function AdminHealthRegistry() {
   // Section switcher: the patient registry vs. the medicine-shortage queue.
@@ -177,7 +178,7 @@ export default function AdminHealthRegistry() {
 
   // Delete Case Handler
   const handleDeleteCase = async (caseId: string) => {
-    if (!window.confirm('A jeni të sigurt që dëshironi ta fshini këtë rast nga Regjistri Shëndetësor? Ky veprim nuk mund të kthehet.')) return;
+    if (!await askConfirm('A jeni të sigurt që dëshironi ta fshini këtë rast nga Regjistri Shëndetësor? Ky veprim nuk mund të kthehet.')) return;
     
     try {
       await deleteDoc(doc(db, 'healthRegistry', caseId));
@@ -215,7 +216,7 @@ export default function AdminHealthRegistry() {
       toast('Ky rast është tashmë anonim.');
       return;
     }
-    if (!window.confirm(
+    if (!await askConfirm(
       'Konverto këtë rast në anonim?\n\n' +
       'Emri i pacientit do të fshihet nga të gjitha pamjet publike dhe i vetmi ' +
       'identifikues do të mbetet kodi i gjurmimit. Të dhënat e kontaktit mbeten ' +
@@ -742,25 +743,25 @@ export default function AdminHealthRegistry() {
       {/* KPI Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Raste në filtra</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Raste në filtra</p>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalCount}</p>
           <p className="text-[11px] text-slate-400">nga të gjitha 38 komunat</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-rose-500">Urgjenca të larta</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-rose-500">Urgjenca të larta</p>
           <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{urgentCount}</p>
           <p className="text-[11px] text-slate-400">kërkojnë ndërhyrje menjëherë</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-blue-500">Spitalet e njoftuara</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-blue-500">Spitalet e njoftuara</p>
           <p className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{notifiedCount}</p>
           <p className="text-[11px] text-slate-400">depërtuar te personeli mjekësor</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-emerald-500">Dokumente / foto</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-emerald-500">Dokumente / foto</p>
           <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{withPhotoCount}</p>
           <p className="text-[11px] text-slate-400">epikriza & analiza mjekësore</p>
         </div>
@@ -886,12 +887,12 @@ export default function AdminHealthRegistry() {
                             >
                               {c.fullName || 'Emër privat i padeklaruar'}
                             </p>
-                            {c.isAnonymous && <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">Anonim për publik</span>}
+                            {c.isAnonymous && <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">Anonim për publik</span>}
                             <p className="text-[11px] text-slate-400">
                               {c.age} vjeç • {c.gender} • {c.contactPhone || 'Pa kontakt'}
                             </p>
-                            <p className="text-[10px] font-mono font-bold text-blue-600 mt-1">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</p>
-                            {c.expiresAt && <p className="text-[10px] text-slate-400">Afati: {new Date(c.expiresAt).toLocaleDateString('sq-AL')}</p>}
+                            <p className="text-[11px] font-mono font-bold text-blue-600 mt-1">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</p>
+                            {c.expiresAt && <p className="text-[11px] text-slate-400">Afati: {new Date(c.expiresAt).toLocaleDateString('sq-AL')}</p>}
                           </div>
                           {c.imageUrl && <button type="button" onClick={() => void handleOpenHealthDocument(c)} className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 dark:border-white/10 dark:bg-slate-900 shrink-0" title="Shiko dokumentin">{c.documentType === 'pdf' ? <FileText className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>}
                         </div>
@@ -911,7 +912,7 @@ export default function AdminHealthRegistry() {
                         <p className="font-bold text-slate-900 dark:text-white truncate" title={c.diagnosis}>
                           {c.diagnosis}
                         </p>
-                        <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded text-[10px] font-bold">
+                        <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded text-[11px] font-bold">
                           {c.category}
                         </span>
                       </td>
@@ -980,7 +981,7 @@ export default function AdminHealthRegistry() {
                           </button>
                         )}
                         {c.supportAmountNeeded ? (
-                          <p className="text-[10px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-slate-400 mt-1">
                             Qëllimi: €{c.supportAmountNeeded.toLocaleString()}
                           </p>
                         ) : null}
@@ -994,7 +995,7 @@ export default function AdminHealthRegistry() {
                               <CheckCircle2 className="w-3 h-3" />
                               Njoftuar
                             </span>
-                            <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[130px]" title={c.hospitalTarget || assignedHospital.name}>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-[130px]" title={c.hospitalTarget || assignedHospital.name}>
                               {c.hospitalTarget || assignedHospital.name}
                             </p>
                           </div>
@@ -1003,7 +1004,7 @@ export default function AdminHealthRegistry() {
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded">
                               Në pritje
                             </span>
-                            <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[130px]">
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-[130px]">
                               {assignedHospital.name}
                             </p>
                           </div>
@@ -1230,27 +1231,27 @@ export default function AdminHealthRegistry() {
               <div className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Pacienti</span>
+                    <span className="text-[11px] uppercase font-bold text-slate-400 block">Pacienti</span>
                     <strong className="text-sm text-slate-900 dark:text-white">{inspectingCase.fullName}</strong>
                   </div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Mosha & Gjinia</span>
+                    <span className="text-[11px] uppercase font-bold text-slate-400 block">Mosha & Gjinia</span>
                     <strong className="text-sm text-slate-900 dark:text-white">{inspectingCase.age} vjeç ({inspectingCase.gender})</strong>
                   </div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Komuna & Lagjja</span>
+                    <span className="text-[11px] uppercase font-bold text-slate-400 block">Komuna & Lagjja</span>
                     <strong className="text-sm text-slate-900 dark:text-white">{inspectingCase.municipality} - {inspectingCase.neighborhood || 'Qendër'}</strong>
                   </div>
                 </div>
 
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Diagnoza Klinike</span>
+                  <span className="text-[11px] uppercase font-bold text-slate-400 block">Diagnoza Klinike</span>
                   <p className="font-bold text-sm text-slate-900 dark:text-white">{inspectingCase.diagnosis}</p>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{inspectingCase.description || 'Nuk ka përshkrim të shtuar.'}</p>
                   {inspectingCase.needs && inspectingCase.needs.length > 0 && (
                     <div className="pt-2 flex flex-wrap gap-1.5">
                       {inspectingCase.needs.map((n, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[10px]">
+                        <span key={i} className="px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[11px]">
                           • {n}
                         </span>
                       ))}
@@ -1261,7 +1262,7 @@ export default function AdminHealthRegistry() {
                 {/* Hospital info bar */}
                 <div className="p-3.5 border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 rounded-xl flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Spitali Përgjegjës Rajonal</span>
+                    <span className="text-[11px] uppercase font-bold text-blue-600 block">Spitali Përgjegjës Rajonal</span>
                     <strong className="text-xs text-slate-900 dark:text-white">
                       {getHospitalInfoForMunicipality(inspectingCase.municipality).name}
                     </strong>
@@ -1339,7 +1340,7 @@ export default function AdminHealthRegistry() {
                   <Building2 className="w-4 h-4 text-blue-500" />
                   {hospitalInfo.name}
                 </span>
-                <span className="text-[10px] font-bold uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-bold uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                   {hospitalInfo.type}
                 </span>
               </div>

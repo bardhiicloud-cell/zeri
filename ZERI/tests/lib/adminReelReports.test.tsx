@@ -10,7 +10,9 @@ const mocks = vi.hoisted(() => ({
   deleteDoc: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
+  askConfirm: vi.fn(),
 }));
+vi.mock('../../src/lib/dialogs', () => ({ askConfirm: mocks.askConfirm, askReason: vi.fn() }));
 
 vi.mock('../../src/lib/firebase', () => ({ auth: { currentUser: { uid: 'staff1' } }, db: {}, storage: {} }));
 vi.mock('firebase/firestore', () => ({ deleteDoc: mocks.deleteDoc, doc: (..._a: unknown[]) => ({ path: 'ref' }) }));
@@ -100,7 +102,7 @@ describe('AdminReelReports', () => {
   it('deletes only after confirmation', async () => {
     mocks.fetchOpenReelReports.mockResolvedValue([report('1', 'a')]);
     mocks.fetchReelForReview.mockResolvedValue(reel('a'));
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+    const confirm = mocks.askConfirm.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
     render(<AdminReelReports />);
     const del = await screen.findByRole('button', { name: /Fshi$/ });
     fireEvent.click(del);
@@ -108,7 +110,7 @@ describe('AdminReelReports', () => {
     fireEvent.click(del);
     await waitFor(() => expect(mocks.deleteDoc).toHaveBeenCalledTimes(1));
     expect(mocks.resolveReelReports).toHaveBeenCalled();
-    confirm.mockRestore();
+    confirm.mockReset();
   });
 
   it('does not offer Hide on an already hidden reel, and handles a missing reel', async () => {

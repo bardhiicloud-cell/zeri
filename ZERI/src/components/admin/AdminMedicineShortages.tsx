@@ -17,6 +17,7 @@ import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import type { MedicineShortage } from '../../types';
 import toast from 'react-hot-toast';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /**
  * Staff-side management of citizen medicine-shortage reports.
@@ -132,7 +133,7 @@ export default function AdminMedicineShortages() {
   };
 
   const remove = async (s: MedicineShortage) => {
-    if (!window.confirm(`Fshi përgjithmonë raportimin për "${s.medicineName}"? Ky veprim nuk mund të kthehet.`)) return;
+    if (!await askConfirm(`Fshi përgjithmonë raportimin për "${s.medicineName}"? Ky veprim nuk mund të kthehet.`)) return;
     try {
       await deleteDoc(doc(db, 'medicineShortages', s.id));
       setItems((prev) => prev.filter((x) => x.id !== s.id));
@@ -179,19 +180,19 @@ export default function AdminMedicineShortages() {
       {/* KPI bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">{dt('Në verifikim')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-amber-500">{dt('Në verifikim')}</p>
           <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{stats.byStatus.pending}</p>
         </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-emerald-500">{dt('Të verifikuara')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-emerald-500">{dt('Të verifikuara')}</p>
           <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{stats.byStatus.verified}</p>
         </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-blue-500">{dt('Të zgjidhura')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-blue-500">{dt('Të zgjidhura')}</p>
           <p className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{stats.byStatus.resolved}</p>
         </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-rose-500">{dt('Të refuzuara')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-rose-500">{dt('Të refuzuara')}</p>
           <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{stats.byStatus.rejected}</p>
         </div>
       </div>
@@ -302,7 +303,7 @@ export default function AdminMedicineShortages() {
                       <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300">{s.quantityStatus || dt('E panjohur')}</span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase', STATUS_META[s.status]?.cls)}>
+                      <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black uppercase', STATUS_META[s.status]?.cls)}>
                         {s.status === 'pending' ? <Clock className="h-3 w-3" /> : s.status === 'rejected' ? <XCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
                         {STATUS_META[s.status]?.label}
                       </span>
@@ -361,34 +362,34 @@ export default function AdminMedicineShortages() {
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">{dt('Doza')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block">{dt('Doza')}</span>
                 <strong className="text-sm text-slate-900 dark:text-white">{inspecting.dose || '—'}</strong>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">{dt('Forma')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block">{dt('Forma')}</span>
                 <strong className="text-sm text-slate-900 dark:text-white">{inspecting.form || '—'}</strong>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">{dt('Komuna')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block">{dt('Komuna')}</span>
                 <strong className="text-sm text-slate-900 dark:text-white">{inspecting.municipality}</strong>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">{dt('Institucioni')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block">{dt('Institucioni')}</span>
                 <strong className="text-sm text-slate-900 dark:text-white">{inspecting.institution || '—'}</strong>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">{dt('Gjendja e sasisë')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block">{dt('Gjendja e sasisë')}</span>
                 <strong className="text-sm text-amber-700 dark:text-amber-300">{inspecting.quantityStatus || dt('E panjohur')}</strong>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">{dt('Anonim')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block">{dt('Anonim')}</span>
                 <strong className="text-sm text-slate-900 dark:text-white">{inspecting.isAnonymous ? dt('Po') : dt('Jo')}</strong>
               </div>
             </div>
 
             {inspecting.comment && (
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">{dt('Komenti i raportuesit')}</span>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block mb-1">{dt('Komenti i raportuesit')}</span>
                 <p className="text-slate-700 dark:text-slate-200 leading-relaxed">{inspecting.comment}</p>
               </div>
             )}
@@ -396,7 +397,7 @@ export default function AdminMedicineShortages() {
             <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
               <p>{dt('Raportuar')}: {inspecting.reportedDate ? new Date(inspecting.reportedDate).toLocaleString('sq-AL') : '—'}</p>
               {inspecting.verifiedAt && <p>{dt('Verifikuar')}: {new Date(inspecting.verifiedAt).toLocaleString('sq-AL')}</p>}
-              <p className="font-mono text-[10px]">ID: {inspecting.id}</p>
+              <p className="font-mono text-[11px]">ID: {inspecting.id}</p>
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-2 flex-wrap">

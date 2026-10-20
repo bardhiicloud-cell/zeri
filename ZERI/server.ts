@@ -2077,6 +2077,16 @@ app.post('/api/v1/reports', requireAuth, async (req, res) => {
       await ref.create(reportDoc);
     }
 
+    // The guest's name and phone stay out of the world-readable report: staff read them here.
+    if (report.contact.name || report.contact.phone) {
+      await db().collection('reportPrivate').doc(ref.id).set({
+        authorId: actor.uid,
+        name: report.contact.name,
+        phone: report.contact.phone,
+        createdAt: FieldValue.serverTimestamp(),
+      }).catch((error: any) => console.error('[REPORTS] private contact not stored:', error?.message));
+    }
+
     audit('report.create', req, { reportId: ref.id, trackId });
     void Promise.all([loadPriorityRules(db()), loadPool(db(), authAdmin()).catch(() => null)])
       .then(([rules, pool]) => syncReportTasks(db(), ref.id, { rules, pool, actorUid: 'system' }))

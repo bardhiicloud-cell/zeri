@@ -14,6 +14,7 @@ import { setRuntimeLanguage, rescanRuntimeTranslation } from './lib/runtimeTrans
 import { useLanguage } from './lib/LanguageContext';
 import { Toaster } from 'react-hot-toast';
 import FloatingSupportBot from './components/FloatingSupportBot';
+import DialogHost from './components/DialogHost';
 import { AppLayout } from './components/layout/AppLayout.tsx';
 import { AppFooter } from './components/AppFooter';
 import CookieConsentBanner, { CookiePreferencesButton } from './components/CookieConsentBanner.tsx';
@@ -982,6 +983,7 @@ export default function App() {
           <FloatingSupportBot />
         </BrowserRouter>
         <CookieConsentBanner />
+        <DialogHost />
       </ErrorBoundary>
     </LanguageProvider>
   );

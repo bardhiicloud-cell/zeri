@@ -14,6 +14,7 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider 
 import { doc, getDoc } from 'firebase/firestore';
 import { canAccessAdmin } from '../lib/adminPermissions';
 import { homeForRole } from '../lib/roleHome';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 
 export default function LoginPage() {
   const { t } = useLanguage();
@@ -249,6 +250,8 @@ export default function LoginPage() {
 
   const isLogin = view === 'login';
   return (
+    <>
+      <SubmissionOverlay busy={loading} kind="login" />
     <AuthShell
       title={dt(isLogin ? 'Mirësevini' : view === 'reset-success' ? 'Verifikoni Emailin' : 'Rikthe Qasjen')}
       subtitle={isLogin ? dt('Identifikohuni për të vazhduar në platformë.') : view === 'reset-success' ? undefined : dt('Do t\'ju dërgojmë një lidhje të sigurt për fjalëkalimin e ri.')}
@@ -323,5 +326,6 @@ export default function LoginPage() {
         </form>
       )}
     </AuthShell>
+    </>
   );
 }

@@ -276,7 +276,7 @@ export default function MunicipalityPanelPage() {
             className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${tab === id ? 'bg-emerald-700 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
           >
             <Icon className="h-4 w-4" /> {dt(label)}
-            {id === 'requests' && pendingRequests > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[10px] text-white">{pendingRequests}</span>}
+            {id === 'requests' && pendingRequests > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[11px] text-white">{pendingRequests}</span>}
           </button>
         ))}
       </nav>
@@ -331,10 +331,10 @@ export default function MunicipalityPanelPage() {
                       className={`block w-full rounded-xl border p-4 text-left transition-colors ${selectedId === r.id ? 'border-emerald-400 bg-emerald-50/60 dark:border-emerald-500/40 dark:bg-emerald-500/10' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900'}`}
                     >
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${TONE_CLASSES[meta.tone]}`}>{dt(meta.label)}</span>
-                        {isLate(r) && <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700"><Flame className="h-3 w-3" /> {dt('Afati i kaluar')}</span>}
-                        {r.urgency === 'Kritike' && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{dt('Kritike')}</span>}
-                        {r.trackingId && <span className="font-mono text-[10px] text-slate-400">#{r.trackingId}</span>}
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${TONE_CLASSES[meta.tone]}`}>{dt(meta.label)}</span>
+                        {isLate(r) && <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700"><Flame className="h-3 w-3" /> {dt('Afati i kaluar')}</span>}
+                        {r.urgency === 'Kritike' && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[11px] font-bold text-white">{dt('Kritike')}</span>}
+                        {r.trackingId && <span className="font-mono text-[11px] text-slate-400">#{r.trackingId}</span>}
                       </span>
                       <span className="mt-1 block truncate text-sm font-semibold text-slate-900 dark:text-white">{r.title}</span>
                       <span className="mt-0.5 block text-xs text-slate-500">{r.category} · {fmt(r.createdAt)} · {hoursSince(r.createdAt)} {dt('orë')}</span>
@@ -441,7 +441,7 @@ export default function MunicipalityPanelPage() {
               {desk.workFacts.map(f => (
                 <li key={f.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
                   <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{f.description}</p>
-                  <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                  <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                     <span>{fmt(f.at)}</span>
                     <span className={`rounded-full px-1.5 py-0.5 font-bold ${f.review === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : f.review === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
                       {f.review === 'confirmed' ? dt('Verifikuar') : f.review === 'rejected' ? dt('Refuzuar') : dt('Në verifikim')}
@@ -520,8 +520,8 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
     <>
       <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${TONE_CLASSES[meta.tone]}`}>{dt(meta.label)}</span>
-          {report.trackingId && <span className="font-mono text-[10px] text-slate-400">#{report.trackingId}</span>}
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${TONE_CLASSES[meta.tone]}`}>{dt(meta.label)}</span>
+          {report.trackingId && <span className="font-mono text-[11px] text-slate-400">#{report.trackingId}</span>}
         </div>
         <h2 className="text-sm font-black text-slate-900 dark:text-white">{report.title}</h2>
         <p className="text-[11px] text-slate-500"><MapPin className="mr-1 inline h-3 w-3" />{report.location?.address || report.location?.municipality} · {report.category}</p>
@@ -578,7 +578,7 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
       {canWork && canRegisterWorks && ['In Progress', 'Assigned', 'Overdue'].includes(report.status) && (report as { resolutionClaimed?: boolean }).resolutionClaimed !== true && (
         <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
           <h3 className="text-xs font-black text-slate-900 dark:text-white">{dt('Fakte për punimet e kryera')}</h3>
-          <p className="text-[10px] leading-relaxed text-slate-500">{dt('Përshkruani çka u rregullua. Redaksia e verifikon para se të shfaqet si fakt i konfirmuar.')}</p>
+          <p className="text-[11px] leading-relaxed text-slate-500">{dt('Përshkruani çka u rregullua. Redaksia e verifikon para se të shfaqet si fakt i konfirmuar.')}</p>
           <textarea value={fact.description} onChange={e => setFact({ ...fact, description: e.target.value })} rows={3} maxLength={2000} placeholder={dt('Çka u rregullua, ku, me çfarë…')} className={input} />
           <div className="grid grid-cols-2 gap-2">
             <input type="date" value={fact.completedAt} onChange={e => setFact({ ...fact, completedAt: e.target.value })} aria-label={dt('Data e përfundimit')} className={input} />
@@ -602,14 +602,14 @@ function Dossier({ report, canWork, canRegisterWorks, onChanged }: { report: Rep
           <select value={kind} onChange={e => setKind(e.target.value as RequestKind)} aria-label={dt('Lloji')} className={input}>
             {(Object.keys(REQUEST_LABELS) as RequestKind[]).map(k => <option key={k} value={k}>{dt(REQUEST_LABELS[k])}</option>)}
           </select>
-          <p className="text-[10px] text-slate-400">
+          <p className="text-[11px] text-slate-400">
             {kind === 'respond' ? dt('Shfaqet menjëherë te historiku publik i raportimit.') : dt('Ruhet dhe e shqyrton redaksia; përgjigjen e shihni te "Kërkesat e mia".')}
           </p>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={4} maxLength={1200} placeholder={dt('Teksti…')} className={input} />
           <button type="button" disabled={busy || note.trim().length < 10} onClick={() => void run(() => fileRequest(report.id, kind, note.trim()), kind === 'respond' ? dt('Përgjigjja u publikua.') : dt('Kërkesa u dërgua te redaksia.'), () => setNote(''))} className={primary}>
             <Send className="h-3.5 w-3.5" /> {kind === 'respond' ? dt('Publiko përgjigjen') : dt('Dërgo kërkesën')}
           </button>
-          <p className="border-t border-slate-100 pt-2 text-[10px] leading-relaxed text-slate-400 dark:border-white/10">{dt('Komuna nuk mund të fshijë, fshehë ose ndryshojë raportime qytetarësh.')}</p>
+          <p className="border-t border-slate-100 pt-2 text-[11px] leading-relaxed text-slate-400 dark:border-white/10">{dt('Komuna nuk mund të fshijë, fshehë ose ndryshojë raportime qytetarësh.')}</p>
         </div>
       )}
     </>

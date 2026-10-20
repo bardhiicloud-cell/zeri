@@ -9,6 +9,7 @@ import { AuraPage, AuraHero, AuraNote, AuraOrbit } from '../components/aura/Aura
 import { cn } from '../lib/utils';
 
 import { dt } from '@/src/lib/dt';
+import SubmissionOverlay from '../components/SubmissionOverlay';
 const ideaCategories = [
   'Shërbime për qytetarë',
   'Raportime dhe Track-ID',
@@ -80,6 +81,8 @@ export default function IdeaPage() {
   ];
 
   return (
+    <>
+      <SubmissionOverlay busy={isSubmitting} kind="idea" />
     <AuraPage>
       <BackLink to="/" label="Platforma" className="-mb-3 self-start" />
 
@@ -154,5 +157,6 @@ export default function IdeaPage() {
 
       <AdBanner position="banner" className="mx-auto" />
     </AuraPage>
+    </>
   );
 }

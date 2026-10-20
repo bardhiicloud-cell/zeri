@@ -5,6 +5,7 @@ import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import { useStore } from '../../lib/store';
 import { supportDesk, type SupportOverview as Overview } from '../../lib/supportDeskApi';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 const ROLE_LABEL: Record<string, string> = { agent: 'Agjent', responder: 'Përgjegjës', dispatcher: 'Menaxher', approver: 'Zyrtar aprovimi', admin: 'Admin', superadmin: 'Superadmin' };
 
@@ -30,7 +31,7 @@ export default function SupportOverview() {
   }, [load]);
 
   const clear = async () => {
-    if (!window.confirm(dt('Të fshihen përgjithmonë të gjitha bisedat e mbyllura (me historikun e tyre)? Bisedat e hapura nuk preken.'))) return;
+    if (!await askConfirm(dt('Të fshihen përgjithmonë të gjitha bisedat e mbyllura (me historikun e tyre)? Bisedat e hapura nuk preken.'))) return;
     setClearing(true);
     try {
       const removed = await supportDesk.clearResolved();
