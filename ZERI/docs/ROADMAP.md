@@ -77,7 +77,8 @@ Kriter: mbulim ≥ 70% në `server/` dhe `src/lib`; E2E për rrjedhat kritike; `
 
 ## WS9: Siguria dhe operimi (8.5 → 10)
 Kriter: `npm audit` bllokues; monitorim me alarme; backup i testuar.
-- [ ] `npm audit` bllokues, Dependabot, skanim sekretesh
+- [x] `npm audit --audit-level=high` bllokues në CI (18 → 11 dobësi, 0 kritike, 0 të larta; kritike ishte `proxy-addr`); Dependabot javor; skanimi i sekreteve (gitleaks) ekzistonte
+- [ ] Firebase 12.19+ shton ~62 KB gzip në ngarkesën fillestare; hyrja te `firebase` mbahet te 12.13 deri sa ta zgjidhim
 - [ ] Sentry, status page, staging, rollback
 - [ ] ⚠️ Penetration test i jashtëm
 - [ ] ⚠️ Rishikim ligjor GDPR, kushte, privatësi
