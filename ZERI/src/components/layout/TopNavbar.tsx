@@ -281,6 +281,17 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
             )}
           </div>
         ) : (
+          <>
+          {currentUser && (
+            <span
+              data-testid="guest-id"
+              title={dt('ID-ja juaj si mysafir')}
+              className="hidden h-9 items-center rounded-xl border border-slate-200 bg-white px-2.5 text-[11px] font-black text-slate-700 lg:inline-flex dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+            >
+              {(currentUser as { guestLabel?: string }).guestLabel
+                ?? (currentUser.name?.startsWith('Mysafir-') ? currentUser.name : dt('Mysafir • po caktohet…'))}
+            </span>
+          )}
           <Link
             to="/login"
             className="hidden h-9 items-center gap-1.5 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition-colors hover:bg-slate-800 sm:inline-flex dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
@@ -288,6 +299,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
             <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
             {dt('Hyr')}
           </Link>
+          </>
         )}
       </div>
     </header>
