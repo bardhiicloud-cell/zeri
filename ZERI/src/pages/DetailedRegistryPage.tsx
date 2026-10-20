@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  ChevronLeft, ChevronRight, Download, FilePlus2, Filter, LayoutGrid, List, Rows3, Search, ShieldCheck,
+  BarChart3, ChevronDown, ChevronLeft, ChevronRight, Download, FilePlus2, Filter, LayoutGrid, List, Rows3, Search, ShieldCheck,
   SlidersHorizontal, WifiOff, X, ArrowRight, FileSearch,
 } from 'lucide-react';
 import { useStore } from '../lib/store';
@@ -88,6 +88,7 @@ export default function DetailedRegistryPage() {
   const [datePreset, setDatePreset] = useState<DatePreset>(() => (searchParams.get('from') || searchParams.get('to') ? 'custom' : 'all'));
   const [selectedReportId, setSelectedReportId] = useState<string | null>(searchParams.get('report'));
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
   const [selectedMunicipality, setSelectedMunicipality] = useState(() => (isSpecificScope(userMunicipality) ? scopeKey(userMunicipality) : ''));
 
   // A link that names a municipality wins, and it sets the platform-wide scope
@@ -366,15 +367,26 @@ export default function DetailedRegistryPage() {
         </div>
       )}
 
-      {!loading && reportsStatus !== 'error' && (
-        <RegistryInsights
-          reports={filteredReports}
-          dt={dt}
-          activeMunicipality={selectedMunicipality}
-          activeTopic={selectedTopic}
-          onMunicipality={value => { setSelectedMunicipality(value); if (value) setUserMunicipality(value); setCurrentPage(1); }}
-          onTopic={value => { setSelectedTopic(value); setCurrentPage(1); }}
-        />
+      {!loading && reportsStatus !== 'error' && filteredReports.length > 0 && (
+        <div>
+          <button type="button" onClick={() => setShowInsights(open => !open)} aria-expanded={showInsights} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-slate-600 transition hover:border-blue-400 hover:text-blue-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            {showInsights ? dt('Fshih statistikat') : dt('Shfaq statistikat')}
+            <ChevronDown className={cn('h-4 w-4 transition-transform', showInsights && 'rotate-180')} aria-hidden="true" />
+          </button>
+          {showInsights && (
+            <div className="mt-4">
+              <RegistryInsights
+                reports={filteredReports}
+                dt={dt}
+                activeMunicipality={selectedMunicipality}
+                activeTopic={selectedTopic}
+                onMunicipality={value => { setSelectedMunicipality(value); if (value) setUserMunicipality(value); setCurrentPage(1); }}
+                onTopic={value => { setSelectedTopic(value); setCurrentPage(1); }}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       <section id="registry-results" aria-labelledby="registry-results-title" className="scroll-mt-24 space-y-5">

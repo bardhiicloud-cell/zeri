@@ -69,7 +69,7 @@ export function RegistryCard({ report, dt, onOpen, onShare }: RegistryCardProps)
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white transition duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-white/10 dark:bg-slate-900 dark:hover:border-blue-500/50">
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+      <div className="relative aspect-[16/10] w-full overflow-hidden sm:aspect-[4/3] bg-slate-100 dark:bg-slate-800">
         {cover?.type === 'image' ? (
           <img src={cover.url} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
         ) : cover?.type === 'video' ? (
@@ -79,7 +79,7 @@ export function RegistryCard({ report, dt, onOpen, onShare }: RegistryCardProps)
             {topic?.icon ?? <Layers className="h-10 w-10 text-slate-300" />}
           </span>
         )}
-        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/40 to-transparent" />
+        {cover && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/40 to-transparent" />}
         <StatusPill status={report.status} className="absolute left-3 top-3 border-white/60 bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/90" />
         {count > 0 && (
           <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-slate-950/65 px-2 py-1 text-[11px] font-bold text-white backdrop-blur">

@@ -66,6 +66,45 @@ function buildSlides(report: Report): Slide[] {
   return slides;
 }
 
+interface DialogState {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger?: boolean;
+  input?: { placeholder: string; label: string };
+  onConfirm: (value?: string) => void;
+}
+
+/** Small confirmation / one-field dialog that sits inside the viewer, replacing the browser's confirm() and prompt(). */
+function ActionDialog({ dialog, onClose }: { dialog: DialogState; onClose: () => void }) {
+  const [value, setValue] = useState('');
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    dialog.onConfirm(value.trim() || undefined);
+    onClose();
+  };
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); } };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
+  return (
+    <div className="absolute inset-0 z-40 grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <form onSubmit={submit} role="alertdialog" aria-modal="true" aria-labelledby="action-dialog-title" className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <h3 id="action-dialog-title" className="text-lg font-black text-slate-950 dark:text-white">{dialog.title}</h3>
+        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{dialog.message}</p>
+        {dialog.input && (
+          <input autoFocus type="url" value={value} onChange={event => setValue(event.target.value)} placeholder={dialog.input.placeholder} aria-label={dialog.input.label} className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-800 dark:text-white" />
+        )}
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="h-10 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Anulo')}</button>
+          <button type="submit" autoFocus={!dialog.input} className={cn('h-10 rounded-xl px-4 text-sm font-black text-white transition', dialog.danger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-blue-700 hover:bg-blue-800')}>{dialog.confirmLabel}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 const safeDate = (value?: string) => {
   const date = value ? new Date(value) : null;
   return date && !Number.isNaN(date.getTime()) ? date : null;
@@ -186,6 +225,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
   const updateReportStatus = useStore(state => state.updateReportStatus);
 
   const [tab, setTab] = useState<Tab>('details');
+  const [dialog, setDialog] = useState<DialogState | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
@@ -225,7 +265,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
   // Esc closes; arrows browse the media unless the visitor is typing.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (lightboxOpen) return;
+      if (lightboxOpen || dialog) return;
       const typing = event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName);
       if (event.key === 'Escape') onClose();
       else if (!typing && event.key === 'ArrowLeft' && slides.length > 1) stepSlide(-1);
@@ -233,7 +273,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lightboxOpen, onClose, slides.length, stepSlide]);
+  }, [lightboxOpen, dialog, onClose, slides.length, stepSlide]);
 
   // Calculate Community Impact & Urgency Score
   const getImpactScore = () => {
@@ -285,16 +325,28 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
    * arrives as a rejection carrying the server's own explanation, so it is shown
    * rather than left to become an unhandled promise rejection in the console.
    */
-  const handleStatusChangeClick = async (status: string) => {
+  const applyStatus = async (status: string, evidenceUrl?: string) => {
     try {
       if (status === 'Resolved') {
-        const url = prompt("Ju lutem ngarkoni foton si provë e punës së kryer (Before & After): (Opsionale URL)");
-        await updateReportStatus(report.id, status as any, adminResponse || adminReason || "Puna u krye me sukses.", url || undefined);
+        await updateReportStatus(report.id, status as any, adminResponse || adminReason || "Puna u krye me sukses.", evidenceUrl || undefined);
       } else {
         await updateReportStatus(report.id, status as any, adminResponse || adminReason);
       }
     } catch (error) {
       toast.error((error as Error)?.message || 'Statusi nuk u ndryshua.');
+    }
+  };
+  const handleStatusChangeClick = (status: string) => {
+    if (status === 'Resolved') {
+      setDialog({
+        title: dt('Shëno si të zgjidhur'),
+        message: dt('Mund të shtoni lidhjen e fotos si provë e punës së kryer (opsionale).'),
+        input: { placeholder: 'https://…', label: dt('Lidhja e fotos') },
+        confirmLabel: dt('Shëno si të zgjidhur'),
+        onConfirm: value => void applyStatus(status, value),
+      });
+    } else {
+      void applyStatus(status);
     }
   };
   const [editForm, setEditForm] = useState({
@@ -438,7 +490,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
       ),
     },
     { icon: Calendar, label: dt('Raportuar'), value: created ? `${format(created, 'dd MMMM yyyy, HH:mm', { locale: sq })} · ${formatDistanceToNow(created, { locale: sq, addSuffix: true })}` : '—' },
-    { icon: Tag, label: dt('Kategoria'), value: [topic ? `${topic.icon} ${topic.label}` : null, dt(report.category)].filter(Boolean).join(' · ') },
+    { icon: Tag, label: dt('Kategoria'), value: [...new Set([topic ? `${topic.icon} ${topic.label}` : null, dt(report.category)].filter(Boolean))].join(' · ') },
     ...(report.responsibleInstitution ? [{ icon: Building2, label: dt('Institucioni përgjegjës'), value: dt(report.responsibleInstitution) }] : []),
     { icon: Gauge, label: dt('Urgjenca'), value: getUrgencyLabel(report.urgency) },
   ];
@@ -450,7 +502,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
     <div className="fixed inset-0 z-[12000] flex items-center justify-center overflow-hidden p-0 md:p-6" role="dialog" aria-modal="true" aria-label={report.title}>
       <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div ref={dialogRef} tabIndex={-1} className="relative flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl outline-none dark:bg-slate-900 md:h-[min(92dvh,880px)] md:flex-row md:rounded-3xl md:border md:border-white/10">
+      <div ref={dialogRef} tabIndex={-1} className="relative flex h-[100dvh] w-full max-w-[72rem] flex-col overflow-hidden bg-white shadow-2xl outline-none dark:bg-slate-900 md:h-[min(92dvh,880px)] md:flex-row md:rounded-3xl md:border md:border-white/10">
 
         {/* Phones: the close button floats over the photo. */}
         <button type="button" aria-label={dt('Mbyll')} onClick={onClose} className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-30 grid h-10 w-10 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition hover:bg-black/75 md:hidden">
@@ -542,12 +594,13 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                   <button type="button" onClick={() => { setTab('details'); setIsEditing(true); }} className={iconButton} title={dt('Edit')} aria-label={dt('Edit')}><Edit3 className="h-4 w-4" aria-hidden="true" /></button>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (window.confirm('A jeni të sigurt që dëshironi ta fshini?')) {
-                        useStore.getState().deleteReport(report.id);
-                        onClose();
-                      }
-                    }}
+                    onClick={() => setDialog({
+                      title: dt('Fshi raportimin?'),
+                      message: dt('Ky veprim nuk mund të kthehet mbrapsht.'),
+                      confirmLabel: dt('Fshi'),
+                      danger: true,
+                      onConfirm: () => { useStore.getState().deleteReport(report.id); onClose(); },
+                    })}
                     className="grid h-10 w-10 place-items-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10"
                     title={dt('Delete')} aria-label={dt('Delete')}
                   ><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
@@ -778,6 +831,8 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
             </form>
           )}
         </section>
+
+        {dialog && <ActionDialog dialog={dialog} onClose={() => setDialog(null)} />}
       </div>
 
       {lightboxOpen && slides.length > 0 && (

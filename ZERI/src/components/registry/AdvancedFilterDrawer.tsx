@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, MapPin, SlidersHorizontal, X } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
@@ -99,7 +100,7 @@ export function AdvancedFilterDrawer({
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -218,6 +219,7 @@ export function AdvancedFilterDrawer({
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
