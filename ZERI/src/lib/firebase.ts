@@ -283,7 +283,18 @@ export const uploadFileToStorage = async (
     ? `avatars/${uid}/${uniqueName}`
     : `${kind}/${uid}/${safeScope}/${uniqueName}`;
 
-  const { sdk: storageSdkApi, storage } = await loadStorage();
+  // Loading the Storage chunk sits outside the stall timers below; on a weak link (or a
+  // chunk that changed after a deploy) it never settled and the report froze at 0%.
+  const { sdk: storageSdkApi, storage } = await new Promise<Awaited<ReturnType<typeof loadStorage>>>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      storageSdk = null; // let the next attempt import the chunk again
+      reject(new Error(`Lidhja me ruajtjen e fajllave nuk u hap (${file.name}). Kontrolloni internetin dhe provoni përsëri.`));
+    }, 15000);
+    loadStorage().then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
   const storageRef = storageSdkApi.ref(storage, fullPath);
 
   const uploadTask = storageSdkApi.uploadBytesResumable(storageRef, file, { contentType: file.type });

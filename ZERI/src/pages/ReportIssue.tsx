@@ -25,7 +25,7 @@ import { compressImage, looksLikeImage } from '../lib/imageCompress';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
 import { doc, setDoc, getDocFromServer, collection, serverTimestamp } from 'firebase/firestore';
-import { fetchWithTimeout, isJsonResponse, withTimeout } from '../lib/timeouts';
+import { fetchWithTimeout, isJsonResponse, withTimeout, TimeoutError } from '../lib/timeouts';
 import { apiReady, markApiUnavailable } from '../lib/apiAvailability';
 import { createTrackingId, saveGuestReportHistory } from '../lib/session';
 import { ensureReportSession } from '../lib/reportSession';
@@ -412,10 +412,6 @@ export default function ReportIssue() {
     [coordinates, municipality]
   );
 
-  useEffect(() => {
-    // A report is intentionally session-only until it is submitted.
-    localStorage.removeItem('reportDraft');
-  }, []);
 
 
   useEffect(() => {
@@ -476,6 +472,58 @@ export default function ReportIssue() {
   }, []);
 
   const [mediaItems, setMediaItems] = useState<{file: File, url: string, type: 'image' | 'video' | 'document' | 'audio'}[]>([]);
+
+  /*
+   * The text of an unfinished report is kept on this device (photos cannot be), so a
+   * dropped connection, a closed tab or a failed send never costs the citizen what they
+   * typed. It is removed once the report is stored (confirmSubmission).
+   */
+  const draftRestored = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('reportDraft');
+      const draft = raw ? JSON.parse(raw) : null;
+      if (draft && Date.now() - (draft.savedAt || 0) < 7 * 24 * 3600 * 1000 && (draft.title || draft.description)) {
+        if (draft.title) setTitle(draft.title);
+        if (draft.description) setDescription(draft.description);
+        if (draft.topicCategory) setTopicCategory(draft.topicCategory);
+        if (draft.category) setCategory(draft.category);
+        if (draft.urgency) setUrgency(draft.urgency);
+        if (draft.municipality) setMunicipality(draft.municipality);
+        if (draft.address) setAddress(draft.address);
+        if (Array.isArray(draft.coordinates) && draft.coordinates.length === 2) setCoordinates([draft.coordinates[0], draft.coordinates[1]]);
+        toast(dt('Keni një raport të papërfunduar. Të dhënat u rikthyen — shtoni foton dhe vazhdoni dërgimin.'), { duration: 10000 });
+      }
+    } catch { /* storage unavailable: start with an empty form */ }
+    draftRestored.current = true;
+  }, []);
+  useEffect(() => {
+    if (!draftRestored.current || step === 3) return;
+    const timer = window.setTimeout(() => {
+      try {
+        if (!title && !description) { localStorage.removeItem('reportDraft'); return; }
+        localStorage.setItem('reportDraft', JSON.stringify({
+          title, description, topicCategory, category, urgency, municipality, address, coordinates, savedAt: Date.now(),
+        }));
+      } catch { /* private mode or full storage */ }
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [title, description, topicCategory, category, urgency, municipality, address, coordinates, step]);
+
+  // A send that outlives every network bound must still be escapable by the citizen.
+  const cancelledRef = useRef(false);
+  const [canCancel, setCanCancel] = useState(false);
+  useEffect(() => {
+    if (!isSubmitting) { setCanCancel(false); return; }
+    const timer = window.setTimeout(() => setCanCancel(true), 40000);
+    return () => window.clearTimeout(timer);
+  }, [isSubmitting]);
+  const cancelSubmit = () => {
+    cancelledRef.current = true;
+    setIsSubmitting(false);
+    setSubmitStage('');
+    toast.error(dt('Dërgimi u ndalua. Të dhënat e formës janë ruajtur — kontrolloni lidhjen dhe provoni përsëri.'), { duration: 8000 });
+  };
 
   const analyzeWithAI = async () => {
     // AI vision analysis only makes sense for a photo; a video, document or
@@ -652,6 +700,7 @@ export default function ReportIssue() {
       return;
     }
     if (isSubmitting) return;
+    cancelledRef.current = false;
     setIsSubmitting(true);
     setSubmitStage(dt('Duke verifikuar sesionin...'));
     const timeSpentMs = Date.now() - startTime.current;
@@ -660,7 +709,7 @@ export default function ReportIssue() {
       // 0. Firestore requires `authorId == request.auth.uid`, so a report can
       //    only be stored together with a real identity. Guarantee one up front
       //    instead of showing a Track ID for a report that was never persisted.
-      const authorUid = await ensureReportSession();
+      const authorUid = await withTimeout(ensureReportSession(), 20000, 'Sesioni nuk u hap në kohë.');
       if (!authorUid || !auth.currentUser) {
         toast.error(
           'Për të ruajtur raportin nevojitet një sesion aktiv. Kyçuni ose vazhdoni si mysafir (Guest) dhe provoni përsëri — të dhënat e formës ruhen.',
@@ -680,8 +729,14 @@ export default function ReportIssue() {
       // (status 'Pending Review') and the citizen gets the Track ID straight away.
 
       // Simulate AI Moderation for Text
-      const { validateReportByAI } = await import('../lib/moderation');
-      const aiCheck = await validateReportByAI(title, description);
+      // A moderation check that never answers must not hold the report: skip it after 12 s.
+      const aiCheck = await withTimeout((async () => {
+        const { validateReportByAI } = await import('../lib/moderation');
+        return validateReportByAI(title, description);
+      })(), 12000, 'timeout').catch((error) => {
+        if (error instanceof TimeoutError) return { valid: true } as { valid: boolean; error?: string };
+        throw error;
+      });
       
       if (!aiCheck.valid) {
         toast.error(aiCheck.error);
@@ -783,6 +838,7 @@ export default function ReportIssue() {
           };
         })
       );
+      if (cancelledRef.current) return;
       const uploadedMedia = uploadResults.flatMap(result => result.status === 'fulfilled' ? [result.value] : []);
       const failedUploads = uploadResults.filter(result => result.status === 'rejected');
       if (failedUploads.length > 0) {
@@ -1498,6 +1554,11 @@ export default function ReportIssue() {
               <p role="status" aria-live="polite" className="mt-5 text-sm font-bold text-indigo-700 dark:text-indigo-300">{submitStage}</p>
             )}
             <p className="mt-3 text-xs text-slate-500 max-w-md mx-auto">{dt('Mos e mbyllni faqen. Nëse lidhja dështon, forma ruhet dhe merrni mesazh për ta provuar përsëri.')}</p>
+            {canCancel && (
+              <button type="button" onClick={cancelSubmit} className="mt-6 px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-700 dark:text-indigo-300 font-bold text-sm">
+                {dt('Po vonon? Ndale dhe provo përsëri')}
+              </button>
+            )}
             <div className="mt-8 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-slate-500">
               <span className="h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
               <span>Secure workflow</span>
