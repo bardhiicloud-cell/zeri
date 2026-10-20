@@ -11,13 +11,22 @@ import { translationLanguageFor } from './seo';
 type SupportedLanguage = SupportedLanguageCode;
 
 /**
- * The translation tables are ~4 MB of generated text, split at build time into one
- * module per language (see translationChunks in vite.config.ts). Albanian is the
- * source language and needs none of it, so a visitor only fetches the table for
- * the language they read. Until it arrives dt() returns the Albanian original.
+ * Translations live in src/lib/i18n/locales (one JSON file per language,
+ * maintained with scripts/i18n.ts) and are fetched only for the language a
+ * visitor reads. Albanian is the source language and needs no table, so dt()
+ * returns the original text for it.
+ * Until a table has loaded, dt() also returns the Albanian original.
  */
-type LanguageTable = Record<string, string>;
-const tables = new Map<string, LanguageTable>();
+type Table = Record<string, string>;
+// import.meta.glob exists only under Vite. The server bundle (esbuild) and tsx also load this
+// module and have no browser to fetch for, so there the lookup stays empty.
+let tableLoaders: Record<string, () => Promise<Table>> = {};
+try {
+  tableLoaders = import.meta.glob<Table>('./i18n/locales/*.json', { import: 'default' });
+} catch {
+  // not running under Vite
+}
+const tables = new Map<string, Table>();
 const tablesLoading = new Map<string, Promise<void>>();
 
 /** The only Albanian entry whose output differs from its key (a deliberate rewording). */
@@ -26,23 +35,20 @@ const ALBANIAN_OVERRIDES: Record<string, string> = {
 };
 
 /**
- * Fetch the translation tables when `language` needs them. Resolves at once for
- * Albanian and when they are already loaded; a failed fetch can be retried.
+ * Fetch the translation table for `language`. Resolves at once for Albanian and
+ * when it is already loaded; a failed fetch can be retried.
  */
 export function ensureTranslationTables(language: string): Promise<void> {
   if (!isSupportedLanguage(language)) return Promise.resolve();
   const lang = translationLanguageFor(language);
   if (lang === DEFAULT_LANGUAGE || tables.has(lang)) return Promise.resolve();
+  const loader = tableLoaders[`./i18n/locales/${lang}.json`];
+  if (!loader) return Promise.resolve();
   let loading = tablesLoading.get(lang);
   if (!loading) {
-    loading = import('virtual:zeri-translations/loaders')
-      .then(({ translationLoaders }) => {
-        const load = (translationLoaders as Record<string, () => Promise<{ default: LanguageTable }>>)[lang];
-        // A language with no table at all simply shows the Albanian originals.
-        return load ? load() : { default: {} };
-      })
-      .then((module) => {
-        tables.set(lang, module.default);
+    loading = loader()
+      .then((table) => {
+        tables.set(lang, table);
       })
       .catch((error) => {
         tablesLoading.delete(lang);
@@ -55,7 +61,9 @@ export function ensureTranslationTables(language: string): Promise<void> {
 
 /** True when dt() can already translate into `language`. */
 export function translationTablesReady(language: string): boolean {
-  return !isSupportedLanguage(language) || translationLanguageFor(language) === DEFAULT_LANGUAGE || tables.has(translationLanguageFor(language));
+  if (!isSupportedLanguage(language)) return true;
+  const lang = translationLanguageFor(language);
+  return lang === DEFAULT_LANGUAGE || tables.has(lang) || !tableLoaders[`./i18n/locales/${lang}.json`];
 }
 
 const isSupported = (value: string | null): value is SupportedLanguage =>
@@ -68,12 +76,9 @@ const isSupported = (value: string | null): value is SupportedLanguage =>
  * language is forced it reads the persisted choice, and every miss falls back to
  * Albanian before falling back to the original text.
  *
- * Lookup order, most specific first:
- *   1. newLanguageTranslations — the 14 added languages (ar, fr, it, ... nl)
- *   2. siteTranslations        — gap-fills for strings missing from every table
- *   3. uiTranslations          — short UI labels that override the big table
- *   4. dynamicTranslations     — the original six languages
- *   5. Albanian, then the input text itself
+ * The per-language tables already apply the source precedence (public pages,
+ * added languages, site gap-fills, UI labels, the original six, then Albanian);
+ * see scripts/i18n.ts. A miss returns the input text itself.
  */
 export function dt(text: string, forcedLang?: string): string {
   if (!text) return text;

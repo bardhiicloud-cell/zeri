@@ -150,10 +150,10 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [scrollbar-width:thin]">
         {events.length === 0 ? (
           <div className="flex h-full min-h-28 flex-col items-center justify-center gap-2 px-4 text-center">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-600 dark:text-slate-400 dark:bg-slate-800">
               <Radio className="h-5 w-5" aria-hidden="true" />
             </span>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">
               {dt('Ende pa përgjigje publike për këtë komunë.')}
             </p>
           </div>
@@ -176,13 +176,13 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
                       <span className={cn('rounded-full border px-2.5 py-0.5 text-[10px] font-black', tone.badge)}>
                         {statusLabel(ev.status)}
                       </span>
-                      <time className="text-[10px] font-semibold tabular-nums text-slate-400">{relativeWhen(ev.createdAt)}</time>
+                      <time className="text-[10px] font-semibold tabular-nums text-slate-600 dark:text-slate-400">{relativeWhen(ev.createdAt)}</time>
                     </span>
                     <span className="mt-2 block line-clamp-2 text-[13px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">
                       {ev.reportTitle || dt('Raportim')}
                     </span>
                     {(ev.municipality || ev.actorInstitution) && (
-                      <span className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400">
                         <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
                         <span className="truncate">
                           {ev.municipality ? `${dt('Komuna e')} ${ev.municipality}` : ''}
