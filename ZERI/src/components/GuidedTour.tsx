@@ -402,8 +402,8 @@ export default function GuidedTour() {
             <p className="mt-2 text-[13px] leading-relaxed text-slate-700 dark:text-slate-300" aria-live="polite">{dt(step.body)}</p>
             <div className="mt-4 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
-                <span className="text-[11px] font-bold tabular-nums text-slate-500">{index + 1} / {steps.length}</span>
-                {!last && <button type="button" onClick={() => close(true)} className="text-[11px] font-bold text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">{dt('Kapërce')}</button>}
+                <span className="text-[11px] font-bold tabular-nums text-slate-500 dark:text-slate-400">{index + 1} / {steps.length}</span>
+                {!last && <button type="button" onClick={() => close(true)} className="text-[11px] font-bold text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">{dt('Kapërce')}</button>}
               </div>
               <div className="flex gap-2">
                 {index > 0 && (

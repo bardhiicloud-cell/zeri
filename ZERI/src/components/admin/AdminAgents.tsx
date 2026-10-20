@@ -308,7 +308,7 @@ export default function AdminAgents() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email) {
-      toast.error("Ju lutem plotësoni fushat e detyrueshme: Emri dhe Emaili!");
+      toast.error(dt("Ju lutem plotësoni fushat e detyrueshme: Emri dhe Emaili!"));
       return;
     }
 
@@ -316,15 +316,15 @@ export default function AdminAgents() {
     // learns the rule before the account is created rather than after.
     const wantsPassword = formData.password.trim().length > 0;
     if (wantsPassword && formData.password.length < 8) {
-      toast.error('Fjalëkalimi duhet të ketë së paku 8 shenja.');
+      toast.error(dt('Fjalëkalimi duhet të ketë së paku 8 shenja.'));
       return;
     }
     if (wantsPassword && !/[a-zA-Z]/.test(formData.password)) {
-      toast.error('Fjalëkalimi duhet të përmbajë së paku një shkronjë.');
+      toast.error(dt('Fjalëkalimi duhet të përmbajë së paku një shkronjë.'));
       return;
     }
     if (wantsPassword && !/\d/.test(formData.password)) {
-      toast.error('Fjalëkalimi duhet të përmbajë së paku një numër.');
+      toast.error(dt('Fjalëkalimi duhet të përmbajë së paku një numër.'));
       return;
     }
 
@@ -364,13 +364,13 @@ export default function AdminAgents() {
           const result = await response.json();
           if (!response.ok) throw new Error(describeApiFailure(response.status, result));
           addAuditLog('Agent Password Set', 'warning', `Fjalëkalimi u ndryshua për ${formData.email}`);
-          toast.success('Agenti u përditësua dhe fjalëkalimi u ndryshua.');
+          toast.success(dt('Agenti u përditësua dhe fjalëkalimi u ndryshua.'));
         } catch (error) {
           toast.error(error instanceof Error ? error.message : 'Fjalëkalimi nuk u vendos.');
           return;
         }
       } else {
-        toast.success("Agenti u përditësua me sukses!");
+        toast.success(dt("Agenti u përditësua me sukses!"));
       }
     } else {
       try {
@@ -943,10 +943,10 @@ export default function AdminAgents() {
                             });
                             const result = await response.json();
                             if (!response.ok) throw new Error(result.error || 'Deshtoi.');
-                            toast.success('Fjalëkalimi u vendos dhe sesionet e vjetra u revokuan.');
+                            toast.success(dt('Fjalëkalimi u vendos dhe sesionet e vjetra u revokuan.'));
                             setDirectPassword('');
                             addAuditLog('Agent Password Set', 'success', `Fjalëkalimi u vendos direkt për ${selectedAgent.email}`);
-                          } catch (error: any) {
+                          } catch (error) {
                             toast.error(error.message || 'Fjalëkalimi nuk u vendos.');
                           } finally {
                             setIsSettingPassword(false);

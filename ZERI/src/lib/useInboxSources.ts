@@ -21,9 +21,11 @@ export interface InboxAccess {
   health: boolean;
   support: boolean;
   ads: boolean;
+  /** Citizen news tips. The rules open them to the newsroom (newsadmin) and the owner only. */
+  news: boolean;
 }
 
-type SourceKey = 'workFacts' | 'health' | 'shortages' | 'chats' | 'adRequests';
+type SourceKey = 'workFacts' | 'health' | 'shortages' | 'chats' | 'adRequests' | 'newsTips';
 
 const PER_SOURCE_LIMIT = 100;
 
@@ -44,6 +46,9 @@ function sources(access: InboxAccess): Array<{ key: SourceKey; build: () => Quer
   if (access.ads) {
     list.push({ key: 'adRequests', build: () => query(collection(db, 'adRequests'), where('status', '==', 'pending'), limit(PER_SOURCE_LIMIT)) });
   }
+  if (access.news) {
+    list.push({ key: 'newsTips', build: () => query(collection(db, 'newsTips'), where('status', '==', 'submitted'), limit(PER_SOURCE_LIMIT)) });
+  }
   return list;
 }
 
@@ -55,7 +60,7 @@ export function useInboxSources(access: InboxAccess) {
   // come from the staff API and are refreshed every minute.
   const [muniRequests, setMuniRequests] = useState<RawRecord[]>([]);
 
-  const { workfacts, health, support, ads } = access;
+  const { workfacts, health, support, ads, news } = access;
 
   useEffect(() => {
     if (!workfacts) {
@@ -78,7 +83,7 @@ export function useInboxSources(access: InboxAccess) {
     const timer = window.setInterval(() => void load(), 60_000);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [workfacts]);
-  const wanted = useMemo(() => sources({ workfacts, health, support, ads }), [workfacts, health, support, ads]);
+  const wanted = useMemo(() => sources({ workfacts, health, support, ads, news }), [workfacts, health, support, ads, news]);
 
   useEffect(() => {
     setData({});
@@ -108,6 +113,7 @@ export function useInboxSources(access: InboxAccess) {
     shortages: data.shortages ?? [],
     chats: data.chats ?? [],
     adRequests: data.adRequests ?? [],
+    newsTips: data.newsTips ?? [],
     muniRequests,
     /** True once every source that was opened has answered (or failed). */
     ready: wanted.every(({ key }) => settled.includes(key)),

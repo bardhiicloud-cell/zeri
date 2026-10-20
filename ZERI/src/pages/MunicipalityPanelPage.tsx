@@ -27,7 +27,6 @@ import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import { MUNICIPALITY_PLANS } from '../lib/municipalityProvisioning';
 import { statusMeta, TONE_CLASSES } from '../lib/reportStatus';
-import { applyTransition } from '../lib/adminApi';
 import { fetchReportPage, useServerReports } from '../lib/adminReportsApi';
 import {
   FEATURE_FROM_PLAN, REQUEST_LABELS, addWorkFact, fileRequest, loadDesk, loadHealthCases,

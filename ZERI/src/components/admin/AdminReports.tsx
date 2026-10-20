@@ -1,12 +1,10 @@
-import { dt } from '@/src/lib/dt';
 import { escapeHtml } from '../../lib/escapeHtml';
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../lib/store';
-import { Download, Search, Trash2, CheckCircle2, FileText, Calendar, Filter, X, ChevronLeft, ChevronRight, CheckSquare, Square, Edit, MapPin, LayoutGrid, List, Cpu, Mail, ContactRound, Plus } from 'lucide-react';
+import { Search, Trash2, Calendar, X, ChevronLeft, ChevronRight, Cpu, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../../lib/utils';
 import ReportDetailModal from '../ReportDetailModal.tsx';
-import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../lib/LanguageContext';
 import { getAccountabilityProfile } from '../../lib/accountability';
@@ -32,7 +30,7 @@ import { ReportRow } from './reports/ReportRow';
 import ReviewMode from './ReviewMode';
 import EmailInstitutionDialog from './EmailInstitutionDialog';
 import { ReportsToolbar } from './reports/ReportsToolbar';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface ReportRoutingContact {
   id: string;
@@ -415,7 +413,7 @@ export default function AdminReports({ department, openReportId }: { department?
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newContact.email.trim())) {
-      toast.error('Adresa e emailit nuk duket e vlefshme.');
+      toast.error(dt('Adresa e emailit nuk duket e vlefshme.'));
       return;
     }
     try {
@@ -486,10 +484,10 @@ export default function AdminReports({ department, openReportId }: { department?
     if (!await askConfirm(`${dt('Të fshihet kontakti')} ${contact.name} (${contact.email})?`)) return;
     try {
       await deleteDoc(doc(db, 'reportRoutingContacts', contact.id));
-      toast.success('Kontakti u fshi.');
+      toast.success(dt('Kontakti u fshi.'));
     } catch (error) {
       console.error('Nuk u fshi kontakti:', error);
-      toast.error('Kontakti nuk u fshi.');
+      toast.error(dt('Kontakti nuk u fshi.'));
     }
   };
 

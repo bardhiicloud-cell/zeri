@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Shield, AlertTriangle, UserCheck, Lock, Download, Loader2 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { db } from '../../lib/firebase';

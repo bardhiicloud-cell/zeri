@@ -187,9 +187,9 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
 
   const handleResolve = async () => {
     if (!activeChat || activeChat.status === 'resolved') return;
-    if (!await askConfirm('A dëshironi ta shënoni këtë bisedë si të zgjidhur?')) return;
+    if (!await askConfirm(dt('A dëshironi ta shënoni këtë bisedë si të zgjidhur?'))) return;
     const othersChat = Boolean(activeChat.assignedTo) && activeChat.assignedTo !== myUid;
-    const reason = othersChat ? await askReason('Kjo bisedë është e një agjenti tjetër. Pse e mbyllni? (të paktën 5 shenja)', { minLength: 5 }) ?? '' : '';
+    const reason = othersChat ? await askReason(dt('Kjo bisedë është e një agjenti tjetër. Pse e mbyllni? (të paktën 5 shenja)'), { minLength: 5 }) ?? '' : '';
     if (othersChat && reason.trim().length < 5) return;
     await runDesk('resolve', () => supportDesk.resolve(activeChat.id, reason || undefined), 'Biseda u mbyll.');
   };
@@ -202,7 +202,7 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
   const handleRelease = async () => {
     if (!activeChat) return;
     const othersChat = Boolean(activeChat.assignedTo) && activeChat.assignedTo !== myUid;
-    const reason = othersChat ? await askReason('Pse ia merrni bisedën agjentit? (të paktën 5 shenja)', { minLength: 5 }) ?? '' : '';
+    const reason = othersChat ? await askReason(dt('Pse ia merrni bisedën agjentit? (të paktën 5 shenja)'), { minLength: 5 }) ?? '' : '';
     if (othersChat && reason.trim().length < 5) return;
     await runDesk('release', () => supportDesk.release(activeChat.id, reason || undefined), 'Biseda u kthye në radhë për një agjent tjetër.');
   };
@@ -210,7 +210,7 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
   const handleTransfer = async (targetUid: string) => {
     if (!activeChat || !targetUid) return;
     const othersChat = Boolean(activeChat.assignedTo) && activeChat.assignedTo !== myUid;
-    const reason = othersChat ? await askReason('Pse e transferoni bisedën e një agjenti tjetër? (të paktën 5 shenja)', { minLength: 5 }) ?? '' : '';
+    const reason = othersChat ? await askReason(dt('Pse e transferoni bisedën e një agjenti tjetër? (të paktën 5 shenja)'), { minLength: 5 }) ?? '' : '';
     if (othersChat && reason.trim().length < 5) return;
     const ok = await runDesk('transfer', () => supportDesk.transfer(activeChat.id, targetUid, reason || undefined), targetUid === myUid ? 'E morët përsipër bisedën.' : 'Biseda u transferua.');
     if (ok) setTransferTo('');
@@ -274,12 +274,12 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
           <>
             <header className="flex shrink-0 items-center justify-between gap-3 border-b border-(--color-border-soft) bg-(--color-surface) px-4 py-4 dark:border-white/10 dark:bg-slate-900 sm:px-5">
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                <button type="button" onClick={() => setActiveChatId(null)} className="grid min-h-10 min-w-10 place-items-center rounded-[10px] text-slate-500 hover:bg-slate-100 md:hidden dark:hover:bg-slate-800" aria-label="Kthehu te bisedat"><ArrowLeft className="h-4 w-4" aria-hidden="true" /></button>
+                <button type="button" onClick={() => setActiveChatId(null)} className="grid min-h-10 min-w-10 place-items-center rounded-[10px] text-slate-500 hover:bg-slate-100 md:hidden dark:hover:bg-slate-800" aria-label={dt('Kthehu te bisedat')}><ArrowLeft className="h-4 w-4" aria-hidden="true" /></button>
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-(--color-surface-subtle) text-(--color-brand-primary)"><UserRound className="h-5 w-5" aria-hidden="true" /></div>
                 <div className="min-w-0"><h2 className="truncate text-base font-black text-(--color-text) dark:text-white">{activeChat.userName}</h2><p className="truncate text-xs text-slate-500 dark:text-slate-400">{activeChat.userEmail || 'Nuk ka email'} · <span className="font-mono">{activeChat.id}</span></p><p className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-(--color-brand-primary)"><span className={cn('h-1.5 w-1.5 rounded-full', statusTone[activeChat.status])} />{SUPPORT_STATUS_LABELS[activeChat.status]} · {activeChat.agentTrackId || 'Pa ID ndjekjeje'}</p></div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <button type="button" onClick={() => setIsDetailsOpen((open) => !open)} className="grid min-h-10 min-w-10 place-items-center rounded-[10px] border border-(--color-border-soft) text-slate-500 hover:text-(--color-brand-primary) lg:hidden" aria-label="Hap detajet"><Info className="h-4 w-4" aria-hidden="true" /></button>
+                <button type="button" onClick={() => setIsDetailsOpen((open) => !open)} className="grid min-h-10 min-w-10 place-items-center rounded-[10px] border border-(--color-border-soft) text-slate-500 hover:text-(--color-brand-primary) lg:hidden" aria-label={dt('Hap detajet')}><Info className="h-4 w-4" aria-hidden="true" /></button>
                 {activeChat.status !== 'resolved' && <button type="button" onClick={handleResolve} className="hidden min-h-10 items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-100 sm:inline-flex"><CheckCircle2 className="h-4 w-4" aria-hidden="true" />Shëno të zgjidhur</button>}
               </div>
             </header>
@@ -317,13 +317,13 @@ export default function AdminSupportChats({ openChatId }: { openChatId?: string 
               </div>
             ) : activeChat.status === 'bot' ? (
               <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">{dt('Qytetari po flet me asistentin automatik dhe nuk ka kërkuar agjent.')}</div>
-            ) : activeChat.status === 'resolved' ? <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">Kjo bisedë është shënuar e zgjidhur. Nuk mund të dërgoni më mesazhe.</div> : <form onSubmit={handleSend} className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 dark:border-white/10 dark:bg-slate-900"><label htmlFor="support-agent-reply" className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Përgjigjja juaj</label><div className="flex gap-2"><input id="support-agent-reply" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Shkruaj përgjigjen si agjent..." disabled={isSending} className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-(--color-border-soft) bg-(--color-surface-subtle) px-3.5 text-sm text-(--color-text) outline-none focus:border-(--color-brand-primary) dark:border-white/10 dark:bg-slate-800 dark:text-white" /><button type="submit" disabled={!input.trim() || isSending} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-(--color-brand-primary) px-4 text-xs font-black text-white transition-colors hover:bg-(--color-brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50">{isSending ? 'Duke dërguar...' : 'Dërgo përgjigjen'}<Send className="h-4 w-4" aria-hidden="true" /></button></div>{error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}</form>}
+            ) : activeChat.status === 'resolved' ? <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">Kjo bisedë është shënuar e zgjidhur. Nuk mund të dërgoni më mesazhe.</div> : <form onSubmit={handleSend} className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 dark:border-white/10 dark:bg-slate-900"><label htmlFor="support-agent-reply" className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Përgjigjja juaj</label><div className="flex gap-2"><input id="support-agent-reply" value={input} onChange={(event) => setInput(event.target.value)} placeholder={dt('Shkruaj përgjigjen si agjent...')} disabled={isSending} className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-(--color-border-soft) bg-(--color-surface-subtle) px-3.5 text-sm text-(--color-text) outline-none focus:border-(--color-brand-primary) dark:border-white/10 dark:bg-slate-800 dark:text-white" /><button type="submit" disabled={!input.trim() || isSending} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-(--color-brand-primary) px-4 text-xs font-black text-white transition-colors hover:bg-(--color-brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50">{isSending ? 'Duke dërguar...' : 'Dërgo përgjigjen'}<Send className="h-4 w-4" aria-hidden="true" /></button></div>{error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}</form>}
           </>
         ) : <div className="flex flex-1 items-center justify-center p-8 text-center text-sm font-semibold text-slate-500 dark:text-slate-400"><MessageSquare className="mb-3 h-8 w-8 text-slate-300" aria-hidden="true" /><p>Zgjidhni një bisedë nga lista.</p></div>}
       </section>
 
       {activeChat && <aside className={cn('w-[240px] shrink-0 border-l border-(--color-border-soft) bg-(--color-surface) p-4 dark:border-white/10 dark:bg-slate-900', isDetailsOpen ? 'fixed inset-y-0 right-0 z-[120] block shadow-(--shadow-floating) lg:static lg:shadow-none' : 'hidden lg:block')}>
-        <div className="flex items-center justify-between"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Detajet</p><button type="button" onClick={() => setIsDetailsOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800" aria-label="Mbyll detajet"><X className="h-4 w-4" aria-hidden="true" /></button></div>
+        <div className="flex items-center justify-between"><p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Detajet</p><button type="button" onClick={() => setIsDetailsOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800" aria-label={dt('Mbyll detajet')}><X className="h-4 w-4" aria-hidden="true" /></button></div>
         <div className="mt-5 space-y-5 text-sm">
           <div><p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Statusi</p><p className="mt-1 flex items-center gap-2 font-bold text-(--color-text) dark:text-white"><span className={cn('h-2 w-2 rounded-full', statusTone[activeChat.status])} />{SUPPORT_STATUS_LABELS[activeChat.status]}</p></div>
           <div><p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Agjenti')}</p><p className="mt-1 font-bold text-(--color-text) dark:text-white">{activeChat.assignedTo ? (activeChat.assignedTo === myUid ? dt('Ju') : activeChat.assignedAgentName || dt('Agjent tjetër')) : dt('Askush ende')}</p></div>

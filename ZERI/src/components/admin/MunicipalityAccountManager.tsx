@@ -19,7 +19,6 @@
  */
 import { useMemo, useState } from 'react';
 import { dt } from '../../lib/dt';
-import { auth } from '../../lib/firebase';
 import { requireAdminToken, describeApiFailure } from '../../lib/adminApi';
 import { useCitizenDirectory } from '../../lib/useCitizenDirectory';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
@@ -149,7 +148,7 @@ export default function MunicipalityAccountManager() {
       const result = await response.json();
       if (!response.ok) throw new Error(describeApiFailure(response.status, result));
       toast.success(dt('Llogaria komunale u përditësua.'));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Ndryshimet nuk u ruajtën.'));
     } finally {
       setIsBusy(false);
@@ -171,7 +170,7 @@ export default function MunicipalityAccountManager() {
       const result = await response.json();
       if (!response.ok) throw new Error(describeApiFailure(response.status, result));
       toast.success(nextBanned ? dt('Llogaria u pezullua.') : dt('Llogaria u riaktivizua.'));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Statusi nuk u ndryshua.'));
     } finally {
       setIsBusy(false);
@@ -199,7 +198,7 @@ export default function MunicipalityAccountManager() {
       if (!response.ok) throw new Error(describeApiFailure(response.status, result));
       toast.success(dt('Fjalëkalimi u vendos dhe sesionet e vjetra u revokuan.'));
       setNewPassword('');
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Fjalëkalimi nuk u vendos.'));
     } finally {
       setIsBusy(false);
@@ -222,7 +221,7 @@ export default function MunicipalityAccountManager() {
       setMessageText('');
       await loadThread(selected.id);
       toast.success(dt('Mesazhi u dërgua.'));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || dt('Mesazhi nuk u dërgua.'));
     } finally {
       setIsBusy(false);

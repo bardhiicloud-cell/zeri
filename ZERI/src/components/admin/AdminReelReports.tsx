@@ -10,7 +10,7 @@ import {
 } from '../../lib/reelsSocial';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 type Group = { reelId: string; reports: ReelReport[]; reel: (Reel & { isHidden: boolean }) | null | 'missing' };
 

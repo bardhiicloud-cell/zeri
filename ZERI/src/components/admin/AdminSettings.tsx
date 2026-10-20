@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import React, { useState } from 'react';
-import { Settings, Save, Database, Shield, Globe, Heart, CheckCircle2, AlertTriangle, Eye } from 'lucide-react';
+import { Settings, Save, Database, Shield, Globe, Heart, AlertTriangle, Eye } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { db } from '../../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -41,10 +41,10 @@ export default function AdminSettings() {
         popupMessage: popup.message,
         popupSeverity: popup.severity,
       }, { merge: true });
-      toast.success('Njoftimi popup u publikua për të gjithë vizitorët!');
+      toast.success(dt('Njoftimi popup u publikua për të gjithë vizitorët!'));
     } catch (e) {
       console.error(e);
-      toast.error('Popup nuk u ruajt. Provoni përsëri.');
+      toast.error(dt('Popup nuk u ruajt. Provoni përsëri.'));
     }
   };
 
@@ -53,13 +53,13 @@ export default function AdminSettings() {
     updateDonationUrls({ charity: charityUrl, maintenance: maintenanceUrl });
     try {
       await setDoc(doc(db, 'settings', 'general'), { showReels }, { merge: true });
-      toast.success('Cilësimet e sistemit u ruajtën me sukses!');
+      toast.success(dt('Cilësimet e sistemit u ruajtën me sukses!'));
     } catch (e) {
       // A failed write must say so. This used to report success ("saved
       // locally"), so an administrator believed a setting was live when the
       // platform never received it.
       console.error(e);
-      toast.error('Cilësimet nuk u ruajtën. Kontrolloni lidhjen dhe provoni përsëri.');
+      toast.error(dt('Cilësimet nuk u ruajtën. Kontrolloni lidhjen dhe provoni përsëri.'));
     } finally {
       setIsSaving(false);
     }
@@ -133,7 +133,7 @@ export default function AdminSettings() {
                   value={popup.message}
                   onChange={(e) => setPopup(p => ({ ...p, message: e.target.value }))}
                   rows={4}
-                  placeholder="Shkruani njoftimin serioz që do t'u shfaqet çdo vizitori..."
+                  placeholder={dt("Shkruani njoftimin serioz që do t'u shfaqet çdo vizitori...")}
                   className="w-full px-4 py-3 bg-neutral-100 border border-slate-200/60 dark:border-white/10 rounded-xl font-bold text-sm outline-none focus:border-rose-600 transition-colors resize-none"
                 />
               </div>

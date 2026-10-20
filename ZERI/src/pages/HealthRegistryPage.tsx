@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {  dt } from '../lib/dt'; import { AuraHero, AuraNote, AuraOrbit } from '../components/aura/Aura';
+import React, { useState, useEffect, useMemo } from 'react';
+import { dt } from '../lib/dt';
+import { AuraHero, AuraNote, AuraOrbit } from '../components/aura/Aura';
 import {
-  HeartPulse, Activity, ShieldAlert, Plus, Search, Filter, MapPin, 
-  User, Calendar, AlertCircle, CheckCircle2, ChevronRight, Share2, 
-  Phone, Heart, Download, FileText, Sparkles, Building2, Droplets,
-  Stethoscope, Pill, X, ArrowUpRight, Upload, Camera, Eye, Send,
-  Mail, Printer, AlertTriangle, ShieldCheck, Link as LinkIcon, Edit3
+  HeartPulse, Plus, Search, MapPin,
+  User, AlertCircle, CheckCircle2, Share2,
+  Phone, Heart, Download, FileText, Building2, Stethoscope, Pill, X, ArrowUpRight, Camera, Eye, Send,
+  Mail, ShieldCheck, Link as LinkIcon, Edit3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, onSnapshot, addDoc, query, updateDoc, doc, where, limit } from 'firebase/firestore';

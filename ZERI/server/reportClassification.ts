@@ -129,7 +129,7 @@ export function registerReportClassificationRoutes(app: Express, deps: Classific
       await batch.commit();
       deps.audit('report.classify', req, { count: results.length, patch: decision.patch });
       return res.json({ updated: results.length, results, at: now });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[CLASSIFY] failed:', error?.message);
       return res.status(500).json({ error: 'Klasifikimi nuk u krye. Provoni përsëri.' });
     }

@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, authAdmin } from './firebaseAdmin';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';

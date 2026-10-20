@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 import {
-  ChevronDown, PlusCircle, FileText, LogIn, LogOut, ShieldAlert,
-  Globe, Sun, Moon, Menu, Check, Home, UserRound,
+  PlusCircle, FileText, LogIn, LogOut, ShieldAlert,
+  Globe, Sun, Moon, Menu, Check, Home, UserRound
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { TOP_NAV, LEGAL_NAV, type NavLink as NavLinkDef } from '../../lib/navigation';
 import { canAccessAdmin } from '../../lib/adminPermissions';
-import { isSpecificScope } from '../../lib/municipalityScope';
 import { useThemePreference } from '../../lib/themePreference';
 import { ResponseNotificationsBell } from '../NewNewsBadge';
 
@@ -319,7 +318,7 @@ function NavBarLink({ link, active }: { link: NavLinkDef; active: boolean }) {
       className={cn(
         'flex min-h-9 items-center rounded-lg px-3 text-xs font-bold transition-colors',
         active
-          ? 'text-(--color-brand-primary)'
+          ? 'text-(--color-brand-primary) dark:text-blue-300'
           : 'text-slate-600 hover:bg-slate-50 hover:text-(--color-brand-primary) dark:text-slate-300 dark:hover:bg-slate-800'
       )}
     >

@@ -1,11 +1,10 @@
 import { BackLink } from '../components/BackLink';
 import { dt } from '@/src/lib/dt';
 import { AuraHero, AuraOrbit } from '../components/aura/Aura';
-import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowLeft, CheckCircle2, Scale, ShieldCheck, UserCheck,
-  AlertTriangle, Sparkles,
+  CheckCircle2, Scale, ShieldCheck, UserCheck,
+  AlertTriangle, Sparkles
 } from 'lucide-react';
 import { usePageMeta } from '../lib/usePageMeta';
 import { CookiePreferencesButton } from '../components/CookieConsentBanner';

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { escapeHtml } from '../../lib/escapeHtml';
-import {  dt } from '../../lib/dt';
+import { dt } from '../../lib/dt';
 import {
-  HeartPulse, Download, Search, Filter, Phone, Mail, 
-  MapPin, CheckCircle2, AlertTriangle, FileText, Send, 
-  ExternalLink, Eye, Building2, ShieldAlert, Sparkles, X,
+  HeartPulse, Download, Search, Phone, Mail,
+  MapPin, CheckCircle2, AlertTriangle, FileText, Send, Eye, Building2, ShieldAlert, X,
   Printer, ArrowUpRight, Heart, Link as LinkIcon, Edit3, Plus,
-  Trash2, ShieldCheck, Check, Clock, UserCheck
+  Trash2, ShieldCheck
 } from 'lucide-react';
 import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore';
 import DecisionBar from './DecisionBar';
@@ -19,7 +18,7 @@ import { cn } from '../../lib/utils';
 import type { HealthCase } from '../../pages/HealthRegistryPage.tsx';
 import AdminMedicineShortages from './AdminMedicineShortages.tsx';
 import toast from 'react-hot-toast';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 export default function AdminHealthRegistry() {
   // Section switcher: the patient registry vs. the medicine-shortage queue.
@@ -78,7 +77,7 @@ export default function AdminHealthRegistry() {
       console.error('Regjistri shëndetësor nuk u ngarkua për administratorin:', error);
       setLoadError('Të dhënat nuk u ngarkuan. Kontrolloni lejet dhe lidhjen, pastaj provoni përsëri.');
       setIsLoadingCases(false);
-      toast.error('Regjistri shëndetësor nuk u ngarkua.');
+      toast.error(dt('Regjistri shëndetësor nuk u ngarkua.'));
     });
 
     return () => unsub();
@@ -138,7 +137,7 @@ export default function AdminHealthRegistry() {
       setPreviewImage({ url, title: `${healthCase.fullName || 'Rast shëndetësor'} · Dokument`, documentType });
     } catch (error) {
       console.error('Dokumenti privat nuk u hap:', error);
-      toast.error('Dokumenti nuk u hap. Verifikoni qasjen dhe provoni përsëri.');
+      toast.error(dt('Dokumenti nuk u hap. Verifikoni qasjen dhe provoni përsëri.'));
     }
   };
 
@@ -169,25 +168,25 @@ export default function AdminHealthRegistry() {
       setCases(prev => prev.map(c => c.id === inspectingCase.id ? updatedCase : c));
       setInspectingCase(updatedCase);
       setIsEditingCase(false);
-      toast.success('Të dhënat mjekësore u ruajtën me sukses!');
+      toast.success(dt('Të dhënat mjekësore u ruajtën me sukses!'));
     } catch (err) {
       console.error('Ndryshimet e rastit shëndetësor nuk u ruajtën:', err);
-      toast.error('Gabim gjatë ruajtjes së ndryshimeve.');
+      toast.error(dt('Gabim gjatë ruajtjes së ndryshimeve.'));
     }
   };
 
   // Delete Case Handler
   const handleDeleteCase = async (caseId: string) => {
-    if (!await askConfirm('A jeni të sigurt që dëshironi ta fshini këtë rast nga Regjistri Shëndetësor? Ky veprim nuk mund të kthehet.')) return;
+    if (!await askConfirm(dt('A jeni të sigurt që dëshironi ta fshini këtë rast nga Regjistri Shëndetësor? Ky veprim nuk mund të kthehet.'))) return;
     
     try {
       await deleteDoc(doc(db, 'healthRegistry', caseId));
       setCases(prev => prev.filter(c => c.id !== caseId));
       if (inspectingCase?.id === caseId) setInspectingCase(null);
-      toast.success('Rasti shëndetësor u fshi me sukses.');
+      toast.success(dt('Rasti shëndetësor u fshi me sukses.'));
     } catch (err) {
       console.error('Rasti shëndetësor nuk u fshi:', err);
-      toast.error('Rasti nuk u fshi. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Rasti nuk u fshi. Kontrolloni lejet dhe provoni përsëri.'));
     }
   };
 
@@ -236,10 +235,10 @@ export default function AdminHealthRegistry() {
       await updateDoc(doc(db, 'healthRegistry', healthCase.id), patch);
       setCases(prev => prev.map(c => (c.id === healthCase.id ? { ...c, ...patch } : c)));
       setInspectingCase(prev => prev?.id === healthCase.id ? { ...prev, ...patch } : prev);
-      toast.success('Rasti u kthye në anonim. Identiteti mbetet vetëm për administratën.');
+      toast.success(dt('Rasti u kthye në anonim. Identiteti mbetet vetëm për administratën.'));
     } catch (err) {
       console.error('Anonimizimi i rastit nuk u ruajt:', err);
-      toast.error('Anonimizimi nuk u ruajt. Provoni përsëri.');
+      toast.error(dt('Anonimizimi nuk u ruajt. Provoni përsëri.'));
     }
   };
 
@@ -375,7 +374,7 @@ export default function AdminHealthRegistry() {
       setNotifyingCase(null);
     } catch (err) {
       console.error(err);
-      toast.error('Gabim gjatë regjistrimit të njoftimit.');
+      toast.error(dt('Gabim gjatë regjistrimit të njoftimit.'));
     } finally {
       setIsDispatching(false);
     }
@@ -392,7 +391,7 @@ export default function AdminHealthRegistry() {
     if (!adminGoFundMeCase) return;
     const url = adminGoFundMeUrl.trim();
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
-      toast.error('Ju lutem vendosni një URL të vlefshme (duke filluar me https://)');
+      toast.error(dt('Ju lutem vendosni një URL të vlefshme (duke filluar me https://)'));
       return;
     }
 
@@ -411,7 +410,7 @@ export default function AdminHealthRegistry() {
     } catch (err) {
       console.error('GoFundMe link not saved:', err);
       setCases(prev => prev.map(item => item.id === adminGoFundMeCase.id ? { ...item, donationUrl: previousUrl } : item));
-      toast.error('Linku nuk u ruajt. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Linku nuk u ruajt. Kontrolloni lejet dhe provoni përsëri.'));
     } finally {
       setIsAdminSavingGoFundMe(false);
     }
@@ -420,7 +419,7 @@ export default function AdminHealthRegistry() {
   // CSV Export Function
   const handleExportCSV = () => {
     if (filteredCases.length === 0) {
-      toast.error('Nuk ka të dhëna për të shkarkuar.');
+      toast.error(dt('Nuk ka të dhëna për të shkarkuar.'));
       return;
     }
 
@@ -473,7 +472,7 @@ export default function AdminHealthRegistry() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Skedari CSV u shkarkua me sukses!');
+    toast.success(dt('Skedari CSV u shkarkua me sukses!'));
   };
 
   /** Filename stem shared by every export, so the three files group together. */
@@ -720,7 +719,7 @@ export default function AdminHealthRegistry() {
           <button
             onClick={handlePrintReport}
             className="flex-1 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/10 active:scale-95 sm:flex-initial"
-            title="Printo raport zyrtar"
+            title={dt('Printo raport zyrtar')}
           >
             <Printer className="inline w-4 h-4" />
             <span className="ml-1.5">{dt('Printo Raport')}</span>
@@ -777,7 +776,7 @@ export default function AdminHealthRegistry() {
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Kërko pacient, diagnozë, nevojë..."
+              placeholder={dt('Kërko pacient, diagnozë, nevojë...')}
               className="w-full pl-9 pr-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:border-rose-500"
             />
           </div>
@@ -894,7 +893,7 @@ export default function AdminHealthRegistry() {
                             <p className="text-[11px] font-mono font-bold text-blue-600 mt-1">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</p>
                             {c.expiresAt && <p className="text-[11px] text-slate-400">Afati: {new Date(c.expiresAt).toLocaleDateString('sq-AL')}</p>}
                           </div>
-                          {c.imageUrl && <button type="button" onClick={() => void handleOpenHealthDocument(c)} className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 dark:border-white/10 dark:bg-slate-900 shrink-0" title="Shiko dokumentin">{c.documentType === 'pdf' ? <FileText className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>}
+                          {c.imageUrl && <button type="button" onClick={() => void handleOpenHealthDocument(c)} className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 dark:border-white/10 dark:bg-slate-900 shrink-0" title={dt('Shiko dokumentin')}>{c.documentType === 'pdf' ? <FileText className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>}
                         </div>
                       </td>
 
@@ -956,7 +955,7 @@ export default function AdminHealthRegistry() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-800 transition-colors"
-                              title="Hap fushatën në GoFundMe"
+                              title={dt('Hap fushatën në GoFundMe')}
                             >
                               <Heart className="w-3 h-3 fill-emerald-600/30 text-emerald-600" />
                               <span>GoFundMe</span>
@@ -965,7 +964,7 @@ export default function AdminHealthRegistry() {
                             <button
                               onClick={() => handleOpenAdminGoFundMe(c)}
                               className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
-                              title="Ndrysho linkun e GoFundMe"
+                              title={dt('Ndrysho linkun e GoFundMe')}
                             >
                               <Edit3 className="w-3 h-3" />
                             </button>
@@ -974,7 +973,7 @@ export default function AdminHealthRegistry() {
                           <button
                             onClick={() => handleOpenAdminGoFundMe(c)}
                             className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300 rounded-lg text-[11px] font-bold text-slate-500 inline-flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition-colors"
-                            title="Vendos linkun e GoFundMe"
+                            title={dt('Vendos linkun e GoFundMe')}
                           >
                             <Plus className="w-3 h-3" />
                             <span>Shto Link</span>
@@ -1017,7 +1016,7 @@ export default function AdminHealthRegistry() {
                           <button
                             onClick={() => handleOpenInspect(c)}
                             className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 transition"
-                            title="Inspekto Dosjen e Plotë Mjekësore"
+                            title={dt('Inspekto Dosjen e Plotë Mjekësore')}
                           >
                             <FileText className="w-3 h-3 text-rose-500" />
                             <span>Dosja</span>
@@ -1026,7 +1025,7 @@ export default function AdminHealthRegistry() {
                           <button
                             onClick={() => handleOpenNotifyModal(c)}
                             className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] inline-flex items-center gap-1 shadow-xs transition active:scale-95"
-                            title="Njofto Spitalin Rajonal ose QKMF"
+                            title={dt('Njofto Spitalin Rajonal ose QKMF')}
                           >
                             <Send className="w-3 h-3" />
                             <span>Spitali</span>
@@ -1035,7 +1034,7 @@ export default function AdminHealthRegistry() {
                           <button
                             onClick={() => handlePrintReferral(c)}
                             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                            title="Printo Fletë-Referimin Zyrtar"
+                            title={dt('Printo Fletë-Referimin Zyrtar')}
                           >
                             <Printer className="w-3.5 h-3.5" />
                           </button>

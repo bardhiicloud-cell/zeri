@@ -30,10 +30,10 @@ export function ArticleBlock({ entry, content, lang, headingLevel = 2 }: {
   const H = (`h${headingLevel}`) as 'h2' | 'h3';
   const sources = sourcesFor(content, entry);
   return (
-    <article id={entry.id} className="hx-card scroll-mt-28 space-y-4 p-5 sm:p-7">
+    <article id={entry.id} className="hx-card scroll-mt-28 min-w-0 space-y-4 p-4 sm:p-7">
       <header className="space-y-2">
         <EntryMeta entry={entry} lang={lang} />
-        <H className="hx-serif text-2xl font-black leading-tight" style={{ color: 'var(--hx-ink)' }}>
+        <H className="hx-serif text-xl font-black leading-tight [overflow-wrap:anywhere] sm:text-2xl" style={{ color: 'var(--hx-ink)' }}>
           <Link to={entryPath(entry)} className="hover:underline decoration-[var(--hx-brass-2)] underline-offset-4">{pick(entry.title, lang)}</Link>
         </H>
         <EvidenceBadge status={entry.evidence} lang={lang} />

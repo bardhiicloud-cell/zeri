@@ -3,7 +3,7 @@ import { RotateCcw, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dt } from '@/src/lib/dt';
 import { PostApiError, purgePostApi, restoreDaysLeft, restorePostApi } from '../../lib/forumPostsApi';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 export interface DeletedPost { id: string; content: string; deletedAtMs: number | null }
 

@@ -1,3 +1,4 @@
+import { dt } from '@/src/lib/dt';
 import ReportQueuesPanel from './ReportQueuesPanel';
 
 /**
@@ -8,7 +9,7 @@ import ReportQueuesPanel from './ReportQueuesPanel';
 export default function ReportsSection({ openReportId }: { openReportId?: string }) {
   return (
     <ReportQueuesPanel
-      title="Raportet e qytetarëve"
+      title={dt('Raportet e qytetarëve')}
       subtitle="Këtu punohen raportimet: Në pritje → U aprovua → I caktuar → Në proces → U zgjidh → U mbyll. Të refuzuarat janë veçmas. Hap një raport për ta aprovuar, caktuar ose refuzuar."
       openReportId={openReportId}
     />

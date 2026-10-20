@@ -1,9 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { useLanguage } from '../lib/LanguageContext';
 import { MapPin, Navigation, Loader2, Search, CheckCircle2 } from 'lucide-react';
-import { ALL_MUNICIPALITIES_OPTION } from '../lib/constants';
-import { cn } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeMunicipalityName, isInsideKosovo } from '../lib/municipalityNormalizer';
@@ -11,9 +9,7 @@ import { hasAnalyticsConsent, hasDecided, onConsentChange } from '../lib/consent
 import { AGE_PASSED_EVENT, isAgeVerified } from '../lib/ageGate';
 import {
   ALL_MUNICIPALITIES,
-  ALL_SCOPE,
-  hasPersistedScope,
-  searchMunicipalities,
+  ALL_SCOPE, searchMunicipalities
 } from '../lib/municipalityScope';
 
 /**
@@ -226,7 +222,7 @@ export function LocationDetectorModal() {
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                   {dt("Gjej vendndodhjen time automatikisht")}
                 </h4>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-0.5">
                   {dt("Kërkon leje nga shfletuesi juaj")}
                 </p>
               </div>

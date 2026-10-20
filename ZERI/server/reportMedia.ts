@@ -181,7 +181,7 @@ export function registerReportMediaRoutes(app: Express, deps: ReportMediaDeps): 
 
       deps.audit(`report.media.${action}`, req, { reportId, url: decision.url, reason: decision.reason || null });
       return res.json({ ok: true, action, media: decision.media, images: decision.images });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[REPORTS] media change failed:', error?.message);
       return res.status(500).json({ error: 'Ndryshimi i fotos nuk u krye. Provoni përsëri.' });
     }

@@ -9,14 +9,13 @@ import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { dt } from '@/src/lib/dt';
-import { ALL_SCOPE } from '../../lib/municipalityScope';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import toast from 'react-hot-toast';
 import { NEWS_CATEGORIES } from '../../lib/newsCategories';
 import { DEMO_NEWS } from '../../lib/demoNews';
 import NewsPlacementPreview from './NewsPlacementPreview';
 import { layoutNews } from '../../lib/newsPlacement';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface AdminNewsItem {
   id: string;
@@ -468,9 +467,9 @@ export default function AdminNews() {
                   <option value={ALL_KOSOVA}>{dt('Gjithë Kosova (niveli kombëtar)')}</option>
                   {KOSOVO_MUNICIPALITIES.map(municipality => <option key={municipality}>{municipality}</option>)}
                 </select>
-                <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="URL e fotografisë kryesore" className={fieldClass} />
-                <input value={form.inlineImageUrl} onChange={e => setForm({ ...form, inlineImageUrl: e.target.value })} placeholder="URL e fotos BRENDA lajmit" className={fieldClass} />
-                <input value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} placeholder="URL e videos (YouTube ose mp4)" className={fieldClass} />
+                <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder={dt('URL e fotografisë kryesore')} className={fieldClass} />
+                <input value={form.inlineImageUrl} onChange={e => setForm({ ...form, inlineImageUrl: e.target.value })} placeholder={dt('URL e fotos BRENDA lajmit')} className={fieldClass} />
+                <input value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} placeholder={dt('URL e videos (YouTube ose mp4)')} className={fieldClass} />
               </div>
             </details>
 
@@ -583,7 +582,7 @@ export default function AdminNews() {
                 {form.videoUrl && (
                   <div className="overflow-hidden rounded-lg">
                     {form.videoUrl.includes('youtube.com') || form.videoUrl.includes('youtu.be') ? (
-                      <iframe src={form.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title="Video e lajmit" className="aspect-video w-full" allowFullScreen />
+                      <iframe src={form.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title={dt('Video e lajmit')} className="aspect-video w-full" allowFullScreen />
                     ) : (
                       <video src={form.videoUrl} controls className="w-full" />
                     )}
@@ -670,7 +669,7 @@ export default function AdminNews() {
                     <button
                       type="button"
                       onClick={() => handleEdit(item)}
-                      title="Redakto lajmin"
+                      title={dt('Redakto lajmin')}
                       aria-label={`Redakto lajmin: ${item.title}`}
                       className="rounded-lg p-2 text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/30"
                     >

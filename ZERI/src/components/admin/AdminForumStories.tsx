@@ -12,7 +12,7 @@ import { useStore } from '../../lib/store';
 import { dt } from '../../lib/dt';
 import { cn } from '../../lib/utils';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /**
  * Staff-side moderation of "Debat Story" — the ephemeral 24h media stories
@@ -96,7 +96,7 @@ export default function AdminForumStories() {
         console.error('Debat Story-t nuk u ngarkuan për stafin:', err);
         setLoadError('Story-t nuk u ngarkuan. Kontrolloni lejet dhe lidhjen, pastaj provoni përsëri.');
         setLoading(false);
-        toast.error('Debat Story-t nuk u ngarkuan.');
+        toast.error(dt('Debat Story-t nuk u ngarkuan.'));
       },
     );
   }, []);
@@ -152,7 +152,7 @@ export default function AdminForumStories() {
       toast.success(next ? 'Story u fsheh nga publiku.' : 'Story u rikthye publik.');
     } catch (err) {
       console.error('Ndryshimi i dukshmërisë dështoi:', err);
-      toast.error('Dukshmëria nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Dukshmëria nuk u ndryshua. Kontrolloni lejet dhe provoni përsëri.'));
     }
   };
 
@@ -162,10 +162,10 @@ export default function AdminForumStories() {
       await deleteDoc(doc(db, 'forumStories', s.id));
       setStories((prev) => prev.filter((x) => x.id !== s.id));
       if (previewing?.id === s.id) setPreviewing(null);
-      toast.success('Story u fshi.');
+      toast.success(dt('Story u fshi.'));
     } catch (err) {
       console.error('Story nuk u fshi:', err);
-      toast.error('Fshirja dështoi. Kontrolloni lejet dhe provoni përsëri.');
+      toast.error(dt('Fshirja dështoi. Kontrolloni lejet dhe provoni përsëri.'));
     }
   };
 

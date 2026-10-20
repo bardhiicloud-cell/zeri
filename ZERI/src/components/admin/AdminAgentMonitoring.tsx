@@ -1,7 +1,7 @@
+import { dt } from '@/src/lib/dt';
 import { useMemo, useState } from 'react';
 import {
-  Activity, AlertTriangle, BarChart3, CheckCircle2, Clock, Eye, FileText, Filter, Globe,
-  MapPin, RefreshCw, Search, ShieldAlert, TrendingUp, UserCheck, Users, X,
+  Activity, AlertTriangle, BarChart3, Clock, Eye, FileText, Filter, MapPin, RefreshCw, Search, ShieldAlert, UserCheck, Users, X
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { useCitizenDirectory } from '../../lib/useCitizenDirectory';
@@ -194,8 +194,8 @@ export default function AdminAgentMonitoring() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Kërko agjentin…"
-                aria-label="Kërko agjentin"
+                placeholder={dt('Kërko agjentin…')}
+                aria-label={dt('Kërko agjentin')}
                 className="min-h-9 w-52 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs font-semibold outline-none focus:border-rose-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
@@ -203,7 +203,7 @@ export default function AdminAgentMonitoring() {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              aria-label="Filtro rolin"
+              aria-label={dt('Filtro rolin')}
               className="min-h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold outline-none focus:border-rose-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="all">Të gjitha rolet</option>
@@ -258,7 +258,7 @@ export default function AdminAgentMonitoring() {
                   key={row.agent.id}
                   onClick={() => setSelectedAgent(row.agent)}
                   className="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                  title="Kliko për detajet e plota të agjentit"
+                  title={dt('Kliko për detajet e plota të agjentit')}
                 >
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2.5">
@@ -356,7 +356,7 @@ export default function AdminAgentMonitoring() {
         <div className="fixed inset-0 z-50 flex items-stretch justify-end" role="dialog" aria-modal="true">
           <button
             type="button"
-            aria-label="Mbyll detajet"
+            aria-label={dt('Mbyll detajet')}
             onClick={() => setSelectedAgent(null)}
             className="absolute inset-0 bg-slate-900/60 md:backdrop-blur-sm"
           />

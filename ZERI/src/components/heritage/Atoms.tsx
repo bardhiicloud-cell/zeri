@@ -113,12 +113,7 @@ export function VerificationNote({ entry, lang }: { entry: HeritageEntry; lang: 
       </p>
     );
   }
-  return (
-    <p className="flex items-start gap-2 text-sm" style={{ color: 'var(--hx-warn)' }}>
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-      <span>{ui('unverifiedNote', lang)}</span>
-    </p>
-  );
+  return null;
 }
 
 export function EntryMeta({ entry, lang }: { entry: HeritageEntry; lang: HeritageLang }) {
@@ -192,11 +187,11 @@ export function useJsonLd(data: Record<string, unknown> | null) {
 
 export function Crumbs({ items }: { items: Array<{ to?: string; label: string }> }) {
   return (
-    <nav aria-label="Breadcrumb" className="hx-ink-3 flex flex-wrap items-center gap-1 text-xs font-semibold">
+    <nav aria-label="Breadcrumb" className="hx-ink-3 hx-crumbs -mx-4 flex items-center gap-1 overflow-x-auto whitespace-nowrap px-4 py-1 text-xs font-semibold sm:mx-0 sm:flex-wrap sm:px-0">
       {items.map((it, i) => (
         <React.Fragment key={i}>
-          {i > 0 && <ChevronRight className="h-3 w-3 opacity-60" aria-hidden="true" />}
-          {it.to ? <Link to={it.to} className="hover:underline">{it.label}</Link> : <span aria-current="page" style={{ color: 'var(--hx-ink)' }}>{it.label}</span>}
+          {i > 0 && <ChevronRight className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />}
+          {it.to ? <Link to={it.to} className="shrink-0 hover:underline">{it.label}</Link> : <span aria-current="page" className="shrink-0" style={{ color: 'var(--hx-ink)' }}>{it.label}</span>}
         </React.Fragment>
       ))}
     </nav>
