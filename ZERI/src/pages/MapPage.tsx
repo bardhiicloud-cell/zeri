@@ -326,7 +326,7 @@ export default function MapPage() {
 
       {/* Mobile Floating Search Bar - Improved styling and functionality */}
       {!isFullscreen && (
-        <div className="lg:hidden absolute top-4 left-4 right-4 z-[2000] pointer-events-none">
+        <div data-tour="map-search" className="lg:hidden absolute top-4 left-4 right-4 z-[2000] pointer-events-none">
           <div className="bg-white/95 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-all duration-300 flex items-center p-1.5 pointer-events-auto text-[var(--color-text)] dark:text-[var(--color-surface)]">
             <div className="w-10 h-10 flex items-center justify-center text-slate-400 shrink-0">
               <Search className="w-5 h-5" />
@@ -699,7 +699,7 @@ export default function MapPage() {
       )}
 
       {/* Map Content */}
-      <div className="flex-1 w-full bg-slate-900 z-0 relative min-h-[60vh] md:min-h-[500px]">
+      <div data-tour="map-canvas" className="flex-1 w-full bg-slate-900 z-0 relative min-h-[60vh] md:min-h-[500px]">
         <div className="absolute inset-0">
           <MapContainer
             center={mapCenter}

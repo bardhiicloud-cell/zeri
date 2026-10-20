@@ -17,6 +17,7 @@ import { useThemePreference } from '../../lib/themePreference';
 import { MunicipalitySwitcher } from './MunicipalitySwitcher.tsx';
 import { ResponseNotificationsBell } from '../NewNewsBadge';
 import { LANGUAGE_OPTIONS } from '../../lib/languageConstants';
+import { TOUR_PANEL_EVENT } from '../../lib/tours';
 import { useLanguageSwitch } from '../../lib/LanguageUrlSync';
 import {
   ALL_SCOPE,
@@ -105,12 +106,19 @@ export function MobileNav() {
   const currentLanguage = LANGUAGE_OPTIONS.find((l) => l.code === language) ?? LANGUAGE_OPTIONS[0];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // The guided tour opens and closes this menu itself (see GuidedTour) so a visitor is
-  // shown a link inside it instead of being told to hunt for it.
+  // The guided tour opens and closes the "+" list and this menu itself (see GuidedTour) so a
+  // visitor is shown an entry inside them instead of being told to hunt for it. While it
+  // does, every group is unfolded so the walk down the list never hits a folded section.
+  const [tourUnfold, setTourUnfold] = useState(false);
   useEffect(() => {
-    const onMenu = (event: Event) => setIsSheetOpen(Boolean((event as CustomEvent<boolean>).detail));
-    window.addEventListener('zq:mobile-menu', onMenu);
-    return () => window.removeEventListener('zq:mobile-menu', onMenu);
+    const onPanel = (event: Event) => {
+      const panel = (event as CustomEvent<'menu' | 'create' | null>).detail;
+      setIsSheetOpen(panel === 'menu');
+      setIsCreateOpen(panel === 'create');
+      setTourUnfold(panel === 'menu');
+    };
+    window.addEventListener(TOUR_PANEL_EVENT, onPanel);
+    return () => window.removeEventListener(TOUR_PANEL_EVENT, onPanel);
   }, []);
 
   const isActive = (path: string) => isNavActive(path, location.pathname);
@@ -143,9 +151,13 @@ export function MobileNav() {
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(['primary']));
   useEffect(() => {
     if (!isSheetOpen) return;
+    if (tourUnfold) {
+      setOpenGroups(new Set(grouped.map((group) => group.id)));
+      return;
+    }
     const current = grouped.find((group) => group.items.some((item) => isNavActive(item.href, location.pathname)));
     setOpenGroups(new Set(['primary', ...(current ? [current.id] : [])]));
-  }, [isSheetOpen, grouped, location.pathname]);
+  }, [isSheetOpen, grouped, location.pathname, tourUnfold]);
   const toggleGroup = (id: string) => setOpenGroups((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id);
@@ -245,6 +257,7 @@ export function MobileNav() {
                   type="button"
                   onClick={() => setIsCreateOpen((open) => !open)}
                   aria-label={dt('Krijo')}
+                  data-tour="dock-create"
                   aria-haspopup="menu"
                   aria-expanded={isCreateOpen}
                   className={cn(
@@ -290,6 +303,7 @@ export function MobileNav() {
                   type="button"
                   onClick={() => setIsSheetOpen(true)}
                   aria-label={dt('Menuja')}
+                  data-tour="dock-menu"
                   aria-expanded={isSheetOpen}
                   className={cn(
                     'flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-bold transition-colors',
@@ -323,7 +337,7 @@ export function MobileNav() {
             />
             <div className="absolute inset-x-0 bottom-0 px-4 pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+5.5rem)]">
               {/* Eight actions: on a short phone the list scrolls instead of running off the top. */}
-              <ul role="menu" aria-label={dt('Krijo')} className="mx-auto flex max-h-[calc(100dvh-9rem)] max-w-md flex-col gap-2 overflow-y-auto overscroll-contain">
+              <ul role="menu" aria-label={dt('Krijo')} data-tour="create-menu" className="mx-auto flex max-h-[calc(100dvh-9rem)] max-w-md flex-col gap-2 overflow-y-auto overscroll-contain">
                 {CREATE_ACTIONS.map((action, index) => (
                   <motion.li
                     key={action.id}
@@ -439,6 +453,7 @@ export function MobileNav() {
               <div className="shrink-0 px-4 pb-3">
                 <button
                   type="button"
+                  data-tour="menu-search"
                   onClick={() => {
                     close();
                     // Deferred so the sheet is gone before the palette mounts.
@@ -721,6 +736,7 @@ export function MobileNav() {
                             <li key={item.href}>
                               <Link
                                 to={item.href}
+                                data-tour-menu={item.href}
                                 onClick={close}
                                 aria-current={active ? 'page' : undefined}
                                 className={cn(
@@ -873,6 +889,7 @@ function DockTab({
     <Link
       to={tab.href}
       onClick={onClick}
+      data-tour={`dock-${tab.href === '/' ? 'home' : tab.href === '/harta' ? 'map' : tab.href === '/lajme' ? 'news' : 'tab'}`}
       aria-current={active ? 'page' : undefined}
       aria-label={dt(tab.label)}
       className={cn(

@@ -193,6 +193,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
 
         <Link
           to="/trackid"
+          data-tour-menu="/trackid"
           className="hidden min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 lg:inline-flex dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <FileText className="h-3.5 w-3.5" aria-hidden="true" />
@@ -201,6 +202,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
 
         <Link
           to="/raporto"
+          data-tour="top-report"
           className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-3 text-xs font-black text-white transition hover:brightness-110"
         >
           <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
@@ -311,6 +313,7 @@ function NavBarLink({ link, active }: { link: NavLinkDef; active: boolean }) {
   return (
     <NavLink
       to={link.href}
+      data-tour-menu={link.href}
       end={link.href === '/'}
       aria-current={active ? 'page' : undefined}
       className={cn(
