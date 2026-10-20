@@ -99,7 +99,7 @@ export function registerContactRoutes(app: Express, deps: ContactDeps): void {
       });
       // The reference is only returned after the write succeeded.
       return res.status(201).json({ ok: true, reference, delivery: 'stored' });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[CONTACT] store failed:', error?.message);
       return res.status(500).json({ error: 'Mesazhi nuk u ruajt. Provoni përsëri.', code: 'STORE_FAILED' });
     }

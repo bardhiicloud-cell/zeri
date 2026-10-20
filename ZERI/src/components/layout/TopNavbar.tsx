@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 import {
-  ChevronDown, PlusCircle, FileText, LogIn, LogOut, ShieldAlert,
-  Globe, Sun, Moon, Menu, Check, Home, UserRound,
+  PlusCircle, FileText, LogIn, LogOut, ShieldAlert,
+  Globe, Sun, Moon, Menu, Check, Home, UserRound
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { TOP_NAV, LEGAL_NAV, type NavLink as NavLinkDef } from '../../lib/navigation';
 import { canAccessAdmin } from '../../lib/adminPermissions';
-import { isSpecificScope } from '../../lib/municipalityScope';
 import { useThemePreference } from '../../lib/themePreference';
 import { ResponseNotificationsBell } from '../NewNewsBadge';
 
@@ -193,6 +192,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
 
         <Link
           to="/trackid"
+          data-tour-menu="/trackid"
           className="hidden min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 lg:inline-flex dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <FileText className="h-3.5 w-3.5" aria-hidden="true" />
@@ -201,6 +201,7 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
 
         <Link
           to="/raporto"
+          data-tour="top-report"
           className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-900 px-3 text-xs font-black text-white transition hover:brightness-110"
         >
           <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
@@ -311,12 +312,13 @@ function NavBarLink({ link, active }: { link: NavLinkDef; active: boolean }) {
   return (
     <NavLink
       to={link.href}
+      data-tour-menu={link.href}
       end={link.href === '/'}
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex min-h-9 items-center rounded-lg px-3 text-xs font-bold transition-colors',
         active
-          ? 'text-(--color-brand-primary)'
+          ? 'text-(--color-brand-primary) dark:text-blue-300'
           : 'text-slate-600 hover:bg-slate-50 hover:text-(--color-brand-primary) dark:text-slate-300 dark:hover:bg-slate-800'
       )}
     >

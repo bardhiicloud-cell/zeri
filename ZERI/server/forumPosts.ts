@@ -142,7 +142,7 @@ async function notifyOnce(fs: Firestore, id: string, n: NoteInput): Promise<void
     const recipient = await fs.collection('users').doc(n.userId).get();
     if (!wantsNotification(recipient.data(), n.category)) return;
     await fs.collection('notifications').doc(id).create(noteDoc(n));
-  } catch (error: any) {
+  } catch (error) {
     if (error?.code === 6 || /ALREADY_EXISTS/i.test(String(error?.message))) return;
     console.warn('[FORUM] notification failed:', error?.message);
   }

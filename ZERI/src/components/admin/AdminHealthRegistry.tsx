@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { escapeHtml } from '../../lib/escapeHtml';
-import {  dt } from '../../lib/dt';
+import { dt } from '../../lib/dt';
 import {
-  HeartPulse, Download, Search, Filter, Phone, Mail, 
-  MapPin, CheckCircle2, AlertTriangle, FileText, Send, 
-  ExternalLink, Eye, Building2, ShieldAlert, Sparkles, X,
+  HeartPulse, Download, Search, Phone, Mail,
+  MapPin, CheckCircle2, AlertTriangle, FileText, Send, Eye, Building2, ShieldAlert, X,
   Printer, ArrowUpRight, Heart, Link as LinkIcon, Edit3, Plus,
-  Trash2, ShieldCheck, Check, Clock, UserCheck
+  Trash2, ShieldCheck
 } from 'lucide-react';
 import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore';
 import DecisionBar from './DecisionBar';
@@ -19,7 +18,7 @@ import { cn } from '../../lib/utils';
 import type { HealthCase } from '../../pages/HealthRegistryPage.tsx';
 import AdminMedicineShortages from './AdminMedicineShortages.tsx';
 import toast from 'react-hot-toast';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 export default function AdminHealthRegistry() {
   // Section switcher: the patient registry vs. the medicine-shortage queue.

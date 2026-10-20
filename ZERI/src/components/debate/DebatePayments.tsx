@@ -22,7 +22,7 @@ import {
   type StatementOutcome,
 } from '../../lib/debateApi';
 import { Badge, BulkBar, Empty, ErrorNote, Panel, Spinner, Stat, btn, inputClass, useLoad, useSelection } from './ui';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 type Sub = 'awaiting' | 'paid' | 'cancelled' | 'statement' | 'settings' | 'guide';
 

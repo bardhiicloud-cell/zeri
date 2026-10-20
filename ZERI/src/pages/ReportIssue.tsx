@@ -15,9 +15,6 @@ import { cn } from '../lib/utils';
 import { getAccountabilityDueDate, getAccountabilityProfile } from '../lib/accountability';
 import { SECTOR_CATALOG, LEVEL_LABEL, checkLocation, nearestMunicipality, sectorByName, sectorLabel, suggestSectors } from '../lib/sectorCatalog';
 
-import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 
 import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constants';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
@@ -33,7 +30,7 @@ import { createTrackingId, saveGuestReportHistory } from '../lib/session';
 import { ensureReportSession } from '../lib/reportSession';
 
 
-import { validations, runValidations } from '../lib/validations';
+import { validations } from '../lib/validations';
 import { handleFirebaseError } from '../lib/errorHandler';
 
 // Fix for default Leaflet icon in React
@@ -266,7 +263,7 @@ function getSimulatedIP() {
 }
 
 import { motion } from 'framer-motion';
-import { askConfirm, askReason } from '../lib/dialogs';
+import { askConfirm } from '../lib/dialogs';
 
 export default function ReportIssue() {
   const { t, dt } = useLanguage();
@@ -1058,7 +1055,7 @@ export default function ReportIssue() {
                  <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
                  <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
                  <span className="text-[10px] md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
-                 <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                 <input type="file" multiple aria-label={dt('Shto foto, video ose dokumente')} accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                </div>
 
                {mediaItems.length > 0 && (
@@ -1138,7 +1135,7 @@ export default function ReportIssue() {
                     <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Bëni një foto ose video të problemit (gropë në rrugë, ndotje mjedisore, shtyllë e dëmtuar) dhe ngarkojeni te kutia më lart.`)}
                     </p>
                   </div>
-                  <p className="text-[10px] text-indigo-600 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Foto duhet të jetë e qartë`)}
+                  <p className="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Foto duhet të jetë e qartë`)}
                   </p>
                 </div>
                 
@@ -1153,7 +1150,7 @@ export default function ReportIssue() {
                     <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Sistemi do të gjejë GPS tuaj automatikisht, ose mund të klikoni`)} <strong>{dt(`direkt mbi hartë`)}</strong>{dt(`për të vendosur pikën e saktë ku ndodhet problemi.`)}
                     </p>
                   </div>
-                  <p className="text-[10px] text-indigo-600 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Kliko mbi Hartë për saktësi`)}
+                  <p className="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Kliko mbi Hartë për saktësi`)}
                   </p>
                 </div>
                 
@@ -1168,7 +1165,7 @@ export default function ReportIssue() {
                     <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Kliko`)} <strong>{dt(`"Krijim me AI"`)}</strong>{dt(`që inteligjenca jonë të lexojë foton dhe të shkruajë automatikisht titullin/kategorinë. Më pas kliko dërgo.`)}
                     </p>
                   </div>
-                  <p className="text-[10px] text-indigo-600 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`E lehtë dhe automatike`)}
+                  <p className="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`E lehtë dhe automatike`)}
                   </p>
                 </div>
               </div>

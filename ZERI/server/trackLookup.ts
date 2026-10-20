@@ -100,7 +100,7 @@ export function registerTrackLookupRoutes(app: Express, deps: TrackLookupDeps): 
         return res.status(404).json({ error: NOT_FOUND_MESSAGE, code: 'NOT_FOUND' });
       }
       return res.json({ report: view, generatedAt: new Date().toISOString() });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[TRACK] lookup failed:', error?.message);
       return res.status(500).json({ error: 'Kërkimi nuk u krye. Provoni përsëri.', code: 'LOOKUP_FAILED' });
     }

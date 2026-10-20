@@ -1,9 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  MapPin, Newspaper, Lightbulb, Vote, BarChart3, Wallet,
-  Megaphone, Phone, Building2, Briefcase, Info, HeartPulse,
+  MapPin, Newspaper, Lightbulb, Vote, BarChart3, Wallet, Phone, Building2, Briefcase, Info, HeartPulse,
   Bot, ShieldAlert, ShieldCheck, MessageSquare, Radio,
-  PlusCircle, FileText, Handshake, Landmark, FolderOpen,
+  PlusCircle, FileText, Handshake, Landmark, FolderOpen
 } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from './constants';
 

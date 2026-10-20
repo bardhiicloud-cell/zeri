@@ -85,7 +85,7 @@ export function registerDecisionRoutes(app: Express, deps: DecisionDeps): void {
       }
       deps.audit(`decision.${result.kind}.${result.action}`, req, { id, from: result.from, to: result.to, reason: result.reason || null });
       return res.json({ ok: true, state: result.to, action: result.action });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DECISIONS] failed:', error?.message);
       return res.status(500).json({ error: 'Vendimi nuk u ruajt. Provoni përsëri.' });
     }
@@ -102,7 +102,7 @@ export function registerDecisionRoutes(app: Express, deps: DecisionDeps): void {
     try {
       const snap = await deps.db().collection(rule.collection).doc(String(req.params.id)).collection('decisions').orderBy('at', 'desc').limit(100).get();
       return res.json({ items: snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: undefined })) });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[DECISIONS] history failed:', error?.message);
       return res.status(500).json({ error: 'Historia nuk u lexua.' });
     }

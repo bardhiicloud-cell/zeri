@@ -13,11 +13,11 @@ import { analyzeTheme } from './lib/themePreference';
 import { setRuntimeLanguage, rescanRuntimeTranslation } from './lib/runtimeTranslate';
 import { useLanguage } from './lib/LanguageContext';
 import { Toaster } from 'react-hot-toast';
-import FloatingSupportBot from './components/FloatingSupportBot';
 import DialogHost from './components/DialogHost';
 import { AppLayout } from './components/layout/AppLayout.tsx';
 import { AppFooter } from './components/AppFooter';
 import CookieConsentBanner, { CookiePreferencesButton } from './components/CookieConsentBanner.tsx';
+const FloatingSupportBot = React.lazy(() => import('./components/FloatingSupportBot'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard.tsx'));
 const DetailedRegistryPage = React.lazy(() => import('./pages/DetailedRegistryPage.tsx'));
 const TrackIdPage = React.lazy(() => import('./pages/TrackIdPage'));
@@ -370,7 +370,7 @@ export default function App() {
             const guest = await signInAsGuest();
             if (guest.ok === false) throw new Error(guest.reason);
           }
-        } catch (error: any) {
+        } catch (error) {
           const code: string = error?.code || '';
           // A signed-in user must never be downgraded to guest: this catch can
           // fire after onAuthStateChanged has already restored a real account
@@ -980,7 +980,9 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
             </Suspense>
-          <FloatingSupportBot />
+          <Suspense fallback={null}>
+            <FloatingSupportBot />
+          </Suspense>
         </BrowserRouter>
         <CookieConsentBanner />
         <DialogHost />

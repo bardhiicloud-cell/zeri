@@ -9,14 +9,13 @@ import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
 import { dt } from '@/src/lib/dt';
-import { ALL_SCOPE } from '../../lib/municipalityScope';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import toast from 'react-hot-toast';
 import { NEWS_CATEGORIES } from '../../lib/newsCategories';
 import { DEMO_NEWS } from '../../lib/demoNews';
 import NewsPlacementPreview from './NewsPlacementPreview';
 import { layoutNews } from '../../lib/newsPlacement';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface AdminNewsItem {
   id: string;

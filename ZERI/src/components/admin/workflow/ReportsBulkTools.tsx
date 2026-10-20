@@ -12,7 +12,7 @@ import { contactRefFor, ensureContact } from '../../../lib/routingContacts';
 import { sendReportEmail } from '../../../lib/institutionMailApi';
 import SectorPicker from '../SectorPicker';
 import ContactsDirectory from '../ContactsDirectory';
-import { askConfirm, askReason } from '../../../lib/dialogs';
+import { askConfirm } from '../../../lib/dialogs';
 
 /**
  * What staff do with a set of selected reports besides moving them along the board:

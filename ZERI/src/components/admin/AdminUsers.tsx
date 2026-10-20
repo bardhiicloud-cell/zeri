@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../../lib/store';
 import { useCitizenDirectory } from '../../lib/useCitizenDirectory';
 import { canAccessSection } from '../../lib/adminPermissions';
-import { UserX, UserCheck, ShieldAlert, Plus, Edit3, X, Search, Phone, Mail, Award, ShieldCheck, Trash2, CheckSquare, Square, Users, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { UserX, UserCheck, ShieldAlert, Edit3, Search, Phone, Mail, Award, ShieldCheck, Trash2, CheckSquare, Square, Users, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -52,7 +52,7 @@ export default function AdminUsers() {
       const { sendPasswordResetEmail } = await import('firebase/auth');
       await sendPasswordResetEmail(auth, email);
       alert(`Email me udhëzimet e qasjes u dërgua me sukses tek: ${email}`);
-    } catch (e: any) {
+    } catch (e) {
       alert('Gabim gjatë dërgimit të emailit: ' + e.message);
     }
   };

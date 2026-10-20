@@ -81,7 +81,7 @@ export function registerPublicSubmissionRoutes(app: Express, deps: SubmissionDep
       const reference = await reserveReference(deps.db(), { prefix, kind: collection, ownerUid: uid, randomBytes });
       await ref.set({ status: 'submitted', ...data, reference, authorId: uid, createdAt: FieldValue.serverTimestamp() });
       return res.status(201).json({ ok: true, reference });
-    } catch (error: any) {
+    } catch (error) {
       console.error(`[${collection}] store failed:`, error?.message);
       return res.status(500).json({ error: 'Nuk u ruajt. Provoni përsëri.', code: 'STORE_FAILED' });
     }

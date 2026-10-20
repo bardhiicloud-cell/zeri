@@ -2,15 +2,15 @@ import { dt } from '@/src/lib/dt';
 import { AuraOrbit, AuraHero } from '../components/aura/Aura';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BarChart as BarChartIcon, TrendingUp, Users, Map, CheckCircle2,
-  AlertCircle, Activity, Award, PieChart as PieChartIcon, Filter, MapPin, Download, CheckSquare, Clock, FileText,
-  Sparkles, ShieldCheck, Zap, ArrowUpRight, ArrowDownRight, RefreshCw, Radio, Video, MessageSquare, Search, X
+import { motion } from 'framer-motion';
+import {
+  TrendingUp, Users, CheckCircle2,
+  AlertCircle, Activity, Filter, MapPin, Download, CheckSquare, Clock, FileText,
+  Sparkles, ArrowUpRight, ArrowDownRight, RefreshCw, Radio, Search, X
 } from 'lucide-react';
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, PieChart, Pie, Cell, RadialBarChart, RadialBar
+  BarChart, Bar, Legend, PieChart, Pie, Cell
 } from 'recharts';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import { ALL_SCOPE, isSpecificScope, scopeKey } from '../lib/municipalityScope';

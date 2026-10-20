@@ -39,7 +39,7 @@ jobs:
         working-directory: .
         run: |
           echo "::warning::FIREBASE_SERVICE_ACCOUNT is not set: nothing was deployed. Add it under Settings → Secrets and variables → Actions."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.HAS_KEY == 'true'
       - uses: actions/setup-node@v4
         if: env.HAS_KEY == 'true'

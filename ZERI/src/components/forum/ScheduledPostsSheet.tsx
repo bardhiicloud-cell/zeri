@@ -29,7 +29,7 @@ export function ScheduledPostsSheet({ onClose }: { onClose: () => void }) {
       await cancelScheduledApi(id);
       setItems((prev) => (prev ?? []).filter((i) => i.id !== id));
       toast.success(dt('Postimi i planifikuar u anulua.'));
-    } catch (e: any) {
+    } catch (e) {
       toast.error(e?.message || dt('Veprimi dështoi.'));
     } finally {
       setBusy(null);

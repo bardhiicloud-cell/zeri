@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { useNavigate, Link } from 'react-router-dom';
-import { Home, Search, MapPin, MessageSquare, FileText, ArrowLeft, Compass } from 'lucide-react';
+import { Home, MapPin, MessageSquare, FileText, ArrowLeft, Compass } from 'lucide-react';
 import { usePageMeta } from '../lib/usePageMeta';
 
 /**

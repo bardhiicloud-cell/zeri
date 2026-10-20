@@ -12,7 +12,7 @@ import { useStore } from '../../lib/store';
 import { dt } from '../../lib/dt';
 import { cn } from '../../lib/utils';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /**
  * Staff-side moderation of "Debat Story" — the ephemeral 24h media stories

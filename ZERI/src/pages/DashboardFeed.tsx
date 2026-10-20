@@ -1,17 +1,12 @@
-import { dt } from '@/src/lib/dt';
 import React, { useState } from 'react';
 import { useStore } from '../lib/store';
-import { formatDistanceToNow } from 'date-fns';
-import { sq } from 'date-fns/locale';
-import { ThumbsUp, MessageCircle, MapPin, Clock, ArrowUpRight, CheckCircle2, AlertTriangle, TrendingUp, Search, Filter, Layers, Heart, ArrowRight, Share2, X, Sparkles, Award, QrCode, Gift, CloudSun, Wind, Smile } from 'lucide-react';
+import { ThumbsUp, MessageCircle, MapPin, CheckCircle2, AlertTriangle, TrendingUp, Search, Filter, Layers, Heart, ArrowRight, Share2, X, Award, QrCode, CloudSun, Wind } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import ReportDetailModal from '../components/ReportDetailModal.tsx';
-import { Report } from '../types';
 import AdBanner from '../components/AdBanner';
 import { MunicipalityHealthCheck } from '../components/MunicipalityHealthCheck';
-import { InteractiveDashboardMap } from '../components/InteractiveDashboardMap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../lib/LanguageContext';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
@@ -20,7 +15,6 @@ import { authHeaders } from '../lib/apiAuth';
 
 
 import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 
 const urgencyConfig = {

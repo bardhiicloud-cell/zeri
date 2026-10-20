@@ -1,4 +1,3 @@
-import { dt } from '@/src/lib/dt';
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -6,7 +5,7 @@ import L from 'leaflet';
 import { useStore } from '../../lib/store';
 import { formatDistanceToNow } from 'date-fns';
 import { sq } from 'date-fns/locale';
-import { MapPin, Navigation, Clock, Activity, Loader2, ShieldAlert, Zap, Radio, Moon, Sun } from 'lucide-react';
+import { Navigation, ShieldAlert, Zap, Radio, Moon, Sun } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { KOSOVO_MUNICIPALITIES, KOSOVO_BOUNDS, MUNICIPALITY_COORDINATES } from '../../lib/constants';
 import { useLanguage } from '../../lib/LanguageContext';

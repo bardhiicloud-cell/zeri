@@ -8,26 +8,17 @@ import { useStore } from '../../../lib/store';
 import { cn } from '../../../lib/utils';
 import { canAccessSection, type AdminSection } from '../../../lib/adminPermissions';
 import { STAFF_LIMITS } from '../../../lib/loadLimits';
-import { filterByScope, isSpecificScope, normalizeScope } from '../../../lib/municipalityScope';
-import { useServerReports } from '../../../lib/adminReportsApi';
+import { isSpecificScope, normalizeScope } from '../../../lib/municipalityScope';
 import { takeDecision } from '../../../lib/decisionsApi';
 import { DECISION_KINDS } from '../../../lib/decisionRules';
 import {
   daysSince,
-  docStage,
-  pipelineRoleFor,
-  planDocMove,
-  planReportMove,
-  reportStage,
-  type Actor,
+  docStage, planDocMove, type Actor,
   type BoardKind,
   type DocBoardKind,
-  type StageKey,
+  type StageKey
 } from '../../../lib/workflowStages';
-import type { Report } from '../../../types';
-import ReportDetailModal from '../../ReportDetailModal.tsx';
 import { StageBoard, type BoardItem, type MoveCheck } from './StageBoard';
-import { ReportsBulkDrawer } from './ReportsBulkTools';
 
 interface Domain {
   kind: BoardKind | 'tips';

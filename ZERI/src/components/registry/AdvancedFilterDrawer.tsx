@@ -1,6 +1,5 @@
-import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Filter, MapPin, SlidersHorizontal, X } from 'lucide-react';
+import { Calendar, MapPin, SlidersHorizontal, X } from 'lucide-react';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { cn } from '../../lib/utils';
 import { useLanguage } from '../../lib/LanguageContext';

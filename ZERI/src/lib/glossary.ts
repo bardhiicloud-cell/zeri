@@ -9,7 +9,7 @@
  *
  * The glossary is the single source for four consumers:
  *   1. the AI system prompt, injected so the model is told the preferred term
- *   2. check_translations.js, which verifies the term survived translation
+ *   2. a future translation check, which verifies the term survived
  *   3. the server's translateText helper, as post-translation replacements
  *   4. a human reviewer, who reads this table rather than grepping the codebase
  */

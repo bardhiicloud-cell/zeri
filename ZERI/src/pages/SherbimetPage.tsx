@@ -1,9 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  FileText, Search, ExternalLink, Clock, DollarSign, 
-  CheckCircle2, HelpCircle, Shield, ArrowRight, Phone,
-  Home, Building, TreePine, HeartPulse, GraduationCap, AlertTriangle, Lightbulb, Star, Send
+import {
+  FileText, Search, ExternalLink, CheckCircle2, HelpCircle, Shield, ArrowRight, Phone, Building, Lightbulb, Star, Send
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AuraPage, AuraHero, AuraStats, AuraSection, AuraNote, AuraEmpty, AuraOrbit } from '../components/aura/Aura';

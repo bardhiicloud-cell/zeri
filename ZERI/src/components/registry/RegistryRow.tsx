@@ -6,7 +6,6 @@ import { Report } from '../../types';
 import { cn } from '../../lib/utils';
 import { getReportTopic } from '../../lib/reportTopics';
 
-import { dt } from '@/src/lib/dt';
 import { trackingIdOf } from '../../lib/trackingId';
 interface RegistryRowProps {
   report: Report;
