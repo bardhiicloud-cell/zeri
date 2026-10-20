@@ -273,10 +273,10 @@ export default function FloatingSupportBot() {
 
   const selectedDepartment = SUPPORT_DEPARTMENTS.find((item) => item.id === department) || defaultDepartment;
 
-  // The public debate is a social app: the round launcher would sit on top of its
-  // compose button and its tab bar. Support stays reachable from every other page
-  // (and from an already open conversation).
-  if (!isBotOpen && /(^|\/)forum(\/|$)/.test(pathname)) return null;
+  // The assistant lives on the contact page only. A conversation that is already open
+  // (the login page opens it for password help) stays reachable until it is closed.
+  const onContactPage = /^(\/[a-z]{2,3}(-[A-Za-z]+)?)?\/kontakte?\/?$/.test(pathname);
+  if (!isBotOpen && !onContactPage) return null;
 
   return (
     <>

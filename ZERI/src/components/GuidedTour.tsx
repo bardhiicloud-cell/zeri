@@ -88,6 +88,18 @@ export default function GuidedTour() {
     setBox({ top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 });
   }, [step]);
 
+  // A step about something in the menu opens the menu (phone) and closes it again afterwards.
+  const menuOpened = useRef(false);
+  const setMenu = useCallback((open: boolean) => {
+    window.dispatchEvent(new CustomEvent('zq:mobile-menu', { detail: open }));
+    menuOpened.current = open;
+  }, []);
+  useEffect(() => {
+    if (!step?.inMenu) return;
+    if (!findTarget(step)) setMenu(true);
+    return () => { if (menuOpened.current) setMenu(false); };
+  }, [step, setMenu]);
+
   // Bring the target into view, then follow it while the page moves.
   useEffect(() => {
     if (!step) return;

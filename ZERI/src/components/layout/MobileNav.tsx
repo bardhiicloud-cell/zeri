@@ -105,6 +105,14 @@ export function MobileNav() {
   const currentLanguage = LANGUAGE_OPTIONS.find((l) => l.code === language) ?? LANGUAGE_OPTIONS[0];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  // The guided tour opens and closes this menu itself (see GuidedTour) so a visitor is
+  // shown a link inside it instead of being told to hunt for it.
+  useEffect(() => {
+    const onMenu = (event: Event) => setIsSheetOpen(Boolean((event as CustomEvent<boolean>).detail));
+    window.addEventListener('zq:mobile-menu', onMenu);
+    return () => window.removeEventListener('zq:mobile-menu', onMenu);
+  }, []);
+
   const isActive = (path: string) => isNavActive(path, location.pathname);
 
   const scoped = isSpecificScope(userMunicipality);
