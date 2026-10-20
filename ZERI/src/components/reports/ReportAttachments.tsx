@@ -1,4 +1,3 @@
-import React from 'react';
 import { Download, FileText, Film, Image as ImageIcon, Music } from 'lucide-react';
 import type { MediaItem } from '@/src/types';
 import { formatBytes } from '@/src/lib/firebase';

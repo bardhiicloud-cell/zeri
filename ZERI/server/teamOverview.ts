@@ -156,7 +156,7 @@ export function registerTeamOverviewRoutes(app: Express, deps: TeamOverviewDeps)
       };
       cache = { at: nowMs, body };
       return res.json(body);
-    } catch (error: any) {
+    } catch (error) {
       const missingIndex = error?.code === 9 || /index/i.test(String(error?.message ?? ''));
       console.error('[TEAM] overview failed:', error?.message);
       return res.status(missingIndex ? 503 : 500).json({

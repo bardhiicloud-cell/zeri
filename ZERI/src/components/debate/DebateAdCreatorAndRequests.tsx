@@ -4,7 +4,7 @@ import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import { createAdPost, decideVerification, formatWhen, verificationRequests } from '../../lib/debateApi';
 import { Badge, Empty, ErrorNote, Panel, Spinner, btn, inputClass, useLoad } from './ui';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askReason } from '../../lib/dialogs';
 
 /** Publish a sponsored post straight into the public debate, with a preview of how it reads. */
 export function DebateAdCreator({ onCreated }: { onCreated?: () => void }) {

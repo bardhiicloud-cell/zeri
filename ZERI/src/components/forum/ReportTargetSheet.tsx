@@ -31,7 +31,7 @@ export function ReportTargetSheet({ target, onClose }: { target: ReportTarget; o
       const result = await reportTargetApi({ ...target, reason, details: details.trim() });
       toast.success(result.status === 'duplicate' ? dt('Këtë e keni raportuar tashmë.') : dt('Faleminderit. Raportimi u dërgua te moderatorët.'));
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || dt('Raportimi nuk u dërgua.'));
     } finally {
       setBusy(false);

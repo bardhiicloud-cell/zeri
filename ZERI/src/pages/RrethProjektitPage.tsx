@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Eye, Users, Clock, Info } from 'lucide-react';
 import { MunicipalityShield } from '../components/MunicipalityShield';

@@ -173,7 +173,7 @@ export function registerMunicipalityDeskRoutes(app: Express, deps: MunicipalityD
       });
       deps.audit(`municipality.request.${decision.kind}`, req, { reportId, requestId: requestRef.id });
       return res.status(201).json({ id: requestRef.id, status: request.status });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[MUNICIPALITY] request failed:', error?.message);
       return res.status(500).json({ error: 'Kërkesa nuk u ruajt. Provoni përsëri.' });
     }
@@ -214,7 +214,7 @@ export function registerMunicipalityDeskRoutes(app: Express, deps: MunicipalityD
           })
           .sort(sortDesc),
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[MUNICIPALITY] desk failed:', error?.message);
       return res.status(500).json({ error: 'Tavolina nuk u ngarkua.' });
     }
@@ -234,7 +234,7 @@ export function registerMunicipalityDeskRoutes(app: Express, deps: MunicipalityD
         .map(d => ({ id: d.id, ...d.data(), at: iso(d.data().at) ?? iso(d.data().createdAt), createdAt: undefined }))
         .sort((a, b) => Date.parse(String(b.at ?? '')) - Date.parse(String(a.at ?? '')));
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[ADMIN] municipality requests failed:', error?.message);
       return res.status(500).json({ error: 'Kërkesat nuk u ngarkuan.' });
     }
@@ -273,7 +273,7 @@ export function registerMunicipalityDeskRoutes(app: Express, deps: MunicipalityD
         .sort((a, b) => (rank[b.urgency] ?? 0) - (rank[a.urgency] ?? 0) || Date.parse(b.createdAt ?? '') - Date.parse(a.createdAt ?? ''));
       res.setHeader('Cache-Control', 'private, no-store');
       return res.json({ items });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[MUNICIPALITY] health failed:', error?.message);
       return res.status(500).json({ error: 'Rastet shëndetësore nuk u ngarkuan.' });
     }
@@ -288,7 +288,7 @@ export function registerMunicipalityDeskRoutes(app: Express, deps: MunicipalityD
       try {
         const user = await deps.authAdmin().getUser(targetUid);
         targetRole = String((user.customClaims as Record<string, unknown> | undefined)?.role ?? '');
-      } catch (error: any) {
+      } catch (error) {
         if (error?.code === 'auth/user-not-found') return res.status(404).json({ error: 'Llogaria nuk u gjet.' });
         throw error;
       }
@@ -302,7 +302,7 @@ export function registerMunicipalityDeskRoutes(app: Express, deps: MunicipalityD
       await ref.set({ municipalityPlan: decision.plan, planChangedAt: new Date().toISOString(), planChangedBy: actor.uid }, { merge: true });
       deps.audit('admin.municipality.plan', req, { targetUid, from: before, to: decision.plan });
       return res.json({ ok: true, plan: decision.plan, features: featuresFor(decision.plan) });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[ADMIN] plan change failed:', error?.message);
       return res.status(500).json({ error: 'Plani nuk u ruajt. Provoni përsëri.' });
     }

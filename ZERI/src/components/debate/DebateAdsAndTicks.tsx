@@ -12,7 +12,7 @@ import {
   type AdRequestRow,
 } from '../../lib/debateApi';
 import { Badge, Empty, ErrorNote, Panel, Spinner, btn, inputClass, useLoad } from './ui';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 const AD_STATUSES: ReadonlyArray<{ id: AdRequestRow['status']; label: string; tone: 'slate' | 'blue' | 'emerald' | 'amber' | 'rose' }> = [
   { id: 'pending', label: 'Në pritje', tone: 'amber' },

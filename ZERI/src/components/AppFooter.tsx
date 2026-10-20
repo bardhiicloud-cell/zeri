@@ -1,7 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import { BrandLogo } from '@/src/components/BrandLogo';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, FileText, Info, Mail, Phone, ExternalLink, Github, Heart } from 'lucide-react';
+import { Mail, Phone, Heart } from 'lucide-react';
 import { CookiePreferencesButton } from './CookieConsentBanner';
 import { SOCIAL_LINKS } from './SocialIcons';
 import { InstallAppButton } from './InstallAppPrompt';
@@ -74,14 +74,14 @@ export function AppFooter() {
             <div className="mt-4 space-y-0 text-sm md:space-y-1.5 md:text-xs">
               <Link
                 to="/kontakt"
-                className="flex min-h-10 items-center gap-2 text-slate-500 transition-colors md:min-h-0 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                className="flex min-h-10 items-center gap-2 text-slate-500 transition-colors md:min-h-6 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {dt('Na shkruani (formulari i kontaktit)')}
               </Link>
               <Link
                 to="/kontakt-numrat"
-                className="flex min-h-10 items-center gap-2 text-slate-500 transition-colors md:min-h-0 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                className="flex min-h-10 items-center gap-2 text-slate-500 transition-colors md:min-h-6 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {dt('Numrat e institucioneve')}
@@ -101,7 +101,7 @@ export function AppFooter() {
               and a citizen should not have to scroll to the bottom to follow.
             */}
             <div className="mt-5">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
                 {dt('Na ndiqni')}
               </h2>
               <ul className="mt-3 flex items-center gap-2">
@@ -125,7 +125,7 @@ export function AppFooter() {
 
           {COLUMNS.map((column) => (
             <nav key={column.title} aria-label={dt(column.title)}>
-              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
                 {dt(column.title)}
               </h2>
               <ul className="mt-2 md:mt-3 md:space-y-2">
@@ -145,13 +145,13 @@ export function AppFooter() {
         </div>
 
         <div className="mt-9 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/5">
-          <p className="text-[11px] leading-relaxed text-slate-400">
+          <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
             {dt('Të dhënat përpunohen sipas Ligjit Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale në Kosovë dhe GDPR-së së Bashkimit Europian.')}
           </p>
 
           <div className="flex flex-wrap items-center gap-4">
             <CookiePreferencesButton />
-            <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400">
               <Heart className="h-3 w-3 text-rose-500" aria-hidden="true" />
               {dt('Bërë për qytetarët e Kosovës')}
             </span>

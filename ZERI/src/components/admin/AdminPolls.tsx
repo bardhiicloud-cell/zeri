@@ -1,13 +1,12 @@
 import { dt } from '@/src/lib/dt';
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../lib/store';
-import { Plus, Trash2, Calendar, MapPin, Edit3, X, BarChart2, Search, ChevronLeft, ChevronRight, Vote, CheckSquare, Square } from 'lucide-react';
+import { Plus, Trash2, Calendar, MapPin, Edit3, X, Search, Vote, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../../lib/utils';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 export default function AdminPolls() {
   const polls = useStore(state => state.polls);

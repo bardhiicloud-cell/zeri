@@ -12,7 +12,7 @@ import { ReelCommentsSheet } from './ReelCommentsSheet';
 import { ReelApiError, deleteReelApi, recordReelViewApi, shareReel, updateReelCaption } from '../../lib/reelsApi';
 import { fetchReelForReview } from '../../lib/reelsSocial';
 import { trackInsight } from '../../lib/forumAnalyticsApi';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /** Where the player gets its reels: the public feed, one author, or one hashtag. */
 export type ReelsSource =

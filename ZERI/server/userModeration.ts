@@ -95,7 +95,7 @@ export function registerUserModerationRoutes(app: Express, deps: UserModerationD
       try {
         const target = await deps.authAdmin().getUser(targetUid);
         targetRole = String((target.customClaims as Record<string, unknown> | undefined)?.role ?? '');
-      } catch (error: any) {
+      } catch (error) {
         if (error?.code === 'auth/user-not-found') return res.status(404).json({ error: 'Llogaria nuk u gjet.' });
         throw error;
       }
@@ -133,7 +133,7 @@ export function registerUserModerationRoutes(app: Express, deps: UserModerationD
 
       deps.audit(`admin.user.${action}`, req, { targetUid, targetEmail: profile.data()?.email ?? null, reason: reason || null });
       return res.json({ ok: true, action });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[ADMIN] user moderation failed:', error?.message);
       return res.status(500).json({ error: 'Veprimi nuk u krye. Provoni përsëri.' });
     }

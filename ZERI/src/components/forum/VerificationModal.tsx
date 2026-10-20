@@ -90,7 +90,7 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
       setOrder(result.order);
       setBank(result.bank);
       setConfig((c) => (c ? { ...c, methods: { ...c.methods, paysera: result.payseraEnabled } } : c));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || dt('Kodi nuk u krijua.'));
     } finally {
       setBusy(false);
@@ -103,7 +103,7 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
       await decideVerification(uid, decision);
       toast.success(decision === 'approve' ? dt('Verifikimi u aktivizua për 30 ditë.') : dt('Kërkesa u refuzua.'));
       await refresh();
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || dt('Vendimi nuk u ruajt.'));
     } finally {
       setBusy(false);

@@ -1,7 +1,7 @@
 import { dt } from '@/src/lib/dt';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Video, Plus, Pencil, Trash2, Search, X, Save, Eye, EyeOff, Upload, Link2, Loader2,
+  Video, Plus, Pencil, Trash2, Search, X, Save, Upload, Link2, Loader2
 } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { cn } from '../../lib/utils';
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import DecisionBar from './DecisionBar';
 import { takeDecision } from '../../lib/decisionsApi';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /**
  * "Menaxhimi i Videove" — the admin manager for public video content.
@@ -121,7 +121,7 @@ export default function AdminVideos() {
     try {
       const url = await uploadFileToStorage(file, 'reports', { scope: 'videos' });
       setForm((f) => (kind === 'video' ? { ...f, videoUrl: url } : { ...f, imageUrl: url }));
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err?.message || dt('Ngarkimi dështoi.'));
     } finally {
       setUploading(null);

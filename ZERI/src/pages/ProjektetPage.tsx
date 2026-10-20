@@ -1,9 +1,7 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Search, ArrowUpRight, FileText, MapPin, BarChart3, ScrollText, Landmark,
-  MessagesSquare, Vote, Lightbulb, Building, HeartPulse, HeartHandshake, Newspaper,
-  Phone, LifeBuoy, ListChecks, Info, Layers,
+  Search, ArrowUpRight, FileText, MapPin, BarChart3, ScrollText, Landmark, Vote, Lightbulb, Building, HeartPulse, HeartHandshake, Newspaper,
+  Phone, LifeBuoy, ListChecks, Info, Layers
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AuraPage, AuraHero, AuraStats, AuraSection, AuraNote, AuraOrbit } from '../components/aura/Aura';

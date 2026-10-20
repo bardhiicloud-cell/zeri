@@ -1,6 +1,4 @@
 import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { dt } from '@/src/lib/dt';
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -9,10 +7,10 @@ import { saveGuestReportHistory } from '../lib/session';
 import { TrackIdIssuedModal } from '../components/TrackIdIssuedModal';
 import { useStore, DonationCause } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, Heart, Globe, X, PlusCircle, Activity, Home, Utensils, Shirt, Grid, ChevronLeft, ChevronRight, ChevronDown, Layers, HeartPulse } from 'lucide-react';
+import { ExternalLink, Heart, Globe, X, PlusCircle, Home, Utensils, Shirt, Grid, ChevronLeft, ChevronRight, HeartPulse } from 'lucide-react';
 import AdBanner from '../components/AdBanner.tsx';
 import { isSpecificScope, recordMatchesScope } from '../lib/municipalityScope';
-import { AuraHero, AuraStats, AuraSection, AuraEmpty, Reveal, AuraOrbit } from '../components/aura/Aura';
+import { AuraHero, AuraStats, AuraEmpty, Reveal, AuraOrbit } from '../components/aura/Aura';
 import SubmissionOverlay from '../components/SubmissionOverlay';
 
 /** Applicant-supplied links are only followed when they are plain http(s); `javascript:` and the like become "#". */

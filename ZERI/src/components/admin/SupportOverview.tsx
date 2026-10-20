@@ -5,7 +5,7 @@ import { dt } from '@/src/lib/dt';
 import { cn } from '../../lib/utils';
 import { useStore } from '../../lib/store';
 import { supportDesk, type SupportOverview as Overview } from '../../lib/supportDeskApi';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 const ROLE_LABEL: Record<string, string> = { agent: 'Agjent', responder: 'Përgjegjës', dispatcher: 'Menaxher', approver: 'Zyrtar aprovimi', admin: 'Admin', superadmin: 'Superadmin' };
 

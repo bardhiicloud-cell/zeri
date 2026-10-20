@@ -191,7 +191,7 @@ export function ForumStories({ currentUser, followedUserIds, onRequireAuth, isAc
       await replyToStoryApi(currentStory.id, replyText.trim());
       setReplyText('');
       toast.success(dt('Përgjigjja u dërgua.'));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || dt('Përgjigjja nuk u dërgua.'));
     } finally {
       setIsReplying(false);

@@ -18,7 +18,7 @@ import PhotoCropper from '../PhotoCropper';
 import type { ReportAction } from '../../../lib/reportWorkflow';
 import { directAdvance, directCounts, directQueue, directReject, directReopen, directReport, isApiUnavailableError } from '../../../lib/workflowDirect';
 import { contactLine, useReportContact } from '../../../lib/useReportContact';
-import { askConfirm, askReason } from '../../../lib/dialogs';
+import { askReason } from '../../../lib/dialogs';
 
 /* ------------------------------------------------------------------ */
 /* Small pieces                                                        */

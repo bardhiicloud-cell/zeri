@@ -1,6 +1,5 @@
 import { dt } from '@/src/lib/dt';
 import { AuraHero, AuraOrbit } from '../components/aura/Aura';
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Scale, MapPin, Clock, Trash2, Building2, Mail, Eye, Cookie, AlertTriangle } from 'lucide-react';
 import { CookiePreferencesButton } from '../components/CookieConsentBanner';
@@ -175,7 +174,7 @@ export default function PrivacyPolicyPage() {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:border-white/5">
+                  <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 dark:border-white/5">
                     <th className="py-2.5 pr-3">{dt('Lloji i të dhënave')}</th>
                     <th className="py-2.5 pr-3">{dt('Koha e ruajtjes')}</th>
                     <th className="py-2.5">{dt('Arsyeja')}</th>
@@ -193,8 +192,8 @@ export default function PrivacyPolicyPage() {
                   ].map((row) => (
                     <tr key={row[0]}>
                       <td className="py-3 pr-3 font-bold text-slate-800 dark:text-white">{row[0]}</td>
-                      <td className="py-3 pr-3 text-slate-500 dark:text-slate-400">{row[1]}</td>
-                      <td className="py-3 text-slate-500 dark:text-slate-400">{row[2]}</td>
+                      <td className="py-3 pr-3 text-slate-600 dark:text-slate-400">{row[1]}</td>
+                      <td className="py-3 text-slate-600 dark:text-slate-400">{row[2]}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -226,7 +225,7 @@ export default function PrivacyPolicyPage() {
                     <ItemIcon className="mt-0.5 h-4 w-4 shrink-0 text-(--color-brand-primary)" aria-hidden="true" />
                     <span>
                       <span className="block text-xs font-black text-slate-800 dark:text-white">{title as string}</span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{description as string}</span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-slate-600 dark:text-slate-400">{description as string}</span>
                     </span>
                   </li>
                 );
@@ -289,13 +288,13 @@ export default function PrivacyPolicyPage() {
             <div className="mt-4 space-y-3">
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                 <p className="text-sm font-black text-slate-800 dark:text-white">{dt('Kontrolluesi: Platforma ZERI')}</p>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{dt('Email:')}{' '}
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{dt('Email:')}{' '}
                   <a href="mailto:privatisi@zeriqytetare.republiks" className="font-bold text-blue-600 dark:text-blue-400">privatisi@zeriqytetare.republiks</a>
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                 <p className="text-sm font-black text-slate-800 dark:text-white">{dt('Institucioni Mbikëqyrës: Agjencia për Informim dhe Privatësi (AIP)')}</p>
-                <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                   {dt("Agjencia për Informim dhe Privatësi është autoriteti shtetëror i pavarur, i ngarkuar me mbikëqyrjen e zbatimit të Ligjit Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale në Kosovë. Nëse keni ndonjë ankesë që nuk trajtohet nga Kontrolluesi, mund t'i adresoni kësaj autoriteti.")}
                 </p>
               </div>
@@ -303,7 +302,7 @@ export default function PrivacyPolicyPage() {
           </section>
         </div>
 
-        <footer className="mt-8 text-center text-xs text-slate-400">
+        <footer className="mt-8 text-center text-xs text-slate-600 dark:text-slate-400">
           <p>{dt('Kjo politikë u përditësua në përputhje me Ligjin Nr. 06/L-082 dhe GDPR-në e Bashkimit Europian.')}
           </p>
         </footer>

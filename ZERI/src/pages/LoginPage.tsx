@@ -3,7 +3,7 @@ import { AuthShell, AuthField, AuthError, AuthDivider, GoogleIcon, authPrimaryBt
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
-import { ShieldAlert, LogIn, Lock, ArrowLeft, Mail, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Lock, Mail, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { auth, db, signInWithGoogle, readGoogleRedirectResult, getUserRole } from '../lib/firebase';
@@ -141,7 +141,7 @@ export default function LoginPage() {
         } else {
           setError(t('login_error_invalid'));
         }
-      } catch (err: any) {
+      } catch (err) {
         /**
          * One generic message for every failure mode.
          *
@@ -220,7 +220,7 @@ export default function LoginPage() {
         permissions: userData.permissions,
         isBanned: userData.isBanned,
       });
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
         // The citizen closed the window themselves; not an error worth a banner.
       } else if (err?.code === 'auth/popup-blocked') {
