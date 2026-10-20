@@ -286,9 +286,9 @@ export function TopNavbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
             <span
               data-testid="guest-id"
               title={dt('ID-ja juaj si mysafir')}
-              className="hidden h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-700 lg:inline-flex dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+              className="hidden h-9 items-center gap-2 rounded-full border border-slate-200/80 bg-white py-1 pl-1 pr-3 text-xs font-semibold tracking-tight text-slate-700 lg:inline-flex dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
             >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-[10px] font-black text-white" aria-hidden="true">M</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-400/20" aria-hidden="true">M</span>
               {(currentUser as { guestLabel?: string }).guestLabel
                 ?? (currentUser.name?.startsWith('Mysafir-') ? currentUser.name : dt('Mysafir • po caktohet…'))}
             </span>

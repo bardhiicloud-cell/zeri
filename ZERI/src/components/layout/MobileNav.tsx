@@ -572,30 +572,41 @@ export function MobileNav() {
                   and notifications, so it must not sit below the module list.
                 */}
                 {isGuest && (
-                  <section aria-label={dt('Llogaria juaj')} className="mb-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-3.5 dark:border-blue-900/60 dark:from-blue-950/40 dark:to-slate-900">
+                  <section
+                    aria-label={dt('Llogaria juaj')}
+                    className="mb-5 overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-16px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900 dark:shadow-none"
+                  >
                     {(() => {
                       const label = (currentUser as { guestLabel?: string } | null)?.guestLabel
                         ?? (currentUser?.name?.startsWith('Mysafir-') ? currentUser.name : null);
                       return (
-                        <div className="flex items-center gap-3" data-testid="guest-id">
-                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-base font-black text-white" aria-hidden="true">M</span>
+                        <div className="flex items-center gap-4" data-testid="guest-id">
+                          <span
+                            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xl font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-400/20"
+                            aria-hidden="true"
+                          >
+                            M
+                          </span>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-black text-slate-900 dark:text-white">{label ?? dt('Mysafir')}</p>
-                            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                              {label ? dt('Mysafir') : dt('Po caktohet ID-ja…')}
+                            <p className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                              {label ?? dt('Mysafir')}
+                            </p>
+                            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <span className={`h-1.5 w-1.5 rounded-full ${label ? 'bg-emerald-400' : 'animate-pulse bg-slate-300'}`} aria-hidden="true" />
+                              {label ? dt('Mysafir i identifikuar') : dt('Po caktohet ID-ja…')}
                             </p>
                           </div>
                         </div>
                       );
                     })()}
-                    <p className="mt-2.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                    <p className="mt-4 border-t border-slate-100 pt-4 text-[13px] leading-relaxed text-slate-500 dark:border-white/10 dark:text-slate-400">
                       {dt('Regjistrohuni për t’i ruajtur raportimet dhe për të marrë njoftime për përgjigjet.')}
                     </p>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="mt-4 grid grid-cols-2 gap-2.5">
                       <Link
                         to="/login"
                         onClick={close}
-                        className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 text-sm font-black text-white shadow-sm transition-transform active:scale-95"
+                        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-slate-900 text-sm font-semibold text-white transition active:scale-[0.98] dark:bg-white dark:text-slate-900"
                       >
                         <LogIn className="h-4 w-4" aria-hidden="true" />
                         {dt('Hyr')}
@@ -603,7 +614,7 @@ export function MobileNav() {
                       <Link
                         to="/register"
                         onClick={close}
-                        className="flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-800 transition-transform active:scale-95 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
+                        className="flex min-h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-800 transition active:scale-[0.98] dark:border-white/15 dark:bg-transparent dark:text-slate-100"
                       >
                         {dt('Regjistrohu')}
                       </Link>
