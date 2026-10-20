@@ -7,7 +7,6 @@ import {
 } from 'recharts';
 import { addDoc, collection, limit, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { useStore } from '../../lib/store';
 import { dt } from '@/src/lib/dt';
 import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
@@ -50,9 +49,9 @@ const tooltipStyle = {
 };
 
 export function MedicineShortages() {
-  const currentUser = useStore((s) => s.currentUser);
   const uid = auth.currentUser?.uid || null;
-  const canReport = Boolean(uid) && currentUser?.role !== 'guest';
+  // A guest signs in for real (anonymous or server-minted), so they may report too; staff still verify every report.
+  const canReport = Boolean(uid);
 
   const [verified, setVerified] = useState<MedicineShortage[]>([]);
   const [mine, setMine] = useState<MedicineShortage[]>([]);

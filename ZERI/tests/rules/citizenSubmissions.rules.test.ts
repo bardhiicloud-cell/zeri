@@ -113,6 +113,23 @@ describe('a visitor without the /api server', () => {
     await assertSucceeds(addDoc(collection(guest(), 'healthRegistry'), healthCase()));
   });
 
+  it('reports a missing medicine, left pending for staff to verify', async () => {
+    await setDoc(doc(guest(), 'users', GUEST), { id: GUEST, name: '', avatar: '', createdAt: serverTimestamp() });
+    const shortage = { medicineName: 'Insulinë', municipality: 'Prishtinë', reportedDate: '2026-10-20', isAnonymous: true, status: 'pending', authorId: GUEST };
+    await assertSucceeds(addDoc(collection(guest(), 'medicineShortages'), shortage));
+    await assertFails(addDoc(collection(guest(), 'medicineShortages'), { ...shortage, status: 'verified' }));
+  });
+
+  it('works the same for a guest the server signed in (custom token with guest: true)', async () => {
+    // server/guestSession.ts: provider is "custom", the guest claim marks the account.
+    const SERVER_GUEST = 'guest_0123456789abcdef0123456789abcdef';
+    const db = env.authenticatedContext(SERVER_GUEST, { guest: true, firebase: { sign_in_provider: 'custom' } }).firestore();
+    await assertSucceeds(setDoc(doc(db, 'users', SERVER_GUEST), { id: SERVER_GUEST, name: '', avatar: '', createdAt: serverTimestamp() }));
+    await assertSucceeds(setDoc(doc(db, 'reports', 'repS'), { ...directReport('repS'), authorId: SERVER_GUEST }));
+    await assertSucceeds(addDoc(collection(db, 'healthRegistry'), { ...healthCase(), authorId: SERVER_GUEST }));
+    await assertSucceeds(addDoc(collection(db, 'medicineShortages'), { medicineName: 'Insulinë', municipality: 'Prishtinë', reportedDate: '2026-10-20', isAnonymous: false, status: 'pending', authorId: SERVER_GUEST }));
+  });
+
   // Opened to the browser by the project owner (2026-10-19) so that "Raporto një lajm"
   // and donation applications work while the /api server is down.
   // directSubmissions.ts runs ensureReportSession first, which creates the guest's profile.

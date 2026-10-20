@@ -70,9 +70,10 @@ export interface GuestNumberDeps {
   reserve?: (size: number) => Promise<number>;
 }
 
+/** An anonymous Firebase account, or a guest the server signed in itself (server/guestSession.ts). */
 const isAnonymous = (req: Request): boolean => {
-  const claims = (req.user as { claims?: { firebase?: { sign_in_provider?: string } } } | undefined)?.claims;
-  return claims?.firebase?.sign_in_provider === 'anonymous';
+  const claims = (req.user as { claims?: { guest?: boolean; firebase?: { sign_in_provider?: string } } } | undefined)?.claims;
+  return claims?.firebase?.sign_in_provider === 'anonymous' || claims?.guest === true;
 };
 
 export function registerGuestNumberRoutes(app: Express, deps: GuestNumberDeps): void {

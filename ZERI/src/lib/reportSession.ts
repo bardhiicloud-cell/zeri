@@ -1,7 +1,6 @@
-import { signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { getOrCreateGuestUser } from './session';
+import { signInAsGuest } from './guestSession';
 import { withTimeout } from './timeouts';
 
 /**
@@ -54,15 +53,11 @@ async function ensureOwnProfile(uid: string): Promise<void> {
 
 async function startReportSession(): Promise<string | null> {
   // Until Firebase has restored a saved session, `currentUser` is null even for a
-  // signed-in citizen; signing in anonymously then would replace their account.
+  // signed-in citizen; signing in as a guest then would replace their account.
   await withTimeout(auth.authStateReady(), 8000, 'timeout').catch(() => undefined);
   if (auth.currentUser?.uid) return auth.currentUser.uid;
-  try {
-    // Bounded: a blocked App Check token or a dead link left this pending forever.
-    const credential = await withTimeout(signInAnonymously(auth), 15000, 'Sesioni nuk u krijua në kohë.');
-    return credential.user.uid;
-  } catch {
-    const guestUser = getOrCreateGuestUser();
-    return guestUser.id;
-  }
+  // A real Firebase guest (anonymous, or minted by the server). A local-only id is
+  // never returned: the rules would refuse everything written under it.
+  const guest = await signInAsGuest();
+  return guest.ok ? guest.uid : null;
 }
