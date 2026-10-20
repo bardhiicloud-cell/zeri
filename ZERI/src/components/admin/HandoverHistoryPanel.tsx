@@ -63,7 +63,7 @@ export default function HandoverHistoryPanel({ reportId, refreshKey = '' }: { re
         onClick={() => setOpen(value => !value)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 dark:text-slate-400 dark:hover:text-white"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 dark:text-slate-400 dark:hover:text-white"
       >
         <History className="h-3.5 w-3.5" aria-hidden="true" />
         {dt('Historiku i caktimeve')}

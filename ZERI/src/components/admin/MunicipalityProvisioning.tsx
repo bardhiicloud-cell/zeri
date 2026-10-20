@@ -201,7 +201,7 @@ export default function MunicipalityProvisioning() {
           {(['identity', 'jurisdiction', 'consent', 'review'] as const).map((s, i) => (
             <li key={s} className="flex flex-1 items-center gap-2">
               <span
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-black ${i < stepIndex
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-black ${i < stepIndex
                     ? 'bg-emerald-500 text-white'
                     : i === stepIndex
                       ? 'bg-blue-700 text-white'
@@ -256,7 +256,7 @@ export default function MunicipalityProvisioning() {
                 className={`w-full rounded-lg border px-3 py-2 text-sm outline-none dark:bg-slate-950 dark:text-white ${errors.initialPassword ? 'border-rose-400' : 'border-slate-200 dark:border-white/10 focus:border-blue-500'}`}
               />
               {errors.initialPassword && <span className="mt-1 block text-[11px] text-rose-600">{dt(errors.initialPassword)}</span>}
-              <span className="mt-1 block text-[10px] text-slate-400">
+              <span className="mt-1 block text-[11px] text-slate-400">
                 {dt('Nëse e lë bosh, zyrtari merr email për të vendosur fjalëkalimin vetë.')}
               </span>
             </label>
@@ -359,7 +359,7 @@ export default function MunicipalityProvisioning() {
                   </ul>
                 </div>
               </div>
-              <pre className="mt-4 whitespace-pre-wrap border-t border-slate-200 pt-3 font-sans text-[10px] leading-relaxed text-slate-500 dark:border-white/10">
+              <pre className="mt-4 whitespace-pre-wrap border-t border-slate-200 pt-3 font-sans text-[11px] leading-relaxed text-slate-500 dark:border-white/10">
                 {EDITORIAL_FIREWALL_CLAUSE}
               </pre>
             </div>
@@ -383,7 +383,7 @@ export default function MunicipalityProvisioning() {
               <span className="block text-[11px] text-rose-600">{dt(errors.clauseAccepted)}</span>
             )}
             {draft.clauseAcceptedAt && (
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[11px] text-slate-400">
                 {dt('Pranuar:')} {new Date(draft.clauseAcceptedAt).toLocaleString('sq-AL')}
               </p>
             )}
@@ -461,7 +461,7 @@ export default function MunicipalityProvisioning() {
                 ? dt('Fjalëkalimi është vendosur. Llogaria mund të hyjë menjëherë me email-in dhe fjalëkalimin e dhënë.')
                 : dt('Pa fjalëkalim fillestar. Komuna duhet të përdorë "harruar fjalëkalimin" për të hyrë herën e parë.')}
             </p>
-            <pre className="mx-auto max-w-lg overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-[10px] leading-relaxed text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-400">
+            <pre className="mx-auto max-w-lg overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-[11px] leading-relaxed text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-400">
               {JSON.stringify(created, null, 2)}
             </pre>
             <div className="flex flex-wrap items-center justify-center gap-2">

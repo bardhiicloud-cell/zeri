@@ -460,11 +460,11 @@ export default function ModerationCenter() {
                 <div key={r.id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLORS[r.status] ?? ''}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_COLORS[r.status] ?? ''}`}>
                         {r.status}
                       </span>
                       {risk !== 'clean' && (
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${risk === 'violation' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${risk === 'violation' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
                           }`}>
                           {risk === 'violation' ? dt('Gjuhë e përshtatshme jo') : dt('E dyshimtë')}
                         </span>
@@ -543,7 +543,7 @@ export default function ModerationCenter() {
                           <p className="text-xs font-bold text-slate-600 dark:text-slate-300">{dt('Seksionet e lejuara')}:</p>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {(agentUser.permissions ?? []).map((p) => (
-                              <span key={p} className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">{p}</span>
+                              <span key={p} className="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-indigo-700">{p}</span>
                             ))}
                             {(!agentUser.permissions || agentUser.permissions.length === 0) && (
                               <span className="text-xs text-slate-500">{dt('Vetëm rolet e parazgjedhura')}</span>
@@ -585,7 +585,7 @@ export default function ModerationCenter() {
                                   <div className="min-w-0">
                                     <p className="font-bold text-slate-900 dark:text-white">{log.action}</p>
                                     {log.details && <p className="truncate text-slate-600 dark:text-slate-300">{log.details}</p>}
-                                    <p className="text-[10px] text-slate-400">{fmtDate(log.createdAt)} · {log.municipality ?? '—'}</p>
+                                    <p className="text-[11px] text-slate-400">{fmtDate(log.createdAt)} · {log.municipality ?? '—'}</p>
                                   </div>
                                 </div>
                               ))}
@@ -714,9 +714,9 @@ export default function ModerationCenter() {
                             <div key={r.id} className="flex items-center justify-between gap-2 text-xs">
                               <div className="min-w-0">
                                 <p className="truncate font-bold text-slate-900 dark:text-white">{r.title}</p>
-                                <p className="text-[10px] text-slate-400">{fmtDate(r.createdAt)}</p>
+                                <p className="text-[11px] text-slate-400">{fmtDate(r.createdAt)}</p>
                               </div>
-                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLORS[r.status] ?? ''}`}>
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_COLORS[r.status] ?? ''}`}>
                                 {r.status}
                               </span>
                             </div>
@@ -829,7 +829,7 @@ export default function ModerationCenter() {
                       type="button"
                       onClick={() => setInspectKind(inspectKind === k ? 'all' : k)}
                       aria-pressed={inspectKind === k}
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition-opacity ${ACTION_KIND_TONES[k]} ${
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-opacity ${ACTION_KIND_TONES[k]} ${
                         inspectKind === 'all' || inspectKind === k ? 'opacity-100' : 'opacity-45'
                       }`}
                     >
@@ -843,7 +843,7 @@ export default function ModerationCenter() {
                     <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{dt('Ka vepruar në')}:</p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {inspection.municipalities.map((m) => (
-                        <span key={m} className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+                        <span key={m} className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
                           {m}
                         </span>
                       ))}
@@ -866,7 +866,7 @@ export default function ModerationCenter() {
                     <ul className="max-h-[560px] divide-y divide-slate-100 overflow-y-auto dark:divide-white/5">
                       {inspectRows.map(({ log, kind }) => (
                         <li key={log.id} className="flex items-start gap-3 px-4 py-3">
-                          <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black ${ACTION_KIND_TONES[kind]}`}>
+                          <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black ${ACTION_KIND_TONES[kind]}`}>
                             {dt(ACTION_KIND_LABELS[kind])}
                           </span>
                           <span className="min-w-0 flex-1">
@@ -876,7 +876,7 @@ export default function ModerationCenter() {
                                 {String(log.details)}
                               </span>
                             )}
-                            <span className="mt-1 flex flex-wrap items-center gap-x-2 text-[10px] text-slate-400">
+                            <span className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-400">
                               <span>{fmtDate(log.createdAt)}</span>
                               {log.municipality && <span>· {log.municipality}</span>}
                               <span className={`rounded-full px-1.5 py-0.5 font-bold ${
@@ -907,9 +907,9 @@ export default function ModerationCenter() {
                         <li key={s.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 dark:border-white/5 dark:bg-slate-800/60">
                           <span className="min-w-0">
                             <span className="block truncate font-mono text-[11px] font-bold text-slate-700 dark:text-slate-200">{s.id}</span>
-                            <span className="block text-[10px] text-slate-400">{fmtDate(s.lastAt)}</span>
+                            <span className="block text-[11px] text-slate-400">{fmtDate(s.lastAt)}</span>
                           </span>
-                          <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-black text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+                          <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-black text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
                             {s.hits}×
                           </span>
                         </li>

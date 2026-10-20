@@ -22,6 +22,7 @@ import {
   type StatementOutcome,
 } from '../../lib/debateApi';
 import { Badge, BulkBar, Empty, ErrorNote, Panel, Spinner, Stat, btn, inputClass, useLoad, useSelection } from './ui';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 type Sub = 'awaiting' | 'paid' | 'cancelled' | 'statement' | 'settings' | 'guide';
 
@@ -97,7 +98,7 @@ function OrdersList({ status, onChanged }: { status: PaymentStatus; onChanged?: 
   const confirmMany = async (list: PaymentOrder[]) => {
     if (list.length === 0) return;
     const sum = list.reduce((s, o) => s + o.amountEur, 0);
-    if (!window.confirm(`${dt('Konfirmoni')} ${list.length} ${dt('pagesa me total')} ${formatEur(sum)}? ${dt('Bëjeni vetëm nëse paratë janë në llogari.')}`)) return;
+    if (!await askConfirm(`${dt('Konfirmoni')} ${list.length} ${dt('pagesa me total')} ${formatEur(sum)}? ${dt('Bëjeni vetëm nëse paratë janë në llogari.')}`)) return;
     setBusy(true);
     let ok = 0;
     const failed: string[] = [];
@@ -118,7 +119,7 @@ function OrdersList({ status, onChanged }: { status: PaymentStatus; onChanged?: 
   };
 
   const cancelMany = async (list: PaymentOrder[]) => {
-    if (list.length === 0 || !window.confirm(`${dt('Anuloni')} ${list.length} ${dt('porosi? Kodet nuk do të pranohen më.')}`)) return;
+    if (list.length === 0 || !await askConfirm(`${dt('Anuloni')} ${list.length} ${dt('porosi? Kodet nuk do të pranohen më.')}`)) return;
     setBusy(true);
     for (const order of list) {
       try {
@@ -244,7 +245,7 @@ function StatementImport({ onChanged }: { onChanged?: () => void }) {
     const codes = [...selection.selected];
     if (codes.length === 0) return;
     const sum = (entries ?? []).filter((e) => selection.selected.has(e.code)).reduce((s, e) => s + (e.orderAmountEur ?? 0), 0);
-    if (!window.confirm(`${dt('Konfirmoni')} ${codes.length} ${dt('pagesa me total')} ${formatEur(sum)}?`)) return;
+    if (!await askConfirm(`${dt('Konfirmoni')} ${codes.length} ${dt('pagesa me total')} ${formatEur(sum)}?`)) return;
     setBusy(true);
     try {
       const { results } = await applyStatement(text, codes);

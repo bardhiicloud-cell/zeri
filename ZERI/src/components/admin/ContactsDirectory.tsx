@@ -60,7 +60,7 @@ export default function ContactsDirectory({ onClose }: { onClose: () => void }) 
             {EMERGENCY_NUMBERS.map(item => (
               <a key={item.number} href={`tel:${item.number}`} className="rounded-xl bg-rose-50 px-2 py-2 text-center text-rose-800 dark:bg-rose-500/15 dark:text-rose-100">
                 <span className="block text-lg font-black leading-none">{item.number}</span>
-                <span className="mt-1 block text-[10px] font-bold leading-tight">{dt(item.label)}</span>
+                <span className="mt-1 block text-[11px] font-bold leading-tight">{dt(item.label)}</span>
               </a>
             ))}
           </div>

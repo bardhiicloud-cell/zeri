@@ -12,6 +12,7 @@ import { useStore } from '../../lib/store';
 import { dt } from '../../lib/dt';
 import { cn } from '../../lib/utils';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /**
  * Staff-side moderation of "Debat Story" — the ephemeral 24h media stories
@@ -156,7 +157,7 @@ export default function AdminForumStories() {
   };
 
   const remove = async (s: StoryDoc) => {
-    if (!window.confirm(`Fshi përgjithmonë story-n e "${s.authorName}"? Ky veprim nuk mund të kthehet.`)) return;
+    if (!await askConfirm(`Fshi përgjithmonë story-n e "${s.authorName}"? Ky veprim nuk mund të kthehet.`)) return;
     try {
       await deleteDoc(doc(db, 'forumStories', s.id));
       setStories((prev) => prev.filter((x) => x.id !== s.id));
@@ -216,19 +217,19 @@ export default function AdminForumStories() {
       {/* KPI bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-emerald-500">{dt('Aktive')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-emerald-500">{dt('Aktive')}</p>
           <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{stats.live}</p>
         </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-amber-500">{dt('Skadojnë shpejt')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-amber-500">{dt('Skadojnë shpejt')}</p>
           <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{stats.soon}</p>
         </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{dt('Skaduara')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Skaduara')}</p>
           <p className="text-2xl font-black text-slate-500 dark:text-slate-400 mt-1">{stats.expired}</p>
         </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <p className="text-[10px] font-black uppercase tracking-wider text-rose-500">{dt('Të fshehura')}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-rose-500">{dt('Të fshehura')}</p>
           <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{stats.hidden}</p>
         </div>
       </div>
@@ -306,11 +307,11 @@ export default function AdminForumStories() {
                     {s.textOverlay}
                   </span>
                 )}
-                <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white">
+                <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-bold text-white">
                   {s.mediaType === 'video' ? <Video className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
                   {s.mediaType === 'video' ? dt('Video') : dt('Foto')}
                 </span>
-                <span className={cn('absolute right-2 top-2 flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black', toneCls(s._expiry.tone))}>
+                <span className={cn('absolute right-2 top-2 flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black', toneCls(s._expiry.tone))}>
                   <Clock className="w-3 h-3" /> {s._expiry.label}
                 </span>
                 {s.isHidden && (
@@ -400,7 +401,7 @@ export default function AdminForumStories() {
                 className="h-8 w-8 rounded-full border border-white/40 object-cover"
               />
               <span className="min-w-0 flex-1 truncate text-sm font-bold">{previewing.authorName}</span>
-              <span className={cn('flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black', toneCls(previewing._expiry.tone))}>
+              <span className={cn('flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black', toneCls(previewing._expiry.tone))}>
                 <Clock className="w-3 h-3" /> {previewing._expiry.label}
               </span>
             </div>

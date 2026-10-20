@@ -164,7 +164,7 @@ export default function AdminSecurity() {
               {rows.map((log: any) => (
                 <tr key={log.id} className="hover:bg-slate-50 dark:bg-slate-800/80 transition-colors group">
                   <td className="p-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase border ${
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded text-[11px] font-bold tracking-widest uppercase border ${
                       log.status === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
                       log.status === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' :
                       'bg-rose-50 border-rose-200 text-rose-700'
@@ -174,7 +174,7 @@ export default function AdminSecurity() {
                   </td>
                   <td className="p-4 flex flex-col gap-1">
                     <span className="text-sm font-bold text-slate-900 dark:text-white">{log.userEmail}</span>
-                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 rounded px-1 w-max">{dt(`IP:`)} {log.ip}</span>
+                    <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 rounded px-1 w-max">{dt(`IP:`)} {log.ip}</span>
                   </td>
                   <td className="p-4 text-sm font-medium text-slate-700 dark:text-slate-300 max-w-sm truncate" title={log.details}>
                     {log.details || '-'}

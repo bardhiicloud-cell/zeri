@@ -407,7 +407,7 @@ export default function MonitoringPage() {
             </h1>
             <p className="text-xs text-slate-500">
               {dt('Vëzhgim i plotë i veprimeve — pa vendime, vetëm fakte')}
-              {isOwner && <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-black text-white dark:bg-slate-700">{dt('Akses i plotë')}</span>}
+              {isOwner && <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-black text-white dark:bg-slate-700">{dt('Akses i plotë')}</span>}
             </p>
           </div>
         </div>
@@ -499,14 +499,14 @@ export default function MonitoringPage() {
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className={`block rounded-full px-2 py-0.5 text-[10px] font-black ${
+                        <span className={`block rounded-full px-2 py-0.5 text-[11px] font-black ${
                           a.kind === 'municipality'
                             ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'
                             : 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
                         }`}>
                           {a.kind === 'municipality' ? dt('Komunë') : dt('Agjent')}
                         </span>
-                        <span className="mt-0.5 block text-[10px] font-bold text-slate-400">
+                        <span className="mt-0.5 block text-[11px] font-bold text-slate-400">
                           {a.total} {dt('veprime')}
                         </span>
                       </span>
@@ -550,7 +550,7 @@ export default function MonitoringPage() {
                 {inspection && (
                   <div className="flex flex-wrap gap-1.5">
                     {(Object.keys(ACTION_KIND_LABELS) as Array<keyof typeof ACTION_KIND_LABELS>).map((k) => (
-                      <span key={k} className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${ACTION_KIND_TONES[k]}`}>
+                      <span key={k} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${ACTION_KIND_TONES[k]}`}>
                         {dt(ACTION_KIND_LABELS[k])}: {inspection.byKind[k]}
                       </span>
                     ))}
@@ -589,9 +589,9 @@ export default function MonitoringPage() {
                           <li key={s.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 dark:border-white/5 dark:bg-slate-800/60">
                             <span className="min-w-0">
                               <span className="block truncate font-mono text-[11px] font-bold text-slate-700 dark:text-slate-200">{s.id}</span>
-                              <span className="block text-[10px] text-slate-400">{fmtDate(s.lastAt)}</span>
+                              <span className="block text-[11px] text-slate-400">{fmtDate(s.lastAt)}</span>
                             </span>
-                            <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-black text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+                            <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-black text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
                               {s.hits}×
                             </span>
                           </li>
@@ -613,7 +613,7 @@ export default function MonitoringPage() {
                       <ul className="max-h-[520px] divide-y divide-slate-100 overflow-y-auto dark:divide-white/5">
                         {inspection.rows.slice(0, 200).map(({ log, kind }) => (
                           <li key={log.id} className="flex items-start gap-3 px-4 py-3">
-                            <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black ${ACTION_KIND_TONES[kind]}`}>
+                            <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black ${ACTION_KIND_TONES[kind]}`}>
                               {dt(ACTION_KIND_LABELS[kind])}
                             </span>
                             <span className="min-w-0 flex-1">
@@ -623,7 +623,7 @@ export default function MonitoringPage() {
                                   {String(log.details)}
                                 </span>
                               )}
-                              <span className="mt-1 flex flex-wrap items-center gap-x-2 text-[10px] text-slate-400">
+                              <span className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-400">
                                 <span>{fmtDate(log.createdAt)}</span>
                                 {log.municipality && <span>· {log.municipality}</span>}
                                 <span className={`rounded-full px-1.5 py-0.5 font-bold ${
@@ -686,7 +686,7 @@ export default function MonitoringPage() {
                           {m.actions}
                         </span>
                         {m.flagged > 0 && (
-                          <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+                          <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-black text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                             {m.flagged}
                           </span>
                         )}
@@ -733,9 +733,9 @@ export default function MonitoringPage() {
                 <header className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h4 className="truncate text-sm font-black text-slate-900 dark:text-white">{dt(d.label)}</h4>
-                    {d.note && <p className="mt-0.5 text-[10px] text-slate-400">{d.note}</p>}
+                    {d.note && <p className="mt-0.5 text-[11px] text-slate-400">{d.note}</p>}
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${HEALTH_TONES[d.health]}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${HEALTH_TONES[d.health]}`}>
                     {dt(HEALTH_LABELS[d.health])}
                   </span>
                 </header>
@@ -751,13 +751,13 @@ export default function MonitoringPage() {
                     ['Në punë', `${d.activeStaff}/${d.staff}`, 'text-blue-600'],
                   ] as const).map(([label, value, tone]) => (
                     <div key={label} className="rounded-lg bg-slate-50 py-2 dark:bg-slate-800/60">
-                      <dt className="text-[9px] font-bold uppercase tracking-wide text-slate-400">{dt(label)}</dt>
+                      <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{dt(label)}</dt>
                       <dd className={`mt-0.5 text-sm font-black tabular-nums ${tone}`}>{value}</dd>
                     </div>
                   ))}
                 </dl>
 
-                <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-slate-500">
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold dark:bg-slate-800 dark:text-slate-300">
                     {d.loadPerWorker} {dt('punë / punëtor')}
                   </span>
@@ -901,7 +901,7 @@ export default function MonitoringPage() {
                     <p className="text-xs font-bold text-slate-900 dark:text-white">
                       {a.log.action}
                       {a.count > 1 && (
-                        <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-black text-white dark:bg-slate-700">
+                        <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-black text-white dark:bg-slate-700">
                           {a.count}×
                         </span>
                       )}
@@ -910,7 +910,7 @@ export default function MonitoringPage() {
                     {a.log.details && (
                       <p className="mt-0.5 truncate text-[11px] text-slate-500">{String(a.log.details)}</p>
                     )}
-                    <p className="mt-1 text-[10px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-slate-400">
                       {a.log.userName ?? a.log.userEmail} · {fmtDate(a.log.createdAt)} · {a.log.municipality ?? '—'}
                     </p>
                   </div>

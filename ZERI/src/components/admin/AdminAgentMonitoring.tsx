@@ -156,7 +156,7 @@ export default function AdminAgentMonitoring() {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Përditësuar</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Përditësuar</p>
             <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
               {new Date(lastRefreshed).toLocaleString('sq-AL')}
             </p>
@@ -231,7 +231,7 @@ export default function AdminAgentMonitoring() {
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[54rem] text-left text-xs">
-            <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+            <thead className="bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-3">Agjenti</th>
                 <th className="px-5 py-3">Roli</th>
@@ -267,11 +267,11 @@ export default function AdminAgentMonitoring() {
                       </span>
                       <div className="min-w-0">
                         <p className="truncate font-bold text-slate-900 dark:text-white">{row.agent.name}</p>
-                        <p className="truncate text-[10px] text-slate-400">{row.agent.email || 'Pa email'}</p>
+                        <p className="truncate text-[11px] text-slate-400">{row.agent.email || 'Pa email'}</p>
                       </div>
                       {row.flagged > 0 && (
                         <span
-                          className="ml-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
+                          className="ml-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-black text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
                           title={`${row.flagged} veprime të flaguara`}
                         >
                           <AlertTriangle className="h-3 w-3" aria-hidden="true" />
@@ -304,13 +304,13 @@ export default function AdminAgentMonitoring() {
                   <td className="px-5 py-3">
                     <div className="flex max-w-[9rem] flex-wrap gap-1">
                       {row.municipalities.length === 0 ? (
-                        <span className="text-[10px] text-slate-300 dark:text-slate-600">—</span>
+                        <span className="text-[11px] text-slate-300 dark:text-slate-600">—</span>
                       ) : (
                         row.municipalities.slice(0, 3).map((m) => (
                           <span
                             key={m}
                             className={cn(
-                              'rounded px-1.5 py-0.5 text-[9px] font-bold',
+                              'rounded px-1.5 py-0.5 text-[11px] font-bold',
                               m === wanted && scoped
                                 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
                                 : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'
@@ -321,7 +321,7 @@ export default function AdminAgentMonitoring() {
                         ))
                       )}
                       {row.municipalities.length > 3 && (
-                        <span className="text-[9px] font-bold text-slate-400">+{row.municipalities.length - 3}</span>
+                        <span className="text-[11px] font-bold text-slate-400">+{row.municipalities.length - 3}</span>
                       )}
                     </div>
                   </td>
@@ -329,17 +329,17 @@ export default function AdminAgentMonitoring() {
                     {row.lastAction ? (
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-slate-700 dark:text-slate-200">{row.lastAction.action}</p>
-                        <p className="flex items-center gap-1 text-[10px] text-slate-400">
+                        <p className="flex items-center gap-1 text-[11px] text-slate-400">
                           <Clock className="h-2.5 w-2.5" aria-hidden="true" />
                           {new Date(row.lastAction.at).toLocaleString('sq-AL')}
                         </p>
                       </div>
                     ) : (
-                      <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600">Pa veprime</span>
+                      <span className="text-[11px] font-semibold text-slate-300 dark:text-slate-600">Pa veprime</span>
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-600 transition-colors hover:border-rose-300 hover:text-rose-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-600 transition-colors hover:border-rose-300 hover:text-rose-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300">
                       <Eye className="h-3 w-3" aria-hidden="true" />
                       Detaje
                     </span>
@@ -396,13 +396,13 @@ export default function AdminAgentMonitoring() {
                       <li key={log.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs dark:border-white/5 dark:bg-slate-800/60">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-bold text-slate-800 dark:text-slate-100">{log.action}</span>
-                          <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
                             <Clock className="h-2.5 w-2.5" /> {new Date(log.createdAt).toLocaleString('sq-AL')}
                           </span>
                         </div>
                         {log.details && <p className="mt-1 leading-relaxed text-slate-500 dark:text-slate-400">{String(log.details)}</p>}
                         {log.municipality && (
-                          <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                          <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                             <MapPin className="h-2.5 w-2.5" /> {log.municipality}
                           </span>
                         )}
@@ -426,7 +426,7 @@ export default function AdminAgentMonitoring() {
                     {selectedReports.map((report) => (
                       <li key={report.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-white/5 dark:bg-slate-800/60">
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-100">{report.title}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                           <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono font-bold dark:bg-slate-700">{report.trackingId || report.id}</span>
                           <span>{report.status}</span>
                           <span>{getReportTopicLabel(report)}</span>
@@ -447,7 +447,7 @@ export default function AdminAgentMonitoring() {
         <div className="flex items-center gap-2 border-b border-slate-100 p-5 dark:border-white/5">
           <BarChart3 className="h-4 w-4 text-blue-600" />
           <h3 className="font-bold text-slate-900 dark:text-white">Ngarkesa sipas komunave</h3>
-          <span className="ml-auto text-[10px] font-bold text-slate-400">12 më e larta</span>
+          <span className="ml-auto text-[11px] font-bold text-slate-400">12 më e larta</span>
         </div>
 
         {topMunicipalities.length === 0 ? (
@@ -474,7 +474,7 @@ export default function AdminAgentMonitoring() {
                   {m.actions}
                 </span>
                 {m.flagged > 0 && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-black text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                     <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
                     {m.flagged}
                   </span>
@@ -510,7 +510,7 @@ function Tile({
     <div className={cn('rounded-xl p-4', tones[tone])}>
       <Icon className="h-4 w-4 opacity-70" aria-hidden="true" />
       <p className="mt-2 text-2xl font-black leading-none">{value}</p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</p>
+      <p className="mt-1 text-[11px] font-bold uppercase tracking-wider opacity-70">{label}</p>
     </div>
   );
 }
@@ -524,7 +524,7 @@ function RolePill({ role }: { role: string }) {
         : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300';
 
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider', tone)}>
+    <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wider', tone)}>
       {role}
     </span>
   );

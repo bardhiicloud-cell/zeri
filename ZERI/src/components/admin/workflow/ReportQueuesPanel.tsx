@@ -17,6 +17,7 @@ import { cropReportPhoto, removeReportPhoto } from '../../../lib/reportMediaApi'
 import PhotoCropper from '../PhotoCropper';
 import type { ReportAction } from '../../../lib/reportWorkflow';
 import { directAdvance, directCounts, directQueue, directReject, directReopen, directReport, isApiUnavailableError } from '../../../lib/workflowDirect';
+import { askConfirm, askReason } from '../../../lib/dialogs';
 
 /* ------------------------------------------------------------------ */
 /* Small pieces                                                        */
@@ -253,7 +254,7 @@ export default function ReportQueuesPanel({ title, subtitle, initialQueue = 'pen
   const isManager = !direct && (role === 'superadmin' || role === 'manager');
 
   const rejectDirect = async (row: QueueRow) => {
-    const reason = window.prompt(dt('Arsyeja e refuzimit (e sheh qytetari në Track ID):')) ?? '';
+    const reason = await askReason(dt('Arsyeja e refuzimit (e sheh qytetari në Track ID):')) ?? '';
     if (!reason.trim()) return;
     setQuickBusy(row.id);
     try { await directReject(row.id, row.status, reason); toast.success(dt('Raporti u refuzua.')); refresh(); }
@@ -443,7 +444,7 @@ function DirectReportDrawer({ reportId, onClose, onChanged }: { reportId: string
         const to = await directAdvance(report.id, String(report.status));
         toast.success(`${dt('Raporti kaloi në')} "${dt(QUEUE_TEXT[to].label)}".`);
       } else {
-        const reason = window.prompt(dt('Arsyeja e refuzimit (e sheh qytetari në Track ID):')) ?? '';
+        const reason = await askReason(dt('Arsyeja e refuzimit (e sheh qytetari në Track ID):')) ?? '';
         if (!reason.trim()) { setBusy(false); return; }
         await directReject(report.id, String(report.status), reason);
         toast.success(dt('Raporti u refuzua.'));
@@ -558,7 +559,7 @@ export function ReportWorkflowDrawer({ reportId, onClose, onChanged, startAction
   const photoList = detail ? (detail.report.media.filter(m => m.type === 'image').length ? detail.report.media.filter(m => m.type === 'image') : detail.report.images.map(url => ({ url, type: 'image', name: '', edited: false }))) : [];
 
   const removePhoto = async (url: string) => {
-    const reason = window.prompt(dt('Pse hiqet kjo foto? (e lexon vetëm stafi, së paku 5 shenja)')) ?? '';
+    const reason = await askReason(dt('Pse hiqet kjo foto? (e lexon vetëm stafi, së paku 5 shenja)'), { minLength: 5 }) ?? '';
     if (reason.trim().length < 5) return;
     setPhotoBusy(true);
     try { await removeReportPhoto(reportId, url, reason.trim()); toast.success(dt('Fotoja u hoq (ruhet privatisht dhe zhbëhet).')); await load(); }
@@ -652,7 +653,7 @@ export function ReportWorkflowDrawer({ reportId, onClose, onChanged, startAction
                   {photoList.map(photo => (
                     <div key={photo.url} className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100 dark:bg-white/5">
                       <img src={photo.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                      {photo.edited && <span className="absolute left-1.5 top-1.5 rounded bg-slate-900/80 px-1.5 py-0.5 text-[10px] font-bold text-white">{dt('E ndryshuar')}</span>}
+                      {photo.edited && <span className="absolute left-1.5 top-1.5 rounded bg-slate-900/80 px-1.5 py-0.5 text-[11px] font-bold text-white">{dt('E ndryshuar')}</span>}
                       {/* Hover (or focus / tap) menu: View · Ndrysho foto · Prit · Hiq */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-950/55 p-2 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100 [@media(hover:none)]:bg-slate-950/35">
                         <button type="button" onClick={() => setLightbox(photo.url)} className="inline-flex w-28 items-center justify-center gap-1.5 rounded-md bg-slate-700/90 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-600"><Eye className="h-3.5 w-3.5" aria-hidden="true" />{dt('Shiko')}</button>
@@ -683,7 +684,7 @@ export function ReportWorkflowDrawer({ reportId, onClose, onChanged, startAction
                   ['Dërguar', formatWhen(r.createdAtMs)],
                 ] as const).map(([label, value]) => (
                   <div key={label} className="min-w-0">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt(label)}</dt>
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt(label)}</dt>
                     <dd className="mt-0.5 break-words font-medium text-slate-800 dark:text-slate-100">{value || '—'}</dd>
                   </div>
                 ))}
@@ -691,7 +692,7 @@ export function ReportWorkflowDrawer({ reportId, onClose, onChanged, startAction
               {r.lat != null && r.lng != null && (
                 <a href={`https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lng}#map=17/${r.lat}/${r.lng}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 underline dark:text-sky-300"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{dt('Hape në hartë')}</a>
               )}
-              {r.description && <p className="whitespace-pre-line rounded-xl bg-slate-50 p-3 text-sm text-slate-700 dark:bg-white/5 dark:text-slate-200"><b className="block text-[10px] uppercase tracking-wider text-slate-400">{dt('Përshkrimi')}</b>{r.description}</p>}
+              {r.description && <p className="whitespace-pre-line rounded-xl bg-slate-50 p-3 text-sm text-slate-700 dark:bg-white/5 dark:text-slate-200"><b className="block text-[11px] uppercase tracking-wider text-slate-400">{dt('Përshkrimi')}</b>{r.description}</p>}
               {r.rejectionReason && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300"><b>{dt('Arsyeja e refuzimit')}:</b> {r.rejectionReason}</p>}
               {r.resolutionSummary && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"><b>{dt('Zgjidhja e verifikuar')}:</b> {r.resolutionSummary}</p>}
               {r.finalOutcome && <p className="rounded-xl bg-slate-100 p-3 text-sm text-slate-800 dark:bg-white/10 dark:text-slate-100"><b>{dt('Rezultati përfundimtar')}:</b> {r.finalOutcome}</p>}

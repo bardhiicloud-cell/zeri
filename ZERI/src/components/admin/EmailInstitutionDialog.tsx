@@ -103,13 +103,13 @@ export default function EmailInstitutionDialog({ reportId, reportTitle, contact,
           )}
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400" htmlFor="mail-note">{dt('Shënim nga ju (opsional)')}</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400" htmlFor="mail-note">{dt('Shënim nga ju (opsional)')}</label>
             <textarea id="mail-note" value={note} onChange={event => setNote(event.target.value)} rows={3} maxLength={600} placeholder={dt('p.sh. Ka rrezik për kalimtarët, ju lutemi trajtoni sa më parë.')} className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm dark:border-white/10 dark:bg-slate-800 dark:text-white" />
             <p className="mt-1 text-[11px] text-slate-400">{dt('Mesazhi përmban raportimin me foto dhe vendndodhje, por kurrë emrin e atij që e ka raportuar.')}</p>
           </div>
 
           <div>
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Çfarë është dërguar për këtë raportim')}</h4>
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt('Çfarë është dërguar për këtë raportim')}</h4>
             {history === null ? (
               <p className="mt-2 text-xs text-slate-400"><Loader2 className="inline h-3.5 w-3.5 animate-spin" /> {dt('Duke lexuar…')}</p>
             ) : history.length === 0 ? (

@@ -401,7 +401,7 @@ export default function AdminDashboard({ onTabChange }: { onTabChange: (tab: Adm
               >
                 <span>{dt(`Veprimet në pritje`)}</span>
                 {pendingReports.value !== null && (
-                  <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px]">
+                  <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[11px]">
                     <FigureText figure={pendingReports} />
                   </span>
                 )}
@@ -608,11 +608,11 @@ export default function AdminDashboard({ onTabChange }: { onTabChange: (tab: Adm
                             </span>
                           </span>
                           {report.urgency === 'Kritike' && (
-                            <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                            <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
                               {dt(`Kritike`)}
                             </span>
                           )}
-                          <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold', TONE_CLASSES[meta.tone].badge)}>
+                          <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-bold', TONE_CLASSES[meta.tone].badge)}>
                             {meta.label}
                           </span>
                         </button>
@@ -722,7 +722,7 @@ export default function AdminDashboard({ onTabChange }: { onTabChange: (tab: Adm
                           <td className="px-2 py-2 text-center font-semibold text-slate-700 dark:text-slate-300">{row.total}</td>
                           <td className="px-2 py-2 text-center">
                             {row.pending > 0 ? (
-                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">{row.pending}</span>
+                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">{row.pending}</span>
                             ) : (
                               <span className="text-slate-400">–</span>
                             )}

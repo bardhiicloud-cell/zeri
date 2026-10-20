@@ -591,7 +591,7 @@ export default function AdminAgents() {
           >
             <Activity className="w-4 h-4 text-emerald-400" />
             <span>{dt("Monitorimi Profesional 7-Ditor")}</span>
-            <span className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
+            <span className="ml-1 px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
               7 DITË
             </span>
           </button>
@@ -714,7 +714,7 @@ export default function AdminAgents() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-none">{agent.name}</h4>
                           <span className={cn(
-                            "text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm dark:shadow-none",
+                            "text-[11px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm dark:shadow-none",
                             agent.role === 'approver' ? "bg-emerald-100 text-emerald-800" :
                             agent.role === 'adsadmin' ? "bg-amber-100 text-amber-800" :
                             "bg-slate-200 text-slate-800 dark:text-slate-200 dark:text-slate-200"
@@ -731,14 +731,14 @@ export default function AdminAgents() {
                         {/* Permissions Tags */}
                         <div className="flex gap-1 mt-2 flex-wrap">
                           {(!agent.permissions || agent.permissions.length === 0) ? (
-                            <span className="text-[9px] bg-slate-200 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">{dt(`Nuk ka qasje të veçantë`)}
+                            <span className="text-[11px] bg-slate-200 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">{dt(`Nuk ka qasje të veçantë`)}
                             </span>
                           ) : (
                             agent.permissions.map(p => (
                               <span
                                 key={p}
                                 className={cn(
-                                  "text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider",
+                                  "text-[11px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider",
                                   p === 'reports' ? "bg-rose-100 text-rose-700" :
                                   p === 'donations' ? "bg-indigo-100 text-indigo-700" :
                                   "bg-amber-100 text-amber-700"
@@ -812,14 +812,14 @@ export default function AdminAgents() {
                     <div>
                       <h3 className="font-extrabold text-slate-900 dark:text-white text-base leading-tight">{selectedAgent.name}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{selectedAgent.email}</p>
-                      <p className="text-[10px] font-mono text-slate-400 mt-1">{dt(`ID:`)} {selectedAgent.id}</p>
+                      <p className="text-[11px] font-mono text-slate-400 mt-1">{dt(`ID:`)} {selectedAgent.id}</p>
                     </div>
                   </div>
 
                   {/* Real-time Status Light */}
                   <div className="flex flex-col items-end">
                     <span className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm dark:shadow-none",
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-sm dark:shadow-none",
                       selectedAgent.isBanned
                         ? "bg-rose-100 text-rose-700 animate-pulse"
                         : "bg-emerald-100 text-emerald-700"
@@ -827,7 +827,7 @@ export default function AdminAgents() {
                       <span className={cn("w-1.5 h-1.5 rounded-full", selectedAgent.isBanned ? "bg-rose-600" : "bg-emerald-600 animate-ping")} />
                       {selectedAgent.isBanned ? "I Pezulluar" : "Aktiv"}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-bold mt-1 uppercase">{dt(`Jurisdiksioni: KS`)}</span>
+                    <span className="text-[11px] text-slate-400 font-bold mt-1 uppercase">{dt(`Jurisdiksioni: KS`)}</span>
                   </div>
                 </div>
               </div>
@@ -861,28 +861,28 @@ export default function AdminAgents() {
                     <FileText className="w-4 h-4 text-rose-600 animate-pulse" />
                   </div>
                   <span className="block text-xl font-black text-rose-700 leading-none">{agentStats.approvedReports}</span>
-                  <span className="text-[9px] font-black text-rose-600/80 uppercase tracking-widest mt-1.5 block">{dt(`Aprovime`)}</span>
+                  <span className="text-[11px] font-black text-rose-600/80 uppercase tracking-widest mt-1.5 block">{dt(`Aprovime`)}</span>
                 </div>
                 <div className="bg-indigo-50/40 p-3.5 rounded-2xl border border-indigo-100/80 text-center shadow-sm dark:shadow-none hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-shadow">
                   <div className="w-8 h-8 rounded-xl bg-indigo-100/80 flex items-center justify-center mx-auto mb-2">
                     <Heart className="w-4 h-4 text-indigo-600" />
                   </div>
                   <span className="block text-xl font-black text-indigo-700 leading-none">{agentStats.approvedDonations}</span>
-                  <span className="text-[9px] font-black text-indigo-600/80 uppercase tracking-widest mt-1.5 block">{dt(`Donacione`)}</span>
+                  <span className="text-[11px] font-black text-indigo-600/80 uppercase tracking-widest mt-1.5 block">{dt(`Donacione`)}</span>
                 </div>
                 <div className="bg-amber-50/40 p-3.5 rounded-2xl border border-amber-100/80 text-center shadow-sm dark:shadow-none hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-shadow">
                   <div className="w-8 h-8 rounded-xl bg-amber-100/80 flex items-center justify-center mx-auto mb-2">
                     <Megaphone className="w-4 h-4 text-amber-600" />
                   </div>
                   <span className="block text-xl font-black text-amber-700 leading-none">{agentStats.managedAds}</span>
-                  <span className="text-[9px] font-black text-amber-600/80 uppercase tracking-widest mt-1.5 block">{dt(`Reklama`)}</span>
+                  <span className="text-[11px] font-black text-amber-600/80 uppercase tracking-widest mt-1.5 block">{dt(`Reklama`)}</span>
                 </div>
               </div>
 
               {/* Advanced KPIS Gauge Panel */}
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200/60 dark:border-white/10/60 grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Saktësia e Vendimeve`)}</span>
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Saktësia e Vendimeve`)}</span>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full" style={{ width: '98%' }} />
@@ -891,15 +891,15 @@ export default function AdminAgents() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Koha e Reagimit (Mes.)`)}</span>
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Koha e Reagimit (Mes.)`)}</span>
                   <span className="text-xs font-black text-slate-800 dark:text-slate-200 dark:text-slate-200 mt-1 block">{dt(`11 Minuta`)}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Vlerësimi i Punës`)}</span>
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Vlerësimi i Punës`)}</span>
                   <span className="text-xs font-black text-indigo-600 mt-1 block">{dt(`Klasa A+ (Shkëlqyeshëm)`)}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Numri i Telefonit`)}</span>
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">{dt(`Numri i Telefonit`)}</span>
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 block">{selectedAgent.phone || 'I pa specifikuar'}</span>
                 </div>
               </div>
@@ -907,7 +907,7 @@ export default function AdminAgents() {
               {/* Authentication status: passwords are never stored or displayed here. */}
               <div className="bg-indigo-50/30 border border-indigo-100/60 rounded-2xl p-4 space-y-3">
                 <div className="flex justify-between items-center border-b border-indigo-100/40 pb-2">
-                  <h4 className="text-[10px] font-black text-indigo-900/60 uppercase tracking-wider flex items-center gap-1">
+                  <h4 className="text-[11px] font-black text-indigo-900/60 uppercase tracking-wider flex items-center gap-1">
                     <Key className="w-3.5 h-3.5 text-indigo-500" />{dt(`Kredencialet e Qasjes në Panel`)}
                   </h4>
                 </div>
@@ -919,7 +919,7 @@ export default function AdminAgents() {
                   </div>
                   <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">{dt(`Fjalëkalimet menaxhohen vetëm nga Firebase Authentication dhe nuk shfaqen në panel.`)}</p>
                   <div className="mt-2 pt-2 border-t border-indigo-100/60">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-indigo-900/60 mb-1.5">{dt(`Vendos fjalëkalim direkt (admin)`)}</p>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-indigo-900/60 mb-1.5">{dt(`Vendos fjalëkalim direkt (admin)`)}</p>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -963,7 +963,7 @@ export default function AdminAgents() {
 
               {/* Interactive Control Center (Quick Toggles & Suspend) */}
               <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/60 dark:border-white/10 space-y-3">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dt(`Paneli i Kontrollit të Shpejtë (Qasjet direkte)`)}</h4>
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{dt(`Paneli i Kontrollit të Shpejtë (Qasjet direkte)`)}</h4>
 
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                   {/* Reports Toggle */}
@@ -974,7 +974,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('reports')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('reports' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -992,7 +992,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('categories')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('categories' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1017,7 +1017,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('support')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('support')
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1034,7 +1034,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('support')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('support')
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1052,7 +1052,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('donations')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('donations' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1070,7 +1070,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('ads')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('ads' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1088,7 +1088,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('forum')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('forum' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1106,7 +1106,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('polls')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('polls' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1124,7 +1124,7 @@ export default function AdminAgents() {
                     <button
                       onClick={() => handleTogglePermission('notifications')}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.permissions?.includes('notifications' as any)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
@@ -1142,7 +1142,7 @@ export default function AdminAgents() {
                     <button
                       onClick={handleToggleBan}
                       className={cn(
-                        "text-[9px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
+                        "text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-2xl border transition cursor-pointer",
                         selectedAgent.isBanned
                           ? "bg-rose-600 text-white border-rose-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none"
                           : "bg-slate-100 dark:bg-slate-800/50 text-rose-600 border-slate-200/60 dark:border-white/10"
@@ -1157,10 +1157,10 @@ export default function AdminAgents() {
               {/* Private Administrator Notes Box */}
               <div className="bg-amber-50/20 border border-amber-200/60 rounded-2xl p-4 space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-amber-800 uppercase tracking-widest block">{dt(`Shënime Private Mbi Punëtorin (Vetëm për Adminin)`)}
+                  <span className="text-[11px] font-black text-amber-800 uppercase tracking-widest block">{dt(`Shënime Private Mbi Punëtorin (Vetëm për Adminin)`)}
                   </span>
                   {saveSuccess && (
-                    <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded animate-bounce">{dt(`U ruajt!`)}
+                    <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded animate-bounce">{dt(`U ruajt!`)}
                     </span>
                   )}
                 </div>
@@ -1181,7 +1181,7 @@ export default function AdminAgents() {
 
               {/* Log actions / audit trails specifically for this agent */}
               <div className="flex-1 flex flex-col min-h-0 border-t border-slate-100 dark:border-white/5 pt-4">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
                   <span>{dt(`Auditimi i Veprimeve të Agentit`)}</span>
                   <span className="font-mono text-xs text-rose-500 font-bold tracking-normal uppercase bg-rose-50 px-2 py-0.5 rounded">{dt(`AUDIT`)}</span>
                 </h4>
@@ -1190,22 +1190,22 @@ export default function AdminAgents() {
                     <div className="text-center py-6 text-slate-400">
                       <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
                       <p className="text-xs font-bold">{dt(`Ska veprime të regjistruara.`)}</p>
-                      <p className="text-[10px] mt-0.5">{dt(`Veprimet si aprovimet e rasteve do të listohen këtu.`)}</p>
+                      <p className="text-[11px] mt-0.5">{dt(`Veprimet si aprovimet e rasteve do të listohen këtu.`)}</p>
                     </div>
                   ) : (
                     agentLogs.map(log => (
                       <div key={log.id} className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-xl text-xs flex flex-col gap-1 hover:border-slate-200/60 dark:border-white/10 transition">
                         <div className="flex justify-between items-center">
                           <span className="font-extrabold text-slate-800 dark:text-slate-200 dark:text-slate-200">{log.action}</span>
-                          <span className="text-[9px] font-mono text-slate-400">
+                          <span className="text-[11px] font-mono text-slate-400">
                             {new Date(log.createdAt).toLocaleString()}
                           </span>
                         </div>
                         <p className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-relaxed">{log.details}</p>
                         <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-slate-200/60 dark:border-white/10/60">
-                          <span className="text-[9px] text-slate-400">{dt(`Statusi i auditit:`)}</span>
+                          <span className="text-[11px] text-slate-400">{dt(`Statusi i auditit:`)}</span>
                           <span className={cn(
-                            "text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-full",
+                            "text-[11px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-full",
                             log.status === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                           )}>
                             {log.status}
@@ -1254,7 +1254,7 @@ export default function AdminAgents() {
                               </div>
                             </div>
                             <span className={cn(
-                              "text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-2xl shrink-0 border",
+                              "text-[11px] font-black tracking-widest uppercase px-3 py-1 rounded-2xl shrink-0 border",
                               report.status === 'Resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                               report.status === 'Approved' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                               'bg-amber-50 text-amber-700 border-amber-200'
@@ -1266,10 +1266,10 @@ export default function AdminAgents() {
                           {timelineEvent && (
                             <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10/60 rounded-2xl p-3 mt-2">
                               <div className="flex justify-between items-center mb-2 border-b border-slate-200/60 dark:border-white/10/50 pb-2">
-                                <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+                                <p className="text-[11px] font-black text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
                                   <CheckCircle2 className="w-3.5 h-3.5" />{dt(`Veprimi i Agentit`)}
                                 </p>
-                                <span className="text-slate-500 dark:text-slate-400 font-mono text-[10px] font-bold">
+                                <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] font-bold">
                                   {new Date(timelineEvent.date).toLocaleString('sq-AL')}
                                 </span>
                               </div>
@@ -1282,7 +1282,7 @@ export default function AdminAgents() {
                             </div>
                           )}
 
-                          <div className="text-[10px] text-slate-400 font-medium mt-2 flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-2">
+                          <div className="text-[11px] text-slate-400 font-medium mt-2 flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-2">
                              <span>{dt(`ID e Raportit:`)} <span className="font-mono">{report.id.substring(0,8)}...</span></span>
                           </div>
                         </div>
@@ -1311,7 +1311,7 @@ export default function AdminAgents() {
                   {sevenDaysData.reduce((acc, d) => acc + d.actions, 0)}
                 </p>
                 <p className="text-xs text-slate-500 font-medium mt-1">{dt("Veprime Totale (7 Ditë)")}</p>
-                <span className="text-[10px] font-bold text-emerald-600">↑ 18% nga java e kaluar</span>
+                <span className="text-[11px] font-bold text-emerald-600">↑ 18% nga java e kaluar</span>
               </div>
             </div>
 
@@ -1324,7 +1324,7 @@ export default function AdminAgents() {
                   {sevenDaysData.reduce((acc, d) => acc + d.approvals, 0)}
                 </p>
                 <p className="text-xs text-slate-500 font-medium mt-1">{dt("Aprovime të Suksesshme")}</p>
-                <span className="text-[10px] font-bold text-emerald-600">88.4% shkallë suksesi</span>
+                <span className="text-[11px] font-bold text-emerald-600">88.4% shkallë suksesi</span>
               </div>
             </div>
 
@@ -1337,7 +1337,7 @@ export default function AdminAgents() {
                   {agents.length}
                 </p>
                 <p className="text-xs text-slate-500 font-medium mt-1">{dt("Agentë në Detyrë")}</p>
-                <span className="text-[10px] font-bold text-purple-600">100% të caktuar</span>
+                <span className="text-[11px] font-bold text-purple-600">100% të caktuar</span>
               </div>
             </div>
 
@@ -1350,7 +1350,7 @@ export default function AdminAgents() {
                   18 min
                 </p>
                 <p className="text-xs text-slate-500 font-medium mt-1">{dt("Koha Mesatare e Trajtimit")}</p>
-                <span className="text-[10px] font-bold text-emerald-600">Brenda SLA normës</span>
+                <span className="text-[11px] font-bold text-emerald-600">Brenda SLA normës</span>
               </div>
             </div>
           </div>
@@ -1375,11 +1375,11 @@ export default function AdminAgents() {
                 <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/5 flex flex-col justify-between space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300">{day.dayName}</span>
-                    <span className="text-[10px] font-mono text-slate-400">{day.dayNum}</span>
+                    <span className="text-[11px] font-mono text-slate-400">{day.dayNum}</span>
                   </div>
                   <div>
                     <span className="text-xl font-black text-slate-900 dark:text-white">{day.actions}</span>
-                    <span className="text-[10px] text-slate-400 block font-medium">{dt("veprime")}</span>
+                    <span className="text-[11px] text-slate-400 block font-medium">{dt("veprime")}</span>
                   </div>
                   <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                     <div
@@ -1387,7 +1387,7 @@ export default function AdminAgents() {
                       style={{ width: `${Math.min(100, (day.actions / 15) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> {day.approvals} {dt("të aprovuara")}
                   </span>
                 </div>
@@ -1447,12 +1447,12 @@ export default function AdminAgents() {
                             </div>
                             <div>
                               <p className="font-bold text-slate-900 dark:text-white">{agent.name}</p>
-                              <p className="text-[10px] text-slate-400">{agent.email}</p>
+                              <p className="text-[11px] text-slate-400">{agent.email}</p>
                             </div>
                           </div>
                         </td>
                         <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                             {agent.role === 'approver' ? 'Aprovues' : agent.role === 'adsadmin' ? 'Reklama' : 'Agent'}
                           </span>
                         </td>
@@ -1467,12 +1467,12 @@ export default function AdminAgents() {
                         </td>
                         <td className="py-3 px-3">
                           {isActiveNow ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                               Aktiv
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-white/10">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-white/10">
                               <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                               Inaktiv
                             </span>
@@ -1505,14 +1505,14 @@ export default function AdminAgents() {
                 <Clock className="w-5 h-5 text-amber-500" />
                 <span>{dt("Regjistri i Drejtpërdrejtë i Veprimeve të Agentëve")}</span>
               </h3>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{dt("AUDIT LOG")}</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{dt("AUDIT LOG")}</span>
             </div>
 
             <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
               {auditLogs.slice(0, 15).map((log, i) => (
                 <div key={log.id || i} className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-white/5 rounded-xl text-xs flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-slate-200/60 dark:border-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-[10px] shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-slate-200/60 dark:border-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-[11px] shrink-0">
                       {log.userEmail ? log.userEmail.charAt(0).toUpperCase() : 'A'}
                     </div>
                     <div className="min-w-0">
@@ -1525,10 +1525,10 @@ export default function AdminAgents() {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] font-mono text-slate-400 block">
+                    <span className="text-[11px] font-mono text-slate-400 block">
                       {log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sot'}
                     </span>
-                    <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
                       Sukses
                     </span>
                   </div>
@@ -1560,7 +1560,7 @@ export default function AdminAgents() {
               <div className="bg-slate-900 p-6 text-white border-b-4 border-rose-600 flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-black title-serif">{editingAgentId ? 'Ndrysho Detajet e Agentit' : 'Shto Agent / Punëtor të Ri'}</h3>
-                  <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest mt-1">{dt(`Cilësimet e Qasjes`)}</p>
+                  <p className="text-[11px] text-slate-300 font-bold uppercase tracking-widest mt-1">{dt(`Cilësimet e Qasjes`)}</p>
                 </div>
                 <button
                   onClick={() => setIsFormOpen(false)}
@@ -1641,7 +1641,7 @@ export default function AdminAgents() {
                       {showFormPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
                     {formData.password.trim().length > 0
                       ? (editingAgentId
                         ? dt('Fjalëkalimi i agjentit do të ndryshohet me këtë vlerë dhe sesionet e vjetra do të revokohen.')
@@ -1704,7 +1704,7 @@ export default function AdminAgents() {
                         <FileText className="w-4 h-4 text-rose-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Aprovimi i Raporteve (Ankesat)`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon shqyrtimin e gropave, mbeturinave, ndriçimit, etj.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon shqyrtimin e gropave, mbeturinave, ndriçimit, etj.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('reports' as any) ? (
@@ -1746,7 +1746,7 @@ export default function AdminAgents() {
                           <Icon className={`w-4 h-4 ${tone}`} />
                           <div>
                             <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(title)}</p>
-                            <p className="text-[10px] text-slate-400">{dt(desc)}</p>
+                            <p className="text-[11px] text-slate-400">{dt(desc)}</p>
                           </div>
                         </span>
                         {formData.permissions.includes(key as any) ? (
@@ -1767,7 +1767,7 @@ export default function AdminAgents() {
                         <Map className="w-4 h-4 text-teal-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Harta & Infrastruktura (GIS)`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon menaxhimin e aseteve dhe hartës gjeografike.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon menaxhimin e aseteve dhe hartës gjeografike.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('categories' as any) ? (
@@ -1787,7 +1787,7 @@ export default function AdminAgents() {
                         <RadioTower className="w-4 h-4 text-sky-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Kërkesat për Agjent / Support`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon përgjigjen e qytetarëve dhe ndjekjen e Track ID-ve.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon përgjigjen e qytetarëve dhe ndjekjen e Track ID-ve.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('support' as any) ? (
@@ -1807,7 +1807,7 @@ export default function AdminAgents() {
                         <MessageSquareMore className="w-4 h-4 text-pink-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Mbështetja me Qytetarë (Live Chat)`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon bisedat direkte dhe asistimin e qytetarëve.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon bisedat direkte dhe asistimin e qytetarëve.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('chat' as any) ? (
@@ -1827,7 +1827,7 @@ export default function AdminAgents() {
                         <Heart className="w-4 h-4 text-indigo-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Aprovimi i Donacioneve`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon aprovimin ose fshirjen e kauzave të donacioneve.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon aprovimin ose fshirjen e kauzave të donacioneve.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('donations' as any) ? (
@@ -1847,7 +1847,7 @@ export default function AdminAgents() {
                         <Megaphone className="w-4 h-4 text-amber-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Menaxhimi i Reklamave`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon krijimin, fshirjen dhe rregullimin e fushatave.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon krijimin, fshirjen dhe rregullimin e fushatave.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('ads' as any) ? (
@@ -1867,7 +1867,7 @@ export default function AdminAgents() {
                         <MessageSquare className="w-4 h-4 text-emerald-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Menaxhimi i Forumit`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon fshirjen e postimeve dhe komenteve ne forum.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon fshirjen e postimeve dhe komenteve ne forum.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('forum' as any) ? (
@@ -1887,7 +1887,7 @@ export default function AdminAgents() {
                         <Vote className="w-4 h-4 text-purple-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Sondazhet Publike & Votimet`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon menaxhimin dhe dekretimin e sondazheve 3D.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon menaxhimin dhe dekretimin e sondazheve 3D.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('polls' as any) ? (
@@ -1907,7 +1907,7 @@ export default function AdminAgents() {
                         <Bell className="w-4 h-4 text-yellow-500" />
                         <div>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{dt(`Komunikimi & Njoftimet`)}</p>
-                          <p className="text-[10px] text-slate-400">{dt(`Lejon shpërndarjen e njoftimeve zyrtare për komunën.`)}</p>
+                          <p className="text-[11px] text-slate-400">{dt(`Lejon shpërndarjen e njoftimeve zyrtare për komunën.`)}</p>
                         </div>
                       </span>
                       {formData.permissions.includes('notifications' as any) ? (
@@ -1923,13 +1923,13 @@ export default function AdminAgents() {
                 <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-white/10">
                   <div>
                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200 dark:text-slate-200">{dt(`Statusi i Llogarisë`)}</p>
-                    <p className="text-[10px] text-slate-400">{dt(`Nëse bllokohet, agenti nuk mund të kyçet.`)}</p>
+                    <p className="text-[11px] text-slate-400">{dt(`Nëse bllokohet, agenti nuk mund të kyçet.`)}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, isBanned: !formData.isBanned })}
                     className={cn(
-                      "px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider transition",
+                      "px-3 py-1.5 rounded-xl font-bold text-[11px] uppercase tracking-wider transition",
                       formData.isBanned 
                         ? "bg-rose-100 text-rose-700 border border-rose-200"
                         : "bg-emerald-100 text-emerald-700 border border-emerald-200"

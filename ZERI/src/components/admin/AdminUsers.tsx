@@ -7,6 +7,7 @@ import { UserX, UserCheck, ShieldAlert, Plus, Edit3, X, Search, Phone, Mail, Awa
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /** The directory row, which already carries every field the form needs. */
 type UserRow = ReturnType<typeof useCitizenDirectory>['citizens'][number];
@@ -128,13 +129,13 @@ export default function AdminUsers() {
   };
 
   const handleBulkAction = async (action: 'ban' | 'verify' | 'delete') => {
-    if (!window.confirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} përdorues?`)) return;
+    if (!await askConfirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} përdorues?`)) return;
     const ids = [...selectedIds];
 
     if (action === 'delete') {
       ids.forEach(id => deleteUser(id));
     } else {
-      const reason = action === 'ban' ? askBanReason(`${ids.length} ${dt('përdorues')}`) : undefined;
+      const reason = action === 'ban' ? await askBanReason(`${ids.length} ${dt('përdorues')}`) : undefined;
       if (action === 'ban' && !reason) {
         toast.error(dt('Ndalimi anulohet: arsyeja është e detyrueshme (të paktën 5 shenja).'));
         return;
@@ -195,8 +196,8 @@ export default function AdminUsers() {
   };
 
   /** A ban needs a stated reason; it is kept in the audit log. */
-  const askBanReason = (subject: string): string | null => {
-    const reason = window.prompt(`${dt('Arsyeja e ndalimit për')} ${subject} (${dt('e detyrueshme, ruhet në auditim')}):`);
+  const askBanReason = async (subject: string): Promise<string | null> => {
+    const reason = await askReason(`${dt('Arsyeja e ndalimit për')} ${subject} (${dt('e detyrueshme, ruhet në auditim')}):`, { minLength: 5, danger: true, confirmLabel: 'Ndalo' });
     return reason && reason.trim().length >= 5 ? reason.trim() : null;
   };
 
@@ -243,7 +244,7 @@ export default function AdminUsers() {
             ].map((s, i) => (
               <div key={i} className="px-4 py-2 border-r border-slate-200/60 dark:border-white/10 last:border-0 flex flex-col items-center min-w-[5rem]">
                 <span className={cn("text-lg font-bold title-serif leading-none", s.color)}>{s.value}</span>
-                <span className="text-[9px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold mt-1">{s.label}</span>
+                <span className="text-[11px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold mt-1">{s.label}</span>
               </div>
             ))}
           </div>
@@ -341,7 +342,7 @@ export default function AdminUsers() {
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-left whitespace-nowrap min-w-[800px]">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-white/5 uppercase tracking-widest text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+              <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-white/5 uppercase tracking-widest text-[11px] text-slate-500 dark:text-slate-400 font-bold">
                  <th className="px-4 py-4 w-12 text-center">
                    <button onClick={toggleSelectAll} className="text-slate-400 hover:text-slate-500 dark:text-slate-400">
                      {paginatedUsers.length > 0 && selectedIds.size === paginatedUsers.length ? (
@@ -386,11 +387,11 @@ export default function AdminUsers() {
                       <div className="flex flex-col gap-1 text-sm">
                         <div className="flex items-center gap-2">
                            <span className="font-bold text-slate-900 dark:text-white border-b border-transparent group-hover:border-slate-300 w-max">{u.name}</span>
-                           <span className="font-mono text-[9px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-white/5 uppercase">#{u.id.substring(0,8)}</span>
+                           <span className="font-mono text-[11px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-white/5 uppercase">#{u.id.substring(0,8)}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className={cn(
-                            "text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded-sm border",
+                            "text-[11px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded-sm border",
                             u.role === 'admin' ? "bg-indigo-50 text-indigo-700 border-indigo-100" : u.role === 'approver' ? "bg-purple-50 text-purple-700 border-purple-100" : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-white/10"
                           )}>
                             {u.role === 'citizen' ? 'Qytetar' : u.role === 'approver' ? 'Zyr. Aprovimeve' : 'Admin'}
@@ -418,11 +419,11 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-6 py-4 align-top">
                     {u.isBanned ? (
-                      <span className="inline-flex items-center gap-1.5 text-rose-700 font-bold text-[10px] tracking-widest uppercase bg-rose-50 px-2 py-1 rounded border border-rose-100">
+                      <span className="inline-flex items-center gap-1.5 text-rose-700 font-bold text-[11px] tracking-widest uppercase bg-rose-50 px-2 py-1 rounded border border-rose-100">
                         <UserX className="w-3.5 h-3.5" />{dt(`Bllokuar`)}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] tracking-widest uppercase bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
+                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px] tracking-widest uppercase bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
                         <UserCheck className="w-3.5 h-3.5" />{dt(`Aktiv`)}
                       </span>
                     )}
@@ -453,8 +454,8 @@ export default function AdminUsers() {
                       )}
                       {!u.isBanned && u.role !== 'admin' && (
                         <button 
-                          onClick={() => {
-                            const reason = askBanReason(u.name);
+                          onClick={async () => {
+                            const reason = await askBanReason(u.name);
                             if (!reason) {
                               toast.error(dt('Ndalimi anulohet: arsyeja është e detyrueshme (të paktën 5 shenja).'));
                               return;
@@ -478,8 +479,8 @@ export default function AdminUsers() {
                       )}
                       {u.role !== 'admin' && (
                          <button 
-                           onClick={() => {
-                             if(confirm(`AUTORIZIM FSHIRJE: Jeni i sigurt që dëshironi të FSHINI përgjithmonë përdoruesin ${u.name}?`)) {
+                           onClick={async () => {
+                             if(await askConfirm(`AUTORIZIM FSHIRJE: Jeni i sigurt që dëshironi të FSHINI përgjithmonë përdoruesin ${u.name}?`)) {
                                deleteUser(u.id);
                              }
                            }}

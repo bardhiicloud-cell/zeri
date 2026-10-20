@@ -12,6 +12,7 @@ import {
   type AdRequestRow,
 } from '../../lib/debateApi';
 import { Badge, Empty, ErrorNote, Panel, Spinner, btn, inputClass, useLoad } from './ui';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 const AD_STATUSES: ReadonlyArray<{ id: AdRequestRow['status']; label: string; tone: 'slate' | 'blue' | 'emerald' | 'amber' | 'rose' }> = [
   { id: 'pending', label: 'Në pritje', tone: 'amber' },
@@ -110,7 +111,7 @@ export function DebateTicks() {
   const [busy, setBusy] = useState('');
 
   const act = async (uid: string, action: 'extend' | 'revoke') => {
-    if (action === 'revoke' && !window.confirm(dt('Hiqni tickun e kësaj llogarie?'))) return;
+    if (action === 'revoke' && !await askConfirm(dt('Hiqni tickun e kësaj llogarie?'))) return;
     setBusy(uid);
     try {
       await verifiedAction(uid, action);

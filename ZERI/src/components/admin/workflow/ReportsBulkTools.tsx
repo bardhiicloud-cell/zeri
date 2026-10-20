@@ -12,6 +12,7 @@ import { contactRefFor, ensureContact } from '../../../lib/routingContacts';
 import { sendReportEmail } from '../../../lib/institutionMailApi';
 import SectorPicker from '../SectorPicker';
 import ContactsDirectory from '../ContactsDirectory';
+import { askConfirm, askReason } from '../../../lib/dialogs';
 
 /**
  * What staff do with a set of selected reports besides moving them along the board:
@@ -90,7 +91,7 @@ export function ReportsBulkTools({ reports, onChanged }: ReportsBulkToolsProps) 
     const eligible = groups.filter(group => group.recipient.sendable).reduce((sum, group) => sum + group.items.filter(item => !NOT_YET_PUBLIC.has(String(item.report.status))).length, 0);
     if (eligible === 0) { toast.error(dt('Asnjë nga raportet e zgjedhura nuk është aprovuar ende.')); return; }
     const text = `${dt('Do të dërgohen')} ${eligible} ${dt('raportime, secili te institucioni që përgjigjet për të. Vetëm raportet e aprovuara dërgohen; një raport nuk i dërgohet të njëjtit kontakt dy herë brenda 24 orëve. Vazhdoni?')}`;
-    if (!window.confirm(text)) return;
+    if (!await askConfirm(text)) return;
 
     setBusy('send');
     setLines(null);

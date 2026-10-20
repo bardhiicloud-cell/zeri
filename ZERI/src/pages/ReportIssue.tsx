@@ -266,6 +266,7 @@ function getSimulatedIP() {
 }
 
 import { motion } from 'framer-motion';
+import { askConfirm, askReason } from '../lib/dialogs';
 
 export default function ReportIssue() {
   const { t, dt } = useLanguage();
@@ -865,7 +866,7 @@ export default function ReportIssue() {
         const reasonText = firstReason instanceof Error ? firstReason.message : 'Gabim i panjohur gjatë ngarkimit.';
         console.warn('Media upload failed:', reasonText);
         // Never drop the citizen's evidence silently: they choose to send without it or retry.
-        const sendWithout = window.confirm(
+        const sendWithout = await askConfirm(
           dt(`${failedUploads.length} nga ${mediaItems.length} foto/video nuk u ngarkuan (${reasonText}). Shtypni "OK" për ta dërguar raportin pa to, ose "Anulo" për të provuar përsëri (të dhënat ruhen).`)
         );
         if (!sendWithout) {

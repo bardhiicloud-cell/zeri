@@ -17,6 +17,7 @@ import {
   DmApiError, blockUser, composerState, setConversationPrefsApi, markDmRead, respondToDmRequest, sendDm, setDmPrivacy, unblockUser,
   viewOfConversation, type DmPrivacy,
 } from '../../lib/directMessagesApi';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 interface DirectMessage {
   id: string;
@@ -243,8 +244,8 @@ export function DirectMessagesModal({
       else setListTab('inbox');
     }, action === 'accept' ? dt('Kërkesa u pranua.') : dt('Kërkesa u refuzua.'));
 
-  const toggleBlock = (userId: string, name: string, block: boolean) => {
-    if (block && !window.confirm(`${dt('Të bllokohet')} ${name}? ${dt('Nuk do të mund t’ju shkruajë dhe ndjekja mes jush hiqet.')}`)) return;
+  const toggleBlock = async (userId: string, name: string, block: boolean) => {
+    if (block && !await askConfirm(`${dt('Të bllokohet')} ${name}? ${dt('Nuk do të mund t’ju shkruajë dhe ndjekja mes jush hiqet.')}`)) return;
     return runAction('block', () => (block ? blockUser(userId) : unblockUser(userId)),
       block ? dt('Përdoruesi u bllokua.') : dt('Përdoruesi u zhbllokua.'));
   };
@@ -253,8 +254,8 @@ export function DirectMessagesModal({
     runAction('mute', () => setConversationPrefsApi(convId, { muted }),
       muted ? dt('Njoftimet e kësaj bisede u heshtën.') : dt('Njoftimet u rivendosën.'));
 
-  const deleteConversation = (convId: string) => {
-    if (!window.confirm(dt('Ta heq këtë bisedë nga lista jote? Personi tjetër e ruan atë, dhe ajo kthehet nëse shkruani përsëri.'))) return;
+  const deleteConversation = async (convId: string) => {
+    if (!await askConfirm(dt('Ta heq këtë bisedë nga lista jote? Personi tjetër e ruan atë, dhe ajo kthehet nëse shkruani përsëri.'))) return;
     void runAction('hide', async () => { await setConversationPrefsApi(convId, { hidden: true }); setActiveConvId(null); }, dt('Biseda u hoq nga lista.'));
   };
 

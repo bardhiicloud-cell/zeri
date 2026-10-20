@@ -82,7 +82,7 @@ export function MunicipalityScopeControl() {
           {isScoped ? <Building2 className="h-3.5 w-3.5" aria-hidden="true" /> : <Globe className="h-3.5 w-3.5" aria-hidden="true" />}
         </span>
         <span className="hidden min-w-0 flex-col sm:flex">
-          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Kufizimi</span>
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Kufizimi</span>
           <span
             className={cn(
               'max-w-[10rem] truncate text-xs font-black',
@@ -151,7 +151,7 @@ export function MunicipalityScopeControl() {
                         : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
                     )}
                   >
-                    <span className="min-w-[2rem] shrink-0 text-[10px] font-black text-slate-400">
+                    <span className="min-w-[2rem] shrink-0 text-[11px] font-black text-slate-400">
                       {ALL_MUNICIPALITIES.indexOf(name) + 1}
                     </span>
                     <span className="flex-1 truncate">{name}</span>

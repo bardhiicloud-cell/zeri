@@ -42,3 +42,16 @@ Notat janë 1–10. Çdo numër vjen nga një matje ose nga kodi i lexuar; ku nu
 - Matrica e lejeve e gjeneruar dhe e testuar; refuzime të zbatuara nga serveri, jo vetëm buton i fshehur.
 - Udhëzuesit "Si punon" me test mbrojtës.
 - Ndarja në chunk-e dhe menuja e orientuar sipas përdorimit.
+
+## Përditësim — çfarë u ndreq pas notimit
+
+| Gjetja | Statusi |
+|---|---|
+| 3. Dialogë native (36 + 12 jashtë adminit) | **U ndreq.** `lib/dialogs.ts` + `DialogHost`: dialog i stilizuar, i përkthyer (`dt`), i qasshëm (`alertdialog`, Esc, fokus), butoni i kuq për fshirje, arsyeja me minimum shenjash e treguar. Të gjitha thirrjet kaluan te `askConfirm`/`askReason`. |
+| 4. Tekste 8–10 px | **U ndreq** në panel dhe në tre konsolat e roleve: minimumi tani 11 px. |
+| 6. Dokumentimi | **U përditësua** `PRODUCTION_CHECKLIST.md` (pohimet e pasakta u korrigjuan, të hapurat u shënuan). |
+| 1. Raportet `read: if true` / emri i mysafirit | **Mbetet e hapur me qëllim.** Ndryshimi prek 20 vende leximi në klient dhe rregullat; duhet vendim dhe provë me emulator. |
+| 2. Telefoni i mysafirit nuk ruhet | **Mbetet e hapur** — varet nga vendimi te nr. 1 (ku ruhet privatisht). |
+| 5, 7. Skedarë gjigantë, `any` | Mbeten; janë rifaktorim i madh pa ndryshim sjelljeje, jo për t'u bërë në një kalim. |
+
+Verifikuar: `tsc` pastër · 1267/1267 teste · testet që simulonin `window.confirm` u kaluan te `lib/dialogs`.

@@ -32,6 +32,7 @@ import { ReportRow } from './reports/ReportRow';
 import ReviewMode from './ReviewMode';
 import EmailInstitutionDialog from './EmailInstitutionDialog';
 import { ReportsToolbar } from './reports/ReportsToolbar';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 interface ReportRoutingContact {
   id: string;
@@ -333,7 +334,7 @@ export default function AdminReports({ department, openReportId }: { department?
    * is told which ones the pipeline declined.
    */
   const handleBulkAction = async (action: 'approve' | 'resolve' | 'delete') => {
-    if (!window.confirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} dosje?`)) return;
+    if (!await askConfirm(`A jeni të sigurt që dëshironi të kryeni këtë veprim për ${selectedIds.size} dosje?`)) return;
 
     const refused: string[] = [];
     for (const id of selectedIds) {
@@ -387,8 +388,8 @@ export default function AdminReports({ department, openReportId }: { department?
     await updateReportStatus(id, 'Rejected', reason);
   };
 
-  const deleteOne = (report: (typeof reports)[number]) => {
-    if (window.confirm(`${dt('Të fshihet përgjithmonë raporti')} "${report.title}"? ${dt('Ky veprim nuk mund të zhbëhet.')}`)) {
+  const deleteOne = async (report: (typeof reports)[number]) => {
+    if (await askConfirm(`${dt('Të fshihet përgjithmonë raporti')} "${report.title}"? ${dt('Ky veprim nuk mund të zhbëhet.')}`)) {
       void Promise.resolve(deleteReport(report.id)).then(() => serverList.refresh());
     }
   };
@@ -482,7 +483,7 @@ export default function AdminReports({ department, openReportId }: { department?
   };
 
   const handleDeleteContact = async (contact: ReportRoutingContact) => {
-    if (!window.confirm(`${dt('Të fshihet kontakti')} ${contact.name} (${contact.email})?`)) return;
+    if (!await askConfirm(`${dt('Të fshihet kontakti')} ${contact.name} (${contact.email})?`)) return;
     try {
       await deleteDoc(doc(db, 'reportRoutingContacts', contact.id));
       toast.success('Kontakti u fshi.');
@@ -733,13 +734,13 @@ export default function AdminReports({ department, openReportId }: { department?
             <form onSubmit={handleAddContact} className="grid content-start gap-3 sm:grid-cols-2">
               <p className="text-xs font-black text-slate-800 dark:text-slate-100 sm:col-span-2">{dt('Shto kontakt publik të përgjegjësit')}</p>
               <div className="flex flex-wrap gap-2 sm:col-span-2">
-                <button type="button" onClick={downloadContactTemplate} className="min-h-9 rounded-lg border border-slate-200 px-3 text-[10px] font-black text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Shkarko formatin CSV')}</button>
-                <label className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-indigo-200 px-3 text-[10px] font-black text-indigo-700 hover:bg-indigo-50 dark:border-indigo-400/20 dark:text-indigo-200 dark:hover:bg-indigo-400/10">
+                <button type="button" onClick={downloadContactTemplate} className="min-h-9 rounded-lg border border-slate-200 px-3 text-[11px] font-black text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Shkarko formatin CSV')}</button>
+                <label className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-indigo-200 px-3 text-[11px] font-black text-indigo-700 hover:bg-indigo-50 dark:border-indigo-400/20 dark:text-indigo-200 dark:hover:bg-indigo-400/10">
                   <Plus className="h-3.5 w-3.5" /> {dt('Importo listë CSV')}
                   <input type="file" accept=".csv,text/csv" onChange={event => void handleImportContacts(event)} className="sr-only" />
                 </label>
               </div>
-              <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 sm:col-span-2">CSV: name, role, email, municipality, institution, sourceUrl. Importi bën përditësim sipas çiftit komunë + institucion.</p>
+              <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 sm:col-span-2">CSV: name, role, email, municipality, institution, sourceUrl. Importi bën përditësim sipas çiftit komunë + institucion.</p>
               {([
                 ['name', 'Emri i zyrtarit'],
                 ['role', 'Roli / pozita'],
@@ -749,7 +750,7 @@ export default function AdminReports({ department, openReportId }: { department?
                 ['sourceUrl', 'Lidhje zyrtare verifikimi'],
               ] as const).map(([field, label]) => (
                 <label key={field} className={`block ${field === 'sourceUrl' ? 'sm:col-span-2' : ''}`}>
-                  <span className="mb-1 block text-[10px] font-bold text-slate-500 dark:text-slate-400">{dt(label)}</span>
+                  <span className="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">{dt(label)}</span>
                   <input
                     required
                     type={field === 'email' ? 'email' : field === 'sourceUrl' ? 'url' : 'text'}
@@ -775,8 +776,8 @@ export default function AdminReports({ department, openReportId }: { department?
                   <div className="min-w-0">
                     <p className="truncate text-xs font-black text-slate-900 dark:text-white">{contact.name} <span className="font-medium text-slate-500">· {contact.role}</span></p>
                     <p className="mt-1 break-all text-xs font-semibold text-indigo-700 dark:text-indigo-200">{contact.email}</p>
-                    <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{contact.municipality} · {contact.institution}</p>
-                    <a href={contact.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[10px] font-bold text-blue-700 underline dark:text-blue-300">{dt('Burimi i verifikimit')}</a>
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{contact.municipality} · {contact.institution}</p>
+                    <a href={contact.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[11px] font-bold text-blue-700 underline dark:text-blue-300">{dt('Burimi i verifikimit')}</a>
                   </div>
                   <button type="button" onClick={() => void handleDeleteContact(contact)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-400/10" aria-label={`Fshi kontaktin ${contact.name}`}><Trash2 className="h-4 w-4" /></button>
                 </article>
@@ -964,7 +965,7 @@ export default function AdminReports({ department, openReportId }: { department?
                 <div key={col.id} className="w-80 flex flex-col gap-3 h-full">
                    <div className="flex items-center justify-between mb-2 px-1">
                      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{col.title}</h3>
-                     <span className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm dark:shadow-none">{colReports.length}</span>
+                     <span className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 text-slate-500 dark:text-slate-400 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm dark:shadow-none">{colReports.length}</span>
                    </div>
                    
                    <div className="flex flex-col gap-3 flex-1">
@@ -976,8 +977,8 @@ export default function AdminReports({ department, openReportId }: { department?
                          onClick={() => setSelectedReportId(report.id)}
                        >
                          <div className="flex justify-between items-start mb-2">
-                           <span className="font-mono text-[9px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-white/5">#{report.id.substring(0,6)}</span>
-                           <span className={cn("text-[9px] font-bold tracking-widest px-1.5 py-0.5 rounded uppercase", 
+                           <span className="font-mono text-[11px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-white/5">#{report.id.substring(0,6)}</span>
+                           <span className={cn("text-[11px] font-bold tracking-widest px-1.5 py-0.5 rounded uppercase", 
                               report.urgency === 'Kritike' ? 'bg-rose-50 text-rose-600' : 
                               report.urgency === 'E lartë' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400')}
                             >
@@ -990,7 +991,7 @@ export default function AdminReports({ department, openReportId }: { department?
                          <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-50">
                            <div className="flex items-center gap-1.5 text-slate-400">
                              <Calendar className="w-3.5 h-3.5" />
-                             <span className="text-[10px] font-bold tracking-widest uppercase">{format(new Date(report.createdAt), 'dd MMM')}</span>
+                             <span className="text-[11px] font-bold tracking-widest uppercase">{format(new Date(report.createdAt), 'dd MMM')}</span>
                            </div>
                            
                            {/* Quick Action Status Change in Board */}
@@ -998,7 +999,7 @@ export default function AdminReports({ department, openReportId }: { department?
                               onClick={(e) => e.stopPropagation()}
                               value={report.status}
                               onChange={(e) => handleStatusChange(report.id, e.target.value)}
-                              className="px-2 py-1 text-[9px] uppercase font-bold tracking-widest rounded outline-none border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer text-slate-500 dark:text-slate-400 appearance-none transition-colors"
+                              className="px-2 py-1 text-[11px] uppercase font-bold tracking-widest rounded outline-none border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer text-slate-500 dark:text-slate-400 appearance-none transition-colors"
                             >
                               <option value="Pending Review">{dt(`Dërgo në Pritje`)}</option>
                               <option value="Approved">{dt(`Aprovo / Hapur`)}</option>
@@ -1011,7 +1012,7 @@ export default function AdminReports({ department, openReportId }: { department?
                        </motion.div>
                      ))}
                      {colReports.length === 0 && (
-                       <div className="h-24 border-2 border-dashed border-slate-200/60 dark:border-white/10 rounded-xl flex items-center justify-center text-slate-400 text-[10px] font-bold tracking-widest uppercase bg-slate-50 dark:bg-slate-800/50">{dt(`Boshe`)}
+                       <div className="h-24 border-2 border-dashed border-slate-200/60 dark:border-white/10 rounded-xl flex items-center justify-center text-slate-400 text-[11px] font-bold tracking-widest uppercase bg-slate-50 dark:bg-slate-800/50">{dt(`Boshe`)}
                        </div>
                      )}
                    </div>
@@ -1088,7 +1089,7 @@ export default function AdminReports({ department, openReportId }: { department?
                   </div>
                   <div>
                     <h3 className="font-bold text-sm tracking-wide uppercase">{dt(`Përmbledhje Ekzekutive me AI`)}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold tracking-wider mt-0.5">{dt(`Analizë Inteligjente për Aksion Municipal`)}</p>
+                    <p className="text-[11px] text-slate-400 font-bold tracking-wider mt-0.5">{dt(`Analizë Inteligjente për Aksion Municipal`)}</p>
                   </div>
                 </div>
                 <button 
@@ -1116,7 +1117,7 @@ export default function AdminReports({ department, openReportId }: { department?
                   <div className="prose prose-slate max-w-none">
                     <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 p-5 rounded-xl text-xs font-mono text-slate-500 dark:text-slate-400 mb-6 flex justify-between items-center">
                       <div>
-                        <span className="font-bold uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400">{dt(`Masa e Analizuar:`)}</span>
+                        <span className="font-bold uppercase tracking-wider text-[11px] text-slate-500 dark:text-slate-400">{dt(`Masa e Analizuar:`)}</span>
                         <p className="font-bold text-slate-800 dark:text-slate-200 dark:text-slate-200 text-sm mt-0.5">
                           {selectedIds.size > 0 
                             ? `${selectedIds.size} raste të përzgjedhura manualisht` 
@@ -1124,7 +1125,7 @@ export default function AdminReports({ department, openReportId }: { department?
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="font-bold uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400">{dt(`Data e Analizës:`)}</span>
+                        <span className="font-bold uppercase tracking-wider text-[11px] text-slate-500 dark:text-slate-400">{dt(`Data e Analizës:`)}</span>
                         <p className="font-bold text-slate-800 dark:text-slate-200 dark:text-slate-200 mt-0.5">{format(new Date(), 'dd.MM.yyyy HH:mm')}</p>
                       </div>
                     </div>
@@ -1165,7 +1166,7 @@ export default function AdminReports({ department, openReportId }: { department?
               {/* Modal Footer */}
               {!loadingSummary && aiSummary && (
                 <div className="bg-slate-50 dark:bg-slate-800 border-t border-slate-200/60 dark:border-white/10 p-4 md:px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
-                  <span className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase">{dt(`Gjeneruar me Gemini 3.5 Flash`)}</span>
+                  <span className="text-[11px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase">{dt(`Gjeneruar me Gemini 3.5 Flash`)}</span>
                   <div className="flex gap-3 w-full sm:w-auto">
                     <button
                       onClick={() => {

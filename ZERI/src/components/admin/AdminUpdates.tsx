@@ -103,7 +103,7 @@ export default function AdminUpdates({ onTabChange }: { onTabChange: (tab: strin
       <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl shadow-slate-300/10">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-rose-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-rose-300">
               <Sparkles className="w-3.5 h-3.5" />
               Admin Update Center
             </div>
@@ -114,7 +114,7 @@ export default function AdminUpdates({ onTabChange }: { onTabChange: (tab: strin
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-right">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">Status</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">Status</div>
               <div className="mt-1 flex items-center gap-1.5 text-sm font-bold text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 LIVE
@@ -122,7 +122,7 @@ export default function AdminUpdates({ onTabChange }: { onTabChange: (tab: strin
             </div>
             <div className="flex gap-2 rounded-full border border-white/10 bg-white/5 p-1">
               {['Raporte', 'Shëndeti', 'Sondazhe'].map((label) => (
-                <span key={label} className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-200">{label}</span>
+                <span key={label} className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-200">{label}</span>
               ))}
             </div>
             <button
@@ -165,7 +165,7 @@ export default function AdminUpdates({ onTabChange }: { onTabChange: (tab: strin
                   <Icon className="h-4 w-4" />
                 </span>
                 <span className={cn(
-                  'rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em]',
+                  'rounded-full px-2 py-1 text-[11px] font-black uppercase tracking-[0.18em]',
                   isPriority ? 'bg-rose-600 text-white' : isReview ? 'bg-amber-600 text-white' : 'bg-slate-800 text-white'
                 )}>
                   {isPriority ? 'PRIORITET' : isReview ? 'SHQYRIM' : 'LIVE'}
@@ -188,10 +188,10 @@ export default function AdminUpdates({ onTabChange }: { onTabChange: (tab: strin
         <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Rrjedha e punës</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Rrjedha e punës</p>
               <h3 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Prioritetet e javës</h3>
             </div>
-            <div className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
+            <div className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
               Operational
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function AdminUpdates({ onTabChange }: { onTabChange: (tab: strin
         <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-950 p-5 text-white shadow-xl">
           <div className="flex items-center gap-2 text-rose-400">
             <Activity className="h-4 w-4" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Pulse</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.2em]">Pulse</span>
           </div>
           <h3 className="mt-3 text-xl font-black">Kohëzgjatja operacionale</h3>
 

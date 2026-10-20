@@ -277,7 +277,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
                     <span className="block truncate text-[11px] font-bold text-slate-800 dark:text-slate-200">
                       {dt(label)}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
                       {viaGrant ? dt('e dhënë posaçërisht') : dt('nga roli')}
                     </span>
                   </span>
@@ -286,12 +286,12 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
                       type="button"
                       onClick={() => revoke(section)}
                       disabled={isBusy}
-                      className="shrink-0 rounded-lg bg-rose-600 px-2.5 py-1 text-[10px] font-black text-white transition-colors hover:bg-rose-700 disabled:opacity-40"
+                      className="shrink-0 rounded-lg bg-rose-600 px-2.5 py-1 text-[11px] font-black text-white transition-colors hover:bg-rose-700 disabled:opacity-40"
                     >
                       {dt('Hiq')}
                     </button>
                   ) : (
-                    <span className="shrink-0 text-[9px] font-bold uppercase text-slate-400">
+                    <span className="shrink-0 text-[11px] font-bold uppercase text-slate-400">
                       {dt('ndrysho rolin')}
                     </span>
                   )}
@@ -314,7 +314,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
               type="button"
               onClick={() => grant(section)}
               disabled={isBusy}
-              className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 transition-colors hover:bg-emerald-100 hover:text-emerald-800 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-200"
+              className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 transition-colors hover:bg-emerald-100 hover:text-emerald-800 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-200"
             >
               + {dt(label)}
             </button>
@@ -324,7 +324,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
           )}
         </div>
         {roleSections.size > 0 && (
-          <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
             {dt('Seksionet që vijnë nga roli nuk hiqen këtu — ato kërkojnë ndryshim roli.')}
           </p>
         )}
@@ -398,14 +398,14 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
           )}
         </button>
 
-        <p className="mt-2 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400">
+        <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-400">
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
           {dt('Pezullimi çaktivizon identitetin në Firebase Auth dhe revokon sesionet — llogaria ndalon menjëherë.')}
         </p>
 
         {account.role === 'municipality' && (
           <div className="mt-3 rounded-lg border border-slate-200 p-3 dark:border-white/10">
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{dt('Plani i komunës')}</label>
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{dt('Plani i komunës')}</label>
             <div className="mt-1.5 flex gap-2">
               <select value={plan} onChange={event => setPlan(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-white/10 dark:bg-slate-800 dark:text-white">
                 {MUNICIPALITY_PLANS.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
@@ -437,7 +437,7 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
                 {dt('Ruaj')}
               </button>
             </div>
-            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">{dt('Bazë: përgjigje dhe kërkesa. Standard: + shëndetësia, faktet, eksporti. Pro: + email te institucionet.')}</p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">{dt('Bazë: përgjigje dhe kërkesa. Standard: + shëndetësia, faktet, eksporti. Pro: + email te institucionet.')}</p>
           </div>
         )}
 

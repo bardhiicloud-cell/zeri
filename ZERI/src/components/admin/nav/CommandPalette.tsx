@@ -116,7 +116,7 @@ export function CommandPalette({
             autoComplete="off"
             className="h-14 w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
           />
-          <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 sm:block dark:border-white/10">Esc</kbd>
+          <kbd className="hidden rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[11px] text-slate-400 sm:block dark:border-white/10">Esc</kbd>
         </div>
 
         <ul id="palette-results" ref={listRef} role="listbox" className="max-h-[min(24rem,55vh)] overflow-y-auto p-2">
@@ -151,15 +151,15 @@ export function CommandPalette({
                       <span className="flex items-center gap-2">
                         <span className="truncate text-sm font-bold text-slate-900 dark:text-white">{section.label}</span>
                         {section.id === activeId && (
-                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">{dt(`Je këtu`)}</span>
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">{dt(`Je këtu`)}</span>
                         )}
                         {badge > 0 && (
-                          <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{badge > 99 ? '99+' : badge}</span>
+                          <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-bold text-white">{badge > 99 ? '99+' : badge}</span>
                         )}
                       </span>
                       <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{section.hint}</span>
                     </span>
-                    <span className="hidden shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:block">{dt(NAV_GROUPS[section.group].label)}</span>
+                    <span className="hidden shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400 sm:block">{dt(NAV_GROUPS[section.group].label)}</span>
                     {isHighlighted && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-rose-500" aria-hidden="true" />}
                   </button>
                 </li>

@@ -10,6 +10,7 @@ import {
 } from '../../lib/reelsSocial';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 type Group = { reelId: string; reports: ReelReport[]; reel: (Reel & { isHidden: boolean }) | null | 'missing' };
 
@@ -51,7 +52,7 @@ export default function AdminReelReports() {
 
   const act = async (group: Group, action: 'hide' | 'keep' | 'delete') => {
     if (busy) return;
-    if (action === 'delete' && !window.confirm(dt('Fshini përgjithmonë këtë Reel? Veprimi nuk mund të zhbëhet.'))) return;
+    if (action === 'delete' && !await askConfirm(dt('Fshini përgjithmonë këtë Reel? Veprimi nuk mund të zhbëhet.'))) return;
     setBusy(group.reelId);
     try {
       if (action === 'hide') await setReelHidden(group.reelId, true, staffId, group.reports[0]?.reason ?? 'raportim');
@@ -119,7 +120,7 @@ export default function AdminReelReports() {
                   <>
                     <p className="font-black text-slate-900 dark:text-white">{g.reel.authorName}</p>
                     {g.reel.caption && <p className="mt-0.5 line-clamp-3 whitespace-pre-line text-xs text-slate-600 dark:text-slate-300">{g.reel.caption}</p>}
-                    {g.reel.isHidden && <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800"><EyeOff className="h-3 w-3" aria-hidden="true" /> {dt('Tashmë i fshehur')}</p>}
+                    {g.reel.isHidden && <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800"><EyeOff className="h-3 w-3" aria-hidden="true" /> {dt('Tashmë i fshehur')}</p>}
                   </>
                 )}
                 <p className="mt-2 text-xs font-black text-rose-600">{g.reports.length} {g.reports.length === 1 ? dt('raportim') : dt('raportime')}</p>

@@ -216,7 +216,7 @@ function WorkFactsQueue() {
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-blue-700 hover:bg-slate-50 dark:border-white/10 dark:text-blue-300 dark:hover:bg-slate-800"
+                    className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-slate-50 dark:border-white/10 dark:text-blue-300 dark:hover:bg-slate-800"
                   >
                     {dt('Bashkëngjitje')} {i + 1}
                   </a>
@@ -243,14 +243,14 @@ function WorkFactsQueue() {
                 >
                   <X className="h-3.5 w-3.5" /> {dt('Refuzo')}
                 </button>
-                <span className="ml-auto text-[10px] text-slate-400">
+                <span className="ml-auto text-[11px] text-slate-400">
                   {dt('Vetëm teksti nuk ndryshon — regjistrohet kush e verifikoi.')}
                 </span>
               </div>
             )}
 
             {status !== 'pending' && (
-              <p className="mt-3 border-t border-slate-100 pt-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-white/10">
+              <p className="mt-3 border-t border-slate-100 pt-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:border-white/10">
                 {status === 'confirmed' ? dt('Verifikuar') : dt('Refuzuar')}
               </p>
             )}

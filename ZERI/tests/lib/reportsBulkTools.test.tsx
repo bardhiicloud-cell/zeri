@@ -14,6 +14,7 @@ vi.mock('../../src/lib/routingContacts', async () => {
   return { ...actual, ensureContact: (...args: unknown[]) => ensureContact(...args) };
 });
 vi.mock('react-hot-toast', () => ({ default: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
+vi.mock('../../src/lib/dialogs', () => ({ askConfirm: async () => true, askReason: async () => 'arsye' }));
 
 import { ReportsBulkTools } from '../../src/components/admin/workflow/ReportsBulkTools';
 
@@ -29,7 +30,7 @@ beforeEach(() => {
   classifyReports.mockReset().mockResolvedValue({ updated: 2, results: [], at: '' });
   sendReportEmail.mockReset().mockResolvedValue({ id: 'm1', status: 'sent' });
   ensureContact.mockReset().mockResolvedValue('exists');
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 

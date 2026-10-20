@@ -12,6 +12,7 @@ import { useLanguage } from '../lib/LanguageContext';
 import { ReportTimeline } from './reports/ReportTimeline';
 import { statusLabel } from '../lib/reportStatus';
 import { applyTransition } from '../lib/adminApi';
+import { askConfirm, askReason } from '../lib/dialogs';
 
 interface ReportDetailModalProps {
   report: Report;
@@ -444,8 +445,8 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => {
-                            if(window.confirm('A jeni të sigurt që dëshironi ta fshini?')) {
+                          onClick={async () => {
+                            if(await askConfirm('A jeni të sigurt që dëshironi ta fshini?')) {
                               useStore.getState().deleteReport(report.id);
                               onClose();
                             }

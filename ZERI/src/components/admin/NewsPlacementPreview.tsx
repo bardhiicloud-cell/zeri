@@ -58,7 +58,7 @@ export default function NewsPlacementPreview({ items, editingId, draft, willBePu
     const mine = item.id === CANDIDATE;
     return (
       <div className={cn(
-        'min-w-0 rounded-md border px-2 py-1.5 text-[10px] leading-snug',
+        'min-w-0 rounded-md border px-2 py-1.5 text-[11px] leading-snug',
         mine
           ? 'border-blue-600 bg-blue-600 font-black text-white shadow-md shadow-blue-600/20 ring-2 ring-blue-300 dark:ring-blue-500/40'
           : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400',
@@ -82,7 +82,7 @@ export default function NewsPlacementPreview({ items, editingId, draft, willBePu
     <section aria-label={dt('Parapamja e vendosjes')} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-800/40">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h4 className="text-sm font-black text-slate-900 dark:text-white">{dt('Ku do të dalë ky lajm')}</h4>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Parapamje e faqes /lajme')}</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dt('Parapamje e faqes /lajme')}</span>
       </div>
 
       {!willBePublic ? (
@@ -102,34 +102,34 @@ export default function NewsPlacementPreview({ items, editingId, draft, willBePu
 
       <div className="space-y-2 rounded-lg border border-slate-300 bg-white p-2.5 dark:border-white/10 dark:bg-slate-950">
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <span className="shrink-0 rounded bg-rose-600 px-1.5 py-1 text-[9px] font-black uppercase text-white">{dt('Të fundit')}</span>
+          <span className="shrink-0 rounded bg-rose-600 px-1.5 py-1 text-[11px] font-black uppercase text-white">{dt('Të fundit')}</span>
           <div className="flex min-w-0 flex-1 gap-1.5">
             {layout.ticker.slice(0, 3).map(item => <Slot key={item.id} item={item} className="flex-1" />)}
-            {layout.ticker.length > 3 && <span className="self-center text-[9px] text-slate-400">+{Math.min(layout.ticker.length, TICKER_SLOTS) - 3}</span>}
+            {layout.ticker.length > 3 && <span className="self-center text-[11px] text-slate-400">+{Math.min(layout.ticker.length, TICKER_SLOTS) - 3}</span>}
           </div>
         </div>
 
         <div className="grid grid-cols-[1fr_1.6fr_1fr] gap-2">
           <div className="space-y-1.5">
-            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">{dt('Majtas')} · {LATEST_SLOTS}</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Majtas')} · {LATEST_SLOTS}</p>
             {layout.latest.map(item => <Slot key={item.id} item={item} />)}
           </div>
           <div className="space-y-1.5">
-            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">{dt('Kryesori')}</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Kryesori')}</p>
             {layout.lead ? (
               <Slot item={layout.lead} className="py-5 text-xs">
                 {layout.lead.id === CANDIDATE && draft.imageUrl && <img src={draft.imageUrl} alt="" className="mb-1.5 aspect-video w-full rounded object-cover" />}
               </Slot>
-            ) : <div className="rounded-md border border-dashed border-slate-300 p-4 text-center text-[10px] text-slate-400">{dt('Bosh')}</div>}
+            ) : <div className="rounded-md border border-dashed border-slate-300 p-4 text-center text-[11px] text-slate-400">{dt('Bosh')}</div>}
           </div>
           <div className="space-y-1.5">
-            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">{dt('Djathtas')} · {RAIL_SLOTS}</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Djathtas')} · {RAIL_SLOTS}</p>
             {layout.rail.map(item => <Slot key={item.id} item={item} />)}
           </div>
         </div>
 
         <div>
-          <p className="mb-1 text-[9px] font-black uppercase tracking-wider text-slate-400">{dt('Titujt e ditës')} · {HEADLINE_SLOTS}</p>
+          <p className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-400">{dt('Titujt e ditës')} · {HEADLINE_SLOTS}</p>
           <ol className="grid grid-cols-3 gap-1.5">
             {layout.headlines.map((item, index) => (
               <li key={item.id} className="min-w-0">

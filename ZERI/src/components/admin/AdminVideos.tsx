@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import DecisionBar from './DecisionBar';
 import { takeDecision } from '../../lib/decisionsApi';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
+import { askConfirm, askReason } from '../../lib/dialogs';
 
 /**
  * "Menaxhimi i Videove" — the admin manager for public video content.
@@ -171,7 +172,7 @@ export default function AdminVideos() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('A jeni i sigurt që dëshironi ta fshini këtë video?')) return;
+    if (!await askConfirm('A jeni i sigurt që dëshironi ta fshini këtë video?')) return;
     try {
       await deleteDoc(doc(db, 'newsArticles', id));
     } catch (err) {
@@ -312,7 +313,7 @@ export default function AdminVideos() {
                 ) : (
                   <div className="flex h-full items-center justify-center"><Video className="w-8 h-8 text-slate-300" /></div>
                 )}
-                <span className={cn('absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-black uppercase', v.published ? 'bg-emerald-600 text-white' : 'bg-slate-500 text-white')}>
+                <span className={cn('absolute top-2 left-2 px-2 py-0.5 rounded text-[11px] font-black uppercase', v.published ? 'bg-emerald-600 text-white' : 'bg-slate-500 text-white')}>
                   {v.published ? dt('Publikuar') : dt('Draft')}
                 </span>
               </div>
