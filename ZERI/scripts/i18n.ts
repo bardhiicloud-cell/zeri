@@ -19,6 +19,9 @@ const localesDir = path.join(root, 'src/lib/i18n/locales');
 const baselineFile = path.join(root, 'scripts/i18n-baseline.json');
 const pendingFile = path.join(root, 'translations/to-translate.json');
 
+/** Every dt() text must be translated into these (Albanian is the source). The other languages are filled over time. */
+const CORE_LANGUAGES = ['en', 'de', 'sr', 'bs', 'tr'];
+
 type Table = Record<string, string>;
 type Baseline = { missing: string[]; problems: string[] };
 
@@ -76,7 +79,7 @@ function problemsIn(locales: Record<string, Table>): string[] {
 function check() {
   const locales = readLocales();
   const known = new Set(Object.values(locales).flatMap((table) => Object.keys(table)));
-  const missing = [...sourceLiterals()].filter((text) => !known.has(text)).sort();
+  const missing = [...sourceLiterals()].filter((text) => CORE_LANGUAGES.some((lang) => !locales[lang]?.[text])).sort();
   const problems = problemsIn(locales).sort();
 
   if (process.argv.includes('--update-baseline')) {
@@ -96,11 +99,11 @@ function check() {
   for (const [lang, table] of Object.entries(locales)) {
     console.log(`  ${lang.padEnd(4)} ${((Object.keys(table).length / known.size) * 100).toFixed(1)}%`);
   }
-  console.log(`Missing from every language: ${missing.length} (baseline ${baseline.missing.length}). Problems: ${problems.length} (baseline ${baseline.problems.length}).`);
+  console.log(`Missing from a core language (${CORE_LANGUAGES.join(', ')}): ${missing.length} (baseline ${baseline.missing.length}). Problems: ${problems.length} (baseline ${baseline.problems.length}).`);
   if (fixed > 0) console.log(`${fixed} baseline entries are fixed: run  npm run i18n:check -- --update-baseline  to lock that in.`);
 
   if (newMissing.length || newProblems.length) {
-    for (const text of newMissing.slice(0, 20)) console.error(`NEW missing translation: ${JSON.stringify(text)}`);
+    for (const text of newMissing.slice(0, 20)) console.error(`NEW text without a core-language translation: ${JSON.stringify(text)}`);
     for (const p of newProblems.slice(0, 20)) console.error(`NEW problem: ${p}`);
     console.error(`\n${newMissing.length} new missing texts, ${newProblems.length} new problems. Add translations (npm run i18n:missing, then i18n:import).`);
     process.exit(1);
