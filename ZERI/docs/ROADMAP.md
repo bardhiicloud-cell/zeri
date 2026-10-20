@@ -35,10 +35,12 @@ Kriter: `max-lines` 400 pa përjashtime; `server.ts` vetëm bootstrap; `src/lib`
 
 ## WS3: Performanca (6.5 → 10)
 Kriter: hyrja nën 200 KB gzip; Lighthouse mobile ≥ 95; asnjë chunk mbi 500 KB pa arsye.
-- [ ] `manualChunks` për firebase, leaflet, recharts, framer-motion
-- [ ] Dynamic import për hartë, grafikë, player
+- [x] `manualChunks` për vendor/firebase/ui; hartë, grafikë dhe player janë tashmë lazy
+- [x] Modalët e hapur me veprim (profil, raportim i shpejtë, renditje, vendndodhje) dhe asistenti janë chunk-e lazy: `index` 652 → 601 KB (199 → 184 KB gzip)
+- [ ] Firestore (59 skedarë) importohet statikisht nga `App.tsx`; firebase chunk 170 KB gzip është pjesa më e madhe e ngarkesës fillestare
+- [ ] framer-motion (37 skedarë) → `LazyMotion` për të ulur chunk-un `ui` (63 KB gzip)
 - [ ] Imazhe WebP/AVIF, `loading="lazy"`
-- [ ] Buxhet bundle-i në CI
+- [x] Buxhet bundle-i në CI (`npm run check:bundle`: JS fillestar 427 KB gzip, buxheti 440)
 
 ## WS4: UX i qytetarit (6 → 10)
 Kriter: raportim ≤ 3 hapa; përdorues i ri e dërgon raportin nën 60 s; ⚠️ vërtetuar me testim real.
