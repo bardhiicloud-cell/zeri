@@ -926,21 +926,26 @@ const SITEMAP_PAGES: Array<{ path: string; priority: string; changefreq: string 
   { path: '/sherbimet', priority: '0.8', changefreq: 'weekly' },
   { path: '/harta', priority: '0.8', changefreq: 'daily' },
   { path: '/statistikat', priority: '0.8', changefreq: 'daily' },
+  { path: '/transparenca', priority: '0.8', changefreq: 'weekly' },
   { path: '/komunat', priority: '0.7', changefreq: 'weekly' },
   { path: '/projektet', priority: '0.7', changefreq: 'weekly' },
   { path: '/ndihma', priority: '0.7', changefreq: 'weekly' },
+  { path: '/shendetesia', priority: '0.7', changefreq: 'weekly' },
+  { path: '/detailed-registry', priority: '0.7', changefreq: 'weekly' },
+  { path: '/sondazhet', priority: '0.6', changefreq: 'weekly' },
+  { path: '/donacion', priority: '0.6', changefreq: 'monthly' },
+  { path: '/Idea', priority: '0.6', changefreq: 'weekly' },
+  { path: '/partneret', priority: '0.6', changefreq: 'monthly' },
   { path: '/kontakt', priority: '0.6', changefreq: 'monthly' },
   { path: '/kontakt-numrat', priority: '0.6', changefreq: 'monthly' },
-  { path: '/trackid', priority: '0.6', changefreq: 'weekly' },
-  { path: '/sondazhet', priority: '0.6', changefreq: 'weekly' },
-  { path: '/buxheti', priority: '0.6', changefreq: 'monthly' },
-  { path: '/donacion', priority: '0.6', changefreq: 'monthly' },
   { path: '/rreth-projektit', priority: '0.5', changefreq: 'monthly' },
+  { path: '/kosova', priority: '0.7', changefreq: 'weekly' },
+  { path: '/historia-e-uck', priority: '0.7', changefreq: 'weekly' },
   { path: '/kushtet-e-perdorimit', priority: '0.3', changefreq: 'yearly' },
   { path: '/privatesia', priority: '0.3', changefreq: 'yearly' },
 ];
 
-/** Language code -> URL prefix. Mirrors SEO_LOCALES on the client. */
+/** Language code -> URL prefix. Keep this list in exact parity with src/lib/seo.ts. */
 const SITEMAP_LOCALES: Array<{ tag: string; prefix: string }> = [
   { tag: 'sq-AL', prefix: '' },
   { tag: 'en-US', prefix: 'en' },
@@ -951,20 +956,23 @@ const SITEMAP_LOCALES: Array<{ tag: string; prefix: string }> = [
   { tag: 'sr-RS', prefix: 'sr' },
   { tag: 'fr-FR', prefix: 'fr' },
   { tag: 'it-IT', prefix: 'it' },
-  { tag: 'es-ES', prefix: 'es' },
   { tag: 'pt-PT', prefix: 'pt' },
   { tag: 'de-CH', prefix: 'ch' },
   { tag: 'mk-MK', prefix: 'mk' },
   { tag: 'sl-SI', prefix: 'sl' },
   { tag: 'hr-HR', prefix: 'hr' },
-  { tag: 'ro-RO', prefix: 'ro' },
   { tag: 'sv-SE', prefix: 'sv' },
   { tag: 'nb-NO', prefix: 'nb' },
-  { tag: 'hy-AM', prefix: 'hy' },
   { tag: 'nl-NL', prefix: 'nl' },
+  { tag: 'ja-JP', prefix: 'ja' },
+  { tag: 'ko-KR', prefix: 'ko' },
+  { tag: 'pl-PL', prefix: 'pl' },
+  { tag: 'bg-BG', prefix: 'bg' },
+  { tag: 'en-CA', prefix: 'ca' },
+  { tag: 'en-AU', prefix: 'au' },
 ];
 
-const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://zeriqytetarve.com';
+const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://zeriqytetarve.com').replace(/\/+$/, '');
 
 app.get('/sitemap.xml', (_req, res) => {
   const urls: string[] = [];
@@ -1002,9 +1010,19 @@ app.get('/robots.txt', (_req, res) => {
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin',
+    'Disallow: /approvals',
+    'Disallow: /agent',
+    'Disallow: /menagjer',
+    'Disallow: /monitorim',
+    'Disallow: /moderim',
+    'Disallow: /komuna',
+    'Disallow: /komuna-panel',
+    'Disallow: /debatwp',
+    'Disallow: /debatiwp',
     'Disallow: /api/',
     'Disallow: /login',
     'Disallow: /register',
+    'Disallow: /trackid?id=',
     `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
   ];
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
