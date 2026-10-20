@@ -10,14 +10,16 @@ export default function DialogHost() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const confirmRef = useRef<HTMLButtonElement | null>(null);
   const current = queue[0];
+  const currentId = current?.id;
+  const currentKind = current?.kind;
 
   useEffect(() => subscribeDialogs(setQueue), []);
   useEffect(() => {
     setText('');
-    if (!current) return;
-    const timer = window.setTimeout(() => (current.kind === 'reason' ? inputRef.current : confirmRef.current)?.focus(), 30);
+    if (!currentId) return;
+    const timer = window.setTimeout(() => (currentKind === 'reason' ? inputRef.current : confirmRef.current)?.focus(), 30);
     return () => window.clearTimeout(timer);
-  }, [current?.id]);
+  }, [currentId, currentKind]);
 
   useEffect(() => {
     if (!current) return;

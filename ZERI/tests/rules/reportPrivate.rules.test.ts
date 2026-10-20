@@ -21,6 +21,9 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
     await setDoc(doc(ctx.firestore(), 'reportPrivate', 'r1'), { authorId: 'author', name: 'Filan Fisteku', phone: '+38344111222', createdAt: new Date() });
+    // canAct() reads the signed-in user's profile to check for a ban, so a citizen who creates a
+    // contact has one. Without a profile the rule fails closed, which is the behaviour we keep.
+    await setDoc(doc(ctx.firestore(), 'users', 'newbie'), { role: 'citizen' });
   });
 });
 
