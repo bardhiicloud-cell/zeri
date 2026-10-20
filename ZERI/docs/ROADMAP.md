@@ -21,8 +21,9 @@ Kriter: asnjë përkthim në bundle-in e hyrjes; ngarkohet vetëm gjuha aktive; 
 - [x] Një sistem: `src/lib/i18n/locales/<gjuha>.json` + `scripts/i18n.ts` (check / missing / import); u hoqën 5 tabelat TS dhe 10 skriptat e vjetra
 - [x] `npm run i18n:check` në CI: tekst i ri pa përkthim ose me placeholder të dëmtuar e prish build-in
 - [x] `_translation_cache.json` dhe artefaktet e gjeneratorit nga repo
-- [ ] 1057 tekste `dt()` pa asnjë përkthim (shfaqen shqip në çdo gjuhë) → baseline te `scripts/i18n-baseline.json` duhet të bëhet 0
-- [ ] Mbulim i plotë për `sr` (82%), `bs` (~80%), `tr` (88%), `en`/`de`
+- [x] 1057 tekste `dt()` pa asnjë përkthim → 0 (baseline te `scripts/i18n-baseline.json`)
+- [x] Mbulim i plotë i teksteve të kodit për `sq`, `en`, `de`, `sr`, `bs`, `tr`
+- [ ] Mbulim i plotë për 14 gjuhët e tjera (secila i mungon ~1100 nga 3625 tekste): ar, bg, fr, gsw, hr, it, ja, ko, mk, nb, nl, pl, pt, sl, sv. Rrjedha: `npm run i18n:missing`, plotëso, `npm run i18n:import`
 - [ ] 453 përkthime me placeholder të dëmtuar ose me shkrim të gabuar → 0
 - [ ] ⚠️ Rishikim nga folës amtarë për 6 gjuhët kryesore (sq, en, de, tr, sr, bs)
 
