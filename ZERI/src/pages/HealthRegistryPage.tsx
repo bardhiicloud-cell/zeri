@@ -96,7 +96,8 @@ export default function HealthRegistryPage() {
 
   // Health records are private by design; only the signed-in owner's cases load here.
   useEffect(() => {
-    if (!currentUser || currentUser.role === 'guest') {
+    // A guest has a real Firebase identity too: the rules let an owner read their own cases.
+    if (!currentUser || !auth.currentUser) {
       setCases([]);
       return;
     }
@@ -104,7 +105,7 @@ export default function HealthRegistryPage() {
     try {
       const q = query(
         collection(db, 'healthRegistry'),
-        where('authorId', '==', currentUser.id),
+        where('authorId', '==', auth.currentUser.uid),
         limit(STAFF_LIMITS.healthCases)
       );
       const unsub = onSnapshot(q, (snapshot) => {
@@ -329,7 +330,7 @@ export default function HealthRegistryPage() {
         healthCondition: diagnosis
       }), 30000, 'Serveri nuk u përgjigj në kohë. Kontrolloni lidhjen dhe provoni përsëri.');
       
-      if (currentUser && currentUser.role !== 'guest') {
+      if (currentUser && auth.currentUser) {
         setCases(prev => [{ id: docRef.id, ...newCaseData }, ...prev]);
       }
 
@@ -534,7 +535,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             subtitle={dt('Një hapësirë e sigurt për të paraqitur nevoja shëndetësore, ndjekur kërkesat e tua dhe gjetur institucionin përkatës. Rastet dhe dokumentet mjekësore nuk janë publike.')}
             actions={<>
               <button data-tour="health-register" onClick={() => setIsRegisterModalOpen(true)} className="au-btn au-btn-light"><Plus className="h-4 w-4" aria-hidden="true" /><span>{dt('Regjistro Rast / Kërko Ndihmë')}</span></button>
-              {currentUser && currentUser.role !== 'guest' && cases.length > 0 && (
+              {currentUser && auth.currentUser && cases.length > 0 && (
                 <button onClick={handleExportCSV} className="au-btn au-btn-glass" title={dt('Shkarko evidencën në formatin CSV / Excel')}>
                   <Download className="h-4 w-4" aria-hidden="true" /><span>{dt('Shkarko CSV')}</span>
                 </button>
@@ -657,7 +658,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   {searchQuery || selectedMunicipality !== 'Të Gjitha' || selectedCategory !== 'all' || selectedUrgency !== 'all' ? 'Nuk u gjetën raste për filtrat e zgjedhur' : 'Nuk ke ende raste të regjistruara'}
                 </h3>
                 <p className="au-sub mx-auto mt-1 max-w-sm text-[13px]">
-                  {currentUser && currentUser.role !== 'guest' ? 'Regjistro një rast për të ndjekur shqyrtimin dhe hapat e mbështetjes.' : 'Dërgo kërkesë shëndetësore anonime ose me identitet. Për arsye privatësie, rastet pa llogari nuk shfaqen në këtë listë.'}
+                  {currentUser && auth.currentUser ? 'Regjistro një rast për të ndjekur shqyrtimin dhe hapat e mbështetjes.' : 'Dërgo kërkesë shëndetësore anonime ose me identitet. Merrni një Track ID për ta ndjekur.'}
                 </p>
                 <button onClick={() => setIsRegisterModalOpen(true)} className="au-btn au-btn-primary mt-4">{dt('Regjistro Rast të Ri')}</button>
               </div>

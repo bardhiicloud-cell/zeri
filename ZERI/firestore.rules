@@ -1039,7 +1039,7 @@ service cloud.firestore {
       allow read: if resource.data.status == 'verified' ||
                   isStaff() ||
                   (isAuthenticated() && resource.data.authorId == request.auth.uid);
-      allow create: if canAct() && !isGuest() &&
+      allow create: if canAct() &&
                     request.resource.data.authorId == request.auth.uid &&
                     request.resource.data.medicineName is string &&
                     request.resource.data.municipality is string &&
