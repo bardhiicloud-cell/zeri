@@ -73,7 +73,7 @@ import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { isGuestFirebaseUser, signInAsGuest } from './lib/guestSession';
 import { canReadAllReports, startPublicReports } from './lib/publicReportsApi';
-import { registerGuest } from './lib/guestApi';
+import { registerGuest, keepRegisteringGuest } from './lib/guestApi';
 import { doc, getDoc, collection, onSnapshot, query, orderBy, setDoc, getDocs, limit, where } from 'firebase/firestore';
 import { createGuestUser, getOrCreateGuestUser } from './lib/session';
 import { GA_CONFIG, hasAnalyticsConsent, onConsentChange } from './lib/consent';
@@ -413,6 +413,7 @@ export default function App() {
     let reportsRun = 0;
     let switchReportsSource: (user: import('firebase/auth').User | null) => Promise<void> = async () => undefined;
     let unsubscribeAuditLogs: (() => void) | undefined;
+    let stopGuestRetry: (() => void) | undefined;
     const syncNotifications = () => {
       const currentNotifs = useStore.getState().notifications;
       const readIds = new Set(currentNotifs.filter(notification => notification.isRead).map(notification => notification.id));
@@ -469,6 +470,10 @@ export default function App() {
               // database rules refuse a guest writing their own profile from the browser.
               userData = await registerGuest(firebaseUser);
               setCurrentUser(userData);
+              stopGuestRetry?.();
+              if (typeof userData?.guestNumber !== 'number') {
+                stopGuestRetry = keepRegisteringGuest(firebaseUser, profile => setCurrentUser(profile));
+              }
             } else {
               // Create profile for new users (including anonymous/guest)
               userData = {
@@ -825,6 +830,7 @@ export default function App() {
       unsubscribePublicNotifications();
       unsubscribePersonalNotifications?.();
       unsubscribeAuditLogs?.();
+      stopGuestRetry?.();
       unsubscribePolls();
       unsubscribeCategories();
     };
