@@ -16,7 +16,7 @@ import {
   DmApiError, blockUser, composerState, setConversationPrefsApi, markDmRead, respondToDmRequest, sendDm, setDmPrivacy, unblockUser,
   viewOfConversation, type DmPrivacy,
 } from '../../lib/directMessagesApi';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface DirectMessage {
   id: string;

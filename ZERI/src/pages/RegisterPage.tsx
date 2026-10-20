@@ -1,16 +1,15 @@
 import { dt } from '@/src/lib/dt';
-import { AuthShell, AuthField, AuthError, AuthDivider, GoogleIcon, authPrimaryBtn, authGoogleBtn, authGhostBtn } from '@/src/components/auth/AuthShell';
+import { AuthShell, AuthField, AuthError, AuthDivider, GoogleIcon, authPrimaryBtn, authGoogleBtn } from '@/src/components/auth/AuthShell';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
-import { UserPlus, ShieldAlert, Phone, ArrowLeft, Mail, Lock, User, CheckCircle2, Calendar } from 'lucide-react';
+import { Phone, Mail, Lock, User, Calendar } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import { usePageMeta } from '../lib/usePageMeta';
-import { auth, db, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
+import { auth, signInWithGoogle, readGoogleRedirectResult } from '../lib/firebase';
 import { createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider, EmailAuthProvider, linkWithCredential, linkWithPopup } from 'firebase/auth';
 import { isGuestFirebaseUser } from '../lib/guestSession';
 import { PROFILE_SYNC_FAILED, profileSyncError, syncOrCreateProfile } from '../lib/authSync';
-import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import {
   normalisePhone,
@@ -20,7 +19,7 @@ import {
   validatePassword,
   validatePhone,
 } from '../lib/validation';
-import { CheckCircle2 as CheckIcon, X as XIcon } from 'lucide-react';
+import { CheckCircle2 as CheckIcon } from 'lucide-react';
 import SubmissionOverlay from '../components/SubmissionOverlay';
 
 export default function RegisterPage() {

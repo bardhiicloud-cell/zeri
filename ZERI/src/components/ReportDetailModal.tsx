@@ -1,18 +1,17 @@
-import { dt } from '@/src/lib/dt';
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from '../lib/store';
 import { Report } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { sq } from 'date-fns/locale';
-import {  ThumbsUp, MessageCircle, MapPin, X, Send, User as UserIcon, Edit3, Save, Trash2, Plus, Share2, Wand2 , ArrowUpRight, ChevronLeft, ChevronRight, ImageOff, FileText, Music, Download } from 'lucide-react';
+import { ThumbsUp, MessageCircle, MapPin, X, Send, User as UserIcon, Edit3, Trash2, Share2, Wand2, ArrowUpRight, ChevronLeft, ChevronRight, ImageOff, FileText, Music, Download } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { validateComment } from '../lib/moderation';
 import { useLanguage } from '../lib/LanguageContext';
 import { ReportTimeline } from './reports/ReportTimeline';
 import { statusLabel } from '../lib/reportStatus';
 import { applyTransition } from '../lib/adminApi';
-import { askConfirm, askReason } from '../lib/dialogs';
+import { askConfirm } from '../lib/dialogs';
 
 interface ReportDetailModalProps {
   report: Report;

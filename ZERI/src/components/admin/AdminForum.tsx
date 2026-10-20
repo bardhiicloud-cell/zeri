@@ -12,7 +12,7 @@ import { STAFF_LIMITS } from '../../lib/loadLimits';
 import AdminForumStories from './AdminForumStories.tsx';
 import AdminReelReports from './AdminReelReports.tsx';
 import AdminForumReports from './AdminForumReports.tsx';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 export default function AdminForum() {
   const [posts, setPosts] = useState<any[]>([]);

@@ -15,7 +15,7 @@ import { NEWS_CATEGORIES } from '../../lib/newsCategories';
 import { DEMO_NEWS } from '../../lib/demoNews';
 import NewsPlacementPreview from './NewsPlacementPreview';
 import { layoutNews } from '../../lib/newsPlacement';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface AdminNewsItem {
   id: string;

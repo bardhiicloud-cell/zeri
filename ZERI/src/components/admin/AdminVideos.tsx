@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import DecisionBar from './DecisionBar';
 import { takeDecision } from '../../lib/decisionsApi';
 import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /**
  * "Menaxhimi i Videove" — the admin manager for public video content.

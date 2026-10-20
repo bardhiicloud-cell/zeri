@@ -1,6 +1,6 @@
 {
- "@typescript-eslint/no-explicit-any": 267,
- "@typescript-eslint/no-unused-vars": 160,
+ "@typescript-eslint/no-explicit-any": 271,
+ "@typescript-eslint/no-unused-vars": 161,
  "no-case-declarations": 3,
  "no-control-regex": 1,
  "no-empty": 1,
@@ -10,6 +10,6 @@
  "no-useless-escape": 1,
  "prefer-const": 2,
  "preserve-caught-error": 5,
- "react-hooks/exhaustive-deps": 38,
- "react-hooks/rules-of-hooks": 35
+ "react-hooks/exhaustive-deps": 39,
+ "react-hooks/rules-of-hooks": 40
 }

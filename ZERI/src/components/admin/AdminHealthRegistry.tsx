@@ -18,7 +18,7 @@ import { cn } from '../../lib/utils';
 import type { HealthCase } from '../../pages/HealthRegistryPage.tsx';
 import AdminMedicineShortages from './AdminMedicineShortages.tsx';
 import toast from 'react-hot-toast';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 export default function AdminHealthRegistry() {
   // Section switcher: the patient registry vs. the medicine-shortage queue.

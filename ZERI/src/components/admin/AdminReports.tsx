@@ -30,7 +30,7 @@ import { ReportRow } from './reports/ReportRow';
 import ReviewMode from './ReviewMode';
 import EmailInstitutionDialog from './EmailInstitutionDialog';
 import { ReportsToolbar } from './reports/ReportsToolbar';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface ReportRoutingContact {
   id: string;

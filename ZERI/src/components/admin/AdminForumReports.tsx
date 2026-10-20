@@ -7,7 +7,7 @@ import { auth, db } from '../../lib/firebase';
 import { useStore } from '../../lib/store';
 import { deleteCommentApi } from '../../lib/forumPostsApi';
 import { REPORT_TARGET_REASONS } from '../../lib/forumReportsApi';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface Row {
   id: string; kind: 'comment' | 'user' | 'ad'; targetId: string; postId: string; reason: string; details: string;

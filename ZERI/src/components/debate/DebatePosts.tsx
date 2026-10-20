@@ -14,7 +14,7 @@ import {
   type PostRow,
 } from '../../lib/debateApi';
 import { Badge, BulkBar, Empty, ErrorNote, Panel, Spinner, btn, inputClass, useLoad, useSelection } from './ui';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 const FILTERS: ReadonlyArray<{ id: PostFilter; label: string; count?: 'all' | 'reported' | 'hidden' | 'promoted' }> = [
   { id: 'all', label: 'Të gjitha', count: 'all' },

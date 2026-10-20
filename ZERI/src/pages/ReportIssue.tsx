@@ -263,7 +263,7 @@ function getSimulatedIP() {
 }
 
 import { motion } from 'framer-motion';
-import { askConfirm, askReason } from '../lib/dialogs';
+import { askConfirm } from '../lib/dialogs';
 
 export default function ReportIssue() {
   const { t, dt } = useLanguage();
