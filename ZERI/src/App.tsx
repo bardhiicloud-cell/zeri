@@ -280,7 +280,6 @@ export default function App() {
     }
   }, [analyticsConsented]);
 
-  const [authInitialized, setAuthInitialized] = useState(false);
   const initialize = useStore(state => state.initialize);
   const checkSLAs = useStore(state => state.checkSLAs);
   const setCurrentUser = useStore(state => state.setCurrentUser);
@@ -291,14 +290,6 @@ export default function App() {
   const setAds = useStore(state => state.setAds);
   const setNotifications = useStore(state => state.setNotifications);
   const setAuditLogs = useStore(state => state.setAuditLogs);
-
-  useEffect(() => {
-    // Failsafe timer: Ensure app renders fast within 1.5s regardless of network delays
-    const timer = setTimeout(() => {
-      setAuthInitialized(true);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     initialize();
@@ -463,7 +454,7 @@ export default function App() {
         });
       }
 
-       try {
+      {
         if (firebaseUser) {
           unsubscribeAuditLogs?.();
           unsubscribeAuditLogs = undefined;
@@ -536,8 +527,6 @@ export default function App() {
           // null: this happens transiently during a token refresh. Never wipe
           // the profile to guest here — the next callback restores it.
         }
-      } finally {
-        setAuthInitialized(true);
       }
     });
 
@@ -840,18 +829,6 @@ export default function App() {
       unsubscribeCategories();
     };
   }, [initialize, checkSLAs, setCurrentUser, setReports, setReportsStatus, setDonationCauses, setPolls, setAds, setNotifications]);
-
-  if (!authInitialized) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
-        <div className="relative flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-rose-500/20 border-t-rose-600 rounded-full animate-spin mb-4"></div>
-          <span className="text-xl font-bold tracking-widest text-white uppercase font-sans">{dt('KOSOVA BASHKË')}<span className="text-rose-600">.</span></span>
-          <span className="text-xs font-medium text-slate-400 mt-2 tracking-wide uppercase">{dt('Duke ngarkuar platformën...')}</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <LanguageProvider>
