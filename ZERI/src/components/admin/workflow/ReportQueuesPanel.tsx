@@ -937,6 +937,12 @@ function ActionForm({ reportId, option, status, currentAssignees, onCancel, onDo
         </label>
       ) : null}
 
+      {option.action === 'reject_report' && (
+        <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 dark:bg-rose-500/10 dark:text-rose-200">
+          {dt('Raportimi i refuzuar fshihet automatikisht pas 24 orësh, bashkë me fotot dhe videot nga Storage. Qytetari e sheh arsyen deri atëherë.')}
+        </p>
+      )}
+
       {option.action === 'submit_resolution' && (
         <label className="block">
           <span className="mb-1 block text-xs font-bold text-slate-600 dark:text-slate-300">{dt('Dëshmi (lidhje foto ose dokumenti, një për rresht, opsionale)')}</span>
