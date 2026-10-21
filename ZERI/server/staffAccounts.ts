@@ -90,11 +90,11 @@ export type CreateResult =
 
 export async function createStaffAccount(
   deps: { db: Firestore; auth: Auth },
-  actor: { uid: string; role: string },
+  actor: { uid: string; role: string; isOwner?: boolean },
   input: StaffInput,
 ): Promise<CreateResult> {
-  // Same authority rule as changing a role: admin-level caller; owner-level roles need a superadmin.
-  const allowed = checkRoleChange({ actorUid: actor.uid, actorRole: actor.role, targetUid: '__new__', currentTargetRole: '', nextRole: input.role });
+  // Same authority rule as changing a role: admin-level caller; admin needs a superadmin, a new superadmin needs the owner.
+  const allowed = checkRoleChange({ actorUid: actor.uid, actorRole: actor.role, targetUid: '__new__', currentTargetRole: '', nextRole: input.role, actorIsOwner: actor.isOwner === true });
   if (allowed.outcome === 'deny') return { ok: false, status: allowed.status, error: allowed.error };
 
   try {

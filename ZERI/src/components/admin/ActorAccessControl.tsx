@@ -34,6 +34,7 @@ import {
 import toast from 'react-hot-toast';
 import RemoveAccountDialog from './RemoveAccountDialog';
 import { MUNICIPALITY_PLANS } from '../../lib/municipalityProvisioning';
+import { isPlatformOwnerEmail } from '../../lib/platformOwner';
 
 /** Every section the console knows, with the label shown to the operator. */
 const SECTION_LABELS: Array<[AdminSection, string]> = [
@@ -440,14 +441,20 @@ export default function ActorAccessControl({ account, onChanged }: Props) {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => setRemoving(true)}
-          disabled={isBusy}
-          className="mt-3 w-full rounded-lg border border-rose-300 px-3 py-2 text-[11px] font-black text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-40 dark:border-rose-500/40 dark:hover:bg-rose-500/10"
-        >
-          {dt('Hiq llogarinë përgjithmonë…')}
-        </button>
+        {isPlatformOwnerEmail(account.email) ? (
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+            {dt('Pronar i platformës: kjo llogari nuk ndryshohet dhe nuk hiqet nga askush.')}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setRemoving(true)}
+            disabled={isBusy}
+            className="mt-3 w-full rounded-lg border border-rose-300 px-3 py-2 text-[11px] font-black text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-40 dark:border-rose-500/40 dark:hover:bg-rose-500/10"
+          >
+            {dt('Hiq llogarinë përgjithmonë…')}
+          </button>
+        )}
         {removing && (
           <RemoveAccountDialog
             target={{ id: account.id, email: account.email ?? '', name: account.name }}

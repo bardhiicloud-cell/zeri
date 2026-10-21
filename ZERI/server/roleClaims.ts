@@ -105,6 +105,15 @@ export function buildRoleClaims(
   return claims;
 }
 
+/**
+ * The platform owner's claims: everything a superadmin has, plus `owner: true`.
+ * Written only by scripts/make-owner.ts. `owner` is not a managed claim (see server/owner.ts), so the
+ * role routes and the claims sync never add, change or remove it.
+ */
+export function buildOwnerClaims(): Record<string, unknown> {
+  return { ...buildRoleClaims('superadmin', []), owner: true };
+}
+
 export function claimsByteLength(claims: Record<string, unknown>): number {
   return Buffer.byteLength(JSON.stringify(claims), 'utf8');
 }

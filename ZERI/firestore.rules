@@ -26,6 +26,13 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.superadmin == true;
     }
 
+    // The platform owner: a superadmin whose token also carries `owner: true`, a claim only
+    // scripts/make-owner.ts (service account) can write. Everything a superadmin may do, the owner may
+    // do; what only the owner may do is touch a superadmin account or another owner-flagged profile.
+    function isPlatformOwner() {
+      return isAuthenticated() && request.auth.token.owner == true && request.auth.token.superadmin == true;
+    }
+
     /** Read-only oversight role. Grants reads below; no write rule mentions it. */
     function isMonitor() {
       return isAuthenticated() && request.auth.token.monitor == true;
@@ -153,7 +160,7 @@ service cloud.firestore {
      */
     function privilegedUserFields() {
       return [
-        'role', 'isBanned', 'points', 'isVerified', 'permissions', 'municipality',
+        'role', 'isBanned', 'points', 'isVerified', 'permissions', 'municipality', 'isPlatformOwner',
         'municipalityPlan', 'badges', 'email', 'internalNote', 'passwordSetDirectly',
         'bannedAt', 'bannedBy', 'banReason', 'suspendedUntil', 'restriction', 'suspensionLiftedAt',
         'warningCount', 'lastWarningAt', 'lastWarningReason',
@@ -192,7 +199,10 @@ service cloud.firestore {
                         && !request.resource.data.keys().hasAny(privilegedUserFields()))
                     || isSuperAdmin();
 
-      allow update: if isAuthenticated() && (
+      // The owner's profile (flag written by scripts/make-owner.ts) changes only by the owner.
+      allow update: if isAuthenticated()
+        && (resource.data.get('isPlatformOwner', false) != true || request.auth.uid == userId || isPlatformOwner())
+        && (
         (request.auth.uid == userId
          // Self-service: privileged fields are not self-assignable.
          && !request.resource.data.diff(resource.data).affectedKeys()
@@ -207,7 +217,12 @@ service cloud.firestore {
               .hasAny(privilegedUserFields()))
       );
 
-      allow delete: if isSuperAdmin();
+      // An admin deletes ordinary profiles; an admin or superadmin profile goes only by the owner, and the
+      // owner's own profile by nobody from the client (the account is closed on the server, never here).
+      allow delete: if isPlatformOwner() && resource.data.get('isPlatformOwner', false) != true
+                    || isSuperAdmin()
+                       && resource.data.get('isPlatformOwner', false) != true
+                       && !(resource.data.get('role', '') in ['admin', 'superadmin']);
     }
 
     // ──────────────────────────────────────────────

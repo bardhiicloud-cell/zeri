@@ -59,6 +59,10 @@ export interface RoleChange {
   currentTargetRole: string;
   /** The role being assigned. */
   nextRole: string;
+  /** The actor is the platform owner (server/owner.ts); decided from the verified token only. */
+  actorIsOwner?: boolean;
+  /** The target is the platform owner (claim or email); nobody may change that account. */
+  targetIsOwner?: boolean;
 }
 
 /**
@@ -67,14 +71,20 @@ export interface RoleChange {
  *  - only admin / superadmin manage staff roles;
  *  - nobody changes their own role or ban state (a superadmin demoting
  *    themselves would lock the platform out of its owner);
- *  - touching an admin / superadmin account, or granting either role, is reserved
- *    for the superadmin: otherwise an admin could demote or ban their peers.
+ *  - touching an admin account, or granting that role, is reserved for a superadmin:
+ *    otherwise an admin could demote or ban their peers;
+ *  - touching a superadmin account, or granting that role, is reserved for the platform owner;
+ *  - nobody changes the owner, not even another superadmin.
  */
 export function checkRoleChange(input: RoleChange): Decision {
   if (!ASSIGNABLE_STAFF_ROLES.includes(input.nextRole)) return deny(400, 'Invalid role');
   if (!OWNER_LEVEL_ROLES.has(input.actorRole)) return deny(403, 'Kërkohet roli administrator.');
   if (input.actorUid === input.targetUid) {
     return deny(400, 'Nuk mund të ndryshoni rolin ose aksesin e llogarisë suaj.');
+  }
+  if (input.targetIsOwner) return deny(403, 'Llogaria e pronarit të platformës nuk ndryshohet nga askush.');
+  if ((input.currentTargetRole === 'superadmin' || input.nextRole === 'superadmin') && !input.actorIsOwner) {
+    return deny(403, 'Vetëm pronari i platformës krijon, ndryshon ose ul një superadmin.');
   }
   if (
     input.actorRole !== 'superadmin' &&
