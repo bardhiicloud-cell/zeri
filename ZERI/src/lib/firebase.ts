@@ -8,7 +8,7 @@ import {
   getRedirectResult,
   AuthProvider,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore, doc, getDoc } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import type { FirebaseStorage } from 'firebase/storage';
 import appletConfig from '../../firebase-applet-config.json';
 
@@ -180,7 +180,7 @@ let redirectFlowStarted = false;
 export async function signInWithGoogle(provider: AuthProvider): Promise<import('firebase/auth').UserCredential> {
   try {
     return await signInWithPopup(auth, provider);
-  } catch (err: any) {
+  } catch (err) {
     const code = err?.code || '';
     const userCancelled =
       code === 'auth/popup-closed-by-user' ||

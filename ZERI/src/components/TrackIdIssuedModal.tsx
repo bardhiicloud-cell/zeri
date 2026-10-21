@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Copy, X } from 'lucide-react';
 import { dt } from '../lib/dt';

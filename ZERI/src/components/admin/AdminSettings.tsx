@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import React, { useState } from 'react';
-import { Settings, Save, Database, Shield, Globe, Heart, CheckCircle2, AlertTriangle, Eye } from 'lucide-react';
+import { Settings, Save, Database, Shield, Globe, Heart, AlertTriangle, Eye } from 'lucide-react';
 import { useStore } from '../../lib/store';
 import { db } from '../../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';

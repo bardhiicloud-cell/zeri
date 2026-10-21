@@ -107,11 +107,12 @@ describe('Kosovo archive UI', () => {
     expect(screen.getByText('Në rrezik të menjëhershëm telefononi 112.')).toBeTruthy();
   });
 
-  it('labels every entry with its evidence status and states honestly that it is not yet verified', async () => {
+  it('labels every entry with its evidence status and shows the "pending verification" note only outside the KLA archive', async () => {
     mount('/kosova/pavaresia/deklarata-17-shkurt');
     expect(await screen.findByRole('heading', { level: 1, name: /Deklarata e Pavarësisë, 17 shkurt 2008/ })).toBeTruthy();
     expect(screen.getAllByText('Dokument zyrtar').length).toBeGreaterThan(0);
-    expect(screen.getByText(/pret verifikim nga një person i dytë/)).toBeTruthy();
+    // Kosovo pages keep the editorial note; only the KLA archive hides it (see VerificationNote).
+    expect(screen.getAllByText(/pret verifikim nga një person i dytë/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/lidhja nuk është kontrolluar/).length).toBeGreaterThan(0);
   });
 

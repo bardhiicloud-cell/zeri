@@ -704,7 +704,7 @@ html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-.news-ticker-track { display: flex; width: max-content; animation: news-ticker var(--ticker-duration, 40s) linear infinite; }
+.news-ticker-track { display: flex; width: max-content; will-change: transform; animation: news-ticker var(--ticker-duration, 40s) linear infinite; }
 @media (hover: hover) { .news-ticker:hover .news-ticker-track { animation-play-state: paused; } }
 /* The ticker keeps moving under reduced motion too (many Windows setups report it); the pause button satisfies WCAG 2.2.2. */
 .news-ticker[data-paused='true'] .news-ticker-track { animation-play-state: paused; }

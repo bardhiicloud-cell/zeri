@@ -1,0 +1,15 @@
+{
+ "@typescript-eslint/no-explicit-any": 271,
+ "@typescript-eslint/no-unused-vars": 161,
+ "no-case-declarations": 3,
+ "no-control-regex": 1,
+ "no-empty": 1,
+ "no-ex-assign": 1,
+ "no-irregular-whitespace": 2,
+ "no-useless-assignment": 7,
+ "no-useless-escape": 1,
+ "prefer-const": 2,
+ "preserve-caught-error": 5,
+ "react-hooks/exhaustive-deps": 39,
+ "react-hooks/rules-of-hooks": 40
+}

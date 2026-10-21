@@ -1,9 +1,5 @@
-import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { dt } from '@/src/lib/dt';
 import React, { useState } from 'react';
-import { Phone, Search, Building, ShieldAlert, HeartPulse, Shield, TreePine, GraduationCap, Gavel, FileText, Globe, Landmark, Factory, Briefcase, Car, Users, HandCoins, Sprout, Zap, Droplet, Scale, LifeBuoy, ChevronDown, Layers } from 'lucide-react';
+import { Phone, Search, Building, ShieldAlert, TreePine, Gavel, Globe, Landmark } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../lib/LanguageContext';
 import { motion } from 'framer-motion';

@@ -14,7 +14,7 @@
   --au-line: rgba(0, 0, 0, 0.08);
   --au-text: #1d1d1f;
   --au-sub: #6e6e73;
-  --au-accent: #0071e3;
+  --au-accent: #005fb8;
   --au-accent-soft: rgba(0, 113, 227, 0.1);
   --au-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.12);
   --au-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
@@ -45,6 +45,8 @@ html.dark {
 .au-orbit-sat { position: absolute; display: grid; place-items: center; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 10px; transition: transform .2s ease, background .2s ease; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); animation: au-bob 6s ease-in-out infinite; }
 a.au-orbit-sat:hover, .au-orbit-sat:is(a):hover { background: rgba(255,255,255,.3); transform: scale(1.12); }
 @media (max-width: 640px) { .au-orbit { width: 148px; height: 148px; } .au-orbit-sat { width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 9px; } .au-orbit-sat svg { width: 14px; height: 14px; } .au-orbit-core svg { width: 16px; height: 16px; } }
+/* Phones: no per-frame blur or endless bobbing behind the hero; both cost more than they show. */
+@media (max-width: 640px) { .au-orbit-sat { backdrop-filter: none; animation: none; } .au-btn-glass { backdrop-filter: none; } }
 /* Invisible hit area: the satellites stay visually small but take a 40px touch. */
 .au-orbit-sat::before { content: ""; position: absolute; inset: -5px; border-radius: inherit; }
 @keyframes au-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -79,6 +81,7 @@ a.au-orbit-sat:hover, .au-orbit-sat:is(a):hover { background: rgba(255,255,255,.
 .au-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 18px; text-align: center; line-height: 1.2; border-radius: 999px; font-size: 14px; font-weight: 600; transition: transform .2s ease, background .2s ease, opacity .2s; }
 .au-btn:active { transform: scale(.98); }
 .au-btn-primary { background: var(--au-accent); color: #fff; }
+html.dark .au-btn-primary { color: #00142e; }
 .au-btn-primary:hover { filter: brightness(1.08); }
 .au-btn-dark { background: var(--au-text); color: var(--au-bg); }
 .au-btn-soft { background: color-mix(in srgb, var(--au-text) 7%, transparent); color: var(--au-text); }

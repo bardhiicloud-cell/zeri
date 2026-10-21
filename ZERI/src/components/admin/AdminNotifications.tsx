@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, limit } from 'firebase/firestore';
 import { PLACEMENTS, PLACEMENT_META, placementsOf, type NotificationPlacement } from '../../lib/notificationPlacements';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /**
  * Admin control centre for the bell's "Njoftime" (general broadcast) channel.

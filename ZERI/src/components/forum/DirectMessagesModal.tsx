@@ -4,8 +4,7 @@ import { ReportTargetSheet } from './ReportTargetSheet';
 import { dt } from '@/src/lib/dt';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, Send, Search, Image as ImageIcon, MessageSquare, User,
-  CheckCheck, ArrowLeft, Loader2, Sparkles, Smile, ShieldCheck, Ban, Check, Clock
+  X, Send, Search, Image as ImageIcon, MessageSquare, User, ArrowLeft, Loader2, Sparkles, ShieldCheck, Ban, Check, Clock
 } from 'lucide-react';
 import {
   collection, query, where, orderBy, onSnapshot, doc, getDoc, limit
@@ -17,7 +16,7 @@ import {
   DmApiError, blockUser, composerState, setConversationPrefsApi, markDmRead, respondToDmRequest, sendDm, setDmPrivacy, unblockUser,
   viewOfConversation, type DmPrivacy,
 } from '../../lib/directMessagesApi';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface DirectMessage {
   id: string;

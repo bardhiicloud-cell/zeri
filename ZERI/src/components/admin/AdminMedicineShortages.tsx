@@ -17,7 +17,7 @@ import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { STAFF_LIMITS } from '../../lib/loadLimits';
 import type { MedicineShortage } from '../../types';
 import toast from 'react-hot-toast';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 /**
  * Staff-side management of citizen medicine-shortage reports.

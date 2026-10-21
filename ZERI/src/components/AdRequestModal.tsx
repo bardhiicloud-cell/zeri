@@ -105,7 +105,7 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
       }
       toast.success(dt('Kërkesa u dërgua për shqyrtim. Administrata do t’ju kontaktojë për hapat e pagesës.'));
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error(dt('Gabim gjatë dërgimit të kërkesës. Ju lutem provoni përsëri.'));
     } finally {

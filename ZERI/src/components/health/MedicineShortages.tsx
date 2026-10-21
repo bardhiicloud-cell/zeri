@@ -146,7 +146,7 @@ export function MedicineShortages() {
       setShowForm(false);
       setForm({ ...form, medicineName: '', dose: '', form: '', institution: '', comment: '' });
       toast.success(dt('Mungesa u dërgua për verifikim.'));
-    } catch (err: any) {
+    } catch (err) {
       console.error('Raportimi i mungesës dështoi:', err);
       toast.error(err?.message || dt('Raportimi dështoi.'));
     } finally {

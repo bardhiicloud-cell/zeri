@@ -1,12 +1,10 @@
-import { dt } from '@/src/lib/dt';
 import { escapeHtml } from '../../lib/escapeHtml';
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../lib/store';
-import { Download, Search, Trash2, CheckCircle2, FileText, Calendar, Filter, X, ChevronLeft, ChevronRight, CheckSquare, Square, Edit, MapPin, LayoutGrid, List, Cpu, Mail, ContactRound, Plus } from 'lucide-react';
+import { Search, Trash2, Calendar, X, ChevronLeft, ChevronRight, Cpu, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../../lib/utils';
 import ReportDetailModal from '../ReportDetailModal.tsx';
-import { KOSOVO_MUNICIPALITIES } from '../../lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../lib/LanguageContext';
 import { getAccountabilityProfile } from '../../lib/accountability';
@@ -32,7 +30,7 @@ import { ReportRow } from './reports/ReportRow';
 import ReviewMode from './ReviewMode';
 import EmailInstitutionDialog from './EmailInstitutionDialog';
 import { ReportsToolbar } from './reports/ReportsToolbar';
-import { askConfirm, askReason } from '../../lib/dialogs';
+import { askConfirm } from '../../lib/dialogs';
 
 interface ReportRoutingContact {
   id: string;

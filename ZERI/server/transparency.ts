@@ -298,7 +298,7 @@ export function registerTransparencyRoutes(app: Express, deps: TransparencyDeps)
       if (cache.size > 200) cache.clear();
       cache.set(key, { at: Date.now(), body });
       return res.json(body);
-    } catch (error: any) {
+    } catch (error) {
       const missingIndex = error?.code === 9 || /index/i.test(String(error?.message ?? ''));
       console.error('[TRANSPARENCY] failed:', error?.message);
       return res.status(missingIndex ? 503 : 500).json({ error: missingIndex ? 'Indeksi i kërkuar nuk është aktivizuar ende.' : 'Statistikat nuk u ngarkuan.' });

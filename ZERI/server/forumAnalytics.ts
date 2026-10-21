@@ -143,7 +143,7 @@ export function registerForumAnalyticsRoutes(app: Express, deps: ForumAnalyticsD
         reelId: String(req.body?.reelId ?? ''),
       });
       return res.json({ recorded });
-    } catch (error: any) {
+    } catch (error) {
       console.warn('[FORUM] insight event failed:', error?.message);
       return res.json({ recorded: false });
     }
@@ -162,7 +162,7 @@ export function registerForumAnalyticsRoutes(app: Express, deps: ForumAnalyticsD
       // Current period plus the one before it, for "vs previous period".
       const all = await readInsights(deps.db(), uid, days * 2);
       return res.json({ days, previous: all.slice(0, days), current: all.slice(days) });
-    } catch (error: any) {
+    } catch (error) {
       console.error('[FORUM] insights read failed:', error?.message);
       return res.status(500).json({ error: 'Statistikat nuk u ngarkuan.' });
     }
