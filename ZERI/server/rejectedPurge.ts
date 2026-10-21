@@ -15,6 +15,10 @@ import { FieldValue } from 'firebase-admin/firestore';
  * or a restart in the middle of a purge are harmless.
  */
 
+// Firestore documents are untyped data; every field is read through a guard below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ReportDoc = Record<string, any>;
+
 export const REJECTED_RETENTION_MS = 24 * 60 * 60_000;
 export const DELETED_REPORTS = 'deletedReports';
 
@@ -35,7 +39,7 @@ const toMs = (value: unknown): number | null => {
 };
 
 /** When the report was rejected: the pipeline's own stamp, else the newest `Rejected` timeline event. */
-export function rejectedAtMs(report: Record<string, any>): number | null {
+export function rejectedAtMs(report: ReportDoc): number | null {
   const stamped = toMs(report?.workflow?.rejectedAtMs) ?? toMs(report?.rejectedAt);
   if (stamped) return stamped;
   const events: Array<Record<string, unknown>> = Array.isArray(report?.timeline) ? report.timeline : [];
@@ -44,12 +48,12 @@ export function rejectedAtMs(report: Record<string, any>): number | null {
   return toMs(report?.updatedAt);
 }
 
-export function purgeDueAtMs(report: Record<string, any>): number | null {
+export function purgeDueAtMs(report: ReportDoc): number | null {
   const at = rejectedAtMs(report);
   return at === null ? null : at + REJECTED_RETENTION_MS;
 }
 
-export function isPurgeDue(report: Record<string, any>, now: number): boolean {
+export function isPurgeDue(report: ReportDoc, now: number): boolean {
   if (report?.status !== 'Rejected') return false;
   const due = purgeDueAtMs(report);
   return due !== null && due <= now;
@@ -64,7 +68,7 @@ export function storagePathFromUrl(url: unknown): string | null {
 }
 
 /** Every file the report points at: its own folder plus any other Storage object named by a URL in the document. */
-export function reportStorageTargets(report: Record<string, any>, reportId: string): { prefixes: string[]; files: string[] } {
+export function reportStorageTargets(report: ReportDoc, reportId: string): { prefixes: string[]; files: string[] } {
   const prefixes = new Set<string>();
   const authorId = String(report?.authorId ?? '');
   if (authorId && reportId) prefixes.add(`reports/${authorId}/${reportId}/`);
@@ -96,7 +100,7 @@ async function deleteWhere(db: Firestore, collection: string, field: string, val
 }
 
 /** Erases one report completely. Files first: if they fail the document stays, so the next sweep retries with the paths still known. */
-export async function purgeReport(db: Firestore, bucket: PurgeBucket | null, reportId: string, report: Record<string, any>, now: number): Promise<void> {
+export async function purgeReport(db: Firestore, bucket: PurgeBucket | null, reportId: string, report: ReportDoc, now: number): Promise<void> {
   const { prefixes, files } = reportStorageTargets(report, reportId);
   if (bucket) {
     for (const prefix of prefixes) await bucket.deleteFiles({ prefix, force: true });

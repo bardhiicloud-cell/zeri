@@ -149,7 +149,7 @@ function eventInstitution(event: Record<string, unknown>, source: Source): strin
 const RETENTION_MS = 24 * 60 * 60_000;
 
 /** Same clock the purge job uses (server/rejectedPurge.ts): 24 hours after the rejection. */
-function rejectionDeleteAt(report: Record<string, any>, eventDate: string | null): string | null {
+function rejectionDeleteAt(report: { workflow?: { rejectedAtMs?: unknown }; rejectedAt?: unknown }, eventDate: string | null): string | null {
   const stamped = report?.workflow?.rejectedAtMs;
   const from = typeof stamped === 'number' ? new Date(stamped).toISOString() : toIso(report?.rejectedAt) ?? eventDate;
   const ms = from ? Date.parse(from) : NaN;
