@@ -9,6 +9,8 @@ import { MusicDock } from '../../components/heritage/MusicDock';
 import { ClaimsView, Crumbs, EvidenceBadge, SensitiveGate, entryPath, sectionPath, useHeritageLang } from '../../components/heritage/Atoms';
 import { ArticleBlock } from '../../components/heritage/Blocks';
 import { Chronicle } from '../../components/heritage/Chronicle';
+import { Photo } from '../../components/heritage/Photo';
+import { photoCreditText } from '../../lib/heritage/photoCredits';
 import NotFoundPage from '../NotFoundPage';
 import { AccountabilitySection, FamiliesSection, JashariSection, LiberationSection, MartyrsSection } from '../../components/heritage/Memorial';
 
@@ -95,6 +97,16 @@ export default function UckArchivePage() {
 
         {/* Masthead */}
         <header className="hx-uck-hero hx-grain relative isolate overflow-hidden rounded-[28px]">
+          {/* The memorial park at Prekaz: a place, never a portrait, under a dark wash so the text stays the subject. */}
+          {!section && (
+            <div className="absolute inset-0 -z-10" aria-hidden="true">
+              <Photo name="prekaz" alt="" bare noCredit className="!absolute inset-0 !bg-transparent opacity-30" />
+              <span className="absolute inset-0 bg-gradient-to-r from-[#0a0405] via-[#0a0405]/70 to-transparent" />
+            </div>
+          )}
+          {!section && photoCreditText('prekaz') && (
+            <p className="absolute bottom-2 right-4 z-10 text-[10px] font-semibold text-white/55">{lang === 'sq' ? 'Kompleksi Memorial, Prekaz' : 'Memorial Complex, Prekaz'} · © {photoCreditText('prekaz')}</p>
+          )}
           <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-10 sm:p-10 lg:p-12">
             {!section && (
               <img src="/heritage/emblema-uck.webp" alt={lang === 'sq' ? 'Emblema e UÇK-së' : 'KLA emblem'} width={150} height={170}

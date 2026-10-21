@@ -11,6 +11,7 @@ import type { HeritageLang } from '../../lib/heritage/types';
 import { PlateArt } from './HeritageArt';
 import { Photo } from './Photo';
 import { CHARGES, SEXUAL_VIOLENCE_COUNTS, STRENGTH_LABEL } from '../../lib/heritage/accountability';
+import { MARTYR_PROFILES } from '../../lib/heritage/martyrProfiles';
 import { JASHARI_FACTS, JASHARI_SOURCE, PREKAZ_BEATS, PREKAZ_SOURCE } from '../../lib/heritage/jashari';
 import { CITIES, WHY_VISIT } from '../../lib/heritage/welcome';
 
@@ -57,13 +58,23 @@ export function LiberationSection({ lang }: { lang: HeritageLang }) {
 
 function MartyrCard({ m, lang }: { m: Martyr; lang: HeritageLang }) {
   const age = ageAtDeath(m.born, m.died);
+  const profile = MARTYR_PROFILES[m.id];
   return (
     <li className="hx-card relative flex gap-3 overflow-hidden p-4 pl-5 sm:gap-4 sm:p-5">
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#c8102e] via-[#111] to-[#c8102e]" />
-      <span className="relative flex h-14 w-14 shrink-0 sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#c8102e]" style={{ background: 'radial-gradient(circle at 30% 25%, #3a0a12, #0b0b12)' }}>
-        <span aria-hidden="true" className="hx-serif text-lg font-black text-white/90">{initials(m.name)}</span>
-        <Photo name={`dheshmor-${m.id}`} alt={m.name} bare className="!absolute inset-0 !bg-transparent" />
-      </span>
+      {profile?.photo ? (
+        <figure className="w-24 shrink-0 sm:w-28">
+          <span className="relative block aspect-[4/5] overflow-hidden rounded-xl ring-2 ring-[#c8102e]" style={{ background: 'radial-gradient(circle at 30% 25%, #3a0a12, #0b0b12)' }}>
+            <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center hx-serif text-2xl font-black text-white/80">{initials(m.name)}</span>
+            <Photo name={`dheshmor-${m.id}`} alt={`${profile.photo.caption[lang]}`} bare className="!absolute inset-0 !bg-transparent" position="top" />
+          </span>
+          <figcaption className="hx-ink-3 mt-1.5 text-[10px] font-semibold leading-snug">{profile.photo.caption[lang]}</figcaption>
+        </figure>
+      ) : (
+        <span className="relative flex h-14 w-14 shrink-0 sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#c8102e]" style={{ background: 'radial-gradient(circle at 30% 25%, #3a0a12, #0b0b12)' }}>
+          <span aria-hidden="true" className="hx-serif text-lg font-black text-white/90">{initials(m.name)}</span>
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <h3 className="hx-serif text-lg font-black leading-tight" style={{ color: 'var(--hx-ink)' }}>
           {m.name}{m.alias && <span className="hx-brass text-sm font-bold"> · “{m.alias}”</span>}
@@ -73,7 +84,7 @@ function MartyrCard({ m, lang }: { m: Martyr; lang: HeritageLang }) {
           <div className="flex gap-1.5"><dt className="hx-ink-3 w-16 shrink-0">{lang === 'sq' ? 'Lindur' : 'Born'}</dt><dd>{formatMemorialDate(m.born)}{m.bornPlace ? `, ${m.bornPlace}` : ''}</dd></div>
           <div className="flex gap-1.5"><dt className="hx-ink-3 w-16 shrink-0">{lang === 'sq' ? 'Rënë' : 'Fell'}</dt><dd className="font-semibold" style={{ color: 'var(--hx-ink)' }}>{formatMemorialDate(m.died)}, {m.diedPlace}</dd></div>
         </dl>
-        <p className="hx-ink-2 mt-2 text-sm leading-relaxed">{m.role[lang]}</p>
+        <p className="hx-ink-2 mt-2 text-sm leading-relaxed">{profile ? profile.bio[lang] : m.role[lang]}</p>
         {m.lastWords && (
           <blockquote className="mt-2 border-l-2 border-[#c8102e] pl-3 text-sm italic" style={{ color: 'var(--hx-ink)' }}>
             <span className="hx-ink-3 block text-[10px] font-black uppercase not-italic tracking-wider">{lang === 'sq' ? 'Fjalët e fundit' : 'Last words'}</span>“{m.lastWords[lang]}”
@@ -133,7 +144,7 @@ export function MartyrsSection({ lang }: { lang: HeritageLang }) {
       </header>
       {list.length === 0
         ? <p className="hx-ink-3 text-sm">{lang === 'sq' ? 'Asnjë emër nuk përputhet.' : 'No name matches.'}</p>
-        : <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{list.map(m => <MartyrCard key={m.id} m={m} lang={lang} />)}</ul>}
+        : <ul className="grid items-start gap-4 md:grid-cols-2">{list.map(m => <MartyrCard key={m.id} m={m} lang={lang} />)}</ul>}
     </section>
   );
 }

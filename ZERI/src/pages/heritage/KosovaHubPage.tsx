@@ -6,6 +6,8 @@ import { useHeritage } from '../../lib/heritage/api';
 import { contentStats, entriesOf, searchEntries, timelineOf } from '../../lib/heritage/content';
 import { EVIDENCE, EVIDENCE_STATUSES, KOSOVA_SECTIONS, UCK_SECTIONS, formatHeritageDate, pick } from '../../lib/heritage/types';
 import { PlateArt } from '../../components/heritage/HeritageArt';
+import { Photo } from '../../components/heritage/Photo';
+import { photoCreditText } from '../../lib/heritage/photoCredits';
 import { EvidenceBadge, entryPath, sectionPath, useHeritageLang, Crumbs } from '../../components/heritage/Atoms';
 import { EntryCard } from '../../components/heritage/Blocks';
 import { TourismSection, WhyVisitSection } from '../../components/heritage/Memorial';
@@ -48,11 +50,12 @@ export default function KosovaHubPage() {
 
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <section aria-labelledby="hx-h1" className="hx-state-hero hx-grain relative isolate overflow-hidden rounded-[28px] shadow-[0_30px_80px_-44px_rgba(7,13,32,.95)]">
-          {settings.heroImageUrl && (
-            <div className="absolute inset-0 -z-10" aria-hidden="true">
-              <img src={settings.heroImageUrl} alt="" className="h-full w-full object-cover opacity-35" decoding="async" />
-            </div>
-          )}
+          <div className="absolute inset-0 -z-10" aria-hidden="true">
+            {settings.heroImageUrl
+              ? <img src={settings.heroImageUrl} alt="" className="h-full w-full object-cover opacity-35" decoding="async" />
+              /* No photo set in the CMS: the Bjeshkët e Nemuna, a free-licence photograph credited below. */
+              : <Photo name="bjeshket" alt="" bare noCredit className="!absolute inset-0 !bg-transparent opacity-40" />}
+          </div>
           <div className="relative grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.35fr_1fr] lg:p-14">
             <div className="flex flex-col gap-5">
               <p className="hx-eyebrow hx-rise" style={{ ['--i' as string]: 0, color: '#e8c36e' }}>{t('kicker')}</p>
@@ -73,7 +76,9 @@ export default function KosovaHubPage() {
                   {t('openArchive')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
-              {settings.heroImageUrl && settings.heroCredit && <p className="text-[11px] text-white/60">© {settings.heroCredit}</p>}
+              {settings.heroImageUrl
+                ? settings.heroCredit && <p className="text-[11px] text-white/60">© {settings.heroCredit}</p>
+                : photoCreditText('bjeshket') && <p className="text-[11px] text-white/60">© {photoCreditText('bjeshket')}</p>}
             </div>
             <div className="hx-rise relative hidden items-center justify-center lg:flex" style={{ ['--i' as string]: 2 }}>
               <span className="absolute h-72 w-72 rounded-full bg-[#e8c36e]/15 blur-3xl" aria-hidden="true" />
