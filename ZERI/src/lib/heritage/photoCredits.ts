@@ -27,6 +27,17 @@ export const PHOTO_CREDITS: Record<string, PhotoCredit> = {
   'qyteti-mitrovica': { author: 'GentiBehramaj', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Ibar_Bridge_in_Mitrovica,_Kosovo_00_59_05_535000.jpeg' },
   'qyteti-prishtina': { author: 'Petrit Daku', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Prishtina_by_night.jpg' },
   'qyteti-ferizaj': { author: 'Fjolle Ramadani', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:25_gusht.jpg' },
+  'dheshmor-adem-jashari': { author: 'Antidiskriminator', license: 'Public domain', source: 'https://commons.wikimedia.org/wiki/File:Adem_Ja%C5%A1ari,_bista_u_Tirani.JPG' },
+  'dheshmor-zahir-pajaziti': { author: 'Resnjari', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Zahir_Pajaziti_Monument,_2018.jpg' },
+  'dheshmor-hakif-zejnullahu': { author: 'Ulisi', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Shatorja_e_Hakif_Zejnullahut.jpg' },
+  'dheshmor-luan-haradinaj': { author: 'Arianit', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Luan_Haradinaj_statue,_De%C3%A7an_2.jpg' },
+  'dheshmor-ismet-jashari': { author: 'Shkurte ramushi', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Ismet_Jashari,_Hero_Kombetar,_Prizren.jpg' },
+  'dheshmor-shkelzen-haradinaj': { author: 'Br4x667', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Pamje_e_Bustit_te_Gjeneral_Shkelzen_Haradinaj_ne_Peje.jpg' },
+  'dheshmor-sali-cekaj': { author: 'PatriotKosova', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Statue_Sali_%C3%87ekaj,_Kosovo,_De%C3%A7an.jpg' },
+  'dheshmor-nebih-meha': { author: 'Illir Ademi', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Nebih_Meha_B%C3%BCste.jpg' },
+  'dheshmor-jusuf-gervalla': { author: 'RVLLL', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Shtatorja_Jusuf_Gervalla.2.jpg' },
+  'dheshmor-kadri-zeka': { author: 'Arianit', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Kadri_Zeka_bust_at_Radio_Kosova_building.jpg' },
+  'dheshmor-hamez-jashari': { author: 'Based Drenica', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Ham%C3%ABz_Jashari.jpg' },
 };
 
 /** "Author · licence" for places where the credit cannot be a link (for example inside another link). */
