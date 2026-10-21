@@ -19,6 +19,8 @@ import type { Firestore } from 'firebase-admin/firestore';
 export const PURGE_AFTER_MS = 24 * 3_600_000;
 export const TOMBSTONES = 'reportTombstones';
 
+// Firestore documents are untyped data; every field is read through a guard below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Doc = Record<string, any>;
 
 const SAFE_SEGMENT = /^[A-Za-z0-9_-]{4,128}$/;
