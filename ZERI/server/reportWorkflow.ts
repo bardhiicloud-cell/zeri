@@ -723,7 +723,7 @@ async function afterCommit(deps: ReportWorkflowDeps, actor: Actor, result: Extra
     try {
       await db.collection('notifications').add({
         title: `Përditësim i raportimit ${trackId ? `#${trackId}` : ''}`.trim(),
-        message: `Raportimi juaj ${trackId ? `#${trackId}` : ''} kaloi në statusin "${label}".${result.to === 'rejected' && text ? ` Arsyeja: ${text.slice(0, 200)}` : ''}`.trim(),
+        message: `Raportimi juaj ${trackId ? `#${trackId}` : ''} kaloi në statusin "${label}".${result.to === 'rejected' && text ? ` Arsyeja: ${text.slice(0, 200)}` : ''}${result.to === 'rejected' ? ' Raportimi dhe fotot e tij fshihen automatikisht pas 24 orësh.' : ''}`.trim(),
         channel: 'report', category: 'report',
         type: result.to === 'rejected' ? 'alert' : result.to === 'resolved' || result.to === 'closed' ? 'success' : 'info',
         priority: result.to === 'rejected' ? 'high' : 'normal', urgent: false, audience: 'user', userId: authorId,
