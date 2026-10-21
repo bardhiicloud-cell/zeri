@@ -38,6 +38,17 @@ export const PHOTO_CREDITS: Record<string, PhotoCredit> = {
   'dheshmor-jusuf-gervalla': { author: 'RVLLL', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Shtatorja_Jusuf_Gervalla.2.jpg' },
   'dheshmor-kadri-zeka': { author: 'Arianit', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Kadri_Zeka_bust_at_Radio_Kosova_building.jpg' },
   'dheshmor-hamez-jashari': { author: 'Based Drenica', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Ham%C3%ABz_Jashari.jpg' },
+  'dheshmor-indrit-cara': { author: 'Arianit', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Indrit_Cara_-_Ushtar_Kavaja_bust.jpg' },
+  'gazivoda': { author: 'SUHEJLO', license: 'CC BY 4.0', source: 'https://commons.wikimedia.org/wiki/File:Ujemani_or_Gazivoda_Lake_as_seen_from_the_Air.jpg' },
+  'badovc': { author: 'SUHEJLO', license: 'CC BY 4.0', source: 'https://commons.wikimedia.org/wiki/File:Badoc_Lake_20-km_from_Prishtina_from_the_air.jpg' },
+  'gjeravica': { author: 'Bujar Gashi', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Liqeni_i_Zemres,_Bjeshket_e_De%C3%A7anit.jpg' },
+  'kalaja-prizrenit': { author: 'Botoski', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Kaljaja.jpg' },
+  'xhamia-hadumit': { author: 'Ergonc', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Panorama_Xhamia_e_Hadumit.JPG' },
+  'muzeu-kombetar': { author: 'Arild Vågen', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Kosovo_Museum_February_2013_01.jpg' },
+  'kulla-sahatit': { author: 'Musli Berisha', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:The_Prishtina_clock_tower.jpg' },
+  'katedralja': { author: 'Arianit', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Mother_Teresa_Cathedral4.jpg' },
+  'biblioteka': { author: 'LekëC', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:The_left_side_of_the_National_Library_in_Pristina.jpg' },
+  'kalaja-kacanikut': { author: 'Fjolle Ramadani', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Gur_Gur_behet_Mur.jpg' },
 };
 
 /** "Author · licence" for places where the credit cannot be a link (for example inside another link). */

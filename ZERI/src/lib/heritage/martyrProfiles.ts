@@ -129,4 +129,46 @@ export const MARTYR_PROFILES: Readonly<Record<string, MartyrProfile>> = {
       'A national-cause activist. On 17 January 1982 he was shot dead near Stuttgart, in a car with the brothers Jusuf and Bardhosh Gërvalla, in an assassination attributed to the Yugoslav secret service. His memory is kept by a bust beside the Radio Kosova building.'),
     photo: { kind: 'bust', caption: l('Busti i Kadri Zekës para Radio Kosovës', 'Bust of Kadri Zeka at the Radio Kosova building') },
   },
+
+  'agim-shala': {
+    bio: l(
+      'Lindi më 18 shtator 1975 në Jeshkovë të Prizrenit. E ndërpreu shkollën e mesme teknike në Prizren kur familja u varfërua nga ndjekjet dhe në 1993 shkoi në Romë. Pas sulmit në Prekaz iu bashkua UÇK-së; më 6 maj 1998 u vendos në Shtabin Operativ Rajonal të Prizrenit dhe luftoi në Bilushë (7 korrik) dhe në Tusus e Hoçën e Zagradës (16 korrik). Ra më 3 shtator 1998 në ofensivën e policisë në rajonin e Vërrinit, pasi kishte lidhur plagët e shokut të tij. Më 2023 shtatorja e tij u ngrit përpara komunës së Prizrenit.',
+      'Born on 18 September 1975 in Jeshkovë, Prizren. He left the technical secondary school in Prizren when persecution impoverished his family and in 1993 went to Rome. After the attack on Prekaz he joined the KLA; on 6 May 1998 he was placed in the regional operational headquarters for Prizren and fought at Bilushë (7 July) and at Tusus and Hoça e Zagradës (16 July). He fell on 3 September 1998 in the police offensive on the Vërrin region, after dressing a fellow soldier’s wounds. In 2023 a statue of him was set up in front of Prizren municipality.'),
+  },
+  'abedin-rexha': {
+    bio: l(
+      'Lindi më 8 korrik 1969 në Vojnik të Skenderajt; studioi minierinë dhe metalurgjinë në Mitrovicë dhe, që në shkollë të mesme, shpërndante fletushka kundër pushtetit jugosllav. U largua nga Kosova më 1992, iu bashkua UÇK-së më 1996 dhe u takua me Adem Jasharin. Më 6 maj 1997 ishte në grupin që u përpoq të kalonte Qafën e Prushit. Komandant i Brigadës 112 «Arben Haliti», ra më 8 tetor 1998 në Klladërnicë afër Skenderajt; rrethanat e rënies shihni te burimi. Më 2017 iu dha titulli «Hero i Kosovës», dhe një shkollë në Turiçec mban emrin e tij.',
+      'Born on 8 July 1969 in Vojnik, Skenderaj; he studied mining and metallurgy in Mitrovica and, already in secondary school, distributed leaflets against Yugoslav rule. He left Kosovo in 1992, joined the KLA in 1996 and met Adem Jashari. On 6 May 1997 he was in the group that tried to cross the Prush Pass. Commander of the 112th Brigade “Arben Haliti”, he fell on 8 October 1998 at Klladërnicë near Skenderaj; for the circumstances see the source. In 2017 he was awarded “Hero of Kosovo” and a school in Turiçec bears his name.'),
+  },
+  'besnik-lajci': {
+    bio: l(
+      'Lindi në Pejë më 1971 dhe studioi filozofi e letërsi shqipe në Universitetin e Prishtinës. Ishte ndër luftëtarët e parë të UÇK-së në Rugovë: bashkë me Salih e Selman Lajçin themeloi më 1997 Shtabin Rajonal të Rugovës, pati rol të rëndësishëm në furnizimin me armë dhe në krijimin e Brigadës 163 «Rugova», ku u bë gjeneral i njësisë zbuluese. Ra më 19 prill 1999 në Hajlë: i plagosur, sulmoi vijën e armikut për të mbuluar shokët. Mban titullin «Hero i Kosovës» dhe «Nderin e Kombit» nga presidenti i Shqipërisë.',
+      'Born in Pejë in 1971, he studied philosophy and Albanian literature at the University of Pristina. He was among the first KLA fighters in Rugova: with Salih and Selman Lajçi he formed the Rugova Regional Staff in 1997, played a major part in the supply of arms and in creating the 163rd “Rugova” Brigade, where he became a general of the scouting unit. He fell on 19 April 1999 at Hajla: wounded, he charged the enemy line to cover his comrades. He holds the title “Hero of Kosovo” and the “Honour of the Nation” from the President of Albania.'),
+  },
+  'albesian-mataj': {
+    bio: l(
+      'Lindi më 3 gusht 1982 dhe ishte një nga luftëtarët më të rinj të UÇK-së që ranë në detyrë. Familja e tij ishte nga Osek i Pashës i Gjakovës; më 23 mars 1998, bashkë me vëllanë Albinot, u regjistrua në Junik, në zonën operative të Dukagjinit. Luftoi në rrethimin e Junikut, pastaj në Gllogjan nën komandën e Daut Haradinajt dhe më pas në njësinë «Shqiponjat e Zeza». U vra në pritë të policisë serbe natën mes 27 e 28 shkurtit 1999, teksa nisej nga fshati për në Gjakovë; ishte 16 vjeç. Prehet në Gjakovë, ku është ngritur memorial dhe çdo vit më 28 shkurt mbahen përkujtime.',
+      'Born on 3 August 1982, he was one of the youngest KLA fighters to fall on duty. His family was from Osek i Pashës, Gjakova; on 23 March 1998, with his brother Albinot, he enlisted in Junik, in the Dukagjin operational zone. He fought in the siege of Junik, then at Gllogjan under Daut Haradinaj and later in the “Black Eagles” unit. He was killed in a Serbian police ambush on the night of 27–28 February 1999 as he set out from his village for Gjakova; he was 16. He is buried in Gjakova, where a memorial has been raised and commemorations are held every 28 February.'),
+  },
+  'bashkim-suka': {
+    bio: l(
+      'Lindi më 2 shkurt 1979 dhe ishte komandant i Njësisë Speciale të Brigadës 125 të UÇK-së. Gjatë 1998 mori pjesë në veprimet në rajonin jugor të Prizrenit, përfshirë ofensivën jugosllave mbi Prizren, ku u plagos. Ra më 11 mars 1999 në Betejën e Jeshkovës, duke mbrojtur pozicionet e UÇK-së. Më 2015 iu dha urdhri «Luftëtar i Lirisë Adem Jashari», dhe më 2019 titulli «Hero i Kosovës».',
+      'Born on 2 February 1979, he was commander of the Special Unit of the KLA’s 125th Brigade. During 1998 he took part in operations in the southern Prizren region, including against the Yugoslav offensive on Prizren, where he was wounded. He fell on 11 March 1999 in the Battle of Jeshkovë, defending KLA positions. In 2015 he was awarded the “Freedom Fighter Adem Jashari” order and in 2019 the title “Hero of Kosovo”.'),
+  },
+  'indrit-cara': {
+    bio: l(
+      'Shqiptar nga Kavaja, i lindur më 11 korrik 1971 në një familje punëtore; jetonte në Londër mes kosovarëve. Në fillim të 1999 u kthye në Shqipëri për t’iu bashkuar UÇK-së dhe hyri në Kosovë me tre shokë. Ra më 31 mars 1999 në Betejën e Gallushës dhe u varros në Negroc me nderime ushtarake. Më 2009 presidenti Fatmir Sejdiu i dha medaljen «Adem Jashari»; Kavaja e ka bërë qytetar nderi, një rrugë mban emrin e tij dhe në qendër ka një shtatore. Është shembull i vullnetarëve nga Shqipëria që luftuan për Kosovën.',
+      'An Albanian from Kavajë, born on 11 July 1971 into a working-class family; he lived in London among Kosovars. In early 1999 he returned to Albania to join the KLA and entered Kosovo with three friends. He fell on 31 March 1999 in the Battle of Gallushë and was buried in Negroc with a military salute. In 2009 President Fatmir Sejdiu awarded him the “Adem Jashari” medal; Kavajë has named him an honorary citizen, a street bears his name and a statue stands in the town centre. He is an example of the volunteers from Albania who fought for Kosovo.'),
+    photo: { kind: 'bust', caption: l('Busti i Indrit Carës «Ushtar Kavaja»', 'Bust of Indrit Cara “Ushtar Kavaja”') },
+  },
+  'malush-ahmeti': {
+    bio: l(
+      'Lindi më 16 nëntor 1951 në Rezallë të Skenderajt, në një familje të varfër e patriote. Nga 1991–1992 prodhonte armë me dorë në punëtorinë e tij nëntokësore, derisa policia serbe ia bastisi shtëpinë më 1997 dhe ia mori veglat. Konsiderohet ndër shokët më të ngushtë të Adem Jasharit. Ra më 15 maj 1999 pranë Rezallës nga një predhë haubice 122 mm, teksa koordinonte mbrojtjen me komandantë të tjerë. Gjatë luftës kishte humbur edhe të birin shtatëvjeçar, Leotrimin.',
+      'Born on 16 November 1951 in Rezallë, Skenderaj, into a poor and patriotic family. From 1991–1992 he made firearms by hand in his underground workshop, until Serbian police raided his home in 1997 and took his tools. He is considered one of Adem Jashari’s closest comrades. He fell on 15 May 1999 near Rezallë, struck by a 122 mm howitzer shell while coordinating the defence with other commanders. During the war he had also lost his seven-year-old son Leotrim.'),
+  },
+  'rasim-kicina': {
+    bio: l(
+      'Lindi më 25 gusht 1972 në Banjicë të Drenicës; shkollën e mesme «Skënderbeu» e kreu në Drenicë, i dalluar në mësime dhe në futboll. Më 1992 çarmatosi dy policë serbë që ngacmonin udhëtarë shqiptarë në tren — veprimi me të cilin nisi rezistenca e tij aktive. U bë komandant dhe anëtar i hershëm i Shtabit të Përgjithshëm të UÇK-së. U vra më 30 maj 1999 në një pritë afër Arllatit, bashkë me shokun Ragip Halilaj, dhe u varros në Negroc. Mban titullin «Hero i Kosovës».',
+      'Born on 25 August 1972 in Banjica, Drenica; he attended the “Skënderbeu” secondary school in Drenica, standing out in studies and football. In 1992 he disarmed two Serbian police officers harassing Albanian passengers on a train — the act with which his active resistance began. He became a commander and an early member of the KLA General Staff. He was killed on 30 May 1999 in an ambush near Arllat, with his comrade Ragip Halilaj, and was buried in Negroc. He holds the title “Hero of Kosovo”.'),
+  },
 };
