@@ -189,11 +189,6 @@ export function MobileNav() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isCreateOpen]);
-  const goTo = (href: string) => {
-    close();
-    navigate(href);
-  };
-
   /**
    * Opening the sheet must not leave the page behind it scrollable: on iOS the
    * sheet drifts under the thumb while the body scrolls. The previous overflow
@@ -241,13 +236,13 @@ export function MobileNav() {
             */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-x-2 -top-3 bottom-0 rounded-[28px] bg-gradient-to-r from-blue-500/0 via-blue-500/15 to-cyan-400/0 blur-xl dark:via-blue-400/25"
+              className="pointer-events-none absolute -inset-x-2 -top-3 bottom-0 rounded-[28px] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.16),transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(96,165,250,0.26),transparent_70%)]"
             />
 
-            <ul className="relative grid grid-cols-5 items-end rounded-[22px] border border-white/60 bg-white/85 px-1 pt-1 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.45)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_45px_-18px_rgba(0,0,0,0.85)]">
+            <ul className="relative grid grid-cols-5 items-end rounded-[22px] border border-white/60 bg-white/95 px-1 pt-1 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-900/95 dark:shadow-[0_18px_45px_-18px_rgba(0,0,0,0.85)]">
               {TABS.slice(0, 2).map((tab) => (
                 <li key={tab.href}>
-                  <DockTab tab={tab} active={isActive(tab.href)} onClick={() => goTo(tab.href)} />
+                  <DockTab tab={tab} active={isActive(tab.href)} onClick={close} />
                 </li>
               ))}
 
@@ -293,7 +288,7 @@ export function MobileNav() {
               {/* Sign-in lives at the top of the Menu sheet for visitors. */}
               {TABS.slice(3).map((tab) => (
                 <li key={tab.href}>
-                  <DockTab tab={tab} active={isActive(tab.href)} onClick={() => goTo(tab.href)} />
+                  <DockTab tab={tab} active={isActive(tab.href)} onClick={close} />
                 </li>
               ))}
 
@@ -350,7 +345,7 @@ export function MobileNav() {
                       type="button"
                       role="menuitem"
                       onClick={() => startCreate(action.href)}
-                      className="group flex w-full items-center gap-3 rounded-2xl border border-white/60 bg-white/92 p-2.5 text-left shadow-[0_16px_40px_-18px_rgba(15,23,42,0.55)] backdrop-blur-xl transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-slate-900/90"
+                      className="group flex w-full items-center gap-3 rounded-2xl border border-white/60 bg-white/95 p-2.5 text-left shadow-[0_16px_40px_-18px_rgba(15,23,42,0.55)] transition-transform active:scale-[0.98] dark:border-white/10 dark:bg-slate-900/95"
                     >
                       <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br text-white shadow-sm', action.tone)}>
                         <action.icon className="h-5 w-5" aria-hidden="true" />
