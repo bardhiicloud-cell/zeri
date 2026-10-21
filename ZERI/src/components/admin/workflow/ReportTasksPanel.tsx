@@ -7,6 +7,7 @@ import { useStore } from '../../../lib/store';
 import { QUEUE_TEXT, TASK_TEXT, queueOfStatus, workflowRoleOf } from '../../../lib/reportWorkflow';
 import { assignTask, fetchCandidates, fetchTasks, type CandidateRow, type TaskRow } from '../../../lib/workflowApi';
 import { PriorityBadge, ReportWorkflowDrawer, formatWhen } from './ReportQueuesPanel';
+import type { DeskNav } from './deskKit';
 
 type View = 'mine' | 'queue' | 'all';
 
@@ -34,8 +35,8 @@ export default function ReportTasksPanel({ embedded = false }: { embedded?: bool
   const [openReport, setOpenReport] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<TaskRow | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
     setError('');
     try {
       const result = await fetchTasks(view, closed ? 'closed' : 'open');
@@ -62,6 +63,19 @@ export default function ReportTasksPanel({ embedded = false }: { embedded?: bool
       { id: 'rest', label: 'Të tjerat, sipas prioritetit', rows: rest },
     ].filter(g => g.rows.length > 0);
   }, [items, now, closed]);
+
+  /** The order the operator sees, top to bottom: the next report is the next task down. */
+  const flat = useMemo(() => groups.flatMap(g => g.rows).filter((t, i, all) => all.findIndex(o => o.reportId === t.reportId) === i), [groups]);
+  const at = openReport ? flat.findIndex(t => t.reportId === openReport) : -1;
+  const nav: DeskNav | undefined = at >= 0
+    ? { index: at, total: flat.length, more: false, onPrev: at > 0 ? () => setOpenReport(flat[at - 1].reportId) : undefined, onNext: at < flat.length - 1 ? () => setOpenReport(flat[at + 1].reportId) : undefined }
+    : undefined;
+  const handleMoved = (reportId: string) => {
+    const next = flat[at + 1] ?? flat[at - 1];
+    setItems(prev => prev.filter(t => t.reportId !== reportId));
+    setOpenReport(next && next.reportId !== reportId ? next.reportId : null);
+    void load(true);
+  };
 
   if (!role) return <p className="rounded-2xl bg-slate-100 p-4 text-sm dark:bg-white/5">{dt('Kjo llogari nuk ka detyra.')}</p>;
 
@@ -114,7 +128,7 @@ export default function ReportTasksPanel({ embedded = false }: { embedded?: bool
                         <PriorityBadge level={task.priorityLevel} score={task.priorityScore} />
                         <span className="text-[11px] text-slate-500">{dt(QUEUE_TEXT[queueOfStatus(task.reportStatus)].label)}</span>
                       </span>
-                      <span className="mt-1 block truncate font-semibold text-slate-900 hover:underline dark:text-white">{task.title || dt('Pa titull')}</span>
+                      <span className="mt-1 block break-words font-semibold text-slate-900 hover:underline dark:text-white">{task.title || dt('Pa titull')}</span>
                       <span className="block text-xs text-slate-500">{[task.trackingId, task.category, task.municipality, task.sector].filter(Boolean).join(' · ')}</span>
                       <span className="mt-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">{dt(task.doThis || TASK_TEXT[task.kind]?.doThis)}</span>
                     </button>
@@ -141,7 +155,7 @@ export default function ReportTasksPanel({ embedded = false }: { embedded?: bool
       )}
 
       {assigning && <ReviewerPicker task={assigning} onClose={() => setAssigning(null)} onDone={() => { setAssigning(null); void load(); }} />}
-      {openReport && <ReportWorkflowDrawer reportId={openReport} onClose={() => setOpenReport(null)} onChanged={() => void load()} />}
+      {openReport && <ReportWorkflowDrawer reportId={openReport} nav={nav} onMoved={handleMoved} onClose={() => setOpenReport(null)} onChanged={() => void load(true)} />}
     </section>
   );
 }

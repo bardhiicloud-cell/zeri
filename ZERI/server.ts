@@ -90,6 +90,7 @@ import { registerDebateAdminRoutes } from './server/debateAdmin';
 import { registerHeritageRoutes } from './server/heritage';
 import { registerDebateInsightsRoutes } from './server/debateInsights';
 import { buildRoleClaims } from './server/roleClaims';
+import { isPlatformOwnerAccount, isProtectedOwner } from './server/owner';
 import { VoteError, castVote } from './server/polls';
 import { UpvoteError, castUpvote } from './server/upvotes';
 import { buildReportDocument, parseReportInput } from './server/reports';
@@ -1138,7 +1139,7 @@ app.post('/api/v1/admin/users', requireAuth, requireAdmin, async (req, res) => {
   if (parsed.ok === false) return res.status(parsed.status).json({ error: parsed.error });
   try {
     const actorRole = await resolveActorRole(requestUser);
-    const result = await createStaffAccount({ db: db(), auth: authAdmin() }, { uid: requestUser.uid, role: actorRole }, parsed.value);
+    const result = await createStaffAccount({ db: db(), auth: authAdmin() }, { uid: requestUser.uid, role: actorRole, isOwner: isPlatformOwnerAccount({ email: requestUser.email, claims: requestUser.claims }) }, parsed.value);
     if (result.ok === false) {
       audit('admin.staff.create.denied', req, { email: parsed.value.email, role: parsed.value.role, reason: result.error });
       return res.status(result.status).json({ error: result.error });
@@ -1175,16 +1176,33 @@ app.put('/api/v1/admin/users/:uid/role', requireAuth, requireAdmin, async (req, 
     if (!target.exists) return res.status(404).json({ error: 'Staff account not found.' });
     const currentTargetRole = String(target.data()?.role ?? '');
 
+    // Who the target really is comes from its verified claims and email, never from the profile document.
+    let targetIsOwner = false;
+    let targetClaimRole = '';
+    try {
+      const targetAuth = await authAdmin().getUser(uid);
+      targetIsOwner = isProtectedOwner({ email: targetAuth.email, claims: targetAuth.customClaims as Record<string, unknown> | undefined });
+      targetClaimRole = String((targetAuth.customClaims as Record<string, unknown> | undefined)?.role ?? '');
+    } catch (error: any) {
+      if (error?.code !== 'auth/user-not-found') throw error;
+    }
+
     // One tested decision (server/policy.ts): valid role, caller is an admin, no
-    // changing your own access, and only a superadmin touches admin-level accounts.
+    // changing your own access, only a superadmin touches admin-level accounts, only the
+    // platform owner touches a superadmin, and nobody touches the owner.
     const decision = checkRoleChange({
       actorUid: actor.uid,
       actorRole,
       targetUid: uid,
-      currentTargetRole,
+      currentTargetRole: targetClaimRole === 'superadmin' ? 'superadmin' : currentTargetRole,
       nextRole: role,
+      actorIsOwner: isPlatformOwnerAccount({ email: actor.email, claims: actor.claims }),
+      targetIsOwner,
     });
-    if (decision.outcome === 'deny') return res.status(decision.status).json({ error: decision.error });
+    if (decision.outcome === 'deny') {
+      audit('admin.staff.access.denied', req, { targetUid: uid, requestedRole: role, previousRole: currentTargetRole, targetIsOwner, reason: decision.error });
+      return res.status(decision.status).json({ error: decision.error });
+    }
 
     const allowedSections = new Set([
       'dashboard', 'updates', 'reports', 'workfacts', 'health', 'donations', 'users', 'agents', 'municipalities',
@@ -1305,6 +1323,22 @@ app.post('/api/v1/admin/users/:uid/set-password', requireAuth, requireAdmin, asy
     // Only a superadmin may touch another admin's password.
     if (['admin', 'superadmin'].includes(targetRole) && actorRole !== 'superadmin') {
       return res.status(403).json({ error: 'Vetëm superadmini ndryshon fjalëkalimin e administratorëve.' });
+    }
+    // A password is the account: the owner's is changed by the owner alone, a superadmin's by the owner.
+    const actorIsOwner = isPlatformOwnerAccount({ email: actor?.email, claims: actor?.claims });
+    let targetIsOwner = false;
+    let targetClaimRole = '';
+    try {
+      const targetAuth = await authAdmin().getUser(uid);
+      targetIsOwner = isProtectedOwner({ email: targetAuth.email, claims: targetAuth.customClaims as Record<string, unknown> | undefined });
+      targetClaimRole = String((targetAuth.customClaims as Record<string, unknown> | undefined)?.role ?? '');
+    } catch (error: any) {
+      if (error?.code !== 'auth/user-not-found') throw error;
+    }
+    const isSelf = actor?.uid === uid;
+    if ((targetIsOwner && !isSelf) || ((targetRole === 'superadmin' || targetClaimRole === 'superadmin') && !actorIsOwner && !isSelf)) {
+      audit('admin.staff.password.denied', req, { targetUid: uid, targetIsOwner });
+      return res.status(403).json({ error: targetIsOwner ? 'Fjalëkalimin e pronarit të platformës e ndryshon vetëm pronari.' : 'Vetëm pronari i platformës ndryshon fjalëkalimin e një superadmini.' });
     }
 
     await authAdmin().updateUser(uid, { password });
