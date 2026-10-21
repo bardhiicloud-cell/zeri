@@ -27,7 +27,7 @@
   "dependencies": {
     "@google-cloud/translate": "^10.3.0",
     "@google/genai": "^2.30.0",
-    "@tailwindcss/vite": "^4.1.14",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/compression": "^1.8.1",
     "@types/dompurify": "^3.0.5",
     "@vitejs/plugin-react": "^5.0.4",
