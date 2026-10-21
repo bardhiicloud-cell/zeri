@@ -57,6 +57,9 @@ jobs:
         env:
           VITE_API_BASE: ${{ vars.API_BASE_URL }}
         run: node node_modules/vite/bin/vite.js build
+      # Writes dist/<route>/index.html for the public routes (own title, description, canonical).
+      - if: env.HAS_KEY == 'true'
+        run: node node_modules/tsx/dist/cli.mjs scripts/prerender.ts
       - name: Deploy
         if: env.HAS_KEY == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "prototype:server": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build": "vite build && tsx scripts/prerender.ts && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node scripts/start-prod.cjs",
     "check:lint": "node scripts/check-lint.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
