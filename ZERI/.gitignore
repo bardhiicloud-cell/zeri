@@ -31,3 +31,6 @@ _*.png
 _translation_problems.json
 test-results/
 playwright-report/
+
+# Full-size originals for scripts/crop-heritage-photos.mjs (re-downloadable; sources in src/lib/heritage/photoCredits.ts)
+public/heritage/originals/

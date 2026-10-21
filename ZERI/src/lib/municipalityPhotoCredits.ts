@@ -15,8 +15,8 @@ export const MUNICIPALITY_PHOTO_CREDITS: Record<string, { day: MunicipalityPhoto
     night: { title: 'KRM Photography 16.jpg', author: 'Kosovare Ramadani Mehmeti', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:KRM_Photography_16.jpg', graded: true },
   },
   'ferizaj': {
-    day: { title: 'Ferizaj Aerial View.jpg', author: 'Albinfo', license: 'CC BY 4.0', source: 'https://commons.wikimedia.org/wiki/File:Ferizaj_Aerial_View.jpg' },
-    night: { title: 'Ferizaj Aerial View.jpg', author: 'Albinfo', license: 'CC BY 4.0', source: 'https://commons.wikimedia.org/wiki/File:Ferizaj_Aerial_View.jpg', graded: true },
+    day: { title: 'Xhami dhe Kishë Orthodokse.jpg', author: 'ErzaRudi', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Xhami_dhe_Kish%C3%AB_Orthodokse.jpg' },
+    night: { title: 'Kosovo Feb 2020.jpeg', author: 'Robot8A', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Kosovo_Feb_2020.jpeg' },
   },
   'fushe-kosove': {
     day: { title: 'Fushë Kosovë railway station.jpg', author: 'Kabelleger / David Gubler (http://www.bahnbilder.ch)', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Fush%C3%AB_Kosov%C3%AB_railway_station.jpg' },
@@ -91,8 +91,8 @@ export const MUNICIPALITY_PHOTO_CREDITS: Record<string, { day: MunicipalityPhoto
     night: { title: 'Novo Brdo Fortress (OSCAL19 trip).jpg', author: 'albinfo', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Novo_Brdo_Fortress_%28OSCAL19_trip%29.jpg', graded: true },
   },
   'obiliq': {
-    day: { title: 'Obilic Kastriot Main street 2.JPG', author: 'Babaroga', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Obilic_Kastriot_Main_street_2.JPG' },
-    night: { title: 'Obilic Kastriot Main street 2.JPG', author: 'Babaroga', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Obilic_Kastriot_Main_street_2.JPG', graded: true },
+    day: { title: 'Kastriot train.JPG', author: 'Jan Pešula', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Kastriot_train.JPG' },
+    night: { title: 'New Mosque in Obilic Kastriot by night.JPG', author: 'Babaroga', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:New_Mosque_in_Obilic_Kastriot_by_night.JPG' },
   },
   'partesh': {
     day: { title: 'Church of Holy Trinity in Parteš.jpg', author: 'Kafziel at English Wikipedia', license: 'CC BY 2.5', source: 'https://commons.wikimedia.org/wiki/File:Church_of_Holy_Trinity_in_Parte%C5%A1.jpg' },
@@ -127,12 +127,12 @@ export const MUNICIPALITY_PHOTO_CREDITS: Record<string, { day: MunicipalityPhoto
     night: { title: 'Liqeni - Shterpce..JPG', author: 'Sadikymeri', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Liqeni_-_Shterpce..JPG', graded: true },
   },
   'shtime': {
-    day: { title: 'Stadiumi i Shtimes.jpg', author: 'USIllyrian', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Stadiumi_i_Shtimes.jpg' },
-    night: { title: 'Stadiumi i Shtimes.jpg', author: 'USIllyrian', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:Stadiumi_i_Shtimes.jpg', graded: true },
+    day: { title: 'KRM Photography 6.jpg', author: 'Kosovare Ramadani Mehmeti', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:KRM_Photography_6.jpg' },
+    night: { title: 'KRM Photography 6.jpg', author: 'Kosovare Ramadani Mehmeti', license: 'CC0', source: 'https://commons.wikimedia.org/wiki/File:KRM_Photography_6.jpg', graded: true },
   },
   'skenderaj': {
-    day: { title: 'Skenderaj 1.jpg', author: 'sq:Përdoruesi:Kaperthuras', license: 'Public domain', source: 'https://commons.wikimedia.org/wiki/File:Skenderaj_1.jpg' },
-    night: { title: 'Skenderaj 1.jpg', author: 'sq:Përdoruesi:Kaperthuras', license: 'Public domain', source: 'https://commons.wikimedia.org/wiki/File:Skenderaj_1.jpg', graded: true },
+    day: { title: 'Qyteti i Skenderajit.jpg', author: 'AgronBeqiri', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Qyteti_i_Skenderajit.jpg' },
+    night: { title: 'Qyteti i Skenderajit.jpg', author: 'AgronBeqiri', license: 'CC BY-SA 3.0', source: 'https://commons.wikimedia.org/wiki/File:Qyteti_i_Skenderajit.jpg', graded: true },
   },
   'suhareke': {
     day: { title: 'Theranda 2023.jpg', author: 'Metibudakovaa', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Theranda_2023.jpg' },
