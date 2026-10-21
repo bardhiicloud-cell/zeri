@@ -97,6 +97,7 @@ import { randomBytes } from 'node:crypto';
 import { reserveTrackingId } from './server/trackingIds';
 import { validateDateOfBirth } from './src/lib/validation';
 import * as editorialFirewall from './server/editorialFirewall.js';
+import { findPublicRoute } from './src/lib/routeSeo';
 
 /**
  * Firebase Admin access is centralised in server/firebaseAdmin.ts.
@@ -2851,6 +2852,10 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
     const revalidate = 'no-cache, must-revalidate';
 
     app.use(express.static(distPath, {
+      // /raporto must not 301 to /raporto/ because dist/raporto/ exists (prerendered
+      // page): the fallback below serves dist/raporto/index.html at the clean URL.
+      redirect: false,
+      index: false,
       etag: true,
       lastModified: true,
       setHeaders: (res, filePath) => {
@@ -2874,6 +2879,12 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
         return res.status(404).type('text/plain').send('Not Found');
       }
       res.setHeader('Cache-Control', revalidate);
+      // Prerendered public routes (scripts/prerender.ts) carry their own title,
+      // description and canonical. Everything else gets the app shell.
+      const pagePath = req.path.length > 1 ? req.path.replace(/\/+$/, '') : req.path;
+      if (pagePath !== '/' && findPublicRoute(pagePath)) {
+        return res.sendFile(path.join(distPath, ...pagePath.split('/').filter(Boolean), 'index.html'));
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

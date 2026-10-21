@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { SITE_ORIGIN, SEO_LOCALES } from './seo';
 import { readStoredLanguage } from './languageConstants';
+import { HOME_DESCRIPTION, HOME_TITLE } from './routeSeo';
+import { dt } from './dt';
 
 /**
  * Per-page document title, description, canonical URL, Open Graph tags and
@@ -22,19 +24,31 @@ import { readStoredLanguage } from './languageConstants';
 export function usePageMeta(title: string, description?: string) {
   useEffect(() => {
     const BRAND = 'Zëri Qytetarëve';
-    const isHome = title === BRAND;
+    // The router serves one HTML shell for every path, so the page is identified
+    // by the URL, not by the title string (the home route's title is "Ballina").
+    const location = window.location.pathname;
+    const locSegments = location.split('/').filter(Boolean);
+    const locales0 = SEO_LOCALES as Record<string, { pathPrefix: string }>;
+    const lang0 = readStoredLanguage();
+    const prefixed0 = locales0[lang0]?.pathPrefix !== '' && locales0[lang0]?.pathPrefix === locSegments[0];
+    const routePath = '/' + (prefixed0 ? locSegments.slice(1) : locSegments).join('/');
+    const isHome = routePath === '/';
+
+    // Albanian home uses the exact title that index.html ships, so the tab does
+    // not change when the app mounts. Other languages keep the translated form.
     document.title = isHome
-      ? `${BRAND} — Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës`
+      ? (lang0 === 'sq' ? HOME_TITLE : `${BRAND} — ${dt('Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës')}`)
       : `${title} — ${BRAND}`;
 
-    if (description) {
+    const metaDescription = description ?? (isHome ? HOME_DESCRIPTION : undefined);
+    if (metaDescription) {
       let tag = document.querySelector('meta[name="description"]');
       if (!tag) {
         tag = document.createElement('meta');
         tag.setAttribute('name', 'description');
         document.head.appendChild(tag);
       }
-      tag.setAttribute('content', description);
+      tag.setAttribute('content', metaDescription);
     }
 
     // ── Canonical + OG + hreflang ────────────────────────────────────────

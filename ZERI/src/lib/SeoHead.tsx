@@ -16,6 +16,7 @@ import { dt } from './dt';
 import { SUPPORTED_LANGUAGES } from './languageConstants';
 import { SEO_LOCALES, absoluteUrl } from './seo';
 import { SITE_ORIGIN } from './seo';
+import { HOME_DESCRIPTION, HOME_TITLE } from './routeSeo';
 
 const BRAND = 'Zëri Qytetarëve';
 
@@ -61,10 +62,10 @@ export function SeoHead({ pagePath, title, description }: SeoHeadProps) {
     const pageTitle = title ? dt(title) : '';
     const pageDesc = description
       ? dt(description)
-      : dt('Platforma Zëri Qytetarëve i mundëson qytetarëve të raportojnë çështje, të ndiqin zgjidhjen e tyre, të votojnë në sondazhe dhe të kontribuojnë në vendimmarrjen komunale të Kosovës.');
+      : language === 'sq' ? HOME_DESCRIPTION : dt(HOME_DESCRIPTION);
 
     const fullTitle = isHome
-      ? `${dt(BRAND)} — ${dt('Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës')}`
+      ? (language === 'sq' ? HOME_TITLE : `${dt(BRAND)} — ${dt('Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës')}`)
       : `${pageTitle || dt(BRAND)} — ${dt(BRAND)}`;
 
     document.title = fullTitle;

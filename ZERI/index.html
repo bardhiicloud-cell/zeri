@@ -10,8 +10,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>Zëri Qytetarëve — Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës</title>
-    <meta name="description" content="Platforma Zëri Qytetarëve i mundëson qytetarëve të raportojnë çështje, të ndiqin zgjidhjen e tyre, të votojnë në sondazhe dhe të kontribuojnë në vendimmarrjen komunale të Kosovës." />
+    <title>Zëri Qytetarëve — Platforma Kombëtare e Angazhimit Qytetar të Kosovës</title>
+    <meta name="description" content="Raportoni çështjet në komunën tuaj, ndiqni zgjidhjen e tyre, votoni në sondazhe dhe lexoni lajme të verifikuara në Kosovë." />
     <meta name="keywords" content="zeriqytetarve, zeri qytetarve, zëri qytetarëve, qytetar, kosova, raporto, siguria, komuna, transparent, angazhim qytetar" />
 
     <!-- Structured data helps Google identify the website and its name variants. -->
@@ -93,20 +93,33 @@
     </script>
   </head>
   <body>
+    <noscript><p style="margin:0;padding:12px 16px;font-family:system-ui,sans-serif;background:#fff8e1;color:#3d2c00">Kjo faqe kërkon JavaScript për të punuar plotësisht</p></noscript>
     <div id="root">
-      <!-- Replaced by the app once it loads. Gives crawlers, link previews and slow connections real content instead of a blank page. -->
-      <main style="max-width:720px;margin:0 auto;padding:24px 16px;font-family:system-ui,sans-serif;line-height:1.55">
+      <!--
+        Static summary of the page, present in the first response. createRoot() replaces
+        everything inside #root when the app mounts, so nothing here stays on screen next
+        to the real page. scripts/prerender.ts rewrites it per route at build time.
+      -->
+      <header style="max-width:720px;margin:0 auto;padding:16px 16px 0;font-family:system-ui,sans-serif">
+        <p style="margin:0;font-weight:700"><a href="/" style="color:inherit;text-decoration:none">Zëri Qytetarëve</a></p>
+      </header>
+      <main style="max-width:720px;margin:0 auto;padding:8px 16px 24px;font-family:system-ui,sans-serif;line-height:1.55;min-height:60vh">
         <h1>Zëri Qytetarëve — Platforma Kombëtare e Angazhimit Qytetar të Kosovës</h1>
-        <p>Raportoni çështjet në komunën tuaj, ndiqni zgjidhjen e tyre, votoni në sondazhe dhe lexoni lajme të verifikuara.</p>
+        <p>Zëri Qytetarëve është platformë për pjesëmarrje qytetare në Kosovë: qytetarët raportojnë çështje në komunën e tyre, ndjekin zgjidhjen e tyre dhe marrin pjesë në vendimmarrjen publike.</p>
+        <h2>Çfarë mund të bëni</h2>
+        <ul>
+          <li><a href="/raporto">Raportoni një çështje</a> në komunën tuaj</li>
+          <li><a href="/trackid">Ndiqni raportin tuaj</a> me Track ID</li>
+          <li><a href="/sondazhet">Votoni në sondazhe</a> publike</li>
+          <li><a href="/lajme">Lexoni lajme</a> të verifikuara</li>
+        </ul>
+        <h2>Eksploroni</h2>
         <nav aria-label="Seksionet kryesore"><ul>
-          <li><a href="/raporto">Raporto një problem</a></li>
-          <li><a href="/lajme">Lajme</a></li>
           <li><a href="/harta">Harta e raportimeve</a></li>
           <li><a href="/komunat">Komunat</a></li>
           <li><a href="/kosova">Kosova — historia dhe turizmi</a></li>
           <li><a href="/historia-e-uck">Historia e UÇK-së — lufta e lirisë</a></li>
         </ul></nav>
-        <noscript><p>Kjo faqe kërkon JavaScript për të punuar plotësisht.</p></noscript>
       </main>
     </div>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://zeriqytetarve.com/#org","name":"Zëri Qytetarëve","alternateName":"Zeri Qytetarve","url":"https://zeriqytetarve.com/","logo":"https://zeriqytetarve.com/icon-512.png"}</script>
