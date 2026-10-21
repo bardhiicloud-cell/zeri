@@ -73,6 +73,8 @@ export interface PublicTrackView {
   evidence: {
     /** False while no reviewer has accepted the report: the files are not public yet. */
     published: boolean;
+    /** True when the viewer is the report's author: they see their own files whatever the review state. */
+    ownerView: boolean;
     totalCount: number;
     items: PublicMedia[];
   };
@@ -87,7 +89,13 @@ export interface PublicTrackView {
     verificationNote: string | null;
     evidenceUrl: string | null;
   };
-  rejection: { reason: string | null; date: string | null; institution: string | null } | null;
+  rejection: {
+    reason: string | null;
+    date: string | null;
+    institution: string | null;
+    /** When the report and its files are erased (24 hours after the rejection). */
+    deleteAt: string | null;
+  } | null;
 }
 
 const str = (value: unknown, max: number): string => String(value ?? '').trim().slice(0, max);
@@ -138,16 +146,29 @@ function eventInstitution(event: Record<string, unknown>, source: Source): strin
   return 'Administrata';
 }
 
+const RETENTION_MS = 24 * 60 * 60_000;
+
+/** Same clock the purge job uses (server/rejectedPurge.ts): 24 hours after the rejection. */
+function rejectionDeleteAt(report: Record<string, any>, eventDate: string | null): string | null {
+  const stamped = report?.workflow?.rejectedAtMs;
+  const from = typeof stamped === 'number' ? new Date(stamped).toISOString() : toIso(report?.rejectedAt) ?? eventDate;
+  const ms = from ? Date.parse(from) : NaN;
+  return Number.isNaN(ms) ? null : new Date(ms + RETENTION_MS).toISOString();
+}
+
 /**
  * The public view of one report document, or `null` when it has no public page.
  * Pure: takes the stored document, returns the allow-listed projection.
  */
-export function buildPublicTrackView(report: Record<string, any>): PublicTrackView | null {
+export function buildPublicTrackView(report: Record<string, any>, options: { viewerIsAuthor?: boolean } = {}): PublicTrackView | null {
   const status = str(report.status, 40);
   const trackingId = str(report.trackingId, 40);
   if (!trackingId || HIDDEN_STATUSES.includes(status)) return null;
 
+  const ownerView = options.viewerIsAuthor === true;
   const reviewed = REVIEWED_STATUSES.includes(status);
+  // The public sees files only after a reviewer accepted the report; the author always sees their own.
+  const showMedia = reviewed || ownerView;
   const createdAt = toIso(report.createdAt);
 
   const rawTimeline: Array<Record<string, unknown>> = Array.isArray(report.timeline) ? report.timeline : [];
@@ -168,7 +189,7 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
         institution: eventInstitution(event, source),
         source,
         ...(comment ? { comment } : {}),
-        attachments: reviewed ? publicMedia(event.attachments, 6) : [],
+        attachments: showMedia ? publicMedia(event.attachments, 6) : [],
       } as PublicTimelineEvent;
     })
     .filter((event): event is PublicTimelineEvent => event !== null)
@@ -212,8 +233,8 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
   const resolvedAt = toIso(report.resolvedAt) ?? resolvedEvent?.date ?? null;
   const resolvedImage = typeof report.resolvedImage === 'string' && report.resolvedImage.startsWith('https://') ? report.resolvedImage : null;
 
-  const evidenceItems = reviewed
-    ? publicMedia(Array.isArray(report.media) && report.media.length ? report.media : report.images, 12)
+  const evidenceItems = showMedia
+    ? publicMedia(Array.isArray(report.media) && report.media.length ? report.media : report.images, 24)
     : [];
   const evidenceTotal = Array.isArray(report.media) && report.media.length
     ? report.media.length
@@ -248,7 +269,7 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
       level: str(report.responsibleLevel, 40) || null,
       responseDueAt: toIso(report.responseDueAt),
     },
-    evidence: { published: reviewed, totalCount: evidenceTotal, items: evidenceItems },
+    evidence: { published: reviewed, ownerView, totalCount: evidenceTotal, items: evidenceItems },
     timeline,
     officialResponses,
     resolution: {
@@ -261,7 +282,12 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
       evidenceUrl: state === 'none' || !reviewed ? null : resolvedImage,
     },
     rejection: status === 'Rejected'
-      ? { reason: rejectedEvent?.comment ?? null, date: rejectedEvent?.date ?? null, institution: rejectedEvent?.institution ?? null }
+      ? {
+        reason: rejectedEvent?.comment ?? null,
+        date: rejectedEvent?.date ?? null,
+        institution: rejectedEvent?.institution ?? null,
+        deleteAt: rejectionDeleteAt(report, rejectedEvent?.date ?? null),
+      }
       : null,
   };
 }
