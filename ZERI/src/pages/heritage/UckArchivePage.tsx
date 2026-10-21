@@ -100,7 +100,7 @@ export default function UckArchivePage() {
           {/* The memorial park at Prekaz: a place, never a portrait, under a dark wash so the text stays the subject. */}
           {!section && (
             <div className="absolute inset-0 -z-10" aria-hidden="true">
-              <Photo name="prekaz" alt="" bare className="!absolute inset-0 !bg-transparent opacity-30" />
+              <Photo name="prekaz" alt="" bare noCredit className="!absolute inset-0 !bg-transparent opacity-30" />
               <span className="absolute inset-0 bg-gradient-to-r from-[#0a0405] via-[#0a0405]/70 to-transparent" />
             </div>
           )}

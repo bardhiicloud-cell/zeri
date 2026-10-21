@@ -25,7 +25,7 @@ export function HeritageHomeBand() {
       {/* Kosova */}
       <Link to="/kosova" className="hx-glass hx-grain group flex min-h-[210px] flex-col justify-between gap-4 p-5 sm:p-6"
         style={{ background: 'radial-gradient(130% 120% at 100% 0%, #2a56c6 0%, #12317f 48%, #0a1b4d 100%)' }}>
-        <Photo name="prizren" alt="" bare position="72% 40%" className="!absolute inset-0 !bg-transparent opacity-75 transition duration-700 group-hover:scale-105" />
+        <Photo name="prizren" alt="" bare noCredit position="72% 40%" className="!absolute inset-0 !bg-transparent opacity-75 transition duration-700 group-hover:scale-105" />
         <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a1b4d] via-[#0a1b4d]/55 to-[#12317f]/10" />
         <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#e8c36e]/20 blur-3xl" />
         <div className="relative flex items-start justify-between gap-3">
@@ -45,7 +45,7 @@ export function HeritageHomeBand() {
       {/* UÇK */}
       <Link to="/historia-e-uck" className="hx-glass hx-grain group flex min-h-[210px] flex-col justify-between gap-4 p-5 sm:p-6"
         style={{ background: 'radial-gradient(130% 120% at 100% 0%, #c8102e 0%, #5c0a18 46%, #0a0405 100%)' }}>
-        <Photo name="prekaz" alt="" bare className="!absolute inset-0 !bg-transparent opacity-70 transition duration-700 group-hover:scale-105" />
+        <Photo name="prekaz" alt="" bare noCredit className="!absolute inset-0 !bg-transparent opacity-70 transition duration-700 group-hover:scale-105" />
         <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0405] via-[#3a0610]/60 to-[#c8102e]/10" />
         <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
         <div className="relative flex items-start justify-between gap-3">

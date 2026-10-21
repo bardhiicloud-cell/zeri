@@ -54,7 +54,7 @@ export default function KosovaHubPage() {
             {settings.heroImageUrl
               ? <img src={settings.heroImageUrl} alt="" className="h-full w-full object-cover opacity-35" decoding="async" />
               /* No photo set in the CMS: the Bjeshkët e Nemuna, a free-licence photograph credited below. */
-              : <Photo name="bjeshket" alt="" bare className="!absolute inset-0 !bg-transparent opacity-40" />}
+              : <Photo name="bjeshket" alt="" bare noCredit className="!absolute inset-0 !bg-transparent opacity-40" />}
           </div>
           <div className="relative grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.35fr_1fr] lg:p-14">
             <div className="flex flex-col gap-5">
