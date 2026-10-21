@@ -25,7 +25,7 @@
     "matrix:write": "tsx scripts/write-permissions-matrix.ts"
   },
   "dependencies": {
-    "@google-cloud/translate": "^10.0.1",
+    "@google-cloud/translate": "^10.3.0",
     "@google/genai": "^2.30.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/compression": "^1.8.1",
