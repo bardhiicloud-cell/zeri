@@ -513,6 +513,11 @@ export default function ReviewMode({
                   <button type="button" onClick={() => setAsk(null)} className="rounded-lg px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white">{dt('Anulo')}</button>
                 </div>
               </div>
+              {ask.kind === 'reject' && (
+                <p className="mt-2 rounded-lg bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200">
+                  {dt('Raportimi i refuzuar fshihet automatikisht pas 24 orësh, bashkë me fotot dhe videot nga Storage. Qytetari e sheh arsyen deri atëherë.')}
+                </p>
+              )}
             </div>
           )}
 

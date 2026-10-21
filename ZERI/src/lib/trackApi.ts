@@ -1,6 +1,6 @@
 import { collection, getDocsFromServer, limit, query, where } from 'firebase/firestore';
 import { buildPublicTrackView, type PublicTrackView } from '../../server/trackView';
-import { db } from './firebase';
+import { auth, db } from './firebase';
 import { fetchWithTimeout, isJsonResponse, withTimeout } from './timeouts';
 import { apiReady, markApiUnavailable } from './apiAvailability';
 
@@ -39,7 +39,9 @@ async function lookupDirect(trackingId: string): Promise<PublicTrackView> {
       15000,
       'timeout',
     );
-    view = snap.empty ? null : buildPublicTrackView(snap.docs[0].data());
+    const data = snap.empty ? null : snap.docs[0].data();
+    const uid = auth.currentUser?.uid;
+    view = data ? buildPublicTrackView(data, { viewerIsAuthor: Boolean(uid) && data.authorId === uid }) : null;
   } catch {
     throw new TrackLookupError('network', 'Nuk u lidhëm me serverin. Kontrolloni internetin dhe provoni përsëri.');
   }
@@ -60,10 +62,13 @@ export async function lookupTrackingId(rawId: string, signal?: AbortSignal): Pro
   // No usable API (static host, no service account, asleep): go straight to Firestore.
   if (!(await apiReady())) return lookupDirect(trackingId);
 
+  // The author's own session lets the server show them their photos and videos; anyone else sends nothing.
+  const idToken = await auth.currentUser?.getIdToken().catch(() => null);
+
   let response: Response;
   try {
     response = await fetchWithTimeout(`/api/v1/public/track/${encodeURIComponent(trackingId)}`, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
       cache: 'no-store',
       signal,
     }, 10000);
@@ -77,9 +82,10 @@ export async function lookupTrackingId(rawId: string, signal?: AbortSignal): Pro
     markApiUnavailable();
     return lookupDirect(trackingId);
   }
-  const body = (await response.json().catch(() => ({}))) as { report?: PublicTrackView; error?: string; retryAfter?: number };
+  const body = (await response.json().catch(() => ({}))) as { report?: PublicTrackView; error?: string; code?: string; retryAfter?: number };
 
   if (response.ok && body.report) return body.report;
+  if (response.status === 404 && body.code === 'DELETED') throw new TrackLookupError('not_found', body.error || 'Ky raportim u fshi.');
   if (response.status === 429) {
     const wait = Number(body.retryAfter ?? response.headers.get('Retry-After') ?? 0) || undefined;
     throw new TrackLookupError('rate_limited', body.error || 'Shumë kërkime. Provoni përsëri pas pak.', wait);

@@ -1,153 +1,159 @@
 import type { Firestore } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 
 /**
- * A rejected report does not stay in the system.
+ * A rejected report is not kept. Twenty-four hours after staff reject it (long
+ * enough for the citizen to read the reason on /trackid), the report, everything
+ * attached to it and its files in Storage are erased.
  *
- * For 24 hours after the rejection the person who filed it can still look the report up by its
- * Track ID and sees only the code and "Refuzuar" (server/trackView.ts). After that the whole report
- * is deleted: the document and everything under it (history, case messages, internal notes,
- * upvotes, removed photos), the private contact (`reportPrivate`), the photos and videos in Storage,
- * the tasks and work items made for it and the notifications that point at it.
+ * What is left behind is a tombstone with no content (`deletedReports/{trackingId}`:
+ * the id, the time, the reason code), so a citizen who comes back with the Track ID
+ * is told what happened instead of "not found".
  *
- * What stays is a tombstone, `reportTombstones/{trackingId}`, holding the code, the status and the
- * two dates, so the code answers "refused, deleted after 24 hours" instead of "never existed".
- *
- * Every step is idempotent and the report document is deleted last, so a run that stops halfway is
- * finished by the next one, and overlapping workers are safe.
+ * The sweep is idempotent: a report is erased only when it is still `Rejected`, and
+ * Storage and Firestore deletes ignore what is already gone, so overlapping workers
+ * or a restart in the middle of a purge are harmless.
  */
 
-export const PURGE_AFTER_MS = 24 * 3_600_000;
-export const TOMBSTONES = 'reportTombstones';
+export const REJECTED_RETENTION_MS = 24 * 60 * 60_000;
+export const DELETED_REPORTS = 'deletedReports';
 
-// Firestore documents are untyped data; every field is read through a guard below.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Doc = Record<string, any>;
+export interface PurgeBucket {
+  file(path: string): { delete(options?: { ignoreNotFound?: boolean }): Promise<unknown> };
+  deleteFiles(options: { prefix: string; force?: boolean }): Promise<unknown>;
+}
 
-const SAFE_SEGMENT = /^[A-Za-z0-9_-]{4,128}$/;
-
-function toMs(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
+const toMs = (value: unknown): number | null => {
+  if (!value) return null;
+  const v = value as { toMillis?: () => number; seconds?: number; _seconds?: number };
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v.seconds === 'number') return v.seconds * 1000;
+  if (typeof v._seconds === 'number') return v._seconds * 1000;
+  if (typeof value === 'number') return value;
   if (typeof value === 'string') { const t = Date.parse(value); return Number.isNaN(t) ? null : t; }
-  if (value && typeof (value as { toMillis?: unknown }).toMillis === 'function') return (value as { toMillis: () => number }).toMillis();
-  if (value && typeof (value as { seconds?: unknown }).seconds === 'number') return (value as { seconds: number }).seconds * 1000;
   return null;
+};
+
+/** When the report was rejected: the pipeline's own stamp, else the newest `Rejected` timeline event. */
+export function rejectedAtMs(report: Record<string, any>): number | null {
+  const stamped = toMs(report?.workflow?.rejectedAtMs) ?? toMs(report?.rejectedAt);
+  if (stamped) return stamped;
+  const events: Array<Record<string, unknown>> = Array.isArray(report?.timeline) ? report.timeline : [];
+  const times = events.filter(event => event?.status === 'Rejected').map(event => toMs(event.date)).filter((t): t is number => t !== null);
+  if (times.length) return Math.max(...times);
+  return toMs(report?.updatedAt);
 }
 
-/**
- * When the report was last refused: the latest of the date written with the decision and the last
- * "Rejected" entry of its timeline. The latest, so a report that was re-opened and refused again
- * gets a fresh 24 hours instead of inheriting the first refusal's clock.
- */
-export function rejectedAtMs(report: Doc): number | null {
-  const candidates: number[] = [];
-  const direct = toMs(report.rejectedAt);
-  if (direct) candidates.push(direct);
-  const fromWorkflow = toMs(report.workflow?.rejectedAtMs);
-  if (fromWorkflow) candidates.push(fromWorkflow);
-  const timeline: Doc[] = Array.isArray(report.timeline) ? report.timeline : [];
-  for (let i = timeline.length - 1; i >= 0; i--) {
-    if (timeline[i]?.status === 'Rejected') { const t = toMs(timeline[i].date); if (t) candidates.push(t); break; }
-  }
-  return candidates.length ? Math.max(...candidates) : null;
-}
-
-export function isPurgeDue(report: Doc, now: number): boolean {
-  if (report.status !== 'Rejected') return false;
+export function purgeDueAtMs(report: Record<string, any>): number | null {
   const at = rejectedAtMs(report);
-  // A rejected report with no date at all cannot be aged, so it is left for a person to look at.
-  return at !== null && now - at >= PURGE_AFTER_MS;
+  return at === null ? null : at + REJECTED_RETENTION_MS;
 }
 
-/** `reports/…` object paths of the files a report points at (Firebase / emulator download URLs). */
-export function storagePathsOf(report: Doc): string[] {
-  const urls: string[] = [];
-  const push = (value: unknown) => { if (typeof value === 'string') urls.push(value); };
-  (Array.isArray(report.images) ? report.images : []).forEach(push);
-  (Array.isArray(report.media) ? report.media : []).forEach((m: Doc) => push(m?.url));
-  push(report.resolvedImage);
-  const paths = new Set<string>();
+export function isPurgeDue(report: Record<string, any>, now: number): boolean {
+  if (report?.status !== 'Rejected') return false;
+  const due = purgeDueAtMs(report);
+  return due !== null && due <= now;
+}
+
+/** Object path of a Firebase Storage download URL (`.../o/<encoded path>?...`), or null for any other URL. */
+export function storagePathFromUrl(url: unknown): string | null {
+  if (typeof url !== 'string') return null;
+  const match = /\/o\/([^?#]+)/.exec(url);
+  if (!match || !/(firebasestorage|storage\.googleapis)/.test(url)) return null;
+  try { return decodeURIComponent(match[1]); } catch { return null; }
+}
+
+/** Every file the report points at: its own folder plus any other Storage object named by a URL in the document. */
+export function reportStorageTargets(report: Record<string, any>, reportId: string): { prefixes: string[]; files: string[] } {
+  const prefixes = new Set<string>();
+  const authorId = String(report?.authorId ?? '');
+  if (authorId && reportId) prefixes.add(`reports/${authorId}/${reportId}/`);
+
+  const urls: unknown[] = [];
+  const addMedia = (list: unknown) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) urls.push(typeof item === 'string' ? item : (item as { url?: unknown })?.url);
+  };
+  addMedia(report?.media);
+  addMedia(report?.images);
+  urls.push(report?.resolvedImage);
+  for (const event of Array.isArray(report?.timeline) ? report.timeline : []) addMedia(event?.attachments);
+
+  const files = new Set<string>();
   for (const url of urls) {
-    const match = /\/o\/([^?]+)/.exec(url);
-    if (!match) continue;
-    try {
-      const path = decodeURIComponent(match[1]);
-      if (path.startsWith('reports/') && !path.includes('..')) paths.add(path);
-    } catch { /* not ours */ }
+    const path = storagePathFromUrl(url);
+    if (path) files.add(path);
   }
-  return [...paths];
+  return { prefixes: [...prefixes], files: [...files] };
 }
 
-export interface PurgeDeps {
-  db: () => Firestore;
-  /** Storage bucket, or null where none is configured (files are then left for the bucket's own lifecycle rule). */
-  bucket?: () => { deleteFiles: (o: { prefix: string; force?: boolean }) => Promise<unknown>; file: (p: string) => { delete: (o?: { ignoreNotFound?: boolean }) => Promise<unknown> } } | null;
+async function deleteWhere(db: Firestore, collection: string, field: string, value: string): Promise<void> {
+  const snap = await db.collection(collection).where(field, '==', value).limit(400).get();
+  if (snap.empty) return;
+  const batch = db.batch();
+  for (const doc of snap.docs) batch.delete(doc.ref);
+  await batch.commit();
 }
 
-async function deleteWhere(db: Firestore, collection: string, field: string, value: string): Promise<number> {
-  let removed = 0;
-  for (;;) {
-    const snap = await db.collection(collection).where(field, '==', value).limit(200).get();
-    if (snap.empty) return removed;
-    for (const doc of snap.docs) { await db.recursiveDelete(doc.ref); removed += 1; }
-    if (snap.size < 200) return removed;
+/** Erases one report completely. Files first: if they fail the document stays, so the next sweep retries with the paths still known. */
+export async function purgeReport(db: Firestore, bucket: PurgeBucket | null, reportId: string, report: Record<string, any>, now: number): Promise<void> {
+  const { prefixes, files } = reportStorageTargets(report, reportId);
+  if (bucket) {
+    for (const prefix of prefixes) await bucket.deleteFiles({ prefix, force: true });
+    for (const path of files) await bucket.file(path).delete({ ignoreNotFound: true });
+  } else if (prefixes.length || files.length) {
+    throw new Error('No Storage bucket is configured, so the report files could not be erased.');
   }
-}
 
-/** Deletes one report and everything that belongs to it. Throws if a step fails; the report document goes last. */
-export async function purgeReport(deps: PurgeDeps, id: string, report: Doc, now: number): Promise<void> {
-  const db = deps.db();
-  const trackingId = String(report.trackingId ?? '');
-  if (!SAFE_SEGMENT.test(id)) throw new Error('unsafe report id');
+  await deleteWhere(db, 'reportTasks', 'reportId', reportId);
+  await deleteWhere(db, 'workItems', 'link.reportId', reportId);
+  await deleteWhere(db, 'report_events', 'reportId', reportId);
 
+  const trackingId = String(report?.trackingId ?? '');
   if (trackingId) {
-    await db.collection(TOMBSTONES).doc(trackingId).set({
-      trackingId, status: 'Rejected', rejectedAtMs: rejectedAtMs(report), purgedAtMs: now,
+    await db.collection(DELETED_REPORTS).doc(trackingId).set({
+      trackingId, reason: 'rejected', deletedAt: FieldValue.serverTimestamp(), deletedAtMs: now,
     });
   }
-
-  const bucket = deps.bucket?.() ?? null;
-  if (bucket) {
-    const author = String(report.authorId ?? '');
-    if (SAFE_SEGMENT.test(author)) await bucket.deleteFiles({ prefix: `reports/${author}/${id}/`, force: true });
-    await bucket.deleteFiles({ prefix: `reports/edited/${id}/`, force: true });
-    for (const path of storagePathsOf(report)) await bucket.file(path).delete({ ignoreNotFound: true });
-  }
-
-  await db.collection('reportPrivate').doc(id).delete();
-  await deleteWhere(db, 'workItems', 'link.reportId', id);
-  await deleteWhere(db, 'reportTasks', 'reportId', id);
-  await deleteWhere(db, 'notifications', 'link.reportId', id);
-
-  await db.recursiveDelete(db.collection('reports').doc(id));
+  await db.recursiveDelete(db.collection('reports').doc(reportId));
 }
 
-export interface PurgeResult { scanned: number; purged: number; failed: number }
-
-/** One sweep: every rejected report past 24 hours, at most `limit` per run. */
-export async function purgeRejectedReports(deps: PurgeDeps, now = Date.now(), limit = 100): Promise<PurgeResult> {
-  const snap = await deps.db().collection('reports').where('status', '==', 'Rejected').limit(500).get();
-  const result: PurgeResult = { scanned: snap.size, purged: 0, failed: 0 };
+export async function purgeRejectedReports(
+  db: Firestore, bucket: PurgeBucket | null, now: number = Date.now(), limit = 50,
+): Promise<{ purged: number; failed: number }> {
+  const snap = await db.collection('reports').where('status', '==', 'Rejected').limit(300).get();
+  let purged = 0;
+  let failed = 0;
   for (const doc of snap.docs) {
-    if (result.purged + result.failed >= limit) break;
-    const data = doc.data() as Doc;
+    if (purged + failed >= limit) break;
+    const data = doc.data();
     if (!isPurgeDue(data, now)) continue;
     try {
-      await purgeReport(deps, doc.id, data, now);
-      result.purged += 1;
+      await purgeReport(db, bucket, doc.id, data, now);
+      purged += 1;
     } catch (error) {
-      result.failed += 1;
-      console.warn('[PURGE] report not deleted, will retry:', doc.id, (error as Error)?.message);
+      failed += 1;
+      console.error('[PURGE] rejected report not erased:', doc.id, (error as Error)?.message);
     }
   }
-  return result;
+  return { purged, failed };
 }
 
-/** Runs the sweep every ten minutes. Overlapping workers are safe (see the note at the top). */
-export function startRejectedPurge(deps: PurgeDeps, everyMs = 10 * 60_000): () => void {
-  const run = () => { void purgeRejectedReports(deps).then(r => { if (r.purged || r.failed) console.log('[PURGE]', r); }).catch(e => console.warn('[PURGE] run failed:', e?.message)); };
-  const first = setTimeout(run, 30_000);
-  const timer = setInterval(run, everyMs);
-  first.unref?.();
+/** Hourly: a report is gone within an hour of its 24 hours running out. */
+export function startRejectedPurge(db: () => Firestore, bucket: () => PurgeBucket | null, everyMs = 60 * 60_000): () => void {
+  let running = false;
+  const tick = async () => {
+    if (running) return;
+    running = true;
+    try {
+      const result = await purgeRejectedReports(db(), bucket());
+      if (result.purged || result.failed) console.log(`[PURGE] rejected reports erased: ${result.purged}, failed: ${result.failed}`);
+    } catch (error) {
+      console.error('[PURGE] sweep failed:', (error as Error)?.message);
+    } finally { running = false; }
+  };
+  const timer = setInterval(() => void tick(), everyMs);
   timer.unref?.();
-  return () => { clearTimeout(first); clearInterval(timer); };
+  setTimeout(() => void tick(), 30_000).unref?.();
+  return () => clearInterval(timer);
 }

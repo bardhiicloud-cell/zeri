@@ -1,8 +1,7 @@
 import type { Express, Request, RequestHandler, Response } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import { createIpRateLimiter, getClientIp } from './security';
-import { buildPublicTrackView, buildPurgedTrackView, normalizeTrackingId } from './trackView';
-import { TOMBSTONES } from './rejectedPurge';
+import { buildPublicTrackView, normalizeTrackingId } from './trackView';
 
 /**
  * Public Track ID lookup: what a citizen holding a tracking id may see.
@@ -30,12 +29,15 @@ export {
 export type {
   PublicMedia, PublicTimelineEvent, PublicOfficialResponse, ResolutionState, PublicTrackView,
 } from './trackView';
+export const DELETED_MESSAGE = 'Ky raportim u refuzua dhe u fshi automatikisht pas 24 orësh, bashkë me fotot dhe videot e tij.';
 export const NOT_FOUND_MESSAGE = 'Nuk u gjet asnjë raportim me këtë Track ID.';
 
 export interface TrackLookupDeps {
   db: () => Firestore;
   /** Test seam: replaces the lookup limiter. */
   limiter?: RequestHandler;
+  /** Resolves a Firebase ID token to its uid (null when invalid). Lets the author see their own files. */
+  verifyToken?: (token: string) => Promise<string | null>;
 }
 
 /**
@@ -95,13 +97,17 @@ export function registerTrackLookupRoutes(app: Express, deps: TrackLookupDeps): 
 
     try {
       const snap = await deps.db().collection('reports').where('trackingId', '==', trackingId).limit(1).get();
-      let view = snap.empty ? null : buildPublicTrackView(snap.docs[0].data());
-      if (snap.empty) {
-        // A refused report is deleted after 24 hours; its code still says so.
-        const tomb = await deps.db().collection(TOMBSTONES).doc(trackingId).get();
-        if (tomb.exists) view = buildPurgedTrackView(trackingId, tomb.data() ?? {});
+      const data = snap.empty ? null : snap.docs[0].data();
+      let viewerIsAuthor = false;
+      const bearer = /^Bearer (.+)$/.exec(String(req.headers.authorization ?? ''));
+      if (data && bearer && deps.verifyToken && typeof data.authorId === 'string' && data.authorId) {
+        viewerIsAuthor = (await deps.verifyToken(bearer[1]).catch(() => null)) === data.authorId;
       }
+      const view = data ? buildPublicTrackView(data, { viewerIsAuthor }) : null;
       if (!view) {
+        // A rejected report is erased after 24 hours; say so instead of "not found".
+        const gone = await (async () => deps.db().collection('deletedReports').doc(trackingId).get())().catch(() => null);
+        if (gone?.exists) return res.status(404).json({ error: DELETED_MESSAGE, code: 'DELETED' });
         recordMiss(ip);
         return res.status(404).json({ error: NOT_FOUND_MESSAGE, code: 'NOT_FOUND' });
       }
