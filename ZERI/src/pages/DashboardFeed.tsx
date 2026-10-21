@@ -618,7 +618,7 @@ export default function Dashboard() {
                 {/* Center Text inside the donut */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-xl font-black text-slate-950 dark:text-white">{resolvedPercent}%</span>
-                  <span className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-wider">{dt(`Zgjidhur`)}</span>
+                  <span className="text-xs text-[var(--color-text-muted)] font-bold uppercase tracking-wider">{dt(`Zgjidhur`)}</span>
                 </div>
               </div>
 
@@ -674,7 +674,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/15 relative z-10 flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider font-mono">{dt(`Totali i rasteve`)}</span>
+                <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider font-mono">{dt(`Totali i rasteve`)}</span>
                 <span className="text-sm font-black text-indigo-400 font-mono">{reports.length} {dt(`raporte`)}</span>
               </div>
             </div>
@@ -743,7 +743,7 @@ export default function Dashboard() {
                     </span>
                     <h3 className="text-lg font-bold text-[var(--color-text)] dark:text-white title-serif">{dt(`Tabela e Meritave`)}</h3>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full uppercase tracking-wider">{dt(`Top Aktivët`)}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full uppercase tracking-wider">{dt(`Top Aktivët`)}</span>
                 </div>
                 <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] font-medium mb-4">{dt(`Qytetarët tanë më kontribues dhe aktivë këtë muaj.`)}</p>
 
@@ -799,7 +799,7 @@ export default function Dashboard() {
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-[var(--color-text)] dark:text-white">{citizen.name}</span>
-                                {isSelf && <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.2 rounded-full uppercase scale-90">Ti</span>}
+                                {isSelf && <span className="text-xs font-bold bg-indigo-600 text-white px-1.5 py-0.2 rounded-full uppercase scale-90">Ti</span>}
                               </div>
                               <span className="text-xs font-medium text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">{badgeText}</span>
                             </div>
@@ -850,7 +850,7 @@ export default function Dashboard() {
                     
                     return (
                       <div className="space-y-1 pt-1">
-                        <div className="flex justify-between text-[10px] font-bold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">
+                        <div className="flex justify-between text-xs font-bold text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">
                           <span>{dt(`Deri tek`)} {nextBadge}</span>
                           <span>{points}/{nextPoints} p</span>
                         </div>
@@ -1069,26 +1069,26 @@ export default function Dashboard() {
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 md:p-4 hover:bg-slate-800 transition">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{dt(`Raporte Totale`)}</span>
               <div className="text-2xl md:text-3xl font-serif font-bold text-white mt-1">{reports.length}</div>
-              <span className="text-[10px] text-slate-400 mt-1 block">{dt(`Të gjitha ankesat e regjistruara`)}</span>
+              <span className="text-xs text-slate-400 mt-1 block">{dt(`Të gjitha ankesat e regjistruara`)}</span>
             </div>
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 md:p-4 hover:bg-slate-800 transition">
               <Link to="/regjistri?status=dash_resolved" className="hover:underline"><span className="text-xs font-bold uppercase tracking-wider text-slate-400">{dt(`Raste të Zgjidhura`)}</span></Link>
               <div className="text-2xl md:text-3xl font-serif font-bold text-emerald-500 mt-1">
                 {reports.filter(r => r.status === 'Resolved').length}
               </div>
-              <span className="text-[10px] text-emerald-500/80 mt-1 block">✓ {Math.round((reports.filter(r => r.status === 'Resolved').length / (reports.length || 1)) * 100)}{dt(`% Shkalla e zgjidhjes`)}</span>
+              <span className="text-xs text-emerald-500/80 mt-1 block">✓ {Math.round((reports.filter(r => r.status === 'Resolved').length / (reports.length || 1)) * 100)}{dt(`% Shkalla e zgjidhjes`)}</span>
             </div>
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 md:p-4 hover:bg-slate-800 transition">
               <Link to="/regjistri?status=dash_in_progress" className="hover:underline"><span className="text-xs font-bold uppercase tracking-wider text-slate-400">{dt(`Në Progres & Caktuar`)}</span></Link>
               <div className="text-2xl md:text-3xl font-serif font-bold text-amber-500 mt-1">
                 {reports.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length}
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">{dt(`Në ndërhyrje aktive`)}</span>
+              <span className="text-xs text-slate-400 mt-1 block">{dt(`Në ndërhyrje aktive`)}</span>
             </div>
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 md:p-4 hover:bg-slate-800 transition">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{dt(`Koha e Reagimit`)}</span>
               <div className="text-2xl md:text-3xl font-serif font-bold text-indigo-400 mt-1">{dt(`14 Orë`)}</div>
-              <span className="text-[10px] text-indigo-400/80 mt-1 block">{dt(`⚡ Koha më e shpejtë në rajon`)}</span>
+              <span className="text-xs text-indigo-400/80 mt-1 block">{dt(`⚡ Koha më e shpejtë në rajon`)}</span>
             </div>
           </div>
         </div>

@@ -40,7 +40,7 @@ export function TrackIdIssuedModal({ trackingId, title, note, onClose }: TrackId
         <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" aria-hidden="true" />
         <h2 id="trackid-issued-title" className="mt-3 text-xl font-black text-slate-900 dark:text-white">{title}</h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{note}</p>
-        <p className="mt-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{dt('Track ID')}</p>
+        <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-slate-500">{dt('Track ID')}</p>
         <p className="mt-1 break-all font-mono text-2xl font-black tracking-wider text-slate-900 dark:text-white" data-testid="issued-tracking-id">{trackingId}</p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <button type="button" onClick={copy} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-800 dark:border-white/10 dark:text-white">

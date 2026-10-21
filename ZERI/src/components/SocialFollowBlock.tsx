@@ -81,7 +81,7 @@ export function SocialFollowBlock({ className }: { className?: string }) {
           >
             {dt('Mos e humb përditësimin')}
           </h3>
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
             {dt('Ndiq platformën dhe merr statusin e raportit tënd, sondazhet e reja dhe njoftimet e komunës tënde — drejtpërdrejt në rrjetin që përdor çdo ditë.')}
           </p>
         </div>
@@ -117,7 +117,7 @@ export function SocialFollowBlock({ className }: { className?: string }) {
                   <span className="block text-sm font-black text-slate-900 dark:text-white">
                     {label}
                   </span>
-                  <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <span className="mt-0.5 block truncate text-xs font-semibold text-slate-600 dark:text-slate-400">
                     {dt(pitch)}
                   </span>
                 </span>

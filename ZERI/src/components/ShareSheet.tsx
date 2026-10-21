@@ -100,7 +100,7 @@ export function ShareSheet({
                   <p className="truncate text-sm font-black text-slate-900 dark:text-white">
                     {dt('Shpërndaj')}
                   </p>
-                  <p className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  <p className="truncate text-xs font-medium text-slate-600 dark:text-slate-400">
                     {target.title}
                   </p>
                 </div>
@@ -127,7 +127,7 @@ export function ShareSheet({
                 </button>
               )}
 
-              <p className="mb-2.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+              <p className="mb-2.5 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                 {nativeAvailable ? dt('Ose zgjidh një platformë') : dt('Zgjidh një platformë')}
               </p>
 
@@ -146,7 +146,7 @@ export function ShareSheet({
                     className="flex flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50/50 dark:border-white/10 dark:bg-slate-800/60 dark:hover:border-blue-500/40 dark:hover:bg-slate-800"
                   >
                     <Share2 className="h-4 w-4 text-slate-400" aria-hidden="true" />
-                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                       {channel.label}
                     </span>
                   </a>
@@ -170,7 +170,7 @@ export function ShareSheet({
                 )}
               </button>
 
-              <p className="mt-3 truncate rounded-xl bg-slate-50 px-3 py-2 font-mono text-[10px] text-slate-400 dark:bg-slate-800/60">
+              <p className="mt-3 truncate rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs text-slate-400 dark:bg-slate-800/60">
                 {target.url}
               </p>
             </div>

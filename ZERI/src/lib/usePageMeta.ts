@@ -19,8 +19,19 @@ import { readStoredLanguage } from './languageConstants';
  * the route table, with no duplicated wiring to forget. `SeoHead` still works
  * if a page mounts it directly, but it is no longer required.
  */
-export function usePageMeta(title: string, description?: string) {
+export function usePageMeta(title: string, description?: string, options?: { noindex?: boolean }) {
+  const noindex = options?.noindex === true;
   useEffect(() => {
+    // Error pages must not be indexed. The tag is removed again on the next page.
+    document.head.querySelectorAll('meta[data-seo-noindex]').forEach((n) => n.remove());
+    if (noindex) {
+      const robots = document.createElement('meta');
+      robots.setAttribute('name', 'robots');
+      robots.setAttribute('content', 'noindex, follow');
+      robots.setAttribute('data-seo-noindex', '1');
+      document.head.appendChild(robots);
+    }
+
     const BRAND = 'Zëri Qytetarëve';
     const isHome = title === BRAND;
     document.title = isHome
@@ -99,5 +110,5 @@ export function usePageMeta(title: string, description?: string) {
     xDefault.setAttribute('href', SITE_ORIGIN + pagePath);
     xDefault.setAttribute('data-seo-alt', '1');
     document.head.appendChild(xDefault);
-  }, [title, description]);
+  }, [title, description, noindex]);
 }

@@ -19,7 +19,13 @@ export default function VerificationRequestPage() {
   useEffect(() => { if (user && user.role !== 'guest') void load(); }, [user]);
 
   if (!user || user.role === 'guest') {
-    return <main className="mx-auto max-w-xl px-4 py-16 text-center"><p>{dt('Kyçuni për të kërkuar verifikim.')}</p><Link to="/login" className="mt-4 inline-block font-bold underline">{dt('Kyçu')}</Link></main>;
+    return (
+      <main className="mx-auto max-w-xl px-4 py-16 text-center">
+        <h1 className="flex items-center justify-center gap-2 text-2xl font-black text-slate-900 dark:text-white"><BadgeCheck className="h-6 w-6 text-blue-600" aria-hidden="true" />{dt('Kërko verifikimin e llogarisë')}</h1>
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{dt('Kyçuni për të kërkuar verifikim.')}</p>
+        <Link to="/login" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white hover:bg-blue-800">{dt('Kyçu')}</Link>
+      </main>
+    );
   }
 
   const submit = async (event: React.FormEvent) => {

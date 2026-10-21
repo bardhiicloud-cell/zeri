@@ -261,20 +261,20 @@ export default function GuidedTour() {
   const launcher = available && (
     <div
       ref={launcherRef}
-      className={`fixed bottom-24 left-3 z-[90] lg:bottom-6 ${touring ? 'pointer-events-none' : ''}`}
+      className={`fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-3 z-[90] lg:bottom-6 lg:left-auto lg:right-24 ${touring ? 'pointer-events-none' : ''}`}
     >
       {menuOpen && !touring && (
         <div
           role="menu"
           aria-label={dt('Udhëzues')}
-          className="absolute bottom-full left-0 mb-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900"
+          className="absolute bottom-full left-0 mb-2 w-72 max-w-[calc(100vw-1.5rem)] lg:left-auto lg:right-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900"
         >
           {!onHome && (
             <button type="button" role="menuitem" onClick={() => start(available)} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-2.5 text-left transition-colors hover:bg-blue-50 dark:hover:bg-slate-800">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white"><BookOpen className="h-4 w-4" aria-hidden="true" /></span>
               <span className="min-w-0">
                 <span className="block text-[13px] font-black text-slate-900 dark:text-white">{dt('Udhëzuesi i kësaj faqeje')}</span>
-                <span className="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{dt(available.label)}</span>
+                <span className="block truncate text-xs font-medium text-slate-600 dark:text-slate-400">{dt(available.label)}</span>
               </span>
             </button>
           )}
@@ -282,14 +282,14 @@ export default function GuidedTour() {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white"><Compass className="h-4 w-4" aria-hidden="true" /></span>
             <span className="min-w-0">
               <span className="block text-[13px] font-black text-slate-900 dark:text-white">{dt('Turi i plotë i platformës')}</span>
-              <span className="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{dt('Harta, “+”, menuja dhe çdo faqe')}</span>
+              <span className="block truncate text-xs font-medium text-slate-600 dark:text-slate-400">{dt('Harta, “+”, menuja dhe çdo faqe')}</span>
             </span>
           </button>
           <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); navigate('/ndihma'); }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-2.5 text-left transition-colors hover:bg-blue-50 dark:hover:bg-slate-800">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"><LifeBuoy className="h-4 w-4" aria-hidden="true" /></span>
             <span className="min-w-0">
               <span className="block text-[13px] font-black text-slate-900 dark:text-white">{dt('Qendra e ndihmës')}</span>
-              <span className="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{dt('Pyetje të shpeshta')}</span>
+              <span className="block truncate text-xs font-medium text-slate-600 dark:text-slate-400">{dt('Pyetje të shpeshta')}</span>
             </span>
           </button>
         </div>
@@ -302,11 +302,11 @@ export default function GuidedTour() {
         aria-expanded={menuOpen}
         aria-label={dt('Udhëzues: ') + dt(available.label)}
         title={dt('Udhëzues')}
-        className={`relative flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-lg ring-2 ring-white transition active:scale-95 dark:ring-slate-900 ${platformSeen ? 'w-11' : 'px-4'}`}
+        className={`relative flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-lg ring-2 ring-white transition active:scale-95 dark:ring-slate-900 ${platformSeen ? 'w-11' : 'w-11 lg:w-auto lg:px-4'}`}
       >
         {!platformSeen && !touring && <span aria-hidden="true" className="absolute inset-0 rounded-full bg-blue-400/40 motion-safe:animate-ping motion-safe:[animation-duration:2.6s]" />}
         <HelpCircle className="relative h-6 w-6" aria-hidden="true" />
-        {!platformSeen && <span className="relative text-xs font-black">{dt('Udhëzues')}</span>}
+        {!platformSeen && <span className="relative hidden text-xs font-black lg:inline">{dt('Udhëzues')}</span>}
       </button>
     </div>
   );
@@ -317,7 +317,7 @@ export default function GuidedTour() {
       role="dialog"
       aria-modal="false"
       aria-label={dt(ask.id === PLATFORM_TOUR_ID ? 'Mirë se vini në Zëri' : 'Udhëzues për këtë faqe')}
-      className="fixed bottom-40 left-3 right-3 z-[91] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 sm:right-auto sm:w-[372px] lg:bottom-20 dark:border-white/10 dark:bg-slate-900"
+      className="fixed bottom-40 left-3 right-3 z-[91] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 sm:right-auto sm:w-[372px] lg:bottom-40 lg:left-auto lg:right-6 dark:border-white/10 dark:bg-slate-900"
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white"><Sparkles className="h-5 w-5" aria-hidden="true" /></span>
@@ -325,7 +325,7 @@ export default function GuidedTour() {
           <h2 className="text-[15px] font-black text-slate-900 dark:text-white">
             {ask.id === PLATFORM_TOUR_ID ? dt('Mirë se vini në Zëri') : dt('Doni një udhëzues për këtë faqe?')}
           </h2>
-          <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+          <p className="mt-1 hidden text-xs leading-relaxed text-slate-600 sm:block dark:text-slate-300">
             {ask.id === PLATFORM_TOUR_ID
               ? dt('Doni t’ju tregojmë si funksionon platforma? Hartën, butonin “+”, menunë dhe çdo faqe, hap pas hapi. Zgjat dy minuta.')
               : dt('Ju tregojmë shkurt çfarë bën çdo pjesë e kësaj faqeje.')}
@@ -335,11 +335,11 @@ export default function GuidedTour() {
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button type="button" onClick={() => start(ask)} className="min-h-11 rounded-xl bg-blue-700 px-3 text-sm font-black text-white hover:bg-blue-800">{dt('Po, më trego')}</button>
-        <button type="button" onClick={() => { markSeen(ask.id); setAsk(null); bump(n => n + 1); }} className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Jo, faleminderit')}</button>
+        <button type="button" onClick={() => { markSeen(ask.id); setAsk(null); bump(n => n + 1); }} className="hidden min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 sm:block dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Jo, faleminderit')}</button>
       </div>
-      <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+      <div className="mt-2.5 hidden items-center justify-between sm:flex gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
         <span>{dt('Butoni “?” mbetet gjithmonë këtu poshtë.')}</span>
         <button type="button" onClick={() => { writeFlag(TOUR_MUTED_KEY); markSeen(ask.id); setAsk(null); bump(n => n + 1); }} className="shrink-0 font-bold underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">{dt('Mos më pyet më')}</button>
       </div>
@@ -392,7 +392,7 @@ export default function GuidedTour() {
           <div className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-blue-700 dark:text-cyan-300">{dt(step.section ?? 'Udhëzues')}</p>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700 dark:text-cyan-300">{dt(step.section ?? 'Udhëzues')}</p>
                 <h2 className="mt-0.5 text-[15px] font-black leading-snug text-slate-900 dark:text-white">{dt(step.title)}</h2>
               </div>
               <button type="button" onClick={() => close(true)} aria-label={dt('Mbyll udhëzuesin')} className="-m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -402,8 +402,8 @@ export default function GuidedTour() {
             <p className="mt-2 text-[13px] leading-relaxed text-slate-700 dark:text-slate-300" aria-live="polite">{dt(step.body)}</p>
             <div className="mt-4 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
-                <span className="text-[11px] font-bold tabular-nums text-slate-500 dark:text-slate-400">{index + 1} / {steps.length}</span>
-                {!last && <button type="button" onClick={() => close(true)} className="text-[11px] font-bold text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">{dt('Kapërce')}</button>}
+                <span className="text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{index + 1} / {steps.length}</span>
+                {!last && <button type="button" onClick={() => close(true)} className="text-xs font-bold text-slate-600 dark:text-slate-400 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">{dt('Kapërce')}</button>}
               </div>
               <div className="flex gap-2">
                 {index > 0 && (

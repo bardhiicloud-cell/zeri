@@ -281,7 +281,7 @@ export function ResponseNotificationsBell() {
       >
         <Bell className="h-4 w-4" aria-hidden="true" />
         {totalUnread > 0 && (
-          <span className="absolute -right-1 -top-1 flex min-w-[1.15rem] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-black text-white ring-2 ring-white dark:ring-slate-900">
+          <span className="absolute -right-1 -top-1 flex min-w-[1.15rem] items-center justify-center rounded-full bg-rose-600 px-1 text-xs font-black text-white ring-2 ring-white dark:ring-slate-900">
             {totalUnread > 9 ? '9+' : totalUnread}
           </span>
         )}
@@ -305,7 +305,7 @@ export function ResponseNotificationsBell() {
                   type="button"
                   onClick={() => switchTab(t.id)}
                   className={cn(
-                    'flex flex-1 items-center justify-center gap-1.5 px-3 py-3 text-[11px] font-black uppercase tracking-wide transition-colors',
+                    'flex flex-1 items-center justify-center gap-1.5 px-3 py-3 text-xs font-black uppercase tracking-wide transition-colors',
                     active
                       ? 'border-b-2 border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-300'
                       : 'border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200',
@@ -314,7 +314,7 @@ export function ResponseNotificationsBell() {
                   <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                   {t.label}
                   {t.count > 0 && (
-                    <span className="ml-0.5 rounded-full bg-rose-600 px-1.5 text-[9px] font-black text-white">
+                    <span className="ml-0.5 rounded-full bg-rose-600 px-1.5 text-xs font-black text-white">
                       {t.count > 9 ? '9+' : t.count}
                     </span>
                   )}
@@ -345,7 +345,7 @@ export function ResponseNotificationsBell() {
 
           {showSettings && (
             <div className="space-y-1 border-b border-slate-100 bg-slate-50/70 p-3 dark:border-white/5 dark:bg-slate-800/40">
-              <p className="px-1 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <p className="px-1 pb-1 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
                 {dt('Cilësimet e njoftimeve')}
               </p>
               {(
@@ -414,7 +414,7 @@ export function ResponseNotificationsBell() {
                       className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-blue-50 dark:hover:bg-slate-800"
                     >
                       <p className="text-xs font-bold text-slate-900 dark:text-white">{update.reportTitle}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {dt('Statusi')}:{' '}
                         <span className="font-bold text-blue-600 dark:text-blue-400">
                           {REPORT_STATUS_LABELS[update.status] || update.status}
@@ -422,7 +422,7 @@ export function ResponseNotificationsBell() {
                         {update.respondedBy && <> · {update.respondedBy}</>}
                       </p>
                       {update.respondedAt && (
-                        <p className="mt-0.5 text-[10px] text-slate-400">{relativeWhen(update.respondedAt)}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">{relativeWhen(update.respondedAt)}</p>
                       )}
                     </Link>
                   </li>
@@ -447,15 +447,15 @@ export function ResponseNotificationsBell() {
                         <div className="flex items-center gap-1.5">
                           <p className="truncate text-xs font-bold text-slate-900 dark:text-white">{n.title}</p>
                           {n.urgent && (
-                            <span className="shrink-0 rounded bg-rose-600 px-1 text-[8px] font-black uppercase text-white">
+                            <span className="shrink-0 rounded bg-rose-600 px-1 text-xs font-black uppercase text-white">
                               {dt('Urgjente')}
                             </span>
                           )}
                         </div>
-                        <p className="mt-0.5 line-clamp-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                           {n.message}
                         </p>
-                        <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
                           <span>{relativeWhen(n.createdAt)}</span>
                           {n.link && <Link2 className="h-3 w-3" aria-hidden="true" />}
                         </div>
@@ -501,7 +501,7 @@ function EmptyState({ icon: Icon, text }: { icon: typeof Info; text: string }) {
   return (
     <div className="px-4 py-10 text-center">
       <Icon className="mx-auto h-6 w-6 text-slate-300 dark:text-slate-600" />
-      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{text}</p>
+      <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{text}</p>
     </div>
   );
 }

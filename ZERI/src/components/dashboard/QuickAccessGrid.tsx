@@ -79,11 +79,11 @@ export function QuickAccessGrid() {
           <h2 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl">
             {dt('Çfarë dëshiron të bësh sot?')}
           </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             {dt('Zgjidh çfarë të duhet. Të udhëheqim hap pas hapi.')}
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300">
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
           {dt('Ndihmë e shpejtë')}
         </div>

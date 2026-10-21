@@ -114,7 +114,7 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
         <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex items-start justify-between gap-3">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-50">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-black uppercase tracking-[0.18em] text-blue-50">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
@@ -122,7 +122,7 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
               {dt('Drejtpërdrejt')}
             </span>
             <h3 className="mt-3 font-serif text-2xl font-black leading-none tracking-tight">{dt('Njoftime')}</h3>
-            <p className="mt-1.5 text-[11px] leading-snug text-blue-100/90">{dt('Përgjigjet zyrtare të institucioneve ndaj raportimeve të qytetarëve.')}</p>
+            <p className="mt-1.5 text-xs leading-snug text-blue-100/90">{dt('Përgjigjet zyrtare të institucioneve ndaj raportimeve të qytetarëve.')}</p>
           </div>
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20">
             <Radio className="h-5 w-5" aria-hidden="true" />
@@ -173,16 +173,16 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
                     className="group block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-slate-800/50 dark:hover:border-blue-500/50 dark:hover:bg-slate-800"
                   >
                     <span className="flex items-center justify-between gap-2">
-                      <span className={cn('rounded-full border px-2.5 py-0.5 text-[10px] font-black', tone.badge)}>
+                      <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-black', tone.badge)}>
                         {statusLabel(ev.status)}
                       </span>
-                      <time className="text-[10px] font-semibold tabular-nums text-slate-600 dark:text-slate-400">{relativeWhen(ev.createdAt)}</time>
+                      <time className="text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-400">{relativeWhen(ev.createdAt)}</time>
                     </span>
                     <span className="mt-2 block line-clamp-2 text-[13px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">
                       {ev.reportTitle || dt('Raportim')}
                     </span>
                     {(ev.municipality || ev.actorInstitution) && (
-                      <span className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400">
+                      <span className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
                         <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
                         <span className="truncate">
                           {ev.municipality ? `${dt('Komuna e')} ${ev.municipality}` : ''}
@@ -202,7 +202,7 @@ export function LiveNoticesFeed({ className }: { className?: string } = {}) {
             type="button"
             onClick={loadMore}
             disabled={loadingMore}
-            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[11px] font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
           >
             {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
             {dt('Ngarko më shumë')}

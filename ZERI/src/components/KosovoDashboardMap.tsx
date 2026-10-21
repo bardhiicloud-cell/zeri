@@ -164,7 +164,7 @@ function ReportMarker({
           onClick={onNavigate}
           className="text-left p-1 w-44 cursor-pointer select-none font-sans"
         >
-          <div className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 mb-0.5">
+          <div className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 mb-0.5">
             {point.code}
           </div>
 
@@ -172,13 +172,13 @@ function ReportMarker({
             {point.category}
           </div>
 
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
             {point.municipality}
           </div>
 
           <div className="mb-1">
             <span className={cn(
-              "inline-block px-2 py-0.5 rounded text-[10px] font-semibold border",
+              "inline-block px-2 py-0.5 rounded text-xs font-semibold border",
               point.status === 'Në trajtim' && "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900/60",
               point.status === 'Të raportuar' && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900/60",
               point.status === 'Të zgjidhur' && "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900/60",
@@ -188,11 +188,11 @@ function ReportMarker({
             </span>
           </div>
 
-          <div className="text-[10px] text-slate-400 mb-1.5">
+          <div className="text-xs text-slate-400 mb-1.5">
             {point.date}
           </div>
 
-          <div className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+          <div className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
             <span>{dt('Shiko raportin')}</span>
             <ArrowRight className="w-3 h-3" />
           </div>
@@ -305,7 +305,7 @@ export function KosovoDashboardMap({
             <MapPin className="w-5 h-5 text-blue-600" />
             <span>{dt('Harta e Raportimeve')}</span>
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
             {dt('Shikoni problemet e raportuara në të gjithë Kosovën')}
           </p>
         </div>
@@ -500,7 +500,7 @@ export function KosovoDashboardMap({
           </div>
 
           {/* Bottom-Left Scale Bar */}
-          <div className="absolute bottom-3 left-3 z-[1000] text-[9px] font-mono text-slate-600 dark:text-slate-400 font-semibold flex flex-col gap-0.5 pointer-events-none bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/10 backdrop-blur-xs">
+          <div className="absolute bottom-3 left-3 z-[1000] text-xs font-mono text-slate-600 dark:text-slate-400 font-semibold flex flex-col gap-0.5 pointer-events-none bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/10 backdrop-blur-xs">
             <div className="flex justify-between w-20 px-0.5">
               <span>0</span>
               <span>25</span>
@@ -513,7 +513,7 @@ export function KosovoDashboardMap({
           </div>
 
           {/* OSM attribution is mandatory; kept compact so the card layout is preserved. */}
-          <div className="absolute bottom-3 right-3 z-[1000] pointer-events-none text-[8px] font-medium text-slate-600 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/10">
+          <div className="absolute bottom-3 right-3 z-[1000] pointer-events-none text-xs font-medium text-slate-600 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/10">
             &copy; OpenStreetMap
           </div>
 

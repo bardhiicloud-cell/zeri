@@ -21,7 +21,7 @@ export function Photo({ name, alt, credit, className = '', position = 'center', 
           ? <img src={`/heritage/photos/${name}.webp`} srcSet={`/heritage/photos/${name}-640.webp 640w, /heritage/photos/${name}.webp 1600w`} sizes="(max-width: 640px) 100vw, 480px"
               alt={alt} loading="lazy" decoding="async" style={{ objectPosition: position }} onError={() => setFailed(true)} />
           : <img src={`/heritage/photos/${name}.${ext}`} alt={alt} loading="lazy" decoding="async" style={{ objectPosition: position }} onError={() => setFailed(true)} />}
-      {credit && !failed && <span className="absolute bottom-1 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold text-white/85">© {credit}</span>}
+      {credit && !failed && <span className="absolute bottom-1 right-2 rounded bg-black/55 px-1.5 py-0.5 text-xs font-semibold text-white/85">© {credit}</span>}
     </div>
   );
 }

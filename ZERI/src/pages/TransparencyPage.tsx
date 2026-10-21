@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Info, Loader2, Printer, ShieldCheck } from 'lucide-react';
+import { Download, Info, Loader2, Printer, RefreshCw, ShieldCheck } from 'lucide-react';
 import { AuraOrbit, AuraHero } from '../components/aura/Aura';
 import { dt } from '@/src/lib/dt';
 import { cn } from '../lib/utils';
@@ -31,8 +31,8 @@ function Figure({ label, value, note, tone = 'slate' }: { label: string; value: 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
       <div className={cn('text-3xl font-black tabular-nums', tones[tone])}>{value}</div>
-      <div className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">{dt(label)}</div>
-      {note && <div className="mt-1 text-[11px] leading-snug text-slate-400">{dt(note)}</div>}
+      <div className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{dt(label)}</div>
+      {note && <div className="mt-1 text-xs leading-snug text-slate-600 dark:text-slate-400">{dt(note)}</div>}
     </div>
   );
 }
@@ -52,6 +52,8 @@ export default function TransparencyPage() {
   const [data, setData] = useState<TransparencyData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  // Bumped by "Provo përsëri" to run the request again with the same filters.
+  const [attempt, setAttempt] = useState(0);
   const [sort, setSort] = useState<'received' | 'resolutionRate'>('received');
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function TransparencyPage() {
       .catch(caught => { if ((caught as Error).name !== 'AbortError') setError((caught as Error).message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [filters]);
+  }, [filters, attempt]);
 
   const categoryNames = useMemo(() => Array.from(new Set((categories ?? []).map(category => category.name).filter(Boolean))).sort(), [categories]);
   const maxMonth = Math.max(1, ...(data?.monthly.map(month => month.received) ?? [1]));
@@ -91,15 +93,15 @@ export default function TransparencyPage() {
         subtitle={dt('Çfarë ka bërë platforma me raportimet e qytetarëve, në numra që mund t\'i kontrolloni. Çdo shifër numërohet nga baza e të dhënave për të gjitha raportimet, dhe tregon me çfarë pjesëtohet.')} />
 
       <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 print:hidden dark:border-white/10 dark:bg-slate-900" aria-label={dt('Filtrat')}>
-        <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{dt('Nga')}<input type="date" value={filters.from} max={filters.to || undefined} onChange={event => setFilters({ ...filters, from: event.target.value })} className={cn(input, 'mt-1 block')} /></label>
-        <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{dt('Deri')}<input type="date" value={filters.to} min={filters.from || undefined} onChange={event => setFilters({ ...filters, to: event.target.value })} className={cn(input, 'mt-1 block')} /></label>
-        <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{dt('Komuna')}
+        <label className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{dt('Nga')}<input type="date" value={filters.from} max={filters.to || undefined} onChange={event => setFilters({ ...filters, from: event.target.value })} className={cn(input, 'mt-1 block')} /></label>
+        <label className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{dt('Deri')}<input type="date" value={filters.to} min={filters.from || undefined} onChange={event => setFilters({ ...filters, to: event.target.value })} className={cn(input, 'mt-1 block')} /></label>
+        <label className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{dt('Komuna')}
           <select value={filters.municipality} onChange={event => setFilters({ ...filters, municipality: event.target.value })} className={cn(input, 'mt-1 block')}>
             <option value="">{dt('Të gjitha')}</option>
             {KOSOVO_MUNICIPALITIES.map(name => <option key={name} value={name}>{name}</option>)}
           </select>
         </label>
-        <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{dt('Kategoria')}
+        <label className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{dt('Kategoria')}
           <select value={filters.category} onChange={event => setFilters({ ...filters, category: event.target.value })} className={cn(input, 'mt-1 block')}>
             <option value="">{dt('Të gjitha')}</option>
             {categoryNames.map(name => <option key={name} value={name}>{name}</option>)}
@@ -112,12 +114,19 @@ export default function TransparencyPage() {
         </div>
       </section>
 
-      {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
-      {loading && !data && <p className="p-12 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-slate-400" aria-label={dt('Duke ngarkuar')} /></p>}
+      {error && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/40 dark:text-rose-200">
+          <p className="min-w-0 flex-1">{dt(error)}</p>
+          <button type="button" onClick={() => setAttempt(count => count + 1)} disabled={loading} className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-rose-700 px-4 text-xs font-bold text-white hover:bg-rose-800 disabled:opacity-50">
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} aria-hidden="true" />{dt('Provo përsëri')}
+          </button>
+        </div>
+      )}
+      {loading && !data && <p className="p-12 text-center" role="status"><Loader2 className="mx-auto h-6 w-6 animate-spin text-slate-600 dark:text-slate-400" aria-label={dt('Duke ngarkuar')} /></p>}
 
       {data && (
         <div className={cn('space-y-6 transition-opacity', loading && 'opacity-60')} aria-busy={loading}>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
             {dt('Periudha')}: <strong>{data.period.from ?? dt('nga fillimi')}</strong> {dt('deri')} <strong>{data.period.to ?? dt('sot')}</strong>
             {data.filters.municipality && <> · {dt('Komuna')}: <strong>{data.filters.municipality}</strong></>}
             {data.filters.category && <> · {dt('Kategoria')}: <strong>{data.filters.category}</strong></>}
@@ -138,7 +147,7 @@ export default function TransparencyPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">{dt('Ku ndodhen raportimet tani')}</h2>
             {total === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">{dt('Asnjë raportim në këtë filtër.')}</p>
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{dt('Asnjë raportim në këtë filtër.')}</p>
             ) : (
               <>
                 <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="img" aria-label={dt('Ndarja e raportimeve sipas statusit')}>
@@ -150,7 +159,7 @@ export default function TransparencyPage() {
                 <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                   {SEGMENTS.map(segment => {
                     const value = segment.key === 'Resolved' ? (data.counts.Resolved ?? 0) + (data.counts.Closed ?? 0) : segment.key === 'In Progress' ? (data.counts['In Progress'] ?? 0) + (data.counts.Assigned ?? 0) : data.counts[segment.key] ?? 0;
-                    return <li key={segment.key} className="flex items-center gap-1.5"><span className={cn('h-2.5 w-2.5 rounded-full', segment.color)} aria-hidden="true" />{dt(segment.label)}: <strong className="tabular-nums">{fmt(value)}</strong> <span className="text-slate-400">({Math.round((value / total) * 1000) / 10}%)</span></li>;
+                    return <li key={segment.key} className="flex items-center gap-1.5"><span className={cn('h-2.5 w-2.5 rounded-full', segment.color)} aria-hidden="true" />{dt(segment.label)}: <strong className="tabular-nums">{fmt(value)}</strong> <span className="text-slate-600 dark:text-slate-400">({Math.round((value / total) * 1000) / 10}%)</span></li>;
                   })}
                 </ul>
               </>
@@ -162,9 +171,9 @@ export default function TransparencyPage() {
             <div className="mt-4 flex h-40 items-end gap-1.5" role="img" aria-label={dt('Grafiku mujor')}>
               {data.monthly.map(month => (
                 <div key={month.month} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                  <span className="text-[10px] font-bold tabular-nums text-slate-500">{month.received ? fmt(month.received) : ''}</span>
+                  <span className="text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{month.received ? fmt(month.received) : ''}</span>
                   <span className="w-full rounded-t bg-blue-600" style={{ height: `${Math.max(month.received ? 3 : 0, (month.received / maxMonth) * 100)}%` }} title={`${month.month}: ${fmt(month.received)}`} />
-                  <span className="text-[10px] text-slate-400">{month.month.slice(2)}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">{month.month.slice(2)}</span>
                 </div>
               ))}
             </div>
@@ -176,12 +185,12 @@ export default function TransparencyPage() {
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">{dt('Sipas komunës')}</h2>
                 <div className="ml-auto flex gap-1.5 print:hidden" role="group" aria-label={dt('Rendit sipas')}>
                   {([['received', 'Më shumë raportime'], ['resolutionRate', 'Përqindja e zgjidhjes']] as const).map(([id, label]) => (
-                    <button key={id} type="button" onClick={() => setSort(id)} aria-pressed={sort === id} className={cn('rounded-lg px-2.5 py-1 text-[11px] font-bold', sort === id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'border border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300')}>{dt(label)}</button>
+                    <button key={id} type="button" onClick={() => setSort(id)} aria-pressed={sort === id} className={cn('rounded-lg px-2.5 py-1 text-xs font-bold', sort === id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'border border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300')}>{dt(label)}</button>
                   ))}
                 </div>
               </div>
               <table className="w-full text-left text-sm">
-                <thead><tr className="text-[11px] uppercase tracking-wide text-slate-400"><th className="px-5 py-2">{dt('Komuna')}</th><th className="px-3 py-2 text-right">{dt('Të regjistruara')}</th><th className="px-3 py-2 text-right">{dt('Të zgjidhura')}</th><th className="px-5 py-2 text-right">{dt('Zgjidhje')}</th></tr></thead>
+                <thead><tr className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400"><th className="px-5 py-2">{dt('Komuna')}</th><th className="px-3 py-2 text-right">{dt('Të regjistruara')}</th><th className="px-3 py-2 text-right">{dt('Të zgjidhura')}</th><th className="px-5 py-2 text-right">{dt('Zgjidhje')}</th></tr></thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {municipalities.map(row => (
                     <tr key={row.municipality}>
@@ -203,7 +212,7 @@ export default function TransparencyPage() {
                 {data.recentOutcomes.map(outcome => (
                   <li key={`${outcome.trackingId}-${outcome.title}`} className="border-b border-slate-100 pb-3 last:border-0 dark:border-white/5">
                     <p className="text-sm font-bold text-slate-900 dark:text-white">{outcome.title}</p>
-                    <p className="text-xs text-slate-500">{[outcome.municipality, outcome.category, outcome.resolvedAt && `${dt('zgjidhur')} ${outcome.resolvedAt}`].filter(Boolean).join(' · ')}{outcome.trackingId && <> · <a className="font-mono text-blue-700 underline-offset-2 hover:underline print:no-underline" href={`/trackid?id=${encodeURIComponent(outcome.trackingId)}`}>#{outcome.trackingId}</a></>}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">{[outcome.municipality, outcome.category, outcome.resolvedAt && `${dt('zgjidhur')} ${outcome.resolvedAt}`].filter(Boolean).join(' · ')}{outcome.trackingId && <> · <a className="font-mono text-blue-700 underline-offset-2 hover:underline print:no-underline" href={`/trackid?id=${encodeURIComponent(outcome.trackingId)}`}>#{outcome.trackingId}</a></>}</p>
                     {outcome.officialResponse && <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300"><strong>{dt('Përgjigja zyrtare')}:</strong> {outcome.officialResponse}</p>}
                   </li>
                 ))}
@@ -216,7 +225,7 @@ export default function TransparencyPage() {
             <dl className="mt-3 space-y-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
               {Object.entries(data.definitions).map(([key, text]) => <div key={key}><dd>{dt(text)}</dd></div>)}
             </dl>
-            <p className="mt-3 text-[11px] text-slate-400">{dt('Kur një shifër nuk mund të llogaritet (p.sh. pjesëtuesi është zero), shfaqet "pa të dhëna", jo zero.')}</p>
+            <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">{dt('Kur një shifër nuk mund të llogaritet (p.sh. pjesëtuesi është zero), shfaqet "pa të dhëna", jo zero.')}</p>
           </details>
         </div>
       )}

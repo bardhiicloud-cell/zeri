@@ -67,7 +67,7 @@ export function AppFooter() {
               <BrandLogo markClassName="h-10 w-10" />
             </Link>
 
-            <p className="mt-4 max-w-xs text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            <p className="mt-4 max-w-xs text-xs leading-relaxed text-slate-600 dark:text-slate-400">
               {dt('Platforma kombëtare e angazhimit qytetar. Raportoni çështjet, ndiqni zgjidhjet dhe merrni pjesë në vendimmarrjen komunale.')}
             </p>
 
@@ -101,7 +101,7 @@ export function AppFooter() {
               and a citizen should not have to scroll to the bottom to follow.
             */}
             <div className="mt-5">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
+              <h2 className="text-xs font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
                 {dt('Na ndiqni')}
               </h2>
               <ul className="mt-3 flex items-center gap-2">
@@ -125,7 +125,7 @@ export function AppFooter() {
 
           {COLUMNS.map((column) => (
             <nav key={column.title} aria-label={dt(column.title)}>
-              <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
+              <h2 className="text-xs font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
                 {dt(column.title)}
               </h2>
               <ul className="mt-2 md:mt-3 md:space-y-2">
@@ -145,13 +145,13 @@ export function AppFooter() {
         </div>
 
         <div className="mt-9 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/5">
-          <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+          <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
             {dt('Të dhënat përpunohen sipas Ligjit Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale në Kosovë dhe GDPR-së së Bashkimit Europian.')}
           </p>
 
           <div className="flex flex-wrap items-center gap-4">
             <CookiePreferencesButton />
-            <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400">
+            <span className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
               <Heart className="h-3 w-3 text-rose-500" aria-hidden="true" />
               {dt('Bërë për qytetarët e Kosovës')}
             </span>

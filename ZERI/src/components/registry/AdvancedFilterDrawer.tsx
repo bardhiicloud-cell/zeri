@@ -91,7 +91,7 @@ export function AdvancedFilterDrawer({
               <div>
                 <div className="flex items-center gap-2 text-(--color-brand-primary)">
                   <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em]">{dt('Mjet kërkimi')}</p>
+                  <p className="text-xs font-black uppercase tracking-[0.16em]">{dt('Mjet kërkimi')}</p>
                 </div>
                 <h2 id="advanced-filter-title" className="mt-1 text-lg font-black tracking-tight text-(--color-text) dark:text-white">{dt('Filtra të avancuar')}</h2>
               </div>
@@ -140,7 +140,7 @@ export function AdvancedFilterDrawer({
                       aria-pressed={datePreset === preset.key}
                       onClick={() => handlePresetChange(preset.key)}
                       className={cn(
-                        'min-h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-colors',
+                        'min-h-9 rounded-lg border px-2.5 text-xs font-bold transition-colors',
                         datePreset === preset.key
                           ? 'border-(--color-brand-primary) bg-(--color-surface-subtle) text-(--color-brand-primary)'
                           : 'border-(--color-border-soft) bg-(--color-surface) text-slate-600 hover:bg-(--color-surface-subtle) dark:border-white/10 dark:bg-slate-800 dark:text-slate-300'
@@ -151,17 +151,17 @@ export function AdvancedFilterDrawer({
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="space-y-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <label className="space-y-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     <span>{dt('Nga data')}</span>
                     <span className="relative block">
-                      <Calendar className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                      <Calendar className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600 dark:text-slate-400" aria-hidden="true" />
                       <input type="date" value={dateFrom} onChange={(event) => onDateFromChange(event.target.value)} className="min-h-10 w-full rounded-lg border border-(--color-border-soft) bg-(--color-surface-subtle) pl-8 pr-1 text-xs font-semibold text-(--color-text) outline-none focus:border-(--color-brand-primary) dark:border-white/10 dark:bg-slate-800 dark:text-white" />
                     </span>
                   </label>
-                  <label className="space-y-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <label className="space-y-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     <span>{dt('Deri më datë')}</span>
                     <span className="relative block">
-                      <Calendar className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                      <Calendar className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600 dark:text-slate-400" aria-hidden="true" />
                       <input type="date" value={dateTo} onChange={(event) => onDateToChange(event.target.value)} className="min-h-10 w-full rounded-lg border border-(--color-border-soft) bg-(--color-surface-subtle) pl-8 pr-1 text-xs font-semibold text-(--color-text) outline-none focus:border-(--color-brand-primary) dark:border-white/10 dark:bg-slate-800 dark:text-white" />
                     </span>
                   </label>

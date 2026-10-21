@@ -20,13 +20,13 @@ export function BrandLogo({
   hideTextOnMobile?: boolean;
 }) {
   const title = onDark ? 'text-white' : 'text-slate-900 dark:text-white';
-  const sub = onDark ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400';
+  const sub = onDark ? 'text-slate-400' : 'text-slate-600 dark:text-slate-400';
   return (
     <span className="flex items-center gap-2.5">
       <BrandMark className={markClassName} />
       <span className={`${hideTextOnMobile ? 'hidden sm:flex' : 'flex'} flex-col leading-none`}>
         <span className={`text-sm font-black tracking-tight ${title}`}>{dt('Zëri Qytetarëve')}</span>
-        {subtitle && <span className={`mt-0.5 text-[8px] font-semibold ${sub}`}>{dt(subtitle)}</span>}
+        {subtitle && <span className={`mt-0.5 text-xs font-semibold ${sub}`}>{dt(subtitle)}</span>}
       </span>
     </span>
   );
@@ -42,7 +42,7 @@ export function BrandLockup({ size = 'lg' }: { size?: 'md' | 'lg' }) {
         <BrandMark className={lg ? 'h-28 w-28' : 'h-20 w-20'} />
       </div>
       <div className={`mt-4 font-black leading-none text-white ${lg ? 'text-5xl tracking-[0.14em]' : 'text-3xl tracking-[0.14em]'}`}>ZËRI</div>
-      <div className={`mt-2 font-semibold uppercase text-cyan-300 ${lg ? 'text-sm tracking-[0.5em]' : 'text-[11px] tracking-[0.45em]'}`}>Qytetarëve</div>
+      <div className={`mt-2 font-semibold uppercase text-cyan-300 ${lg ? 'text-sm tracking-[0.5em]' : 'text-xs tracking-[0.45em]'}`}>Qytetarëve</div>
     </div>
   );
 }

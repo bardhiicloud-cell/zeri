@@ -185,8 +185,8 @@ export function AdRequestModal({ isOpen, onClose, initialPostId, initialPostCont
                   <span className="font-bold text-sm text-slate-900 dark:text-white">{dt(pkg.name)}</span>
                   <span className="text-sm font-black text-blue-600 dark:text-blue-400">{config?.adPackagePrices?.[pkg.id] !== undefined ? formatEur(config.adPackagePrices?.[pkg.id]) : ''}</span>
                 </div>
-                <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">{dt(pkg.desc)}</p>
+                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{dt(pkg.reach)}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-1">{dt(pkg.desc)}</p>
               </button>
             ))}
           </div>

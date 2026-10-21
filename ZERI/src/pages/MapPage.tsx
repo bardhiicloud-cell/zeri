@@ -100,7 +100,9 @@ export default function MapPage() {
   const [activePreviewReport, setActivePreviewReport] = useState<Report | null>(null);
   const [isHudOpen, setIsHudOpen] = useState(window.innerWidth >= 1024);
   const [isAdVisible, setIsAdVisible] = useState(false);
-  const [mapTheme, setMapTheme] = useState<'light' | 'dark' | 'satellite'>('dark');
+  // Starts in the site's own theme: a night map under a light page was the low-contrast default.
+  const siteTheme = (): 'light' | 'dark' => (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  const [mapTheme, setMapTheme] = useState<'light' | 'dark' | 'satellite'>(siteTheme);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isHeatmapView, setIsHeatmapView] = useState(false);
@@ -178,7 +180,7 @@ export default function MapPage() {
     setSelectedTopic('');
     setActiveFilter('map_all');
     setIsHeatmapView(false);
-    setMapTheme('dark');
+    setMapTheme(siteTheme());
     setIsFullscreen(false);
     setLegendFilters({
       'Kritike': true,
@@ -300,6 +302,7 @@ export default function MapPage() {
         ? "fixed inset-0 h-[100dvh] w-screen z-[10000] border-0" 
         : "flex-1 h-full min-h-[50vh] z-0"
     )}>
+      <h1 className="sr-only">{dt('Harta e Raporteve')}</h1>
       {/* Searching Overlay */}
       {isSearching && (
         <div className="absolute inset-0 z-[12000] bg-white/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500 text-[var(--color-text)] dark:text-[var(--color-surface)]">
@@ -415,7 +418,7 @@ export default function MapPage() {
                       aria-label={dt('Komuna')}
                       value={selectedMunicipality}
                       onChange={(e) => handleMunicipalityChange(e.target.value)}
-                      className="w-full pl-9 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
+                      className="w-full pl-9 pr-4 py-3 bg-slate-800 border border-white/10 rounded-xl font-bold text-white! text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
                     >
                       <option value="">{t('map_all_kosovo')} ({KOSOVO_MUNICIPALITIES.length})</option>
                       {KOSOVO_MUNICIPALITIES.map(m => (
@@ -432,7 +435,7 @@ export default function MapPage() {
                   id="map-topic-filter"
                   value={selectedTopic}
                   onChange={event => setSelectedTopic(event.target.value)}
-                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl font-bold text-white! text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide"
                 >
                   <option value="">{dt('Të gjitha temat')}</option>
                   {REPORT_TOPICS.map(topic => <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>)}
@@ -449,7 +452,7 @@ export default function MapPage() {
                       aria-label={dt('Lagjet e Qytetit')}
                       value={selectedNeighborhood}
                       onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl font-bold text-white text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
+                      className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl font-bold text-white! text-sm md:text-xs outline-none transition focus:border-white focus:ring-1 focus:ring-white cursor-pointer tracking-wide appearance-none"
                     >
                       <option value="">{dt(`TË GJITHA LAGJET`)} ({currentNeighborhoods.length})</option>
                       {currentNeighborhoods.map(n => (
@@ -511,7 +514,7 @@ export default function MapPage() {
         
          {isHudOpen && (
           <div className="pointer-events-auto bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-2 border-2 border-slate-200/60 dark:border-white/10 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
               {t('map_legend')}
             </div>
           </div>
@@ -551,19 +554,19 @@ export default function MapPage() {
           
           <div className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="map-topic-filter-mobile" className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{dt('Tema e raportimit')}</label>
+              <label htmlFor="map-topic-filter-mobile" className="text-xs font-bold text-slate-400 tracking-widest uppercase">{dt('Tema e raportimit')}</label>
               <select
                 id="map-topic-filter-mobile"
                 value={selectedTopic}
                 onChange={event => setSelectedTopic(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-sm font-bold text-white outline-none focus:border-white"
+                className="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3.5 text-sm font-bold text-white! outline-none focus:border-white"
               >
                 <option value="">{dt('Të gjitha temat')}</option>
                 {REPORT_TOPICS.map(topic => <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>)}
               </select>
             </div>
             <div className="space-y-3">
-               <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('map_urgency_level')}</label>
+               <label className="text-xs font-bold text-slate-400 tracking-widest uppercase">{t('map_urgency_level')}</label>
               <div className="grid grid-cols-3 gap-2">
                 {['map_all', 'map_urgent', 'map_critical'].map(f => (
                   <button 
@@ -583,7 +586,7 @@ export default function MapPage() {
 
             {selectedMunicipality && currentNeighborhoods.length > 0 && (
               <div className="space-y-3 animate-in fade-in duration-300">
-                <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase flex items-center gap-1">
+                <label className="text-xs font-bold text-slate-400 tracking-widest uppercase flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-rose-500" />{dt(`Lagjet e Qytetit (`)}{selectedMunicipality})
                 </label>
                 <div className="relative">
@@ -591,7 +594,7 @@ export default function MapPage() {
                     aria-label={dt('Lagjet e Qytetit')}
                     value={selectedNeighborhood}
                     onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                    className="w-full px-4 py-3.5 bg-black/40 border border-white/10 rounded-2xl font-bold text-white text-sm outline-none cursor-pointer tracking-wide focus:border-white focus:ring-1 focus:ring-white transition appearance-none"
+                    className="w-full px-4 py-3.5 bg-slate-800 border border-white/10 rounded-2xl font-bold text-white! text-sm outline-none cursor-pointer tracking-wide focus:border-white focus:ring-1 focus:ring-white transition appearance-none"
                   >
                     <option value="">{dt(`TË GJITHA LAGJET`)} ({currentNeighborhoods.length})</option>
                     {currentNeighborhoods.map(n => (
@@ -603,7 +606,7 @@ export default function MapPage() {
             )}
 
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('map_display')}</label>
+              <label className="text-xs font-bold text-slate-400 tracking-widest uppercase">{t('map_display')}</label>
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button 
                   onClick={() => setMapTheme(getNextMapTheme(mapTheme))}
@@ -694,7 +697,7 @@ export default function MapPage() {
               </button>
             </div>
              <div className="p-4 sm:p-6 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] flex-1">
-                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                <div className="text-center py-8 text-slate-600 dark:text-slate-400">
                   <MapPin className="w-8 h-8 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
                   <p className="text-sm font-medium">{dt('Harta e raportimeve të gjithë Kosovës')}</p>
                   <p className="text-xs mt-1">{dt('Kliko në ndonjë gjashtë për të shfaqur detajet')}</p>
@@ -789,7 +792,7 @@ export default function MapPage() {
               <div className="p-4">
                 <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                   <span className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider text-white",
+                    "px-2 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wider text-white",
                     activePreviewReport.urgency === 'Kritike' ? 'bg-rose-600 shadow-sm dark:shadow-none shadow-rose-600/10' :
                     activePreviewReport.urgency === 'E lartë' ? 'bg-orange-500 shadow-sm dark:shadow-none shadow-orange-500/10' :
                     activePreviewReport.urgency === 'Mesatare' ? 'bg-amber-500 shadow-sm dark:shadow-none shadow-amber-500/10' :
@@ -798,7 +801,7 @@ export default function MapPage() {
                     {getUrgencyLabel(activePreviewReport.urgency)}
                   </span>
                   <span className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider",
+                    "px-2 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wider",
                     activePreviewReport.status === 'Resolved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
                   )}>
                     {activePreviewReport.status === 'Resolved' ? t('dash_resolved') : "Në Proces"}
@@ -806,7 +809,7 @@ export default function MapPage() {
                 </div>
                 <h3 className="font-bold text-[var(--color-text)] dark:text-[var(--color-surface)] leading-tight mb-2 text-base line-clamp-2">{activePreviewReport.title}</h3>
                 {getReportTopic(activePreviewReport) && (
-                  <p className="mb-2 inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-200">
+                  <p className="mb-2 inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-200">
                     {getReportTopic(activePreviewReport)?.icon} {getReportTopic(activePreviewReport) && getReportTopicValueLabel(getReportTopic(activePreviewReport)!.id)}
                   </p>
                 )}
@@ -835,8 +838,8 @@ export default function MapPage() {
 
         {/* Modern Map Legend */}
         <div className={cn("absolute bottom-6 left-6 z-[1000] hidden md:flex flex-col gap-3 bg-slate-900/95 backdrop-blur-xl p-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/15 animate-in slide-in-from-bottom-4 duration-500 min-w-[200px]", selectedReportId && "hidden")}>
-          <div className="text-[10px] font-black tracking-widest text-rose-400 uppercase mb-1.5 border-b border-white/10 pb-1">{t('map_urgency_level')}</div>
-          <p className="max-w-56 text-[11px] leading-relaxed text-slate-400">{dt('Numri në rreth tregon raportimet e grupuara në atë zonë. Kliko rrethin për t’i parë më afër.')}</p>
+          <div className="text-xs font-black tracking-widest text-rose-400 uppercase mb-1.5 border-b border-white/10 pb-1">{t('map_urgency_level')}</div>
+          <p className="max-w-56 text-xs leading-relaxed text-slate-400">{dt('Numri në rreth tregon raportimet e grupuara në atë zonë. Kliko rrethin për t’i parë më afër.')}</p>
           {Object.entries(urgencyColors).map(([level, colorClass]) => {
             const isActive = legendFilters[level] !== false;
             return (

@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from './timeouts';
 /** The public Transparency Center's data; see server/transparency.ts for what each figure means. */
 
 export interface TransparencySummary {
@@ -35,7 +36,7 @@ export interface TransparencyFilters {
 export async function fetchTransparency(filters: TransparencyFilters, signal?: AbortSignal): Promise<TransparencyData> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) if (value) query.set(key, value);
-  const response = await fetch(`/api/v1/public/transparency${query.size ? `?${query}` : ''}`, { signal });
+  const response = await fetchWithTimeout(`/api/v1/public/transparency${query.size ? `?${query}` : ''}`, { signal }, 15000);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Statistikat nuk u ngarkuan.');
   // A host that answers /api with the SPA shell (200 + HTML) yields an empty object here; show the

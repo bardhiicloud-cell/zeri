@@ -119,7 +119,7 @@ function StatusCard({ report, onClose }: { report: PublicTrackView; onClose: () 
           <CopyId id={report.trackingId} />
           <h2 className="mt-2 text-lg font-black leading-snug text-slate-900 dark:text-white">{report.title || dt('Raportim')}</h2>
         </div>
-        <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="-mr-1 rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><X className="h-5 w-5" aria-hidden="true" /></button>
+        <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="-mr-1 rounded-xl p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><X className="h-5 w-5" aria-hidden="true" /></button>
       </div>
 
       <div className={cn('mx-5 rounded-2xl p-4 ring-1', TONE[plain.tone])}>
@@ -136,22 +136,22 @@ function StatusCard({ report, onClose }: { report: PublicTrackView; onClose: () 
           {STEPS.map((label, i) => (
             <li key={label} className="text-center">
               <span className={cn('block h-1.5 rounded-full', i <= plain.step ? (plain.tone === 'done' ? 'bg-emerald-500' : 'bg-blue-600') : 'bg-slate-200 dark:bg-white/10')} />
-              <span className={cn('mt-1.5 block text-[11px] font-bold', i <= plain.step ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400')}>{dt(label)}</span>
+              <span className={cn('mt-1.5 block text-xs font-bold', i <= plain.step ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400')}>{dt(label)}</span>
             </li>
           ))}
         </ol>
       )}
 
       <dl className="mx-5 mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-4 text-sm dark:border-white/10">
-        <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-[11px] text-slate-500">{dt('Komuna')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{report.municipality || '—'}</dd></div></div>
-        <div className="flex items-start gap-2"><Tag className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-[11px] text-slate-500">{dt('Kategoria')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{report.category || '—'}</dd></div></div>
-        <div className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-[11px] text-slate-500">{dt('Dërguar')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{formatDate(report.createdAt)}</dd></div></div>
-        <div className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-[11px] text-slate-500">{dt('Institucioni')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{report.institution.name || '—'}</dd></div></div>
+        <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-xs text-slate-500">{dt('Komuna')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{report.municipality || '—'}</dd></div></div>
+        <div className="flex items-start gap-2"><Tag className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-xs text-slate-500">{dt('Kategoria')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{report.category || '—'}</dd></div></div>
+        <div className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-xs text-slate-500">{dt('Dërguar')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{formatDate(report.createdAt)}</dd></div></div>
+        <div className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><div><dt className="text-xs text-slate-500">{dt('Institucioni')}</dt><dd className="font-semibold text-slate-800 dark:text-slate-100">{report.institution.name || '—'}</dd></div></div>
       </dl>
 
       {response && (
         <div className="mx-5 mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
-          <p className="flex items-center gap-2 text-xs font-black text-slate-500"><MessageSquareText className="h-4 w-4" aria-hidden="true" />{dt('Përgjigjja e institucionit')} · {formatDate(response.date)}</p>
+          <p className="flex items-center gap-2 text-xs font-black text-slate-600 dark:text-slate-400"><MessageSquareText className="h-4 w-4" aria-hidden="true" />{dt('Përgjigjja e institucionit')} · {formatDate(response.date)}</p>
           <p className="mt-1.5 whitespace-pre-line text-sm text-slate-800 dark:text-slate-100">{response.text}</p>
         </div>
       )}
@@ -163,7 +163,7 @@ function StatusCard({ report, onClose }: { report: PublicTrackView; onClose: () 
       )}
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-xs dark:border-white/10">
-        <span className="text-slate-500">{dt('Përditësuar')}: {formatDate(report.lastUpdate ?? report.createdAt, true)}</span>
+        <span className="text-slate-600 dark:text-slate-400">{dt('Përditësuar')}: {formatDate(report.lastUpdate ?? report.createdAt, true)}</span>
         <Link to={`/trackid/detaje?id=${encodeURIComponent(report.trackingId)}`} className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-blue-300">
           {dt('Historia e plotë')}<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
@@ -180,13 +180,13 @@ function SectorCard({ status, onClose }: { status: SectorStatus; onClose: () => 
     <section aria-live="polite" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black text-slate-500">{dt(kind.label)}</p>
+          <p className="text-xs font-black text-slate-600 dark:text-slate-400">{dt(kind.label)}</p>
           <div className="mt-1"><CopyId id={status.reference} /></div>
         </div>
-        <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><X className="h-5 w-5" aria-hidden="true" /></button>
+        <button type="button" onClick={onClose} aria-label={dt('Mbyll')} className="rounded-xl p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><X className="h-5 w-5" aria-hidden="true" /></button>
       </div>
       <p className={cn('mt-4 inline-block rounded-full px-4 py-1.5 text-sm font-black', status.rejected ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800')}>{dt(status.stage)}</p>
-      <p className="mt-3 text-xs text-slate-500">{dt('Dërguar')}: {formatDate(status.createdAt, true)}{status.updatedAt ? ` · ${dt('Përditësuar')}: ${formatDate(status.updatedAt, true)}` : ''}</p>
+      <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">{dt('Dërguar')}: {formatDate(status.createdAt, true)}{status.updatedAt ? ` · ${dt('Përditësuar')}: ${formatDate(status.updatedAt, true)}` : ''}</p>
     </section>
   );
 }
@@ -214,7 +214,11 @@ async function lookupSector(trackingId: string): Promise<SectorStatus> {
   return body as SectorStatus;
 }
 
-export default function ReportsHubPage() {
+/**
+ * One component, two addresses with different jobs: /trackid answers "where is the report with this code?"
+ * (the code may come from anyone), /raportet-e-mia answers "what have I sent?" (this device and account).
+ */
+export default function ReportsHubPage({ mode = 'mine' }: { mode?: 'track' | 'mine' }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [input, setInput] = useState(searchParams.get('id') || '');
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
@@ -292,13 +296,13 @@ export default function ReportsHubPage() {
     <div className="page-shell min-h-screen bg-slate-50 px-4 pb-32 pt-6 dark:bg-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl space-y-5">
         <header className="rounded-3xl bg-gradient-to-br from-[#0b1b3f] via-[#13306b] to-[#1d4ed8] p-5 text-white shadow-lg">
-          <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-blue-200"><FolderOpen className="h-4 w-4" aria-hidden="true" />{dt('Llogaria ime')}</p>
-          <h1 className="mt-1.5 text-2xl font-black">{dt('Raportet e mia')}</h1>
-          <p className="mt-1 text-sm text-blue-100">{dt('Ndiqni çdo raport me Track ID. Prekni një raport për të parë ku ndodhet.')}</p>
+          <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-blue-200"><FolderOpen className="h-4 w-4" aria-hidden="true" />{mode === 'track' ? dt('Ndjekja e raportit') : dt('Llogaria ime')}</p>
+          <h1 className="mt-1.5 text-2xl font-black">{mode === 'track' ? dt('Gjej raportin me Track ID') : dt('Raportet e mia')}</h1>
+          <p className="mt-1 text-sm text-blue-100">{mode === 'track' ? dt('Shkruani Track ID-në që morët kur dërguat raportin dhe shihni se ku ndodhet. Nuk duhet llogari.') : dt('Ndiqni çdo raport me Track ID. Prekni një raport për të parë ku ndodhet.')}</p>
           <form onSubmit={e => { e.preventDefault(); void search(input); }} className="mt-4 flex gap-2" role="search">
             <label htmlFor="hub-track" className="sr-only">{dt('Track ID')}</label>
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" aria-hidden="true" />
               <input
                 id="hub-track"
                 value={input}
@@ -308,10 +312,10 @@ export default function ReportsHubPage() {
                 autoCapitalize="characters"
                 spellCheck={false}
                 maxLength={48}
-                className="h-12 w-full rounded-2xl bg-white pl-10 pr-3 font-mono text-sm font-bold text-slate-900 outline-none ring-2 ring-transparent focus:ring-blue-300"
+                className="h-12 w-full rounded-2xl bg-white pl-10 pr-3 font-mono text-sm font-bold text-slate-900! outline-none ring-2 ring-transparent focus:ring-blue-300"
               />
             </div>
-            <button type="submit" disabled={phase.kind === 'loading'} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-white/15 px-4 text-sm font-black text-white ring-1 ring-white/30 hover:bg-white/25 disabled:opacity-60">
+            <button type="submit" aria-label={dt('Kërko')} disabled={phase.kind === 'loading'} className="inline-flex h-12 min-w-12 items-center justify-center gap-2 rounded-2xl bg-white/15 px-4 text-sm font-black text-white ring-1 ring-white/30 hover:bg-white/25 disabled:opacity-60">
               {phase.kind === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
               <span className="hidden sm:inline">{dt('Kërko')}</span>
             </button>
@@ -333,12 +337,12 @@ export default function ReportsHubPage() {
           <section className="rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm dark:border-white/10 dark:bg-slate-900">
             <FolderOpen className="mx-auto h-10 w-10 text-slate-300" aria-hidden="true" />
             <h2 className="mt-3 text-base font-black text-slate-900 dark:text-white">{dt('Ende asnjë dërgesë nga kjo pajisje')}</h2>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">{dt('Kur dërgoni një raport, ai shfaqet këtu. Nga një pajisje tjetër, ngjitni Track ID-në më lart.')}</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-600 dark:text-slate-400">{dt('Kur dërgoni një raport, ai shfaqet këtu. Nga një pajisje tjetër, ngjitni Track ID-në më lart.')}</p>
             <Link to="/raporto" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white"><PlusCircle className="h-4 w-4" aria-hidden="true" />{dt('Raporto një problem')}</Link>
           </section>
         ) : (
           <section aria-label={dt('Dërgesat e mia')} className="space-y-2.5">
-            <h2 className="px-1 text-xs font-black uppercase tracking-[0.16em] text-slate-500">{dt('Dërgesat e mia')} · {rows.length}</h2>
+            <h2 className="px-1 text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:text-slate-400">{dt('Dërgesat e mia')} · {rows.length}</h2>
             {rows.map(row => {
               const kind = KIND[row.kind];
               const label = row.status ? (row.kind === 'report' ? statusLabel(row.status) : SECTOR_STAGE[row.status] ?? row.status) : null;
@@ -355,19 +359,19 @@ export default function ReportsHubPage() {
                   <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', kind.tone)}><kind.icon className="h-5 w-5" aria-hidden="true" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-black text-slate-900 dark:text-white">{row.title}</span>
-                    <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+                    <span className="mt-0.5 block truncate text-xs text-slate-600 dark:text-slate-400">
                       <span className="font-mono font-bold">{row.trackingId}</span>{row.municipality ? ` · ${row.municipality}` : ''}{row.createdAt ? ` · ${formatDate(row.createdAt)}` : ''}
                     </span>
                   </span>
                   {label && (
-                    <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ring-1', plain ? TONE[plain.tone] : 'bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-white/10')}>
+                    <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-xs font-black ring-1', plain ? TONE[plain.tone] : 'bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-white/10')}>
                       {dt(plain ? plain.headline : label)}
                     </span>
                   )}
                 </button>
               );
             })}
-            <p className="px-1 pt-1 text-xs text-slate-500">{dt('Lista ruhet në këtë pajisje dhe në llogarinë tuaj. Raportet "Në pritje" nuk janë publike derisa t’i aprovojë stafi.')}</p>
+            <p className="px-1 pt-1 text-xs text-slate-600 dark:text-slate-400">{dt('Lista ruhet në këtë pajisje dhe në llogarinë tuaj. Raportet "Në pritje" nuk janë publike derisa t’i aprovojë stafi.')}</p>
           </section>
         )}
       </div>

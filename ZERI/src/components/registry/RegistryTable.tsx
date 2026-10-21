@@ -20,7 +20,7 @@ export function RegistryTable({ reports, dt, onOpen, onShare }: RegistryTablePro
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs dark:border-white/10 dark:bg-slate-900">
       <table className="w-full table-fixed text-left text-sm">
         <caption className="sr-only">{dt('Regjistri i raportimeve publike')}</caption>
-        <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+        <thead className="bg-slate-50 text-xs font-black uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
           <tr>
             <th scope="col" className="w-[38%] px-5 py-3.5">{dt('Raportimi')}</th>
             <th scope="col" className="w-[13%] px-3 py-3.5">{dt('Statusi')}</th>
@@ -40,11 +40,11 @@ export function RegistryTable({ reports, dt, onOpen, onShare }: RegistryTablePro
                   <div className="flex items-center gap-3.5">
                     <span className="grid h-14 w-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
                       {cover?.type === 'image' ? <img src={cover.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                        : <span className="text-xl" aria-hidden="true">{topic?.icon ?? <Layers className="h-5 w-5 text-slate-400" />}</span>}
+                        : <span className="text-xl" aria-hidden="true">{topic?.icon ?? <Layers className="h-5 w-5 text-slate-600 dark:text-slate-400" />}</span>}
                     </span>
                     <div className="min-w-0">
                       <button type="button" onClick={event => { event.stopPropagation(); onOpen(report.id); }} className="block max-w-full truncate text-left font-black text-slate-950 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">{report.title}</button>
-                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400"><span className="font-mono font-bold text-blue-700 dark:text-blue-300">#{trackingIdOf(report)}</span> · {dt(report.category)}</p>
+                      <p className="mt-0.5 truncate text-xs text-slate-600 dark:text-slate-400"><span className="font-mono font-bold text-blue-700 dark:text-blue-300">#{trackingIdOf(report)}</span> · {dt(report.category)}</p>
                     </div>
                   </div>
                 </td>
@@ -54,7 +54,7 @@ export function RegistryTable({ reports, dt, onOpen, onShare }: RegistryTablePro
                 <td className="px-3 py-3.5 text-right"><span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300"><ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />{report.upvotes || 0}</span></td>
                 <td className="px-5 py-3.5">
                   <div className="flex justify-end">
-                    <button type="button" onClick={event => onShare(event, report.title, report.id)} aria-label={dt('Shpërndaj')} title={dt('Shpërndaj')} className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-400 hover:text-blue-700 dark:border-white/10">
+                    <button type="button" onClick={event => onShare(event, report.title, report.id)} aria-label={dt('Shpërndaj')} title={dt('Shpërndaj')} className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 transition hover:border-blue-400 hover:text-blue-700 dark:border-white/10">
                       <Share2 className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>

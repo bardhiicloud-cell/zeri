@@ -582,7 +582,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
             <div key={kpi.label} className="px-4 py-3">
               <dd className="text-[24px] font-semibold leading-none tabular-nums">{kpi.value}</dd>
               <dt className="mt-1.5 truncate text-[12px] font-medium">{kpi.label}</dt>
-              <p className="au-sub truncate text-[11px]">{kpi.note}</p>
+              <p className="au-sub truncate text-xs">{kpi.note}</p>
             </div>
           ))}
         </dl>}
@@ -629,7 +629,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                   return (
                     <button key={cat.id} type="button" aria-pressed={selectedCategory === cat.id} onClick={() => setSelectedCategory(cat.id)} className="au-chip">
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span>{dt(cat.name)}</span>
-                      <span className="ml-1 rounded-full bg-black/10 px-1.5 text-[10px] font-black tabular-nums dark:bg-white/15">{categoryCounts[cat.id] ?? 0}</span>
+                      <span className="ml-1 rounded-full bg-black/10 px-1.5 text-xs font-black tabular-nums dark:bg-white/15">{categoryCounts[cat.id] ?? 0}</span>
                     </button>
                   );
                 })}
@@ -638,14 +638,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
 
             {displayedCases.length > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-slate-500" aria-live="polite">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400" aria-live="polite">
                   {displayedCases.length} {displayedCases.length === 1 ? dt('rast') : dt('raste')}
                   {urgentCount > 0 && <> · <span className="text-rose-600 dark:text-rose-400">{urgentCount} {dt('urgjente')}</span></>}
                 </p>
                 <div className="inline-flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-zinc-800" role="radiogroup" aria-label={dt('Grupimi i rasteve')}>
                   {GROUP_OPTIONS.map((option) => (
                     <button key={option.id} type="button" role="radio" aria-checked={groupBy === option.id} onClick={() => setGroupBy(option.id)}
-                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${groupBy === option.id ? 'bg-white text-rose-700 shadow-sm dark:bg-zinc-700 dark:text-rose-300' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${groupBy === option.id ? 'bg-white text-rose-700 shadow-sm dark:bg-zinc-700 dark:text-rose-300' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}>
                       {dt(option.label)}
                     </button>
                   ))}
@@ -682,7 +682,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                         <h3 className={`text-sm font-black ${headerMeta ? headerMeta.accent : 'text-slate-900 dark:text-white'}`}>
                           {groupBy === 'category' ? dt(headerMeta!.name) : groupBy === 'urgency' ? dt(urgencyMeta(groupHeader.key).label) : groupHeader.key}
                         </h3>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black tabular-nums text-slate-600 dark:bg-zinc-800 dark:text-slate-300">{groupHeader.count}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black tabular-nums text-slate-600 dark:bg-zinc-800 dark:text-slate-300">{groupHeader.count}</span>
                         <span className="h-px flex-1 bg-slate-200 dark:bg-zinc-800" />
                       </div>
                     )}
@@ -698,7 +698,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           <div className="flex items-center gap-3">
                             <div className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl ${cMeta.tile}`} title={dt(cMeta.name)}>
                               <cMeta.icon className="h-4 w-4" aria-hidden="true" />
-                              <span className="mt-0.5 text-[8px] font-black leading-none">{cMeta.abbr}</span>
+                              <span className="mt-0.5 text-xs font-black leading-none">{cMeta.abbr}</span>
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5">
@@ -711,27 +711,27 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                                 {c.age} vjeç • {c.gender} • Viti i diagnozës: {c.diagnosedYear}
                               </p>
                             </div>
                           </div>
 
                           <div className="flex shrink-0 flex-col items-end gap-1.5">
-                            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${uMeta.pill}`}>
+                            <span className={`rounded-full border px-2.5 py-1 text-xs font-black uppercase tracking-wider ${uMeta.pill}`}>
                               {dt(uMeta.label)}
                             </span>
-                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${sMeta.pill}`}>{dt(sMeta.label)}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${sMeta.pill}`}>{dt(sMeta.label)}</span>
                           </div>
                         </div>
 
                         <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/45" aria-label={`Statusi i rastit ${c.trackingId || c.id}`}>
                           <div className="mb-2 flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Gjurmimi i rastit</span>
-                            <span className="font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">Gjurmimi i rastit</span>
+                            <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-400">{c.trackingId || `HC-${c.id.slice(0, 8).toUpperCase()}`}</span>
                           </div>
                           {c.status === 'rejected' ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-100 px-2 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-100 px-2 py-1 text-xs font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                               <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Rasti kërkon rishikim')}
                             </span>
                           ) : (
@@ -744,7 +744,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                               ].map((step) => (
                                 <div key={step.label} className="min-w-0">
                                   <div className={cn('mb-1 h-1.5 rounded-full', step.complete ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-zinc-700')} />
-                                  <span className={cn('block truncate text-[9px] font-bold', step.complete ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500')}>{step.label}</span>
+                                  <span className={cn('block truncate text-xs font-bold', step.complete ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500')}>{step.label}</span>
                                 </div>
                               ))}
                             </div>
@@ -756,7 +756,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
                             <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                             <span>Komuna: {c.municipality}</span>
-                            {c.neighborhood && <span className="text-slate-400 font-normal">• Lagjja: {c.neighborhood}</span>}
+                            {c.neighborhood && <span className="text-slate-600 dark:text-slate-400 font-normal">• Lagjja: {c.neighborhood}</span>}
                           </div>
 
                           <p className="text-sm font-bold text-slate-900 dark:text-white">
@@ -784,10 +784,10 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                                     <span>{dt('Dokument Mjekësor / Epikrizë')}</span>
                                   </p>
-                                  <p className="text-[11px] text-slate-400">{dt('Kliko për ta parë në madhësi të plotë')}</p>
+                                  <p className="text-xs text-slate-600 dark:text-slate-400">{dt('Kliko për ta parë në madhësi të plotë')}</p>
                                 </div>
                               </div>
-                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors mr-1" />
+                              <Eye className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors mr-1" />
                             </div>
                           </div>
                         )}
@@ -798,7 +798,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                             {c.needs.map((need, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 rounded-md text-[11px] font-medium"
+                                className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium"
                               >
                                 • {need}
                               </span>
@@ -808,7 +808,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
 
                         {/* Hospital notification badge */}
                         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-                          <span className="text-slate-500 dark:text-slate-400 font-medium">Spitali Rajonal:</span>
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">Spitali Rajonal:</span>
                           {c.hospitalNotified ? (
                             <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
                               <CheckCircle2 className="w-3 h-3" />
@@ -851,7 +851,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                               </a>
                               <button
                                 onClick={() => handleOpenGoFundMeModal(c)}
-                                className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                                 title={dt('Ndrysho ose shiko linkun e GoFundMe')}
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -871,7 +871,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                         </div>
 
                         <div className="flex items-center gap-1.5 sm:gap-2">
-                          <span className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-800/70 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-zinc-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5" title={dt('Numri nuk publikohet; adminët e autorizuar e shohin në panelin e tyre.')}>
+                          <span className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-800/70 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs font-bold flex items-center gap-1.5" title={dt('Numri nuk publikohet; adminët e autorizuar e shohin në panelin e tyre.')}>
                             <ShieldCheck className="w-3 h-3 text-emerald-600" />
                             Kontakt privat
                           </span>
@@ -901,7 +901,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                                 toast.success(dt('Linku u kopjua!'));
                               }
                             }}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                            className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
                             title={dt('Shpërndaj')}
                           >
                             <Share2 className="w-4 h-4" />
@@ -925,7 +925,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">
                   {dt('Tabela e Evidencës Shëndetësore sipas 38 Komunave')}
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   {dt('Transparencë e plotë mbi rastet onkologjike, kardiake dhe nevojat urgjente për çdo komunë.')}
                 </p>
               </div>
@@ -982,10 +982,10 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                               {st.urgent}
                             </span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-600 dark:text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right text-slate-500 truncate max-w-[220px]" title={hosp.name}>
+                        <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-400 truncate max-w-[220px]" title={hosp.name}>
                           {hosp.name.split('(')[0]}
                         </td>
                       </tr>
@@ -1012,7 +1012,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
               <h3 className="font-bold text-base text-slate-900 dark:text-white">
                 {dt('Drejtoria e Spitaleve Rajonale & QKMF-ve për 38 Komunat e Kosovës')}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                 {dt('Kontaktet zyrtare të urgjencës për të gjitha rajonet: Prishtinë (QKUK), Prizren, Pejë, Gjakovë, Gjilan, Ferizaj, dhe Mitrovicë.')}
               </p>
             </div>
@@ -1033,11 +1033,11 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                             {hosp.name}
                           </h4>
                         </div>
-                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold rounded">
+                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold rounded">
                           {hosp.type}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-2">📍 {hosp.address}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">📍 {hosp.address}</p>
                     </div>
 
                     <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs font-medium">
@@ -1094,14 +1094,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <h3 className="font-black text-lg text-slate-900 dark:text-white">
                       {dt('Regjistro Rast Shëndetësor')}
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       {dt('Evidenca regjistrohet sipas komunës përkatëse në Kosovë.')}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsRegisterModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
+                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1142,14 +1142,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
                       {dt('Njofto Spitalin / QKMF Përkatëse')}
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       Dërgim alarmi zyrtar për Komunën e {hospitalModalCase.municipality}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setHospitalModalCase(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
+                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1162,11 +1162,11 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <Building2 className="w-4 h-4 text-blue-500" />
                     {hospitalInfo.name}
                   </span>
-                  <span className="text-[10px] font-bold uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                  <span className="text-xs font-bold uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                     {hospitalInfo.type}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">📍 {hospitalInfo.address}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">📍 {hospitalInfo.address}</p>
 
                 <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <a
@@ -1258,7 +1258,7 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                 </p>
                 <button
                   onClick={() => setPreviewPhoto(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
+                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1303,14 +1303,14 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
                       Vendos Linkun e GoFundMe
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       Për: {goFundMeModalCase.fullName} • Komuna e {goFundMeModalCase.municipality}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setGoFundMeModalCase(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1333,9 +1333,9 @@ ${c.imageUrl ? 'Dokument Mjekësor / Epikriza: E bashkangjitur në sistem' : ''}
                       placeholder="https://www.gofundme.com/f/emri-i-fushatës..."
                       className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
                     />
-                    <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <LinkIcon className="w-4 h-4 text-slate-600 dark:text-slate-400 absolute left-3 top-3" />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                     {dt('Shembull: https://www.gofundme.com/f/ndihme-per-sherim')}
                   </p>
                 </div>

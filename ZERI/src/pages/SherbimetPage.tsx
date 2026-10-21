@@ -286,14 +286,14 @@ export default function SherbimetPage() {
           <Link to="/raporto" className="au-tile au-tile-link flex items-start gap-3 p-4">
             <span className="au-ico"><Shield className="h-[18px] w-[18px]" aria-hidden="true" /></span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2"><span className="text-[15px] font-semibold">{dt('Zëri Qytetarëve')}</span><span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">{dt('Aktive')}</span></span>
+              <span className="flex items-center gap-2"><span className="text-[15px] font-semibold">{dt('Zëri Qytetarëve')}</span><span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{dt('Aktive')}</span></span>
               <span className="au-sub mt-0.5 block text-[13px] leading-snug">{dt('Raportime, Track-ID, harta, transparencë dhe pjesëmarrje qytetare.')}</span>
             </span>
           </Link>
           <a href="https://ekosova.rks-gov.net" target="_blank" rel="noreferrer" className="au-tile au-tile-link flex items-start gap-3 p-4">
             <span className="au-ico"><Building className="h-[18px] w-[18px]" aria-hidden="true" /></span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2"><span className="text-[15px] font-semibold">e-Kosova</span><span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-semibold dark:bg-white/10">{dt('Portali zyrtar')}</span><ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" /></span>
+              <span className="flex items-center gap-2"><span className="text-[15px] font-semibold">e-Kosova</span><span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-semibold dark:bg-white/10">{dt('Portali zyrtar')}</span><ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" /></span>
               <span className="au-sub mt-0.5 block text-[13px] leading-snug">{dt('Shërbime publike shtetërore të ofruara në mënyrë elektronike.')}</span>
             </span>
           </a>
@@ -329,7 +329,7 @@ export default function SherbimetPage() {
                     <div className="flex items-start gap-3">
                       <span className="au-ico"><CheckCircle2 className="h-[18px] w-[18px]" aria-hidden="true" /></span>
                       <div className="min-w-0">
-                        <p className="au-sub text-[11px] font-semibold uppercase tracking-wide">{service.category}</p>
+                        <p className="au-sub text-xs font-semibold uppercase tracking-wide">{service.category}</p>
                         <h3 className="text-[15px] font-semibold leading-snug">{service.title}</h3>
                       </div>
                     </div>
@@ -352,7 +352,7 @@ export default function SherbimetPage() {
                   {municipalList.map(service => (
                     <li key={service.id} className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4">
                       <div className="min-w-0 flex-1">
-                        <p className="au-sub text-[11px] font-semibold uppercase tracking-wide">{service.category}</p>
+                        <p className="au-sub text-xs font-semibold uppercase tracking-wide">{service.category}</p>
                         <h3 className="text-[15px] font-medium leading-snug">{service.title}</h3>
                         <p className="au-sub text-[12px]">{service.department}</p>
                         <p className="au-sub mt-1 text-[13px] leading-relaxed">{service.description}</p>

@@ -308,21 +308,21 @@ export default function FloatingSupportBot() {
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-white/10"><Bot className="h-5 w-5" aria-hidden="true" /></span>
                   <div className="min-w-0">
                     <h2 className="truncate text-sm font-black">{dt('Asistenti i Zërit Qytetar')}</h2>
-                    <p className="mt-0.5 text-[11px] text-blue-100">{status === 'waiting_agent' ? 'Në pritje të agjentit' : status === 'active_agent' ? 'Në bisedë me agjentin' : status === 'resolved' ? 'Biseda e zgjidhur' : 'Informacion dhe mbështetje'}</p>
+                    <p className="mt-0.5 text-xs text-blue-100">{status === 'waiting_agent' ? 'Në pritje të agjentit' : status === 'active_agent' ? 'Në bisedë me agjentin' : status === 'resolved' ? 'Biseda e zgjidhur' : 'Informacion dhe mbështetje'}</p>
                   </div>
                 </div>
                 <button type="button" onClick={closeBot} className="grid min-h-10 min-w-10 place-items-center rounded-[10px] text-white/75 transition-colors hover:bg-white/10 hover:text-white" aria-label={dt('Mbyll mbështetjen')}><X className="h-5 w-5" aria-hidden="true" /></button>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-bold text-blue-100">
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-bold text-blue-100">
                 <button type="button" onClick={() => chatId && copyValue(chatId, 'conversation')} className="min-w-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-left transition-colors hover:bg-white/10">
                   <span className="block uppercase tracking-wider text-white/50">{dt('ID i bisedës')}</span>
                   <span className="mt-0.5 block truncate font-mono text-white">{chatId || '—'}</span>
-                  <span className="mt-0.5 block text-[9px] text-blue-200">{copiedId === 'conversation' ? 'U kopjua' : 'Kliko për kopjim'}</span>
+                  <span className="mt-0.5 block text-xs text-blue-200">{copiedId === 'conversation' ? 'U kopjua' : 'Kliko për kopjim'}</span>
                 </button>
                 <button type="button" disabled={!agentTrackId} onClick={() => agentTrackId && copyValue(agentTrackId, 'tracking')} className="min-w-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-left transition-colors hover:bg-white/10 disabled:cursor-default disabled:opacity-60">
                   <span className="block uppercase tracking-wider text-white/50">ID i ndjekjes</span>
                   <span className="mt-0.5 block truncate font-mono text-white">{agentTrackId || 'Pa kërkesë aktive'}</span>
-                  <span className="mt-0.5 block text-[9px] text-blue-200">{copiedId === 'tracking' ? 'U kopjua' : selectedDepartment.label}</span>
+                  <span className="mt-0.5 block text-xs text-blue-200">{copiedId === 'tracking' ? 'U kopjua' : selectedDepartment.label}</span>
                 </button>
               </div>
             </header>
@@ -333,12 +333,12 @@ export default function FloatingSupportBot() {
               {messages.map((message) => (
                 <div key={message.id} className={cn('flex', message.role === 'user' || message.role === 'agent' ? 'justify-end' : 'justify-start')}>
                   <div className={cn('max-w-[86%] rounded-[10px] px-3.5 py-3 text-sm leading-relaxed', message.role === 'user' ? 'bg-(--color-brand-primary) text-white' : message.role === 'agent' ? 'bg-emerald-600 text-white' : 'border border-(--color-border-soft) bg-(--color-surface) text-slate-700 shadow-(--shadow-control) dark:border-white/10 dark:bg-slate-900 dark:text-slate-200')}>
-                    <div className={cn('mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider', message.role === 'user' ? 'text-blue-100' : message.role === 'agent' ? 'text-emerald-100' : 'text-(--color-brand-primary)')}>
+                    <div className={cn('mb-1 flex items-center gap-1 text-xs font-black uppercase tracking-wider', message.role === 'user' ? 'text-blue-100' : message.role === 'agent' ? 'text-emerald-100' : 'text-(--color-brand-primary)')}>
                       {message.role === 'agent' ? <Headphones className="h-3 w-3" aria-hidden="true" /> : message.role === 'bot' ? <Bot className="h-3 w-3" aria-hidden="true" /> : null}
                       {message.role === 'agent' ? 'Agjent' : message.role === 'bot' ? 'AI Bot' : 'Ju'}
                     </div>
                     <div className="whitespace-pre-wrap">{message.content}</div>
-                    <div className={cn('mt-1.5 text-right text-[9px]', message.role === 'user' ? 'text-blue-100' : 'text-slate-400')}>
+                    <div className={cn('mt-1.5 text-right text-xs', message.role === 'user' ? 'text-blue-100' : 'text-slate-400')}>
                       {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -352,12 +352,12 @@ export default function FloatingSupportBot() {
               <div className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-4 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400"><CheckCircle2 className="mx-auto mb-2 h-5 w-5 text-emerald-500" aria-hidden="true" />{dt('Kjo bisedë është shënuar si e zgjidhur.')}</div>
             ) : (
               <form onSubmit={(event) => { event.preventDefault(); void handleSend(input); }} className="shrink-0 border-t border-(--color-border-soft) bg-(--color-surface) p-3 dark:border-white/10 dark:bg-slate-900">
-                <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400"><span>{status === 'waiting_agent' || status === 'active_agent' ? 'Mesazh për departamentin' : 'Pyetje për asistentin'}</span><span>{registered ? selectedDepartment.label : 'Vetëm informim'}</span></div>
+                <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400"><span>{status === 'waiting_agent' || status === 'active_agent' ? 'Mesazh për departamentin' : 'Pyetje për asistentin'}</span><span>{registered ? selectedDepartment.label : 'Vetëm informim'}</span></div>
                 <div className="flex items-center gap-2">
                   <input type="text" value={input} onChange={(event) => setInput(event.target.value)} disabled={!isReady || isTyping} placeholder={status === 'waiting_agent' || status === 'active_agent' ? 'Shkruani mesazhin...' : 'Bëni një pyetje ose shkruani /agent...'} className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-(--color-border-soft) bg-(--color-surface-subtle) px-3.5 text-sm text-(--color-text) outline-none transition focus:border-(--color-brand-primary) focus:ring-2 focus:ring-(--color-brand-primary)/15 disabled:opacity-60 dark:border-white/10 dark:bg-slate-800 dark:text-white" />
                   <button type="submit" disabled={!input.trim() || !isReady || isTyping} className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] bg-(--color-brand-primary) text-white transition-colors hover:bg-(--color-brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50" aria-label={dt('Dërgo mesazhin')}><Send className="h-4 w-4" aria-hidden="true" /></button>
                 </div>
-                {!registered && <p className="mt-2 text-[10px] font-semibold text-slate-500">{dt('Regjistrohuni për të kërkuar një agjent njerëzor.')}</p>}
+                {!registered && <p className="mt-2 text-xs font-semibold text-slate-500">{dt('Regjistrohuni për të kërkuar një agjent njerëzor.')}</p>}
               </form>
             )}
           </motion.section>

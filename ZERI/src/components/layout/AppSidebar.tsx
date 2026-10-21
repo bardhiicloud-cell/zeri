@@ -152,7 +152,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <div key={group.id} className="mb-3 last:mb-0">
               {!collapsed && (
                 <>
-                  <h2 className="mb-1 px-2.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">
+                  <h2 className="mb-1 px-2.5 text-xs font-black uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">
                     {dt(group.title)}
                   </h2>
                   <div className="mb-1.5 h-px bg-slate-100 dark:bg-white/5" />
@@ -237,7 +237,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         */}
         {!collapsed && (
           <div className="mb-1 px-2.5 pt-1">
-            <h2 className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">
+            <h2 className="text-xs font-black uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">
               {dt('Na ndiqni')}
             </h2>
             <ul className="mt-1.5 flex items-center gap-1.5">
@@ -267,7 +267,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             title={collapsed ? dt(link.label) : undefined}
             className={cn(
-              'flex h-7 items-center rounded-lg py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800',
+              'flex h-7 items-center rounded-lg py-1 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800',
               collapsed ? 'justify-center px-0' : 'gap-2 px-2.5'
             )}
           >
@@ -285,7 +285,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             }}
             title={collapsed ? dt('Dil nga llogaria') : undefined}
             className={cn(
-              'flex h-7 w-full items-center rounded-lg py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700 dark:text-slate-500 dark:hover:bg-rose-950/30',
+              'flex h-7 w-full items-center rounded-lg py-1 text-xs font-semibold text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700 dark:text-slate-500 dark:hover:bg-rose-950/30',
               collapsed ? 'justify-center px-0' : 'gap-2 px-2.5'
             )}
           >
@@ -301,7 +301,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           aria-expanded={!collapsed}
           title={collapsed ? dt('Zgjero menunë') : dt('Mblidh menunë')}
           className={cn(
-            'mt-0.5 flex h-7 w-full items-center rounded-lg py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200',
+            'mt-0.5 flex h-7 w-full items-center rounded-lg py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200',
             collapsed ? 'justify-center px-0' : 'gap-2 px-2.5'
           )}
         >

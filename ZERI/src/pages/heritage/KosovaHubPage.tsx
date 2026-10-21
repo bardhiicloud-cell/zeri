@@ -73,7 +73,7 @@ export default function KosovaHubPage() {
                   {t('openArchive')}<ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
-              {settings.heroImageUrl && settings.heroCredit && <p className="text-[11px] text-white/60">© {settings.heroCredit}</p>}
+              {settings.heroImageUrl && settings.heroCredit && <p className="text-xs text-white/60">© {settings.heroCredit}</p>}
             </div>
             <div className="hx-rise relative hidden items-center justify-center lg:flex" style={{ ['--i' as string]: 2 }}>
               <span className="absolute h-72 w-72 rounded-full bg-[#e8c36e]/15 blur-3xl" aria-hidden="true" />
@@ -93,7 +93,7 @@ export default function KosovaHubPage() {
                 <dt className="hx-year text-2xl sm:text-3xl">{f.k}</dt>
                 <dd className="mt-1 text-sm font-bold" style={{ color: 'var(--hx-ink)' }}>{f.v}</dd>
                 <dd className="hx-ink-3 text-xs">{f.l}</dd>
-                <dd className="mt-1 text-[10px] uppercase tracking-wider hx-ink-3">{content.sources.get(f.src)?.publisher.split(' (')[0]}</dd>
+                <dd className="mt-1 text-xs uppercase tracking-wider hx-ink-3">{content.sources.get(f.src)?.publisher.split(' (')[0]}</dd>
               </div>
             ))}
           </dl>
@@ -194,7 +194,7 @@ export default function KosovaHubPage() {
               {uckHighlights.map((e) => (
                 <li key={e.id} className="bg-[rgba(10,4,5,.9)] p-4 sm:p-5">
                   <Link to={entryPath(e)} className="group block space-y-1.5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#ff8a98]">{formatHeritageDate(e.date, lang)}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#ff8a98]">{formatHeritageDate(e.date, lang)}</p>
                     <p className="hx-serif text-base font-black leading-snug text-white group-hover:underline">{pick(e.title, lang)}</p>
                     <EvidenceBadge status={e.evidence} lang={lang} />
                   </Link>

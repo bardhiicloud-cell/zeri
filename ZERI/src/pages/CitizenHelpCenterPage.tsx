@@ -187,7 +187,7 @@ export default function CitizenHelpCenterPage() {
                       className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left">
                       <span className="au-ico"><a.icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
                       <span className="min-w-0 flex-1">
-                        <span className="au-sub block text-[11px] font-semibold uppercase tracking-wide">{dt(a.category)}</span>
+                        <span className="au-sub block text-xs font-semibold uppercase tracking-wide">{dt(a.category)}</span>
                         <span className="block text-[15px] font-medium">{dt(a.title)}</span>
                       </span>
                       <ChevronDown className={cn('h-4 w-4 shrink-0 opacity-50 transition-transform', open && 'rotate-180')} aria-hidden="true" />
@@ -198,7 +198,7 @@ export default function CitizenHelpCenterPage() {
                       {a.steps && (
                         <ol className="space-y-2">
                           {a.steps.map((st, n) => (
-                            <li key={st} className="flex gap-2.5"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--au-accent-soft)] text-[11px] font-semibold text-[var(--au-accent)]">{n + 1}</span><span>{dt(st)}</span></li>
+                            <li key={st} className="flex gap-2.5"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--au-accent-soft)] text-xs font-semibold text-[var(--au-accent)]">{n + 1}</span><span>{dt(st)}</span></li>
                           ))}
                         </ol>
                       )}

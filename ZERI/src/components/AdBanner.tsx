@@ -246,7 +246,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
         className={cn(baseStyle, !isClickable && 'cursor-default')}
       >
         <div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-lg bg-slate-900/90 px-2.5 py-0.5 backdrop-blur-sm rtl:left-0 rtl:right-auto rtl:rounded-bl-none rtl:rounded-br-lg">
-          <span className="text-[10px] font-bold tracking-wider text-white uppercase">{dt(`Sponzorizuar`)}</span>
+          <span className="text-xs font-bold tracking-wider text-white uppercase">{dt(`Sponzorizuar`)}</span>
         </div>
 
         <div className="absolute inset-0 -z-10 bg-(--color-sponsor-surface)" />
@@ -378,12 +378,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-brand-primary)"></span>
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   {dt('Hapësirë reklamimi')}
                 </span>
               </div>
               {municipality && municipality !== 'Të gjitha Komunat' && (
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-0.5">
                   <MapPin className="w-2.5 h-2.5" /> {municipality}
                 </span>
               )}
@@ -393,7 +393,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
               <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 leading-tight">
                 {dt('Arrini qytetarët që lexojnë lajmet lokale')}
               </h4>
-              <ul className="mt-1.5 space-y-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+              <ul className="mt-1.5 space-y-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                 <li className="flex gap-1.5"><span aria-hidden="true" className="text-emerald-600">✓</span>{dt('Synim sipas komunës suaj')}</li>
                 <li className="flex gap-1.5"><span aria-hidden="true" className="text-emerald-600">✓</span>{dt('Pranë përmbajtjes që lexohet çdo ditë')}</li>
                 <li className="flex gap-1.5"><span aria-hidden="true" className="text-emerald-600">✓</span>{dt('Fushatë e shënuar qartë si reklamë')}</li>
@@ -403,7 +403,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowInquiryModal(true); }}
-              className="mt-1.5 min-h-9 w-full rounded-lg bg-blue-700 px-3 py-1.5 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-blue-800"
+              className="mt-1.5 min-h-9 w-full rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-black text-white shadow-sm transition-colors hover:bg-blue-800"
             >
               {dt('Kërko ofertë')}
             </button>
@@ -412,7 +412,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
 <a
                 href={`tel:${cleanPhone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
+                className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm"
               >
                 <Phone className="w-3 h-3" aria-hidden="true" />
                 <span>{dt('Kliko e thirr')}</span>
@@ -424,7 +424,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 onClick={(e) => e.stopPropagation()}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
+                className="flex-1 min-h-9 py-1.5 bg-white dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-slate-100 dark:border-white/5 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm"
               >
                 <MessageCircle className="w-3 h-3" aria-hidden="true" />
                 <span>{dt('WhatsApp')}</span>
@@ -445,12 +445,12 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-(--color-brand-primary)"></span>
                     </span>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
                       {dt('Hapësirë reklamimi')}
                     </span>
                   </div>
                   {municipality && municipality !== 'Të gjitha Komunat' && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5 px-1.5 py-0.5 rounded shadow-sm">
+                    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-slate-600 dark:text-slate-400 bg-white/50 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5 px-1.5 py-0.5 rounded shadow-sm">
                       <MapPin className="w-2.5 h-2.5" /> {municipality}
                     </span>
                   )}
@@ -535,7 +535,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
             </div>
             <form onSubmit={handleInquirySubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                   {dt('Emri & Mbiemri *')}
                 </label>
                 <input
@@ -548,7 +548,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                   {dt('Emri i Biznesit / Kompanisë')}
                 </label>
                 <input
@@ -561,7 +561,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                     {dt('Numri i Telefonit *')}
                   </label>
                   <input
@@ -574,7 +574,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                     {dt('Email Adresa')}
                   </label>
                   <input
@@ -587,7 +587,7 @@ export default function AdBanner({ position, className, municipality }: AdBanner
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                   {dt('Shënime ose format i preferuar')}
                 </label>
                 <textarea

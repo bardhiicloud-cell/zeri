@@ -28,7 +28,7 @@ export function NetworkStatus() {
   };
 
   return (
-    <div className="bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-[11px] sm:text-xs font-bold z-[9999] relative shadow-sm dark:shadow-none border-b border-amber-600 animate-in slide-in-from-top-full duration-500">
+    <div className="bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs sm:text-xs font-bold z-[9999] relative shadow-sm dark:shadow-none border-b border-amber-600 animate-in slide-in-from-top-full duration-500">
       <WifiOff className="w-4 h-4 shrink-0" />
       <span className="text-center">{getMessage()}</span>
     </div>

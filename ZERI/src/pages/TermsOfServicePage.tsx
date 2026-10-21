@@ -180,7 +180,7 @@ export default function TermsOfServicePage() {
           </div>
 
           <nav aria-label={dt('Përmbajtja e kushteve')} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
-            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
               {dt('Përmbajtja')}
             </p>
             <ol className="grid gap-1 sm:grid-cols-2">

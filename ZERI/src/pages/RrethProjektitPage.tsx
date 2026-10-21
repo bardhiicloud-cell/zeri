@@ -69,7 +69,7 @@ export default function RrethProjektitPage() {
           {['Prishtinë', 'Prizren', 'Pejë', 'Gjilan', 'Ferizaj', 'Mitrovicë', 'Gjakovë', 'Podujevë'].map(muni => (
             <div key={muni} className="au-tile flex flex-col items-center p-2.5 text-center">
               <MunicipalityShield name={muni} size="sm" className="mb-1.5" />
-              <span className="text-[11px] font-medium">{muni}</span>
+              <span className="text-xs font-medium">{muni}</span>
             </div>
           ))}
         </div>

@@ -111,7 +111,7 @@ export function ReportAttachments({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-(--color-text)">{item.name || 'Dokument'}</p>
-                  <p className="text-[11px] text-(--color-text-muted)">
+                  <p className="text-xs text-(--color-text-muted)">
                     {item.mimeType || 'Dokument'}{item.sizeBytes ? ` · ${formatBytes(item.sizeBytes)}` : ''}
                   </p>
                 </div>
