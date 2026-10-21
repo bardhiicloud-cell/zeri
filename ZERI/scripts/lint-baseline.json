@@ -6,7 +6,7 @@
  "no-empty": 1,
  "no-ex-assign": 1,
  "no-irregular-whitespace": 2,
- "no-useless-assignment": 8,
+ "no-useless-assignment": 7,
  "no-useless-escape": 1,
  "prefer-const": 2,
  "preserve-caught-error": 5,

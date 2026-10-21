@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Zëri Qytetarëve — Platforma Kombëtare e Angazhimit Qytetar të Republikës së Kosovës</title>
     <meta name="description" content="Platforma Zëri Qytetarëve i mundëson qytetarëve të raportojnë çështje, të ndiqin zgjidhjen e tyre, të votojnë në sondazhe dhe të kontribuojnë në vendimmarrjen komunale të Kosovës." />
-    <meta name="keywords" content="qytetar, kosova, raporto, siguria, komuna, transparent, angazhim qytetar" />
+    <meta name="keywords" content="zeriqytetarve, zeri qytetarve, zëri qytetarëve, qytetar, kosova, raporto, siguria, komuna, transparent, angazhim qytetar" />
 
     <!-- Structured data helps Google identify the website and its name variants. -->
     <script type="application/ld+json">
@@ -93,7 +93,23 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Replaced by the app once it loads. Gives crawlers, link previews and slow connections real content instead of a blank page. -->
+      <main style="max-width:720px;margin:0 auto;padding:24px 16px;font-family:system-ui,sans-serif;line-height:1.55">
+        <h1>Zëri Qytetarëve — Platforma Kombëtare e Angazhimit Qytetar të Kosovës</h1>
+        <p>Raportoni çështjet në komunën tuaj, ndiqni zgjidhjen e tyre, votoni në sondazhe dhe lexoni lajme të verifikuara.</p>
+        <nav aria-label="Seksionet kryesore"><ul>
+          <li><a href="/raporto">Raporto një problem</a></li>
+          <li><a href="/lajme">Lajme</a></li>
+          <li><a href="/harta">Harta e raportimeve</a></li>
+          <li><a href="/komunat">Komunat</a></li>
+          <li><a href="/kosova">Kosova — historia dhe turizmi</a></li>
+          <li><a href="/historia-e-uck">Historia e UÇK-së — lufta e lirisë</a></li>
+        </ul></nav>
+        <noscript><p>Kjo faqe kërkon JavaScript për të punuar plotësisht.</p></noscript>
+      </main>
+    </div>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://zeriqytetarve.com/#org","name":"Zëri Qytetarëve","alternateName":"Zeri Qytetarve","url":"https://zeriqytetarve.com/","logo":"https://zeriqytetarve.com/icon-512.png"}</script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
