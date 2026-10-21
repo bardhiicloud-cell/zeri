@@ -1,7 +1,8 @@
 import type { Express, Request, RequestHandler, Response } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import { createIpRateLimiter, getClientIp } from './security';
-import { buildPublicTrackView, normalizeTrackingId } from './trackView';
+import { buildPublicTrackView, buildPurgedTrackView, normalizeTrackingId } from './trackView';
+import { TOMBSTONES } from './rejectedPurge';
 
 /**
  * Public Track ID lookup: what a citizen holding a tracking id may see.
@@ -94,7 +95,12 @@ export function registerTrackLookupRoutes(app: Express, deps: TrackLookupDeps): 
 
     try {
       const snap = await deps.db().collection('reports').where('trackingId', '==', trackingId).limit(1).get();
-      const view = snap.empty ? null : buildPublicTrackView(snap.docs[0].data());
+      let view = snap.empty ? null : buildPublicTrackView(snap.docs[0].data());
+      if (snap.empty) {
+        // A refused report is deleted after 24 hours; its code still says so.
+        const tomb = await deps.db().collection(TOMBSTONES).doc(trackingId).get();
+        if (tomb.exists) view = buildPurgedTrackView(trackingId, tomb.data() ?? {});
+      }
       if (!view) {
         recordMiss(ip);
         return res.status(404).json({ error: NOT_FOUND_MESSAGE, code: 'NOT_FOUND' });

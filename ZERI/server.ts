@@ -83,6 +83,7 @@ import { registerForumReportRoutes } from './server/forumReports';
 import { registerModerationRoutes, startSuspensionSweep } from './server/moderationCases';
 import { registerSupportDeskRoutes } from './server/supportDesk';
 import { publishDueScheduled, registerScheduledPostRoutes } from './server/scheduledPosts';
+import { startRejectedPurge } from './server/rejectedPurge';
 import { registerStoryRoutes } from './server/storyViews';
 import { registerPaymentRoutes } from './server/paymentRoutes';
 import { registerDebateAdminRoutes } from './server/debateAdmin';
@@ -2918,6 +2919,8 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
   // are safe, and it only touches work items, so it also runs in the sandbox (where the manager console would otherwise show a stale scheduler).
   startWorkScheduler(db);
   startWorkflowSweeper(db, authAdmin);
+  // A refused report is deleted from the whole system 24 hours after the refusal; its Track ID keeps answering "refused".
+  startRejectedPurge({ db, bucket: storageBucket });
   startSupportNotifier(db, authAdmin);
 
   // Keep sockets from outliving a rolling deploy, so Cloud Run can drain the

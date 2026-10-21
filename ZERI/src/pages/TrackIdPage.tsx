@@ -348,7 +348,7 @@ function ReportView({ report }: { report: PublicTrackView }) {
                 <Link2 className="h-3.5 w-3.5" aria-hidden="true" /> {dt('Kopjo lidhjen')}
               </button>
             </div>
-            <h2 className="mt-3 font-serif text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">{report.title}</h2>
+            <h2 className="mt-3 font-serif text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">{report.title || dt('Raportimi u refuzua')}</h2>
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
               {report.category && <Chip icon={Tag}>{report.category}</Chip>}
               {report.municipality && <Chip icon={MapPin}>{dt('Komuna e')} {report.municipality}</Chip>}
@@ -379,15 +379,15 @@ function ReportView({ report }: { report: PublicTrackView }) {
             municipality={report.municipality}
             late={Boolean(report.institution.responseDueAt) && Date.parse(report.institution.responseDueAt as string) < Date.now() && !['Resolved', 'Closed', 'Rejected'].includes(report.status)}
           />
-          <DescriptionCard report={report} />
+          {report.description && <DescriptionCard report={report} />}
           <ResolutionCard report={report} />
-          <OfficialResponses report={report} />
-          <History report={report} />
+          {report.status !== 'Rejected' && <OfficialResponses report={report} />}
+          {report.status !== 'Rejected' && <History report={report} />}
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-          <InstitutionCard report={report} />
-          <EvidenceCard report={report} />
+          {report.status !== 'Rejected' && <InstitutionCard report={report} />}
+          {report.status !== 'Rejected' && <EvidenceCard report={report} />}
           <PrivacyCard report={report} />
           <p className="px-1 text-center text-[11px] text-slate-400">
             {dt('Keni një problem tjetër?')}{' '}
@@ -571,7 +571,9 @@ function ResolutionCard({ report }: { report: PublicTrackView }) {
     return (
       <Card title={dt('Raportimi u refuzua')} icon={XCircle} tone="border-rose-200 dark:border-rose-900/60">
         <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-          {rejection.reason || dt('Nuk është publikuar arsye e detajuar për këtë vendim.')}
+          {report.purged
+            ? dt('Ky raportim u refuzua dhe u fshi nga sistemi pas 24 orësh. Vetëm kodi mbetet si dëshmi.')
+            : (rejection.reason || dt('Nuk është publikuar arsye e detajuar për këtë vendim.'))}
         </p>
         <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
           {rejection.institution ? `${rejection.institution} · ` : ''}{formatDate(rejection.date, true)}

@@ -184,6 +184,8 @@ const docs: Record<string, Record<string, unknown>> = {
 };
 const fakeDb = () => ({
   collection: () => ({
+    // The tombstone of a deleted refused report: none of these ids has one.
+    doc: () => ({ get: async () => ({ exists: false, data: () => undefined }) }),
     where: (_field: string, _op: string, value: string) => ({
       limit: () => ({
         get: async () => {

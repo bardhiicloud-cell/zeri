@@ -88,6 +88,8 @@ export interface PublicTrackView {
     evidenceUrl: string | null;
   };
   rejection: { reason: string | null; date: string | null; institution: string | null } | null;
+  /** True once the 24 hours after a rejection have passed and the report was deleted; only the code is left. */
+  purged?: boolean;
 }
 
 const str = (value: unknown, max: number): string => String(value ?? '').trim().slice(0, max);
@@ -226,7 +228,7 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
 
   const location = (report.location ?? {}) as Record<string, unknown>;
 
-  return {
+  const view: PublicTrackView = {
     trackingId,
     title: str(report.title, 300),
     description: str(report.description, 6000),
@@ -263,6 +265,31 @@ export function buildPublicTrackView(report: Record<string, any>): PublicTrackVi
     rejection: status === 'Rejected'
       ? { reason: rejectedEvent?.comment ?? null, date: rejectedEvent?.date ?? null, institution: rejectedEvent?.institution ?? null }
       : null,
+  };
+  // A refused report shows the person who filed it the code, "Refuzuar" and the reason, nothing of its content:
+  // it is deleted from the system 24 hours after the refusal (server/rejectedPurge.ts).
+  if (status !== 'Rejected') return view;
+  return {
+    ...view,
+    title: '', description: '', category: '', topic: null, urgency: null, municipality: '', address: '',
+    institution: { name: null, office: null, level: null, responseDueAt: null },
+    evidence: { published: false, totalCount: 0, items: [] },
+    timeline: [], officialResponses: [],
+  };
+}
+
+/** What the code answers once the report is gone: refused and deleted, with the two dates. */
+export function buildPurgedTrackView(trackingId: string, tombstone: Record<string, unknown>): PublicTrackView {
+  const rejectedAt = toIso(tombstone.rejectedAtMs ?? null);
+  return {
+    trackingId, title: '', description: '', category: '', topic: null, urgency: null, municipality: '', address: '',
+    status: 'Rejected', createdAt: null, lastUpdate: toIso(tombstone.purgedAtMs ?? null) ?? rejectedAt, isAnonymous: false,
+    institution: { name: null, office: null, level: null, responseDueAt: null },
+    evidence: { published: false, totalCount: 0, items: [] },
+    timeline: [], officialResponses: [],
+    resolution: { state: 'none', resolvedAt: null, explanation: null, resolvedBy: null, verifiedAt: null, verificationNote: null, evidenceUrl: null },
+    rejection: { reason: null, date: rejectedAt, institution: null },
+    purged: true,
   };
 }
 
