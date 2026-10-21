@@ -61,6 +61,7 @@ import { registerTeamOverviewRoutes } from './server/teamOverview';
 import { registerTransparencyRoutes } from './server/transparency';
 import { registerReportCaseRoutes } from './server/reportCase';
 import { registerTrackLookupRoutes } from './server/trackLookup';
+import { startRejectedPurge } from './server/rejectedPurge';
 import { registerPublicReportRoutes } from './server/publicReports';
 import { registerGuestNumberRoutes } from './server/guestNumbers';
 import { registerReportPhotoRoutes } from './server/reportPhotos';
@@ -2194,7 +2195,7 @@ registerMunicipalityDeskRoutes(app, { requireAuth, db, authAdmin, actingUser, au
 registerTeamOverviewRoutes(app, { requireAuth, db, actingUser });
 registerTransparencyRoutes(app, { db });
 registerReportCaseRoutes(app, { requireAuth, db, actingUser, audit });
-registerTrackLookupRoutes(app, { db });
+registerTrackLookupRoutes(app, { db, verifyToken: async (token) => (await authAdmin().verifyIdToken(token)).uid });
 registerPublicReportRoutes(app, { db });
 registerGuestNumberRoutes(app, { requireAuth, db });
 registerReportPhotoRoutes(app, { requireAuth, db });
@@ -2940,6 +2941,8 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
   // are safe, and it only touches work items, so it also runs in the sandbox (where the manager console would otherwise show a stale scheduler).
   startWorkScheduler(db);
   startWorkflowSweeper(db, authAdmin);
+  // A rejected report, its files and its work items are erased 24 hours after the rejection.
+  startRejectedPurge(db, storageBucket);
   startSupportNotifier(db, authAdmin);
 
   // Keep sockets from outliving a rolling deploy, so Cloud Run can drain the

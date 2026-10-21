@@ -111,6 +111,22 @@ describe('buildPublicTrackView: evidence', () => {
   it('does not show files of a rejected report', () => {
     expect(buildPublicTrackView(stored({ status: 'Rejected' }))!.evidence.items).toEqual([]);
   });
+
+  it('shows the author their own files whatever the review state, and the public never', () => {
+    const own = buildPublicTrackView(stored({ status: 'Pending Review' }), { viewerIsAuthor: true })!;
+    expect(own.evidence).toMatchObject({ ownerView: true, published: false });
+    expect(own.evidence.items.map(item => item.url)).toEqual(['https://cdn.example/a.jpg']);
+    expect(buildPublicTrackView(stored({ status: 'Pending Review' }))!.evidence.ownerView).toBe(false);
+    expect(buildPublicTrackView(stored({ status: 'Rejected' }), { viewerIsAuthor: true })!.evidence.items).toHaveLength(1);
+  });
+
+  it('tells a rejected report when it will be erased: 24 hours after the rejection', () => {
+    const view = buildPublicTrackView(stored({
+      status: 'Rejected',
+      timeline: [{ id: 'r', status: 'Rejected', date: '2026-01-06T08:00:00.000Z', source: 'admin', comment: 'Jo komunale.' }],
+    }))!;
+    expect(view.rejection?.deleteAt).toBe('2026-01-07T08:00:00.000Z');
+  });
 });
 
 describe('buildPublicTrackView: official responses', () => {
