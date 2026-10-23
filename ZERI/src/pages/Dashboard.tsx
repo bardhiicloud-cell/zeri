@@ -74,7 +74,7 @@ export default function Dashboard() {
               localStorage.setItem('dashboard_view_mode', 'screenshot');
               toast.success("U kthye në pamjen 100% identike!");
             }}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-white transition text-[11px]"
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-white transition text-xs"
           >
             Kthe te Pamja Kryesore ↗
           </button>
@@ -146,8 +146,8 @@ export default function Dashboard() {
   const urgentReportsCount = scopedReports.filter(report => report.urgency === 'Kritike' || report.urgency === 'E lartë').length;
   const renderChange = (change: number | null) => (
     <div className={cn(
-      "flex items-start gap-1 text-[11px] leading-tight font-bold mt-2",
-      change === null ? "text-slate-500 dark:text-slate-400" : change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+      "flex items-start gap-1 text-xs leading-tight font-bold mt-2",
+      change === null ? "text-slate-600 dark:text-slate-400" : change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
     )}>
       {change === null ? <Activity className="w-3 h-3 shrink-0" /> : <ArrowUp className={cn("w-3 h-3 shrink-0", change < 0 && "rotate-180")} />}
       <span>{change === null ? 'Pa bazë krahasimi' : `${change > 0 ? '+' : ''}${change}% krahasuar me muajin e kaluar`}</span>
@@ -252,7 +252,7 @@ export default function Dashboard() {
 
           {/* Top Badge inside Hero */}
           <div className="relative z-10 mb-1">
-            <div className="luxury-pill inline-flex items-center gap-1.5 px-3 py-1 text-blue-200 text-[10px] sm:text-xs font-black rounded-full uppercase tracking-[0.16em]">
+            <div className="luxury-pill inline-flex items-center gap-1.5 px-3 py-1 text-blue-200 text-xs sm:text-xs font-black rounded-full uppercase tracking-[0.16em]">
               <span>{dt('Shërbime për qytetarët')}</span>
             </div>
           </div>
@@ -300,21 +300,21 @@ export default function Dashboard() {
                 <div className="w-5 h-5 rounded-md bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
                   <Users className="w-3 h-3" />
                 </div>
-                <span className="text-[11px] font-bold">{dt('Qytetarët raportojnë')}</span>
+                <span className="text-xs font-bold">{dt('Qytetarët raportojnë')}</span>
               </div>
 
               <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
                   <Building2 className="w-3 h-3" />
                 </div>
-                <span className="text-[11px] font-bold">{dt('Institucionet veprojnë')}</span>
+                <span className="text-xs font-bold">{dt('Institucionet veprojnë')}</span>
               </div>
 
               <div className="luxury-stat-card hover:bg-slate-900/80 backdrop-blur-md rounded-xl px-2 py-1 flex items-center gap-1.5 text-white shadow-xs transition min-w-[170px]">
                 <div className="w-5 h-5 rounded-md bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0">
                   <Heart className="w-3 h-3" />
                 </div>
-                <span className="text-[11px] font-bold">{dt('Komuniteti përmirësohet')}</span>
+                <span className="text-xs font-bold">{dt('Komuniteti përmirësohet')}</span>
               </div>
 
             </div>
@@ -350,7 +350,7 @@ export default function Dashboard() {
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="mt-2 sm:mt-4 text-lg sm:text-2xl font-black leading-none text-slate-900 dark:text-white">{metric.value}</div>
-                <div className="mt-1 text-[9px] sm:text-[11px] font-bold uppercase leading-tight tracking-[0.1em] sm:tracking-[0.15em] text-slate-500 dark:text-slate-400">{dt(metric.label)}</div>
+                <div className="mt-1 text-xs sm:text-xs font-bold uppercase leading-tight tracking-[0.1em] sm:tracking-[0.15em] text-slate-600 dark:text-slate-400">{dt(metric.label)}</div>
               </div>
             );
           })}
@@ -389,7 +389,7 @@ export default function Dashboard() {
                 <Handshake className="h-5 w-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
                   {dt('Për institucione, biznese dhe OJQ')}
                 </p>
                 <h2 id="partner-band-heading" className="mt-1 text-lg font-black leading-tight text-slate-900 sm:text-xl dark:text-white">
@@ -469,7 +469,7 @@ export default function Dashboard() {
               <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={dt('Tabela e raportimeve')}>
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <tr className="border-b border-slate-100 dark:border-white/5 text-xs font-bold uppercase tracking-wider text-slate-400">
                       <th className="py-2.5 pr-2">#</th>
                       <th className="py-2.5 px-2">{dt('Kategoria')}</th>
                       <th className="py-2.5 px-2">{dt('Komuna')}</th>
@@ -480,7 +480,7 @@ export default function Dashboard() {
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
                     {combinedRecentReports.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <td colSpan={5} className="py-8 text-center text-xs font-semibold text-slate-600 dark:text-slate-400">
                           {countsUnavailable ? dt('Raportet po ngarkohen.') : dt('Nuk ka ende raporte publike për këtë zonë.')}
                         </td>
                       </tr>
@@ -508,18 +508,18 @@ export default function Dashboard() {
                         </td>
 
                         {/* Municipality */}
-                        <td className="py-3 px-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <td className="py-3 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                           {row.municipality}
                         </td>
 
                         {/* Date */}
-                        <td className="py-3 px-2 text-slate-400 whitespace-nowrap text-[11px]">
+                        <td className="py-3 px-2 text-slate-400 whitespace-nowrap text-xs">
                           {row.date}
                         </td>
 
                         {/* Status Badge */}
                         <td className="py-3 pl-2 text-right whitespace-nowrap">
-                          <span className={cn("inline-block px-2.5 py-0.5 rounded-full border text-[10px] font-bold", TONE_CLASSES[row.tone].badge)}>
+                          <span className={cn("inline-block px-2.5 py-0.5 rounded-full border text-xs font-bold", TONE_CLASSES[row.tone].badge)}>
                             {row.status}
                           </span>
                         </td>
@@ -573,7 +573,7 @@ export default function Dashboard() {
               <h3 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white">
                 {dt('Pjesëmarrja qytetare')}
               </h3>
-              <p className="mt-1 mb-4 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 mb-4 text-xs text-slate-600 dark:text-slate-400">
                 {dt('Merr pjesë, jep mendimin dhe kontribuo në vendimmarrje.')}
               </p>
 
@@ -591,11 +591,11 @@ export default function Dashboard() {
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white">
                       Sondazhe publike
                     </h4>
-                    <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
                       {dt('Shpreh mendimin tënd për çështje të rëndësishme.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 transition group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -613,11 +613,11 @@ export default function Dashboard() {
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-emerald-600 dark:text-white">
                       {dt('Sondazhe publike')}
                     </h4>
-                    <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
                       {dt('Votoni në sondazhet e hapura.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 transition group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -635,11 +635,11 @@ export default function Dashboard() {
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white">
                       {dt('Gjej raportin tim')}
                     </h4>
-                    <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
                       {dt('Ndiq statusin e rastit me Track ID.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 transition group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -657,11 +657,11 @@ export default function Dashboard() {
                     <h4 className="text-xs font-black leading-tight text-slate-900 transition-colors group-hover:text-rose-600 dark:text-white">
                       {dt('Raste sociale & ndihmë')}
                     </h4>
-                    <p className="mt-1 line-clamp-2 text-[10px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
                       {dt('Ndihmo në rastet ku nevojitet mbështetje.')}
                     </p>
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 transition group-hover:gap-1.5">
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-rose-600 transition group-hover:gap-1.5">
                     <span>{dt('Shiko')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -677,7 +677,7 @@ export default function Dashboard() {
               <h3 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white">
                 {dt('Komunat e Kosovës')}
               </h3>
-              <p className="mt-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 mb-3 text-xs text-slate-600 dark:text-slate-400">
                 {dt('Gjej komunën tënde dhe informohu për shërbimet lokale.')}
               </p>
 
@@ -709,7 +709,7 @@ export default function Dashboard() {
                     <div className="w-7 h-7 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <MunicipalityShield name={muni.name} code={muni.code} />
                     </div>
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 truncate w-full">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 truncate w-full">
                       {muni.name}
                     </span>
                   </button>
@@ -731,7 +731,7 @@ export default function Dashboard() {
               <h3 className="title-serif text-lg font-black tracking-tight text-slate-900 dark:text-white">
                 {dt('Shërbimet dhe kontaktet e institucioneve')}
               </h3>
-              <p className="mt-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 mb-3 text-xs text-slate-600 dark:text-slate-400">
                 {dt('Numra, email dhe kontakte të rëndësishme për qytetarët.')}
               </p>
 
@@ -744,8 +744,8 @@ export default function Dashboard() {
                     <Shield className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">Policia</div>
-                    <div className="font-mono font-black text-blue-600 dark:text-blue-400 text-[10px]">192</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">Policia</div>
+                    <div className="font-mono font-black text-blue-600 dark:text-blue-400 text-xs">192</div>
                   </div>
                 </a>
 
@@ -755,8 +755,8 @@ export default function Dashboard() {
                     <AlertTriangle className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">Emergjenca</div>
-                    <div className="font-mono font-black text-rose-600 dark:text-rose-400 text-[10px]">112</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">Emergjenca</div>
+                    <div className="font-mono font-black text-rose-600 dark:text-rose-400 text-xs">112</div>
                   </div>
                 </a>
 
@@ -766,8 +766,8 @@ export default function Dashboard() {
                     <Zap className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">KEDS</div>
-                    <div className="font-mono font-black text-amber-600 dark:text-amber-400 text-[9px] truncate">0800 791 00</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">KEDS</div>
+                    <div className="font-mono font-black text-amber-600 dark:text-amber-400 text-xs truncate">0800 791 00</div>
                   </div>
                 </a>
 
@@ -777,8 +777,8 @@ export default function Dashboard() {
                     <Droplets className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">KRU</div>
-                    <div className="font-mono font-black text-sky-600 dark:text-sky-400 text-[9px] truncate">0800 500 20</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">KRU</div>
+                    <div className="font-mono font-black text-sky-600 dark:text-sky-400 text-xs truncate">0800 500 20</div>
                   </div>
                 </a>
 
@@ -788,8 +788,8 @@ export default function Dashboard() {
                     <ShieldCheck className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">Inspektorati</div>
-                    <div className="font-mono font-black text-slate-700 dark:text-slate-300 text-[9px] truncate">038 200 650</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">Inspektorati</div>
+                    <div className="font-mono font-black text-slate-700 dark:text-slate-300 text-xs truncate">038 200 650</div>
                   </div>
                 </a>
 
@@ -799,8 +799,8 @@ export default function Dashboard() {
                     <Building2 className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">{dt('Shërb. Publ.')}</div>
-                    <div className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-[9px] truncate">038 200 640</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">{dt('Shërb. Publ.')}</div>
+                    <div className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-xs truncate">038 200 640</div>
                   </div>
                 </a>
 
@@ -810,8 +810,8 @@ export default function Dashboard() {
                     <Leaf className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">Mjedisi</div>
-                    <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-[9px] truncate">0800 200 89</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">Mjedisi</div>
+                    <div className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xs truncate">0800 200 89</div>
                   </div>
                 </a>
 
@@ -821,8 +821,8 @@ export default function Dashboard() {
                     <Heart className="w-3 h-3" />
                   </div>
                   <div className="w-full min-w-0">
-                    <div className="font-bold truncate text-[11px] text-slate-800 dark:text-slate-200">{dt('Ndihma Soc.')}</div>
-                    <div className="font-mono font-black text-rose-600 dark:text-rose-400 text-[9px] truncate">038 234 567</div>
+                    <div className="font-bold truncate text-xs text-slate-800 dark:text-slate-200">{dt('Ndihma Soc.')}</div>
+                    <div className="font-mono font-black text-rose-600 dark:text-rose-400 text-xs truncate">038 234 567</div>
                   </div>
                 </a>
 
@@ -879,7 +879,7 @@ export default function Dashboard() {
             <BrandMark className="h-10 w-10" />
             <div className="flex flex-col">
               <span className="text-sm font-black text-white leading-tight">{dt('Zëri i Qytetarëve')}</span>
-              <span className="text-[10px] text-slate-400">{dt('Platforma Qytetare & Komunale')}</span>
+              <span className="text-xs text-slate-400">{dt('Platforma Qytetare & Komunale')}</span>
             </div>
           </div>
 
@@ -903,7 +903,7 @@ export default function Dashboard() {
           </nav>
 
           {/* Right: Copyright */}
-          <div className="text-[11px] text-slate-400 font-medium text-center md:text-right leading-relaxed">
+          <div className="text-xs text-slate-400 font-medium text-center md:text-right leading-relaxed">
             {dt('© 2026 Zëri i Qytetarëve. Të gjitha të drejtat janë të rezervuara.')}
           </div>
 

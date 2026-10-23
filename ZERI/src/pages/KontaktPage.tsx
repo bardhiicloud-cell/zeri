@@ -237,7 +237,7 @@ export default function KontaktPage() {
                 <textarea id="ct-message" name="message" rows={5} maxLength={LIMITS.message} value={form.message} onChange={set('message')} aria-invalid={!!err('message')} aria-describedby={`${describedBy('message') ?? ''} ct-count`.trim()} className="au-input" />
                 <div className="mt-1 flex justify-between gap-2">
                   <span>{err('message') && <span id="message-error" className="text-[12px] font-medium text-red-600">{err('message')}</span>}</span>
-                  <span id="ct-count" className="au-sub text-[11px] tabular-nums">{form.message.length}/{LIMITS.message}</span>
+                  <span id="ct-count" className="au-sub text-xs tabular-nums">{form.message.length}/{LIMITS.message}</span>
                 </div>
               </div>
               <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">

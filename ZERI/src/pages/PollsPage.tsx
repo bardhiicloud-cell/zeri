@@ -215,7 +215,7 @@ export default function PollsPage() {
                 <stat.icon className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                <p className="truncate text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">
                   {stat.label}
                 </p>
                 <p
@@ -234,13 +234,13 @@ export default function PollsPage() {
         <div className="mb-8 rounded-[28px] border border-slate-200/80 bg-white/80 p-4 shadow-[0_15px_50px_-18px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 md:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">{dt('Prioritetet e qytetit')}</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-rose-700 dark:text-rose-400">{dt('Prioritetet e qytetit')}</p>
               <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white md:text-2xl">{dt('Debate të hapura dhe vendimmarrje me ndikim të drejtpërdrejtë')}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {leadingPriorities.length > 0 ? leadingPriorities.map((item) => (
                 <div key={item.label} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200">
-                  {item.label}: <span className="text-rose-500">{item.value}</span>
+                  {item.label}: <span className="text-rose-700 dark:text-rose-400">{item.value}</span>
                 </div>
               )) : (
                 <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-400">
@@ -258,9 +258,9 @@ export default function PollsPage() {
                 key={f}
                 onClick={() => setFilter(f as any)}
                 className={cn(
-                  "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-[11px] transition uppercase tracking-widest whitespace-nowrap",
+                  "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-xs transition uppercase tracking-widest whitespace-nowrap",
                   filter === f
-                    ? f === 'active' ? 'bg-rose-500 text-white shadow-sm dark:shadow-none' : 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white shadow-sm dark:shadow-none'
+                    ? f === 'active' ? 'bg-rose-600 text-white shadow-sm dark:shadow-none' : 'bg-slate-900 dark:bg-slate-800 text-white dark:text-white shadow-sm dark:shadow-none'
                     : 'text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] hover:text-[var(--color-text)] dark:text-white dark:text-slate-100 hover:bg-slate-200/50 dark:bg-slate-700/50 dark:hover:bg-slate-800 dark:bg-slate-800/50'
                 )}
               >
@@ -305,16 +305,16 @@ export default function PollsPage() {
 
                   <div className="p-5 md:p-6 flex-1 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest bg-rose-50 dark:bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-100 dark:border-rose-500/20">
+                      <span className="text-xs font-black text-rose-600 uppercase tracking-widest bg-rose-50 dark:bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-100 dark:border-rose-500/20">
                         {poll.category || 'Opinion Publik'}
                       </span>
                       <div className="flex items-center gap-2">
                         {isClosed ? (
-                          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 dark:bg-slate-800 text-[var(--color-text-muted)] dark:text-slate-300 text-[10px] font-bold uppercase rounded-full border border-slate-200 dark:border-white/10">
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 dark:bg-slate-800 text-[var(--color-text-muted)] dark:text-slate-300 text-xs font-bold uppercase rounded-full border border-slate-200 dark:border-white/10">
                             <CheckCircle2 className="w-3.5 h-3.5" />{dt(`Përfunduar`)}
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase rounded-full border border-emerald-200 dark:border-emerald-500/20">
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase rounded-full border border-emerald-200 dark:border-emerald-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />{dt(`Aktiv`)}
                           </span>
                         )}
@@ -374,18 +374,18 @@ export default function PollsPage() {
                                     {option.text}
                                   </span>
                                   {isMyChoice && (
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-white">
                                       <CheckCircle2 className="h-3 w-3" /> {dt('Vota juaj')}
                                     </span>
                                   )}
                                   {!isMyChoice && isWinner && (
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
                                       <Trophy className="h-3 w-3" /> {dt('Kryesues')}
                                     </span>
                                   )}
                                 </div>
                                 <div className="relative z-10 flex shrink-0 items-center gap-3">
-                                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                  <span className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">
                                     {votes} {dt('vota')}
                                   </span>
                                   <span className={cn(
@@ -422,7 +422,7 @@ export default function PollsPage() {
                         <button
                           type="button"
                           onClick={() => toggleResults(poll.id)}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                         >
                           <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
                           {dt('Shiko rezultatet pa votuar')}
@@ -433,7 +433,7 @@ export default function PollsPage() {
                         <button
                           type="button"
                           onClick={() => toggleResults(poll.id)}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                         >
                           <ChevronDown className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
                           {dt('Kthehu te votimi')}
@@ -441,7 +441,7 @@ export default function PollsPage() {
                       )}
 
                       {!isClosed && !hasVoted && (
-                        <p className="flex items-center justify-center gap-1.5 pt-1 text-[10px] font-semibold text-slate-400">
+                        <p className="flex items-center justify-center gap-1.5 pt-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
                           <Lock className="h-3 w-3" aria-hidden="true" />
                           {dt('Rezultatet hapen pasi të votoni.')}
                         </p>
@@ -451,11 +451,11 @@ export default function PollsPage() {
 
                   <div className="px-6 md:px-8 py-5 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 mt-auto">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1.5">
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">
                         <Users className="w-3.5 h-3.5" />
                         {totalVotes} {dt('pjesëmarrës')}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">
                         <Clock className="w-3.5 h-3.5" />{dt('Deri:')} {new Date(poll.expiresAt).toLocaleDateString('sq-AL', { day: 'numeric', month: 'short' })}
                       </span>
                       {/*
@@ -466,7 +466,7 @@ export default function PollsPage() {
                         in a way a highlighted bar is not.
                       */}
                       {chosenOptionId && (
-                        <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">
+                        <span className="flex min-w-0 items-center gap-1.5 text-xs font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">
                           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">
                             {dt('Votuat:')} {poll.options.find((o) => o.id === chosenOptionId)?.text ?? ''}

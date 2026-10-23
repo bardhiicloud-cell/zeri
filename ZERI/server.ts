@@ -94,9 +94,11 @@ import { isPlatformOwnerAccount, isProtectedOwner } from './server/owner';
 import { VoteError, castVote } from './server/polls';
 import { UpvoteError, castUpvote } from './server/upvotes';
 import { buildReportDocument, parseReportInput } from './server/reports';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { reserveTrackingId } from './server/trackingIds';
 import { validateDateOfBirth } from './src/lib/validation';
+import { isKnownPagePath } from './src/lib/knownRoutes';
 import * as editorialFirewall from './server/editorialFirewall.js';
 import { findPublicRoute } from './src/lib/routeSeo';
 
@@ -545,13 +547,31 @@ async function startServer() {
   // That previously blocked every OpenStreetMap tile, so both the /harta page and
   // the dashboard map fell back to the static SVG placeholder.
 
+  /**
+   * Production serves the built index.html, whose one executable inline script (the theme bootstrap)
+   * is allowed by its SHA-256 instead of a blanket 'unsafe-inline' for scripts. If the build cannot
+   * be read, or in development (Vite injects its own inline preamble), the old allowance stays.
+   */
+  const inlineScriptSources: string[] = (() => {
+    if (!isProduction) return ["'unsafe-inline'"];
+    try {
+      const html = readFileSync(path.join(process.cwd(), 'dist', 'index.html'), 'utf8');
+      const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>([\s\S]*?)<\/script>/g)]
+        // Browsers normalise CRLF to LF when parsing, so the hash must be taken over the LF text.
+        .map((match) => `'sha256-${createHash('sha256').update(match[1].replace(/\r\n?/g, '\n')).digest('base64')}'`);
+      return hashes.length > 0 ? hashes : ["'unsafe-inline'"];
+    } catch {
+      return ["'unsafe-inline'"];
+    }
+  })();
+
   app.use(helmet({
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
         // www.google.com/recaptcha and www.gstatic.com/recaptcha: Firebase App Check attestation.
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://apis.google.com", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
+        scriptSrc: ["'self'", ...inlineScriptSources, "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://apis.google.com", "https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"],
         // Google Fonts is linked from index.html, so the stylesheet host must be allowed.
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
@@ -2919,6 +2939,8 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
       if (pagePath !== '/' && findPublicRoute(pagePath)) {
         return res.sendFile(path.join(distPath, ...pagePath.split('/').filter(Boolean), 'index.html'));
       }
+      // Unknown URLs must return a real 404 status, not the SPA's default 200.
+      if (!isKnownPagePath(req.path)) res.status(404);
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

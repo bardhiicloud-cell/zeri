@@ -134,7 +134,7 @@ export function MusicDock({ lang, tracks = PLAYLIST }: { lang: HeritageLang; tra
               <button type="button" onClick={() => step(1)} aria-label={sq ? 'Kënga tjetër' : 'Next track'} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"><SkipForward className="h-4 w-4" /></button>
             </>
           ) : (
-            <p className="max-w-[9rem] text-right text-[11px] leading-tight text-white/65">{sq ? 'Muzika s’mund të luhet tani.' : 'Music can’t play right now.'}</p>
+            <p className="max-w-[9rem] text-right text-xs leading-tight text-white/65">{sq ? 'Muzika s’mund të luhet tani.' : 'Music can’t play right now.'}</p>
           )}
           <button type="button" onClick={close} aria-label={sq ? 'Mbyll muzikën' : 'Close the music'} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"><X className="h-5 w-5" /></button>
         </div>

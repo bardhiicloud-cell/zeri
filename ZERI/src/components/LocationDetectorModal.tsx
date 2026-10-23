@@ -230,7 +230,7 @@ export function LocationDetectorModal() {
 
             <div className="flex items-center gap-4 mb-6">
               <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
                 {dt("Ose Zgjidhni Manualisht")}
               </span>
               <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
@@ -263,7 +263,7 @@ export function LocationDetectorModal() {
                   </button>
                 ))
               ) : (
-                <div className="py-8 text-center text-slate-500 dark:text-slate-400 text-sm font-medium">
+                <div className="py-8 text-center text-slate-600 dark:text-slate-400 text-sm font-medium">
                   {dt("Nuk u gjet asnjë komunë.")}
                 </div>
               )}

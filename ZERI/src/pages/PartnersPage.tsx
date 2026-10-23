@@ -161,14 +161,14 @@ export default function PartnersPage() {
                           {ad.title}
                         </div>
                       )}
-                      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm rtl:left-auto rtl:right-3">
+                      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-slate-800 shadow-sm rtl:left-auto rtl:right-3">
                         <BadgeCheck className="h-3 w-3 text-blue-600" aria-hidden="true" />
                         {dt('Partner')}
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col p-3.5">
                       <h3 className="text-base font-black text-slate-900 dark:text-white">{ad.title}</h3>
-                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
                         <MapPin className="h-3 w-3" aria-hidden="true" />
                         {ad.target === 'Nacionale' ? dt('E gjithë Kosova') : ad.target}
                       </p>
@@ -194,7 +194,7 @@ export default function PartnersPage() {
             </ul>
           ) : (
             <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-white/15">
-              <Handshake className="h-8 w-8 text-slate-400" aria-hidden="true" />
+              <Handshake className="h-8 w-8 text-slate-600 dark:text-slate-400" aria-hidden="true" />
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 {dt('Vendi i partnerit të parë është i lirë. Kontaktoni ekipin.')}
               </p>
@@ -246,7 +246,7 @@ export default function PartnersPage() {
                 className={`au-tile relative flex flex-col p-5 ${index === 1 ? '!border-[var(--au-accent)] ring-1 ring-[var(--au-accent)]' : ''}`}
               >
                 {index === 1 && (
-                  <span className="absolute -top-2.5 right-4 rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white rtl:left-4 rtl:right-auto">
+                  <span className="absolute -top-2.5 right-4 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-white rtl:left-4 rtl:right-auto">
                     {dt('Më i zgjedhuri')}
                   </span>
                 )}
@@ -305,12 +305,12 @@ export default function PartnersPage() {
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
                     <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt('Ideale')}</dt>
-                      <dd className="whitespace-nowrap font-mono text-[11px] font-bold text-slate-900 dark:text-white" dir="ltr">{spec.ideal.w} × {spec.ideal.h} px</dd>
+                      <dt className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">{dt('Ideale')}</dt>
+                      <dd className="whitespace-nowrap font-mono text-xs font-bold text-slate-900 dark:text-white" dir="ltr">{spec.ideal.w} × {spec.ideal.h} px</dd>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
-                      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{dt('Minimumi')}</dt>
-                      <dd className="whitespace-nowrap font-mono text-[11px] font-bold text-slate-900 dark:text-white" dir="ltr">{spec.min.w} × {spec.min.h} px</dd>
+                      <dt className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">{dt('Minimumi')}</dt>
+                      <dd className="whitespace-nowrap font-mono text-xs font-bold text-slate-900 dark:text-white" dir="ltr">{spec.min.w} × {spec.min.h} px</dd>
                     </div>
                   </dl>
                 </article>
@@ -336,7 +336,7 @@ export default function PartnersPage() {
               </div>
             ))}
           </div>
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
             <Ruler className="h-3.5 w-3.5" aria-hidden="true" />
             {dt('Sistemi i kontrollon dimensionet automatikisht gjatë ngarkimit dhe refuzon skedarët më të vegjël se minimumi.')}
           </p>

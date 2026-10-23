@@ -137,7 +137,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
                     {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 font-medium">{currentUser.email}</p>
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 font-medium">{currentUser.email}</p>
                 <div className="mt-1 px-3 py-1 bg-emerald-50 text-emerald-600 font-bold text-xs rounded-full border border-emerald-200">{dt(`Roli:`)} {currentUser.role}
                 </div>
               </div>
@@ -163,7 +163,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
                     <span className="min-w-0 flex-1 truncate text-sm text-slate-600 dark:text-slate-300">
                       {currentUser.email || dt('Nuk ka email')}
                     </span>
-                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-slate-400">
                       {dt('Fiks')}
                     </span>
                   </div>
@@ -253,12 +253,12 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
                           </li>
                         ))}
                         {municipalityResults.length === 0 && (
-                          <li className="px-3 py-4 text-center text-[11px] font-semibold text-slate-400">
+                          <li className="px-3 py-4 text-center text-xs font-semibold text-slate-400">
                             {dt('Nuk u gjet asnjë komunë.')}
                           </li>
                         )}
                       </ul>
-                      <p className="border-t border-slate-100 px-3 py-2 text-[10px] leading-snug text-slate-400 dark:border-white/5">
+                      <p className="border-t border-slate-100 px-3 py-2 text-xs leading-snug text-slate-400 dark:border-white/5">
                         {dt('Kjo përcakton raportimet, lajmet dhe sondazhet që shihni në të gjithë platformën.')}
                       </p>
                     </div>
@@ -268,7 +268,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
                 <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-bold text-slate-800 dark:text-white">{dt('Fjalëkalimi')}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
                       {currentUser.role === 'guest'
                         ? dt('Regjistrohuni për të vendosur një fjalëkalim.')
                         : dt('Dërgo një link të sigurt për ta ndryshuar përmes emailit.')}
@@ -287,7 +287,7 @@ export function UserProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose
             </div>
 
             <div className="p-6 border-t border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200 bg-slate-100 dark:bg-slate-800 rounded-[1rem] transition-colors">{dt(`Anulo`)}
+              <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 bg-slate-100 dark:bg-slate-800 rounded-[1rem] transition-colors">{dt(`Anulo`)}
               </button>
               <button onClick={handleSave} disabled={isSaving || !name.trim()} className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-[1rem] transition-colors disabled:opacity-50">
                 <Save className="w-4 h-4" />

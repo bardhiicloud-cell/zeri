@@ -69,7 +69,7 @@ export default function ProjektetPage() {
                       <ArrowUpRight className="h-4 w-4 shrink-0 opacity-40" aria-hidden="true" />
                     </span>
                     <span className="au-sub mt-0.5 block text-[13px] leading-snug">{dt(description)}</span>
-                    <span className="au-sub mt-2 block text-[11px] font-semibold uppercase tracking-wide">{dt(f)}</span>
+                    <span className="au-sub mt-2 block text-xs font-semibold uppercase tracking-wide">{dt(f)}</span>
                   </span>
                 </Link>
               </li>

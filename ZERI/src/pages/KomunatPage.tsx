@@ -381,7 +381,7 @@ export default function KomunatPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-600 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             </div>
 
           </div>
@@ -447,7 +447,7 @@ export default function KomunatPage() {
                   {/* Key Quick Stats */}
                   {muni.population && (
                     <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-white/5 text-xs mb-4">
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">{dt('Banorë (përafërsisht)')}</span>
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider block font-medium">{dt('Banorë (përafërsisht)')}</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">{muni.population}</span>
                     </div>
                   )}
@@ -489,7 +489,7 @@ export default function KomunatPage() {
                     )}
                     {muni.website && (
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Website</p>
+                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">Website</p>
                         <a href={muni.website} target="_blank" rel="noreferrer" className="mt-0.5 flex items-center gap-1.5 text-[11px] font-bold text-blue-700 hover:underline dark:text-blue-300 break-all">
                           <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" /> {muni.website.replace('https://', '')}
                         </a>
@@ -538,13 +538,13 @@ export default function KomunatPage() {
 
         {filteredMunicipalities.length === 0 && (
           <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 p-8">
-            <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+            <AlertCircle className="w-12 h-12 text-slate-600 dark:text-slate-400 mx-auto mb-3" />
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{dt('Nuk u gjet asnjë komunë')}</h3>
-            <p className="text-xs text-slate-500 mt-1">{dt('Provoni një kërkim tjetër me emër komune ose rajoni.')}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{dt('Provoni një kërkim tjetër me emër komune ose rajoni.')}</p>
           </div>
         )}
 
-        <details className="text-[11px] text-slate-500 dark:text-slate-400">
+        <details className="text-[11px] text-slate-600 dark:text-slate-400">
           <summary className="cursor-pointer font-semibold">Burimi i fotove (Wikimedia Commons)</summary>
           <p className="mt-2 max-w-3xl">
             Fotot e ditës janë fotografi reale nga Wikimedia Commons. Për komunat pa foto reale nate, pamja e natës është fotoja e ditës e përpunuar në ngjyra nate.

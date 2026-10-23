@@ -174,7 +174,7 @@ export default function PrivacyPolicyPage() {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 dark:border-white/5">
+                  <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 dark:border-white/5">
                     <th className="py-2.5 pr-3">{dt('Lloji i të dhënave')}</th>
                     <th className="py-2.5 pr-3">{dt('Koha e ruajtjes')}</th>
                     <th className="py-2.5">{dt('Arsyeja')}</th>

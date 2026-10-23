@@ -166,7 +166,7 @@ export function MedicineShortages() {
             <Pill className="h-5 w-5 text-blue-700 dark:text-blue-300" aria-hidden="true" />
             {dt('Mungesat e Barnave të Verifikuara')}
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             {dt('Vetëm mungesat e verifikuara nga stafi ose komuna shfaqen publikisht.')}
           </p>
         </div>
@@ -310,16 +310,16 @@ export function MedicineShortages() {
               <li key={s.id} className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-bold text-slate-900 dark:text-white">{s.medicineName}{s.dose ? ` ${s.dose}` : ''}</p>
-                  <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase', STATUS_META[s.status]?.cls)}>
+                  <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-xs font-black uppercase', STATUS_META[s.status]?.cls)}>
                     {STATUS_META[s.status]?.label}
                   </span>
                 </div>
-                <p className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
                   <MapPin className="h-3 w-3" aria-hidden="true" /> {s.municipality}
                   {s.institution && (<><span aria-hidden="true">·</span><Building2 className="h-3 w-3" aria-hidden="true" /> {s.institution}</>)}
                 </p>
                 <p className="mt-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300">{s.quantityStatus}</p>
-                {s.comment && <p className="mt-1.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{s.comment}</p>}
+                {s.comment && <p className="mt-1.5 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{s.comment}</p>}
               </li>
             ))}
           </ul>
@@ -336,7 +336,7 @@ export function MedicineShortages() {
                 <span className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
                   {s.medicineName} <span className="text-slate-400">· {s.municipality}</span>
                 </span>
-                <span className={cn('flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase', STATUS_META[s.status]?.cls)}>
+                <span className={cn('flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-black uppercase', STATUS_META[s.status]?.cls)}>
                   {s.status === 'pending' ? <Clock className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
                   {STATUS_META[s.status]?.label}
                 </span>

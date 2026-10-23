@@ -71,7 +71,7 @@ export function SourceCitations({ sources, lang }: { sources: HeritageSource[]; 
             <p className="hx-ink-3 text-xs">
               {s.publisher} · {SOURCE_TYPE_LABELS[s.type][lang]}{s.date ? ` · ${s.date}` : ''}{s.reference ? ` · ${s.reference}` : ''}
             </p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11px]" style={{ color: s.linkChecked ? 'var(--hx-ok)' : 'var(--hx-warn)' }}>
+            <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: s.linkChecked ? 'var(--hx-ok)' : 'var(--hx-warn)' }}>
               {s.linkChecked ? <BadgeCheck className="h-3 w-3" aria-hidden="true" /> : <Link2Off className="h-3 w-3" aria-hidden="true" />}
               {s.url ? (s.linkChecked ? `${ui('linkChecked', lang)}${s.linkCheckedAt ? ` ${s.linkCheckedAt}` : ''}` : ui('linkUnchecked', lang)) : ui('noLink', lang)}
             </p>

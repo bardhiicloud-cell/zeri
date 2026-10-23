@@ -325,7 +325,7 @@ export default function ReportIssue() {
         <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] font-bold leading-relaxed">{dt(`Sistemi i Sigurisë (AI Guard) ka bllokuar këtë pajisje (IP:`)} {currentIP}{dt(`) për shkak të shkeljes së kushteve të përdorimit ose dyshimit për spam të vazhdueshëm.`)}
         </p>
         <div className="border-t border-slate-100 dark:border-white/5 pt-4">
-          <p className="text-[10px] text-[var(--color-text-muted)] font-mono">{dt(`CODE: BAN_IP_PREVENT_SUBMIT`)}</p>
+          <p className="text-xs text-[var(--color-text-muted)] font-mono">{dt(`CODE: BAN_IP_PREVENT_SUBMIT`)}</p>
         </div>
       </div>
     );
@@ -1053,8 +1053,8 @@ export default function ReportIssue() {
                    <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900" />
                  </div>
                  <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
-                 <span className="text-[10px] md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
-                 <span className="text-[10px] md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
+                 <span className="text-xs md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
+                 <span className="text-xs md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
                  <input type="file" multiple aria-label={dt('Shto foto, video ose dokumente')} accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                </div>
 
@@ -1071,7 +1071,7 @@ export default function ReportIssue() {
                            {media.type === 'audio'
                              ? <Music className="w-6 h-6 text-indigo-600" />
                              : <FileText className="w-6 h-6 text-indigo-600" />}
-                           <span className="text-[10px] font-bold text-[var(--color-text)] dark:text-white truncate w-full">{media.file.name}</span>
+                           <span className="text-xs font-bold text-[var(--color-text)] dark:text-white truncate w-full">{media.file.name}</span>
                          </div>
                        )}
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
@@ -1135,7 +1135,7 @@ export default function ReportIssue() {
                     <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Bëni një foto ose video të problemit (gropë në rrugë, ndotje mjedisore, shtyllë e dëmtuar) dhe ngarkojeni te kutia më lart.`)}
                     </p>
                   </div>
-                  <p className="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Foto duhet të jetë e qartë`)}
+                  <p className="text-xs text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Foto duhet të jetë e qartë`)}
                   </p>
                 </div>
                 
@@ -1150,7 +1150,7 @@ export default function ReportIssue() {
                     <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Sistemi do të gjejë GPS tuaj automatikisht, ose mund të klikoni`)} <strong>{dt(`direkt mbi hartë`)}</strong>{dt(`për të vendosur pikën e saktë ku ndodhet problemi.`)}
                     </p>
                   </div>
-                  <p className="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Kliko mbi Hartë për saktësi`)}
+                  <p className="text-xs text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`Kliko mbi Hartë për saktësi`)}
                   </p>
                 </div>
                 
@@ -1165,7 +1165,7 @@ export default function ReportIssue() {
                     <p className="text-xs text-neutral-600 dark:text-[var(--color-text-muted)] leading-relaxed font-semibold">{dt(`Kliko`)} <strong>{dt(`"Krijim me AI"`)}</strong>{dt(`që inteligjenca jonë të lexojë foton dhe të shkruajë automatikisht titullin/kategorinë. Më pas kliko dërgo.`)}
                     </p>
                   </div>
-                  <p className="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`E lehtë dhe automatike`)}
+                  <p className="text-xs text-indigo-600 dark:text-indigo-300 font-bold mt-3 border-t border-slate-100 dark:border-white/5 pt-2 uppercase tracking-wider">{dt(`E lehtë dhe automatike`)}
                   </p>
                 </div>
               </div>
@@ -1173,7 +1173,7 @@ export default function ReportIssue() {
               <div className="mt-6 bg-slate-900 border-l-4 border-indigo-600 p-4 flex gap-3 text-white items-start rounded-r-xl">
                 <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                 <div className="text-xs font-bold leading-relaxed space-y-1">
-                  <span className="text-[10px] text-rose-500 uppercase tracking-widest block font-extrabold">{dt(`Shënim për Sigurinë`)}</span>
+                  <span className="text-xs text-rose-500 uppercase tracking-widest block font-extrabold">{dt(`Shënim për Sigurinë`)}</span>
                   <p className="text-slate-200 font-medium font-sans">{dt(`ZëriYT është portal nga komuniteti, për komunitetin. Të gjitha të dhënat janë të sigurta dhe mund të zgjidhni të mbeteni anonim gjatë postimeve tuaja.`)}
                   </p>
                 </div>
@@ -1211,7 +1211,7 @@ export default function ReportIssue() {
                 placeholder={dt(`Psh. Shkatërrimi i infrastrukturës urbane...`)} 
                 className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white placeholder:font-medium placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] text-sm md:text-base", errors.title ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
               />
-              {errors.title && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.title}</p>}
+              {errors.title && <p data-field-error className="text-indigo-600 text-xs sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.title}</p>}
             </div>
 
             <div>
@@ -1224,7 +1224,7 @@ export default function ReportIssue() {
                 className={cn("w-full px-4 md:px-5 py-3 md:py-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors resize-none font-medium text-[var(--color-text)] dark:text-white placeholder:font-normal placeholder:text-neutral-500 dark:text-[var(--color-text-muted)] font-serif italic text-sm md:text-base", errors.description ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
                 placeholder={dt(`Paraqisni me detaje natyrën e problemit...`)}
               />
-              {errors.description && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.description}</p>}
+              {errors.description && <p data-field-error className="text-indigo-600 text-xs sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.description}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 md:p-8 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 border border-slate-200/60 dark:border-white/10 rounded-xl">
@@ -1250,8 +1250,8 @@ export default function ReportIssue() {
                     <option key={topic.id} value={topic.id}>{getReportTopicValueLabel(topic.id)}</option>
                   ))}
                 </select>
-                {errors.topicCategory && <p data-field-error className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-indigo-600"><AlertCircle className="h-3 w-3" />{errors.topicCategory}</p>}
-                <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+                {errors.topicCategory && <p data-field-error className="mt-1.5 flex items-center gap-1 text-xs font-bold text-indigo-600"><AlertCircle className="h-3 w-3" />{errors.topicCategory}</p>}
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                   {dt('Kjo temë ndihmon kërkimin, hartën dhe statistikat; zgjedhja e institucionit poshtë përcakton adresimin e raportit.')}
                 </p>
               </div>
@@ -1296,7 +1296,7 @@ export default function ReportIssue() {
 
                       return (
                         <div key={group}>
-                          <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] px-4 py-2 text-[10px] font-bold uppercase tracking-widest sticky top-0">{dt(group)}</div>
+                          <div className="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-800 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] px-4 py-2 text-xs font-bold uppercase tracking-widest sticky top-0">{dt(group)}</div>
                           {filteredInGroup.map(c => (
                             <button
                               key={'id' in c ? (c as any).id : c.name}
@@ -1305,9 +1305,9 @@ export default function ReportIssue() {
                               className="w-full text-left px-4 py-3 hover:bg-indigo-600/10 border-b last:border-0 border-slate-100 dark:border-white/5 font-bold text-xs text-slate-700 dark:text-[var(--color-text-muted)] transition-colors"
                             >
                               {sectorByName(c.name) ? dt(sectorLabel(sectorByName(c.name)!, municipality)) : dt(c.name)}
-                              {sectorByName(c.name) && <span className="ml-2 rounded-full bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{dt(LEVEL_LABEL[sectorByName(c.name)!.level])}</span>}
+                              {sectorByName(c.name) && <span className="ml-2 rounded-full bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{dt(LEVEL_LABEL[sectorByName(c.name)!.level])}</span>}
                               {(c as any).keywords && categorySearchTerm && (c as any).keywords.toLowerCase().includes(categorySearchTerm.toLowerCase()) && !dt(c.name).toLowerCase().includes(categorySearchTerm.toLowerCase()) && (
-                                <span className="block text-[10px] text-neutral-400 font-normal mt-0.5 normal-case">{dt(`Lidhet me kërkimin tuaj`)}</span>
+                                <span className="block text-xs text-neutral-400 font-normal mt-0.5 normal-case">{dt(`Lidhet me kërkimin tuaj`)}</span>
                               )}
                             </button>
                           ))}
@@ -1323,10 +1323,10 @@ export default function ReportIssue() {
                     )}
                   </div>
                 )}
-                {errors.category && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.category}</p>}
+                {errors.category && <p data-field-error className="text-indigo-600 text-xs sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.category}</p>}
                 {topicCategory && sectorSuggestions.length > 0 && (
                   <div className="mt-3" data-testid="sector-suggestions">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-1.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1.5">
                       {municipality ? dt(`Sugjerime për ${municipality}`) : dt('Sugjerime (zgjidhni komunën për adresim të saktë)')}
                     </p>
                     <div className="flex flex-col gap-1.5">
@@ -1340,8 +1340,8 @@ export default function ReportIssue() {
                             category === entry.name ? 'border-indigo-600 bg-indigo-600/10' : 'border-slate-200 dark:border-white/10 hover:border-indigo-400')}
                         >
                           <span className="font-bold text-[var(--color-text)] dark:text-white">{dt(label)}</span>
-                          <span className="ml-2 rounded-full bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{dt(LEVEL_LABEL[entry.level])}</span>
-                          <span className="block text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{dt(reason)} · {dt('Afati i përgjigjes')}: {entry.responseHours}h</span>
+                          <span className="ml-2 rounded-full bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{dt(LEVEL_LABEL[entry.level])}</span>
+                          <span className="block text-xs text-slate-600 dark:text-slate-400 mt-0.5">{dt(reason)} · {dt('Afati i përgjigjes')}: {entry.responseHours}h</span>
                         </button>
                       ))}
                     </div>
@@ -1382,12 +1382,12 @@ export default function ReportIssue() {
                   <option key={m} value={m}>{m.toUpperCase()}</option>
                 ))}
               </select>
-              {errors.municipality && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mb-4 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.municipality}</p>}
+              {errors.municipality && <p data-field-error className="text-indigo-600 text-xs sm:text-xs font-bold mb-4 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.municipality}</p>}
 
               <div data-tour="report-location" className="flex justify-between items-center mb-2 md:mb-3 border-l-2 border-indigo-600 pl-3 relative">
                   <div>
                     <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide">{dt(`Koordinatat / Adresa`)}</label>
-                    <p className="text-[10px] text-indigo-600 mt-1 uppercase tracking-widest font-bold max-w-[200px] md:max-w-none">{dt(`Kliko tek GPS ose në hartë për të ndarë lokacionin saktësisht!`)}</p>
+                    <p className="text-xs text-indigo-600 mt-1 uppercase tracking-widest font-bold max-w-[200px] md:max-w-none">{dt(`Kliko tek GPS ose në hartë për të ndarë lokacionin saktësisht!`)}</p>
                   </div>
                   <button type="button" onClick={() => {
                     const isAlerted = localStorage.getItem('gps_alerted');
@@ -1512,7 +1512,7 @@ export default function ReportIssue() {
                        placeholder="..." 
                        className={cn("w-full px-4 md:px-5 py-2.5 md:py-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white text-sm", errors.guestName ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
                      />
-                     {errors.guestName && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestName}</p>}
+                     {errors.guestName && <p data-field-error className="text-indigo-600 text-xs sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestName}</p>}
                    </div>
                    <div>
                      <label className="block text-xs md:text-xs font-bold text-[var(--color-text)] dark:text-white tracking-wide mb-2 border-l-2 border-indigo-600 pl-2">{dt(`Kontakti`)}</label>
@@ -1524,7 +1524,7 @@ export default function ReportIssue() {
                        placeholder="+383..." 
                        className={cn("w-full px-4 md:px-5 py-2.5 md:py-3 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border outline-none transition-colors font-bold text-[var(--color-text)] dark:text-white text-sm", errors.guestPhone ? "border-indigo-600 focus:border-indigo-600" : "border-neutral-300 focus:border-slate-900")}
                      />
-                     {errors.guestPhone && <p data-field-error className="text-indigo-600 text-[10px] sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestPhone}</p>}
+                     {errors.guestPhone && <p data-field-error className="text-indigo-600 text-xs sm:text-xs font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.guestPhone}</p>}
                    </div>
                  </div>
               )}
@@ -1578,7 +1578,7 @@ export default function ReportIssue() {
             <h2 className="text-2xl md:text-3xl font-black text-[var(--color-text)] dark:text-white tracking-tight mb-3 uppercase">{finishing ? dt('U dërgua') : dt('Duke Procesuar')}</h2>
             <p className="text-[var(--color-text-muted)] dark:text-slate-300 font-medium max-w-md mx-auto leading-relaxed mb-8">{dt('Raporti juaj po dërgohet te institucioni përgjegjës.')}</p>
             <SubmissionJourney done={finishing} stage={submitStage} institution={municipality || undefined} />
-            <p className="mt-5 text-xs text-slate-500 max-w-md mx-auto">{dt('Mos e mbyllni faqen. Nëse lidhja dështon, forma ruhet dhe merrni mesazh për ta provuar përsëri.')}</p>
+            <p className="mt-5 text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">{dt('Mos e mbyllni faqen. Nëse lidhja dështon, forma ruhet dhe merrni mesazh për ta provuar përsëri.')}</p>
             {canCancel && !finishing && (
               <button type="button" onClick={cancelSubmit} className="mt-6 px-5 py-3 rounded-xl border-2 border-indigo-600 text-indigo-700 dark:text-indigo-300 font-bold text-sm">
                 {dt('Po vonon? Ndale dhe provo përsëri')}
@@ -1599,7 +1599,7 @@ export default function ReportIssue() {
           <h1 className="text-[28px] md:text-[36px] font-bold text-[var(--color-text)] dark:text-white tracking-tight mb-4">{dt(`Raportimi u pranua`)}<span className="text-indigo-600">.</span></h1>
           <p className="text-slate-600 dark:text-slate-200 font-medium text-sm md:text-base lg:text-lg mb-6 md:mb-8 font-serif italic max-w-md mx-auto">{dt(`Raportimi iu dërgua agjentëve dhe administratorëve për shqyrtim. Përdorni Track-ID për ta ndjekur statusin e tij në çdo moment.`)}</p>
           <div className="w-full mb-8 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800 p-4 text-left shadow-inner">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-bold">{dt('Track-ID i raportimit')}</div>
+            <div className="text-xs uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-bold">{dt('Track-ID i raportimit')}</div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <code className="text-lg font-black tracking-wider text-slate-900 dark:text-white break-all">{submittedReportId}</code>
               <button

@@ -212,7 +212,7 @@ const ITEMS_PER_PAGE = 6;
           <div className="absolute top-0 left-0 w-2 h-full bg-rose-600" />
           <div className="flex justify-between items-center mb-6 border-b border-rose-50 pb-4">
             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">{dt(`Aplikoni për Donacion`)}</h3>
-            <button type="button" aria-label={dt('Mbyll')}  onClick={() => setIsApplying(false)} className="text-slate-400 hover:text-slate-500 dark:text-slate-400 p-1 hover:bg-slate-50 dark:bg-slate-900 rounded-2xl transition-colors">
+            <button type="button" aria-label={dt('Mbyll')}  onClick={() => setIsApplying(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1 hover:bg-slate-50 dark:bg-slate-900 rounded-2xl transition-colors">
 <X className="w-6 h-6" /></button>
           </div>
           <form onSubmit={handleSubmitApplication} className="space-y-5" aria-busy={submitting}>
@@ -258,8 +258,8 @@ const ITEMS_PER_PAGE = 6;
                       <svg className="w-8 h-8 mb-3 text-slate-450 text-rose-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
                       </svg>
-                      <p className="mb-1 text-sm text-slate-500 dark:text-slate-400 font-bold"><span className="text-rose-600 underline">{dt(`Kliko për të ngarkuar`)}</span>{dt(`ose tërhiq këtu`)}</p>
-                      <p className="text-[11px] text-slate-400 uppercase tracking-widest font-black">{dt(`PNG, JPG, WebP, MP4 ose WebM`)}</p>
+                      <p className="mb-1 text-sm text-slate-600 dark:text-slate-400 font-bold"><span className="text-rose-600 underline">{dt(`Kliko për të ngarkuar`)}</span>{dt(`ose tërhiq këtu`)}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 uppercase tracking-widest font-black">{dt(`PNG, JPG, WebP, MP4 ose WebM`)}</p>
                     </div>
                     <input
                       id="dropzone-file"
@@ -352,7 +352,7 @@ const ITEMS_PER_PAGE = 6;
               <div className="md:col-span-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{dt(`Link Për Donacion (Opsionale)`)}</label>
                 <input type="url" value={newApplication.donationUrl} onChange={e => setNewApplication({...newApplication, donationUrl: e.target.value})} className="w-full border border-slate-200/60 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 text-sm focus:border-rose-600 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 dark:bg-slate-900 outline-none transition" placeholder={dt(`https://gofund.me/...`)} />
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium">{dt(`Nëse keni një fushatë të hapur në GoFundMe, KosovaCharity apo rrjete tjera`)}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 font-medium">{dt(`Nëse keni një fushatë të hapur në GoFundMe, KosovaCharity apo rrjete tjera`)}</p>
               </div>
             </div>
             <div className="pt-4">
@@ -392,7 +392,7 @@ const ITEMS_PER_PAGE = 6;
                 <div className="au-photo" style={{ aspectRatio: '16/10' }}>
                   {cause.mediaType === 'video' ? <video src={cause.mediaUrl} muted playsInline preload="metadata" /> : <img src={cause.mediaUrl} alt={cause.title} loading="lazy" decoding="async" />}
                   {categoryObj && (
-                    <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                    <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
                       <categoryObj.icon className="h-3 w-3" aria-hidden="true" />{categoryObj.label}
                     </span>
                   )}
@@ -400,7 +400,7 @@ const ITEMS_PER_PAGE = 6;
                 <div className="flex flex-1 flex-col gap-2 p-3.5">
                   <h3 className="line-clamp-2 break-words text-[15px] font-semibold leading-snug">{cause.title}</h3>
                   <p className="au-sub line-clamp-2 break-words text-[13px] leading-relaxed">{cause.description}</p>
-                  <p className="au-sub mt-auto flex items-center justify-between pt-1 text-[11px]">
+                  <p className="au-sub mt-auto flex items-center justify-between pt-1 text-xs">
                     <span>{dt(`Miratuar për publikim`)}</span>
                     <span>{new Date(cause.createdAt).toLocaleDateString('sq-AL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   </p>
@@ -433,14 +433,14 @@ const ITEMS_PER_PAGE = 6;
             className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
             aria-label={dt('Faqja e mëparshme')}
           >
-            <ChevronLeft className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
             {getPageNumbers().map((page, index) => {
               if (page === '...') {
                 return (
-                  <span key={`ellipsis-${index}`} className="px-2 text-slate-400 font-bold font-mono">
+                  <span key={`ellipsis-${index}`} className="px-2 text-slate-600 dark:text-slate-400 font-bold font-mono">
                     ...
                   </span>
                 );
@@ -468,7 +468,7 @@ const ITEMS_PER_PAGE = 6;
             className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 disabled:opacity-40 disabled:pointer-events-none transition shadow-sm dark:shadow-none active:scale-95 cursor-pointer"
             aria-label={dt('Faqja tjetër')}
           >
-            <ChevronRight className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
       )}
@@ -527,7 +527,7 @@ const ITEMS_PER_PAGE = 6;
 
               <div className="p-5 sm:p-8 overflow-y-auto w-full flex-1">
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white title-serif mb-4 leading-snug break-words">{selectedCause.title}</h2>
-                <div className="text-xs font-extrabold text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                <div className="text-xs font-extrabold text-slate-600 dark:text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-wider">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>{dt(`Publikuar:`)} {new Date(selectedCause.createdAt).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
                 <div className="prose prose-slate dark:prose-invert max-w-none text-neutral-600 dark:text-slate-300 leading-relaxed font-semibold text-sm md:text-base space-y-4 break-words">
@@ -538,10 +538,10 @@ const ITEMS_PER_PAGE = 6;
               </div>
               
               <div className="p-5 sm:p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900 shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                <p className="text-xs font-extrabold text-slate-400 max-w-xs text-center sm:text-left leading-normal uppercase break-words">{dt(`Donacioni bëhet në faqen e jashtme të fushatës. Zëri i Qytetarëve nuk e merr pagesën dhe nuk e kontrollon përdorimin e mjeteve.`)}
+                <p className="text-xs font-extrabold text-slate-600 dark:text-slate-400 max-w-xs text-center sm:text-left leading-normal uppercase break-words">{dt(`Donacioni bëhet në faqen e jashtme të fushatës. Zëri i Qytetarëve nuk e merr pagesën dhe nuk e kontrollon përdorimin e mjeteve.`)}
                 </p>
                 {safeExternalUrl(selectedCause.donationUrl) === '#' ? (
-                  <p className="text-xs font-bold text-slate-500">{dt('Kjo fushatë nuk ka lidhje donacioni.')}</p>
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{dt('Kjo fushatë nuk ka lidhje donacioni.')}</p>
                 ) : (
                 <a
                   href={safeExternalUrl(selectedCause.donationUrl)}

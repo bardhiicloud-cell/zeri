@@ -56,12 +56,12 @@ export function GuestGuard({ children }: GuestGuardProps) {
               </div>
 
               <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-3 py-2 text-center dark:border-sky-500/20 dark:bg-sky-500/10">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Identiteti i Mysafirit</div>
+                <div className="text-xs font-black uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Identiteti i Mysafirit</div>
                 <div className="mt-1 text-sm font-bold text-slate-800 dark:text-white">{guestIdentity}</div>
               </div>
               
               <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white mb-3 font-sans tracking-tight">{dt(`Kërkohet Qasje e Plotë`)}</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-8 leading-relaxed">{dt(`Koha juaj e provës (10s) për këtë modul përfundoi. Për të parë dhe ndërvepruar me këtë përmbajtje, ju lutemi kyçuni ose krijoni një llogari falas.`)}
+              <p className="text-slate-600 dark:text-slate-400 text-center text-sm mb-8 leading-relaxed">{dt(`Koha juaj e provës (10s) për këtë modul përfundoi. Për të parë dhe ndërvepruar me këtë përmbajtje, ju lutemi kyçuni ose krijoni një llogari falas.`)}
               </p>
               
               <div className="space-y-3 pointer-events-auto">
@@ -79,7 +79,7 @@ export function GuestGuard({ children }: GuestGuardProps) {
                 </button>
                 <button
                   onClick={() => navigate('/')}
-                  className="w-full text-center py-2 text-xs font-bold text-slate-400 hover:text-slate-500 dark:text-slate-400 dark:hover:text-slate-300 transition-colors mt-2"
+                  className="w-full text-center py-2 text-xs font-bold text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 transition-colors mt-2"
                 >{dt(`Kthehu në Ballinë`)}
                 </button>
               </div>
