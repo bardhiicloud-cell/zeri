@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { useNavigate, Link } from 'react-router-dom';
-import { Home, MapPin, MessageSquare, FileText, ArrowLeft, Compass } from 'lucide-react';
+import { Home, MapPin, MessageSquare, FileText, ArrowLeft, Compass, Search } from 'lucide-react';
 import { usePageMeta } from '../lib/usePageMeta';
 
 /**
@@ -12,7 +12,7 @@ import { usePageMeta } from '../lib/usePageMeta';
  */
 export default function NotFoundPage() {
   const navigate = useNavigate();
-  usePageMeta('Faqja nuk u gjet');
+  usePageMeta('Faqja nuk u gjet', undefined, { noindex: true });
 
   const suggestions = [
     { to: '/', label: 'Ballina', icon: Home, hint: 'Numrat e ditës dhe aktiviteti' },
@@ -24,7 +24,7 @@ export default function NotFoundPage() {
   return (
     <div className="page-shell flex min-h-[70vh] w-full flex-col items-center justify-center px-4 py-16 text-center">
       <div className="w-full max-w-2xl">
-        <div className="mb-6 inline-flex items-center gap-2.5 rounded-full bg-blue-50 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+        <div className="mb-6 inline-flex items-center gap-2.5 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
           <Compass className="h-3.5 w-3.5" aria-hidden="true" />
           {dt('Gabim 404')}
         </div>
@@ -37,7 +37,7 @@ export default function NotFoundPage() {
           {dt('Kjo faqe nuk u gjet')}
         </h2>
 
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-400">
           {dt('Adresa që kërkuat nuk ekziston ose është zhvendosur. Mund të jetë një lidhje e vjetruar ose një gabim shkrimi.')}
         </p>
 
@@ -53,6 +53,15 @@ export default function NotFoundPage() {
 
           <button
             type="button"
+            onClick={() => window.dispatchEvent(new Event('zeri:open-search'))}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-black text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            {dt('Kërko në platformë')}
+          </button>
+
+          <button
+            type="button"
             onClick={() => navigate(-1)}
             className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-black text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
@@ -62,7 +71,7 @@ export default function NotFoundPage() {
         </div>
 
         <div className="mt-10">
-          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-slate-600 dark:text-slate-400">
             {dt('Ndoshta keni kërkuar')}
           </p>
           <ul className="grid gap-2.5 sm:grid-cols-2">
@@ -79,7 +88,7 @@ export default function NotFoundPage() {
                     <span className="block text-xs font-black text-slate-900 dark:text-white">
                       {item.label}
                     </span>
-                    <span className="block truncate text-[10px] text-slate-500 dark:text-slate-400">
+                    <span className="block truncate text-xs text-slate-600 dark:text-slate-400">
                       {item.hint}
                     </span>
                   </span>

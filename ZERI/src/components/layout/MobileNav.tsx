@@ -301,7 +301,7 @@ export function MobileNav() {
                   data-tour="dock-menu"
                   aria-expanded={isSheetOpen}
                   className={cn(
-                    'flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-bold transition-colors',
+                    'flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-xs font-bold transition-colors',
                     isSheetOpen
                       ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -352,7 +352,7 @@ export function MobileNav() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-black text-slate-900 dark:text-white">{dt(action.label)}</span>
-                        <span className="block truncate text-xs font-medium text-slate-500 dark:text-slate-400">{dt(action.hint)}</span>
+                        <span className="block truncate text-xs font-medium text-slate-600 dark:text-slate-400">{dt(action.hint)}</span>
                       </span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-active:translate-x-0.5 dark:text-slate-600" aria-hidden="true" />
                     </button>
@@ -417,7 +417,7 @@ export function MobileNav() {
                     <span className="block truncate text-sm font-black text-slate-900 dark:text-white">
                       {dt('Menuja')}
                     </span>
-                    <span className="block truncate text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    <span className="block truncate text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                       {scoped ? activeScope : dt('Të gjitha 38 komunat')}
                     </span>
                   </span>
@@ -458,7 +458,7 @@ export function MobileNav() {
                 >
                   <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {dt('Kërko faqe, komunë...')}
-                  <span className="ml-auto rounded-md border border-slate-200 px-1.5 py-0.5 text-[9px] font-black text-slate-400 dark:border-white/10">
+                  <span className="ml-auto rounded-md border border-slate-200 px-1.5 py-0.5 text-xs font-black text-slate-400 dark:border-white/10">
                     ⌘K
                   </span>
                 </button>
@@ -485,7 +485,7 @@ export function MobileNav() {
                       <Compass className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      <span className="block text-xs font-black uppercase tracking-[0.14em] text-slate-400">
                         {dt('Zona juaj')}
                       </span>
                       <span className="block truncate text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -542,7 +542,7 @@ export function MobileNav() {
                       <Globe className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      <span className="block text-xs font-black uppercase tracking-[0.14em] text-slate-400">
                         {dt('Gjuha')}
                       </span>
                       <span className="block truncate text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -609,7 +609,7 @@ export function MobileNav() {
                             <p className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
                               {label ?? dt('Mysafir')}
                             </p>
-                            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                               <span className={`h-1.5 w-1.5 rounded-full ${label ? 'bg-emerald-400' : 'animate-pulse bg-slate-300'}`} aria-hidden="true" />
                               {label ? dt('Mysafir i identifikuar') : dt('Po caktohet ID-ja…')}
                             </p>
@@ -648,7 +648,7 @@ export function MobileNav() {
                 <section aria-labelledby="mobile-actions-heading" className="mb-4">
                   <h3
                     id="mobile-actions-heading"
-                    className="mb-2 flex items-center gap-2 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400"
+                    className="mb-2 flex items-center gap-2 px-1 text-xs font-black uppercase tracking-[0.16em] text-slate-400"
                   >
                     <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                     {dt('Veprime të shpejta')}
@@ -667,10 +667,10 @@ export function MobileNav() {
                         )}>
                           <action.icon className="h-4 w-4" aria-hidden="true" />
                         </span>
-                        <span className="text-[10px] font-black leading-none text-slate-800 dark:text-slate-100">
+                        <span className="text-xs font-black leading-none text-slate-800 dark:text-slate-100">
                           {dt(action.label)}
                         </span>
-                        <span className="text-[8px] font-semibold uppercase tracking-wider text-slate-400">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                           {dt(action.hint)}
                         </span>
                       </Link>
@@ -696,7 +696,7 @@ export function MobileNav() {
                     <UserRound className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{currentUser.name || dt('Profili im')}</span>
-                      <span className="block truncate text-[10px] font-semibold uppercase tracking-wider text-blue-700/70 dark:text-blue-200/70">
+                      <span className="block truncate text-xs font-semibold uppercase tracking-wider text-blue-700/70 dark:text-blue-200/70">
                         {dt('Profili, fjalëkalimi, qyteti')}
                       </span>
                     </span>
@@ -716,10 +716,10 @@ export function MobileNav() {
                           aria-expanded={open}
                           aria-controls={`mobile-group-${group.id}`}
                           onClick={() => toggleGroup(group.id)}
-                          className="flex min-h-10 w-full items-center gap-2 rounded-xl px-1 text-left text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200"
+                          className="flex min-h-10 w-full items-center gap-2 rounded-xl px-1 text-left text-xs font-black uppercase tracking-[0.16em] text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200"
                         >
                           <span className="flex-1">{dt(group.title)}</span>
-                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{group.items.length}</span>
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">{group.items.length}</span>
                           <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} aria-hidden="true" />
                         </button>
                       </h3>
@@ -752,7 +752,7 @@ export function MobileNav() {
                                 <span className="min-w-0 flex-1">
                                   <span className="block truncate text-sm font-bold">{dt(item.label)}</span>
                                   {item.hint && (
-                                    <span className="block truncate text-[10px] font-medium text-slate-400">
+                                    <span className="block truncate text-xs font-medium text-slate-400">
                                       {dt(item.hint)}
                                     </span>
                                   )}
@@ -795,7 +795,7 @@ export function MobileNav() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{dt('Bëhu partner')}</span>
-                    <span className="block truncate text-[10px] font-medium text-slate-400">{dt('Për institucione, biznese dhe OJQ')}</span>
+                    <span className="block truncate text-xs font-medium text-slate-400">{dt('Për institucione, biznese dhe OJQ')}</span>
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 opacity-30" aria-hidden="true" />
                 </Link>
@@ -819,7 +819,7 @@ export function MobileNav() {
                   that is always a single tap away.
                 */}
                 <div className="mt-3 rounded-2xl border border-slate-200/80 px-3 py-3 dark:border-white/10">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                     {dt('Na ndiqni')}
                   </h3>
                   <ul className="mt-2.5 flex items-center gap-2">
@@ -888,7 +888,7 @@ function DockTab({
       aria-current={active ? 'page' : undefined}
       aria-label={dt(tab.label)}
       className={cn(
-        'relative flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-bold transition-colors',
+        'relative flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-xs font-bold transition-colors',
         active
           ? 'text-blue-600 dark:text-blue-400'
           : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
@@ -928,7 +928,7 @@ function ScopeChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors',
+        'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
         active
           ? 'border-blue-600 bg-blue-600 text-white'
           : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300'
@@ -943,7 +943,7 @@ function ScopeChip({
       {hint && (
         <span
           className={cn(
-            'text-[9px] font-black uppercase tracking-wider',
+            'text-xs font-black uppercase tracking-wider',
             active ? 'text-blue-100' : 'text-slate-400'
           )}
         >

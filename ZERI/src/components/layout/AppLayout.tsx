@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { InstallAppBanner } from '../InstallAppPrompt';
-import { Suspense, lazy, useState, useEffect } from 'react';
+import { Suspense, lazy, useState, useEffect, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../../lib/store';
 import { useLanguage } from '../../lib/LanguageContext';
@@ -16,6 +16,7 @@ import { SearchPalette, useGlobalSearch } from './GlobalSearch';
 import { AnnouncementBanner } from '../AnnouncementBanner.tsx';
 import { BroadcastPopup, BroadcastStrip } from '../BroadcastLayer';
 import GuidedTour from '../GuidedTour';
+import { BackToTop } from '../BackToTop';
 
 /*
  * Modals opened by a tap are separate chunks: none of them is needed to paint the
@@ -54,14 +55,14 @@ function PageLoading() {
  * up advertising a page that 404'd. The mobile sheet renders the same links
  * rather than a second, hand-maintained list.
  */
-export function AppLayout() {
+export function AppLayout({ children }: { children?: ReactNode } = {}) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isForumPage = pathname === '/forum';
   const isNewsPage = pathname === '/lajme' || pathname === '/lajmet';
-  // The house ad slot belongs on browsing pages only. Task pages (report, track, map, legal, contact, polls,
+  // The house ad slot belongs on browsing pages only, never above the home hero (it has its own slot below the content). Task pages (report, track, map, legal, contact, polls,
   // statistics, which carry their own inline slot) stay free of it so a citizen's first screen is the task.
-  const showTopAd = ['/', '/komunat', '/projektet', '/sherbimet'].includes(pathname);
+  const showTopAd = ['/komunat', '/projektet', '/sherbimet'].includes(pathname);
   const { language } = useLanguage();
   const currentUser = useStore((state) => state.currentUser);
 
@@ -242,7 +243,7 @@ export function AppLayout() {
               : "page-enter flex w-full min-w-0 flex-1 flex-col"}
           >
             <Suspense fallback={<PageLoading />}>
-              <Outlet />
+              {children ?? <Outlet />}
               <GuidedTour />
             </Suspense>
           </div>
@@ -253,6 +254,7 @@ export function AppLayout() {
       </main>
       </div>
 
+      {!isForumPage && <BackToTop />}
       {!isForumPage && !isNewsPage && <MobileNav />}
 
       {/*

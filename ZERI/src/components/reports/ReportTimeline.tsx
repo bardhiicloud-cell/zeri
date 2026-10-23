@@ -80,13 +80,13 @@ export function ReportTimeline({ events }: { events: ReportTimelineEvent[] }) {
                     {statusLabel(event.status)}
                   </span>
                 </span>
-                <span className="rounded-full bg-(--color-surface-subtle) px-2.5 py-0.5 text-[10px] font-bold text-(--color-text-muted)">
+                <span className="rounded-full bg-(--color-surface-subtle) px-2.5 py-0.5 text-xs font-bold text-(--color-text-muted)">
                   {day}{time ? ` · ${time}` : ''}
                 </span>
               </div>
 
               {event.previousStatus && event.previousStatus !== event.status && (
-                <p className="mt-2 text-[11px] font-semibold text-(--color-text-muted)">
+                <p className="mt-2 text-xs font-semibold text-(--color-text-muted)">
                   {statusLabel(event.previousStatus)} <span aria-hidden="true">→</span>{' '}
                   <span className={tone.text}>{statusLabel(event.status)}</span>
                 </p>

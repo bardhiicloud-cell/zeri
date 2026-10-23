@@ -52,7 +52,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
           />
 
           <div className="relative">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-blue-200 backdrop-blur-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-blue-200 backdrop-blur-sm">
               <FileText className="h-3 w-3" aria-hidden="true" />
               {dt('Gjurmimi i Raportimit (Track ID)')}
             </span>
@@ -83,7 +83,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
                   onChange={(event) => setTrackId(event.target.value)}
                   placeholder={dt('SHËNO TRACK-ID (P.SH. ZQ-20260101-ABC123)')}
                   aria-label={dt('Numri i Track ID')}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 font-mono text-sm uppercase tracking-wider text-white outline-none transition-colors placeholder:font-sans placeholder:text-[11px] placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-500 focus:border-blue-500/60 focus:bg-white/10"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 font-mono text-sm uppercase tracking-wider text-white outline-none transition-colors placeholder:font-sans placeholder:text-xs placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-500 focus:border-blue-500/60 focus:bg-white/10"
                 />
               </div>
 
@@ -97,7 +97,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
               </button>
             </form>
 
-            <p className="mt-4 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-slate-400">
+            <p className="mt-4 border-t border-white/10 pt-3 text-xs leading-relaxed text-slate-400">
               {dt('Track-ID merret pasi të dërgoni një raport, p.sh. ZQ-20260101-ABC123.')}
             </p>
           </div>
@@ -109,7 +109,7 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
           className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
               <Lightbulb className="h-3 w-3" aria-hidden="true" />
               {dt('Iniciativa Qytetare')}
             </span>
@@ -119,12 +119,12 @@ export function DashboardEngagementBlock({ municipality }: { municipality?: stri
             {dt('Laboratori i ideve')}
           </h3>
 
-          <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
             {dt('Keni një ide për të përmirësuar platformën ose shërbimet qytetare? Dërgojeni; ekipi i platformës i lexon idetë.')}
           </p>
 
           <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-            <span className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+            <span className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
               {dt('Idea nuk është raport zyrtar dhe nuk garanton zbatim.')}
             </span>
             <Link

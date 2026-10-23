@@ -165,7 +165,7 @@ export default function CookieConsentBanner() {
                 >
                   {dt('Politika e privatësisë dhe Cookies')}
                 </h2>
-                <p className={cn('mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400', !showPreferences && 'hidden sm:block')}>
+                <p className={cn('mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400', !showPreferences && 'hidden sm:block')}>
                   {dt('Ligji Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale në Kosovë kërkon pëlqimin tuaj të qartë dhe të lirë për çdo Cookies jo-esenciale dhe çdo gjurmim të lokacionit.')}
                 </p>
               </div>
@@ -199,7 +199,7 @@ export default function CookieConsentBanner() {
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
                     {dt('Mund ta ndryshoni vendimin në çdo kohë nga këtu:')} {''}
                     <button
                       type="button"
@@ -212,7 +212,7 @@ export default function CookieConsentBanner() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                     {dt('Aktivizoni ose çaktivizoni secilën kategori. Cookies të domosdoshme nuk mund të çaktivizohen sepse pa to platforma nuk funksionon.')}
                   </p>
 
@@ -237,7 +237,7 @@ export default function CookieConsentBanner() {
                         <span className="block text-sm font-black text-slate-900 dark:text-white">
                           {dt(CATEGORY_LABELS[toggle.key].sq)}
                         </span>
-                        <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        <span className="mt-0.5 block text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                           {dt(CATEGORY_LABELS[toggle.key].descriptionSq)}
                         </span>
                       </span>
@@ -294,7 +294,7 @@ export default function CookieConsentBanner() {
             <button
               type="button"
               onClick={() => setShowPreferences((open) => !open)}
-              className="flex items-center justify-center gap-1.5 border-t border-slate-100 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-400 transition-colors hover:bg-slate-50 dark:border-white/5 dark:hover:bg-slate-800/60"
+              className="flex items-center justify-center gap-1.5 border-t border-slate-100 py-2.5 text-xs font-black uppercase tracking-wider text-slate-400 transition-colors hover:bg-slate-50 dark:border-white/5 dark:hover:bg-slate-800/60"
             >
               {showPreferences ? dt('Kthehu te përmbledhja') : dt('Detajet e cookies')}
               <ChevronDown className={cn('h-3 w-3 transition-transform', showPreferences && 'rotate-180')} aria-hidden="true" />
@@ -316,7 +316,7 @@ export default function CookieConsentBanner() {
             className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:p-8"
           >
             <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-blue-100 text-lg font-black text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">16+</div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Para vazhdimit')}</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Para vazhdimit')}</p>
             <h2 id="age-verification-title" className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
               {dt('Sa vjeç jeni?')}
             </h2>
@@ -356,7 +356,7 @@ export default function CookieConsentBanner() {
                 {dt('Vazhdo')}
               </button>
             </form>
-            <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-400">
+            <p className="mt-4 text-center text-xs leading-relaxed text-slate-400">
               {dt('Për verifikim ruhet vetëm shenja se mosha minimale është plotësuar; mosha që shkruani nuk regjistrohet.')}
             </p>
           </motion.section>
@@ -450,7 +450,7 @@ export function CookiePreferencesButton({ className }: { className?: string }) {
                   <input type="checkbox" checked disabled className="mt-0.5 h-5 w-5 shrink-0 accent-blue-600" />
                   <span>
                     <span className="block text-sm font-black text-slate-900 dark:text-white">{CATEGORY_LABELS.essential.sq}</span>
-                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{CATEGORY_LABELS.essential.descriptionSq}</span>
+                    <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{CATEGORY_LABELS.essential.descriptionSq}</span>
                   </span>
                 </label>
 
@@ -463,7 +463,7 @@ export function CookiePreferencesButton({ className }: { className?: string }) {
                   />
                   <span>
                     <span className="block text-sm font-black text-slate-900 dark:text-white">{CATEGORY_LABELS.analytics.sq}</span>
-                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{CATEGORY_LABELS.analytics.descriptionSq}</span>
+                    <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{CATEGORY_LABELS.analytics.descriptionSq}</span>
                   </span>
                 </label>
 
@@ -476,7 +476,7 @@ export function CookiePreferencesButton({ className }: { className?: string }) {
                   />
                   <span>
                     <span className="block text-sm font-black text-slate-900 dark:text-white">{CATEGORY_LABELS.marketing.sq}</span>
-                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{CATEGORY_LABELS.marketing.descriptionSq}</span>
+                    <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{CATEGORY_LABELS.marketing.descriptionSq}</span>
                   </span>
                 </label>
               </div>

@@ -104,7 +104,7 @@ export function SeriousAnnouncementPopup() {
           >
             <div className={`${severity.badge} flex items-center gap-2 px-5 py-3 text-white`}>
               <severity.icon className="h-4 w-4" aria-hidden="true" />
-              <span className="text-[10px] font-black uppercase tracking-[0.22em]">{severity.badgeText}</span>
+              <span className="text-xs font-black uppercase tracking-[0.22em]">{severity.badgeText}</span>
               <button
                 type="button"
                 onClick={dismiss}

@@ -333,10 +333,10 @@ export default function RegisterPage() {
                       <div key={index} className={cn('h-1 flex-1 rounded-full transition-colors', index < passwordCheck.score ? strengthColor : 'bg-white/10')} />
                     ))}
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-300">{passwordCheck.label}</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-300">{passwordCheck.label}</span>
                 </div>
                 {[...passwordCheck.problems, ...passwordCheck.suggestions].slice(0, 2).map((line) => (
-                  <p key={line} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-400">
+                  <p key={line} className="flex items-start gap-1.5 text-xs leading-relaxed text-slate-400">
                     <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-cyan-300" aria-hidden="true" />{line}
                   </p>
                 ))}

@@ -43,7 +43,7 @@ export function LiberationSection({ lang }: { lang: HeritageLang }) {
                 <span className="hx-serif text-lg font-black leading-snug text-white">{p.title[lang]}</span>
               </p>
               <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:pl-11">{p.body[lang]}</p>
-              <a href={p.source} target="_blank" rel="noreferrer" className="mt-3 sm:ml-11 inline-flex items-center gap-1 text-[11px] font-bold text-[#ff8a98] hover:underline">
+              <a href={p.source} target="_blank" rel="noreferrer" className="mt-3 sm:ml-11 inline-flex items-center gap-1 text-xs font-bold text-[#ff8a98] hover:underline">
                 <Scale className="h-3.5 w-3.5" aria-hidden="true" />{p.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             </li>
@@ -87,10 +87,10 @@ function MartyrCard({ m, lang }: { m: Martyr; lang: HeritageLang }) {
         <p className="hx-ink-2 mt-2 text-sm leading-relaxed">{profile ? profile.bio[lang] : m.role[lang]}</p>
         {m.lastWords && (
           <blockquote className="mt-2 border-l-2 border-[#c8102e] pl-3 text-sm italic" style={{ color: 'var(--hx-ink)' }}>
-            <span className="hx-ink-3 block text-[10px] font-black uppercase not-italic tracking-wider">{lang === 'sq' ? 'Fjalët e fundit' : 'Last words'}</span>“{m.lastWords[lang]}”
+            <span className="hx-ink-3 block text-xs font-black uppercase not-italic tracking-wider">{lang === 'sq' ? 'Fjalët e fundit' : 'Last words'}</span>“{m.lastWords[lang]}”
           </blockquote>
         )}
-        <a href={m.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider hover:underline">
+        <a href={m.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-2 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider hover:underline">
           {lang === 'sq' ? 'Burimi' : 'Source'}<ExternalLink className="h-3 w-3" aria-hidden="true" />
         </a>
       </div>
@@ -178,12 +178,12 @@ export function FamiliesSection({ lang }: { lang: HeritageLang }) {
                 <p className="hx-ink-2 text-sm leading-relaxed">{f.body[lang]}</p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">
                   {f.members.map(id => byId.get(id)).filter((m): m is Martyr => Boolean(m)).map(m => (
-                    <li key={m.id} className="rounded-full border hx-rule px-2.5 py-1 text-[11px] font-bold" style={{ color: 'var(--hx-ink)' }}>
+                    <li key={m.id} className="rounded-full border hx-rule px-2.5 py-1 text-xs font-bold" style={{ color: 'var(--hx-ink)' }}>
                       {m.name} <span className="hx-brass">{year(m.born)}–{year(m.died)}</span>
                     </li>
                   ))}
                 </ul>
-                <a href={f.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-auto inline-flex items-center gap-1 pt-2 text-[10px] font-bold uppercase tracking-wider hover:underline">
+                <a href={f.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-auto inline-flex items-center gap-1 pt-2 text-xs font-bold uppercase tracking-wider hover:underline">
                   {lang === 'sq' ? 'Burimi' : 'Source'}<ExternalLink className="h-3 w-3" aria-hidden="true" />
                 </a>
               </div>
@@ -241,7 +241,7 @@ export function TourismSection({ lang }: { lang: HeritageLang }) {
                   <span className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/30 backdrop-blur" aria-hidden="true">
                     <Icon className="h-5 w-5" />
                   </span>
-                  <span className="absolute bottom-3 left-4 rounded-full bg-black/35 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">{PLACE_KINDS[p.kind][lang]}</span>
+                  <span className="absolute bottom-3 left-4 rounded-full bg-black/35 px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur">{PLACE_KINDS[p.kind][lang]}</span>
                 </div>
                 <div className="flex flex-1 flex-col gap-1.5 p-5">
                   <p className="hx-ink-3 flex items-center gap-1 text-xs font-bold"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{p.municipality}</p>
@@ -272,7 +272,7 @@ export function JashariSection({ lang }: { lang: HeritageLang }) {
             {JASHARI_FACTS.map(f => (
               <div key={f.k} className="rounded-xl border border-white/12 bg-white/[0.06] p-3">
                 <dt className="hx-serif text-lg font-black text-[#ff4d63]">{f.k}</dt>
-                <dd className="text-[11px] leading-snug text-slate-300">{f.v[lang]}</dd>
+                <dd className="text-xs leading-snug text-slate-300">{f.v[lang]}</dd>
               </div>
             ))}
           </dl>
@@ -298,7 +298,7 @@ export function JashariSection({ lang }: { lang: HeritageLang }) {
               </li>
             ))}
           </ol>
-          <p className="flex flex-wrap gap-4 text-[11px] font-bold">
+          <p className="flex flex-wrap gap-4 text-xs font-bold">
             {[[JASHARI_SOURCE, 'Adem Jashari'], [PREKAZ_SOURCE, 'Attack on Prekaz']].map(([href, label]) => (
               <a key={href} href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#ff8a98] hover:underline">{sq ? 'Burimi' : 'Source'}: {label}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
             ))}
@@ -311,7 +311,7 @@ export function JashariSection({ lang }: { lang: HeritageLang }) {
 
 /* ── Përgjegjësia: Serbia, dhe shifrat e dhunës seksuale ────────────────── */
 
-const TONE: Record<string, string> = { finding: '#1e6b4a', estimate: '#8a5a0b', record: '#1c3a8c' };
+const TONE: Record<string, string> = { finding: 'var(--hx-ok)', estimate: 'var(--hx-warn)', record: 'var(--hx-blue)' };
 
 export function AccountabilitySection({ lang }: { lang: HeritageLang }) {
   const sq = lang === 'sq';
@@ -343,9 +343,9 @@ export function AccountabilitySection({ lang }: { lang: HeritageLang }) {
             <li key={c.value} className="space-y-2 p-5">
               <p className="hx-serif text-3xl font-black leading-none hx-brass sm:text-4xl">{c.value}</p>
               <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--hx-ink)' }}>{c.label[lang]}</p>
-              <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: TONE[c.strength] }}>{STRENGTH_LABEL[c.strength][lang]}</p>
+              <p className="text-xs font-black uppercase tracking-wider" style={{ color: TONE[c.strength] }}>{STRENGTH_LABEL[c.strength][lang]}</p>
               {c.caveat && <p className="hx-ink-3 text-xs leading-relaxed">{c.caveat[lang]}</p>}
-              <a href={c.source} target="_blank" rel="noreferrer" className="hx-ink-3 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider hover:underline">{c.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
+              <a href={c.source} target="_blank" rel="noreferrer" className="hx-ink-3 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider hover:underline">{c.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
             </li>
           ))}
         </ul>
@@ -367,10 +367,10 @@ export function AccountabilitySection({ lang }: { lang: HeritageLang }) {
               {CHARGES.filter(c => c.side === col.side).map(c => (
                 <li key={c.id} className="hx-card relative overflow-hidden p-5">
                   <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1" style={{ background: TONE[c.strength] }} />
-                  <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: TONE[c.strength] }}>{STRENGTH_LABEL[c.strength][lang]}</p>
+                  <p className="text-xs font-black uppercase tracking-wider" style={{ color: TONE[c.strength] }}>{STRENGTH_LABEL[c.strength][lang]}</p>
                   <h4 className="hx-serif mt-1 text-lg font-black leading-snug" style={{ color: 'var(--hx-ink)' }}>{c.title[lang]}</h4>
                   <p className="hx-ink-2 mt-1.5 text-sm leading-relaxed">{c.body[lang]}</p>
-                  <a href={c.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider hover:underline">{c.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
+                  <a href={c.source} target="_blank" rel="noreferrer" className="hx-ink-3 mt-2 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider hover:underline">{c.sourceLabel}<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
                 </li>
               ))}
             </ul>
@@ -413,7 +413,7 @@ export function WhyVisitSection({ lang }: { lang: HeritageLang }) {
                 <p className="hx-serif absolute bottom-3 left-4 text-2xl font-black text-white">{c.name}</p>
               </div>
               <div className="p-4">
-                <p className="hx-brass text-[10px] font-black uppercase tracking-wider">{c.tag[lang]}</p>
+                <p className="hx-brass text-xs font-black uppercase tracking-wider">{c.tag[lang]}</p>
                 <p className="hx-ink-2 mt-1 text-sm leading-relaxed">{c.body[lang]}</p>
               </div>
             </li>

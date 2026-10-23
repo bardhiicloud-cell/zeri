@@ -279,7 +279,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                      <img src={report.resolvedImage} loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 w-full h-full object-cover" alt="Pas" />
                   </div>
                   <div className="absolute top-1/2 -mt-4 right-4 z-20 pointer-events-none">
-                     <span className="bg-emerald-600/90 text-white text-[10px] uppercase tracking-widest px-2 py-1 rounded backdrop-blur border border-emerald-500/50 whitespace-nowrap shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)]">{dt(`Glisni &rarr;`)}</span>
+                     <span className="bg-emerald-600/90 text-white text-xs uppercase tracking-widest px-2 py-1 rounded backdrop-blur border border-emerald-500/50 whitespace-nowrap shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)]">{dt(`Glisni &rarr;`)}</span>
                   </div>
                 </div>
              ) : report.media && report.media.length > 0 ? (
@@ -309,7 +309,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                   ))}
                   {(report.media.length > 1) && (
                     <div className="absolute top-1/2 -mt-4 right-4 z-20 pointer-events-none">
-                       <span className="bg-black/60 text-white text-[10px] uppercase tracking-widest px-2 py-1 rounded backdrop-blur whitespace-nowrap">{dt(`Glisni &rarr;`)}</span>
+                       <span className="bg-black/60 text-white text-xs uppercase tracking-widest px-2 py-1 rounded backdrop-blur whitespace-nowrap">{dt(`Glisni &rarr;`)}</span>
                     </div>
                   )}
                 </div>
@@ -501,14 +501,14 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
               {/* Impact / Urgency Progress Bar */}
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 sm:p-5 rounded-[1.25rem] border border-slate-200/60 dark:border-white/10/60 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.2)] animate-in fade-in duration-500">
                 <div className="flex justify-between items-center mb-2.5">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">{dt(`Indeksi i Ndikimit dhe Urgjencës`)}</span>
-                  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border uppercase", impactInfo.color, impactInfo.bg)}>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">{dt(`Indeksi i Ndikimit dhe Urgjencës`)}</span>
+                  <span className={cn("text-xs font-bold px-2 py-0.5 rounded border uppercase", impactInfo.color, impactInfo.bg)}>
                     {impactInfo.label}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1.5 mb-2">
                   <span className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{impactScore}%</span>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{dt(`nga 100 pikë maksimale`)}</span>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{dt(`nga 100 pikë maksimale`)}</span>
                 </div>
                 {/* Sleek Progress Bar */}
                 <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-3.5 relative">
@@ -523,7 +523,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                   />
                 </div>
                 {/* Breakdown details */}
-                <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">{dt(`Kjo vlerë llogaritet automatikisht bazuar në kategorinë`)} <strong className="text-slate-800 dark:text-slate-200 dark:text-slate-200">"{dt(report.category)}"</strong>{dt(`, shkallën e urgjencës`)}{' '}<strong className="text-slate-800 dark:text-slate-200 dark:text-slate-200 font-bold">"{getUrgencyLabel(report.urgency)}"</strong>{' '}{dt(`dhe mbështetjen e`)}{' '}<strong className="text-slate-800 dark:text-slate-200 dark:text-slate-200 font-bold">{report.upvotes} {dt(`qytetarëve`)}</strong>.
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 font-medium">{dt(`Kjo vlerë llogaritet automatikisht bazuar në kategorinë`)} <strong className="text-slate-800 dark:text-slate-200 dark:text-slate-200">"{dt(report.category)}"</strong>{dt(`, shkallën e urgjencës`)}{' '}<strong className="text-slate-800 dark:text-slate-200 dark:text-slate-200 font-bold">"{getUrgencyLabel(report.urgency)}"</strong>{' '}{dt(`dhe mbështetjen e`)}{' '}<strong className="text-slate-800 dark:text-slate-200 dark:text-slate-200 font-bold">{report.upvotes} {dt(`qytetarëve`)}</strong>.
                 </p>
               </div>
 
@@ -542,7 +542,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                        </div>
                      </div>
                    )}
-                   <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{dt(`Përditëso Statusin`)}</h4>
+                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">{dt(`Përditëso Statusin`)}</h4>
                    <div className="flex flex-wrap gap-2">
                      {report.status === 'Pending Review' && (
                         <button
@@ -567,7 +567,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                    </div>
 
                    <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-white/10">
-                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{dt(`Auto-Pilot AI për Përgjigje Zyrtare`)}</h4>
+                     <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">{dt(`Auto-Pilot AI për Përgjigje Zyrtare`)}</h4>
                      <input 
                        type="text" 
                        value={adminReason} 
@@ -620,7 +620,7 @@ export default function ReportDetailModal({ report, onClose }: ReportDetailModal
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200 dark:text-slate-200 mr-2">{comment.authorName}</span>
                             <span className="text-sm font-medium text-slate-700 dark:text-slate-200 dark:text-slate-300">{comment.content}</span>
                           </div>
-                          <span className="text-[10px] text-neutral-400 font-medium ml-1 mt-1 block">
+                          <span className="text-xs text-neutral-400 font-medium ml-1 mt-1 block">
                             {formatDistanceToNow(new Date(comment.createdAt), { locale: sq, addSuffix: true })}
                           </span>
                         </div>

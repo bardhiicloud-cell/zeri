@@ -103,7 +103,7 @@ export default function ContactNumbersPage() {
                     </div>
                     <div>
                       <div className="flex items-center mb-1">
-                        <span className="text-[9px] bg-rose-100 text-rose-800 font-extrabold px-2 py-0.5 rounded-xl uppercase tracking-wider">{dt(`Urgjente`)}
+                        <span className="text-xs bg-rose-100 text-rose-800 font-extrabold px-2 py-0.5 rounded-xl uppercase tracking-wider">{dt(`Urgjente`)}
                         </span>
                       </div>
                       <h3 className="font-black text-slate-900 dark:text-white text-sm sm:text-base lg:text-lg tracking-tight leading-tight break-words">
@@ -117,7 +117,7 @@ export default function ContactNumbersPage() {
                   </span>
                   
                   {/* Description */}
-                  <p className="text-[11px] sm:text-xs text-neutral-600 dark:text-slate-400 font-semibold leading-relaxed line-clamp-2 sm:line-clamp-none">
+                  <p className="text-xs sm:text-xs text-neutral-600 dark:text-slate-400 font-semibold leading-relaxed line-clamp-2 sm:line-clamp-none">
                     {dt(emergency.description)}
                   </p>
                 </div>
@@ -125,7 +125,7 @@ export default function ContactNumbersPage() {
                 {/* Call Button */}
                 <a 
                   href={`tel:${emergency.phone}`} 
-                  className="w-full shrink-0 bg-slate-900 hover:bg-rose-600 text-white rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition duration-300 active:scale-95 shadow-sm dark:shadow-none mt-2 sm:mt-auto"
+                  className="w-full shrink-0 bg-slate-900 hover:bg-rose-600 text-white rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 font-black text-xs sm:text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition duration-300 active:scale-95 shadow-sm dark:shadow-none mt-2 sm:mt-auto"
                 >
                   <Phone className="w-4 h-4 text-rose-500 fill-rose-500/10 group-hover:text-white" />
                   <span>{dt(`Telefono Tani`)}</span>
@@ -170,11 +170,11 @@ export default function ContactNumbersPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  "snap-start whitespace-nowrap px-4 py-3 md:px-5 md:py-4 text-[11px] sm:text-xs md:text-sm font-bold tracking-wide border-2 transition-colors duration-300 ease-in-out flex items-center justify-center gap-1.5 md:gap-2 shrink-0 rounded-xl", 
+                  "snap-start whitespace-nowrap px-4 py-3 md:px-5 md:py-4 text-xs sm:text-xs md:text-sm font-bold tracking-wide border-2 transition-colors duration-300 ease-in-out flex items-center justify-center gap-1.5 md:gap-2 shrink-0 rounded-xl", 
                   activeTab === tab.id ? "bg-slate-900 text-white border-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/60 dark:border-white/10 hover:bg-neutral-50 dark:bg-slate-900/50 hover:border-slate-300 shadow-sm dark:shadow-none"
                 )}
               >
-                <TabIcon className={cn("w-3.5 h-3.5 md:w-4 md:h-4", activeTab === tab.id ? "text-rose-400" : "text-slate-400")} />
+                <TabIcon className={cn("w-3.5 h-3.5 md:w-4 md:h-4", activeTab === tab.id ? "text-rose-400" : "text-slate-600 dark:text-slate-400")} />
                 <span className="uppercase whitespace-nowrap">{tab.label}</span>
               </button>
             );
@@ -195,7 +195,7 @@ export default function ContactNumbersPage() {
                  const Icon = contact.icon;
                  return (
                   <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-2xl p-5 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:hover:shadow-none transition-all duration-300 relative shadow-sm dark:shadow-none flex flex-col justify-between">
-                    <div className="absolute top-0 right-0 rounded-bl-xl rounded-tr-xl bg-slate-900 text-white px-2.5 py-1 text-[9px] font-black uppercase tracking-wider z-10">{dt(`Inst.`)}
+                    <div className="absolute top-0 right-0 rounded-bl-xl rounded-tr-xl bg-slate-900 text-white px-2.5 py-1 text-xs font-black uppercase tracking-wider z-10">{dt(`Inst.`)}
                     </div>
                     <div>
                       <div className="flex flex-row items-start gap-4 mb-4">
@@ -203,7 +203,7 @@ export default function ContactNumbersPage() {
                            <Icon className="w-6 h-6 shrink-0 text-slate-850" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="inline-flex items-center px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[9px] md:text-xs font-black tracking-wide mb-1 uppercase">
+                          <div className="inline-flex items-center px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-xs md:text-xs font-black tracking-wide mb-1 uppercase">
                               {dt(contact.department)}
                           </div>
                           <h3 className="font-black text-slate-950 dark:text-white text-sm sm:text-base tracking-tight leading-tight break-words">{dt(contact.name)}</h3>
@@ -214,7 +214,7 @@ export default function ContactNumbersPage() {
                         {dt(contact.description)}
                       </p>
                       {contact.email && (
-                        <p className="text-[10px] text-slate-400 font-bold lowercase tracking-wider break-all mb-3">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-bold lowercase tracking-wider break-all mb-3">
                           {contact.email}
                         </p>
                       )}
@@ -223,7 +223,7 @@ export default function ContactNumbersPage() {
                     {/* Beautiful, High-Contrast Phone Action Box */}
                     <div className="mt-auto p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-inner">
                       <div className="min-w-0">
-                        <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">{dt(`Numri i Telefonit`)}</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400 font-extrabold uppercase tracking-widest block">{dt(`Numri i Telefonit`)}</span>
                         <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white font-mono tracking-wider break-all block">
                           {contact.phone}
                         </span>

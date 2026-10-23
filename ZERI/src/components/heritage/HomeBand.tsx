@@ -29,7 +29,7 @@ export function HeritageHomeBand() {
         <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a1b4d] via-[#0a1b4d]/55 to-[#12317f]/10" />
         <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#e8c36e]/20 blur-3xl" />
         <div className="relative flex items-start justify-between gap-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#e8c36e]">{sq ? 'Republika e Kosovës' : 'Republic of Kosovo'}</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#e8c36e]">{sq ? 'Republika e Kosovës' : 'Republic of Kosovo'}</p>
           <img src="/heritage/stema-kosoves.png" alt="" width={56} height={62} loading="lazy" decoding="async" className="h-14 w-auto max-w-none shrink-0 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,.45)] transition duration-500 group-hover:scale-105" />
         </div>
         <div className="relative space-y-1.5">
@@ -49,7 +49,7 @@ export function HeritageHomeBand() {
         <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0405] via-[#3a0610]/60 to-[#c8102e]/10" />
         <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
         <div className="relative flex items-start justify-between gap-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#ff8a98]">{sq ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army'}</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ff8a98]">{sq ? 'Ushtria Çlirimtare e Kosovës' : 'Kosovo Liberation Army'}</p>
           <img src="/heritage/emblema-uck.webp" alt="" width={56} height={63} loading="lazy" decoding="async" className="h-14 w-auto max-w-none shrink-0 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,.5)] transition duration-500 group-hover:scale-105" />
         </div>
         <div className="relative space-y-1.5">
@@ -65,7 +65,7 @@ export function HeritageHomeBand() {
         style={{ background: 'radial-gradient(130% 120% at 100% 0%, #1f8f9c 0%, #0d3e55 46%, #07182b 100%)' }}>
         <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">{sq ? 'Çka bëjmë ne' : 'What we do'}</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">{sq ? 'Çka bëjmë ne' : 'What we do'}</p>
           <BrandMark className="h-14 w-14 drop-shadow-[0_6px_14px_rgba(0,0,0,.4)] transition duration-500 group-hover:scale-105" />
         </div>
         <div className="space-y-1.5">

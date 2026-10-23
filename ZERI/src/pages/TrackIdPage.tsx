@@ -44,13 +44,13 @@ const SECTOR_LABEL: Record<SectorStatus['kind'], string> = { news: 'Lajmi i dër
 function SectorCard({ status }: { status: SectorStatus }) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900" aria-live="polite">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">{dt(SECTOR_LABEL[status.kind])}</p>
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:text-slate-400">{dt(SECTOR_LABEL[status.kind])}</p>
       <p className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-white">{status.reference}</p>
       <p className={cn('mt-4 inline-block rounded-full px-4 py-1.5 text-sm font-black', status.rejected ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800')}>{dt(status.stage)}</p>
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
         {status.createdAt ? `${dt('Dërguar')}: ${formatDate(status.createdAt, true)}` : ''}{status.updatedAt ? ` · ${dt('Përditësuar')}: ${formatDate(status.updatedAt, true)}` : ''}
       </p>
-      <p className="mt-3 text-xs text-slate-500">{dt('Për siguri shfaqet vetëm faza; teksti dhe të dhënat e dërguesit nuk shfaqen publikisht.')}</p>
+      <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">{dt('Për siguri shfaqet vetëm faza; teksti dhe të dhënat e dërguesit nuk shfaqen publikisht.')}</p>
     </section>
   );
 }
@@ -155,12 +155,12 @@ export default function TrackIdPage() {
           noValidate
           className="-mt-2 rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/5 dark:border-white/10 dark:bg-slate-900 sm:p-6"
         >
-          <label htmlFor="track-id-input" className="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+          <label htmlFor="track-id-input" className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:text-slate-400">
             {dt('Track ID i raportimit')}
           </label>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-600 dark:text-slate-400" aria-hidden="true" />
               <input
                 id="track-id-input"
                 value={input}
@@ -194,21 +194,21 @@ export default function TrackIdPage() {
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {fieldError}
             </p>
           ) : (
-            <p id="track-id-help" className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
+            <p id="track-id-help" className="mt-2.5 text-xs text-slate-600 dark:text-slate-400">
               {dt('Track ID shfaqet në konfirmimin pas dërgimit të raportit dhe, nëse jeni kyçur, në njoftimet e llogarisë. Platforma nuk dërgon email konfirmimi.')}
             </p>
           )}
 
           {myReports.length > 0 && (
             <div className="mt-4 border-t border-slate-100 pt-4 dark:border-white/10">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{dt('Raportimet e dërguara nga kjo pajisje')}</p>
+              <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400">{dt('Raportimet e dërguara nga kjo pajisje')}</p>
               <div className="flex flex-wrap gap-2">
                 {myReports.map(item => (
                   <button
                     key={item.trackingId}
                     type="button"
                     onClick={() => { setInput(item.trackingId); void search(item.trackingId); }}
-                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 font-mono text-[11px] font-bold text-blue-800 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
+                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 font-mono text-xs font-bold text-blue-800 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200"
                   >
                     {item.trackingId}
                   </button>
@@ -245,7 +245,7 @@ function IdleState() {
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
             <step.icon className="h-5 w-5" aria-hidden="true" />
           </span>
-          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">{dt('Hapi')} {index + 1}</p>
+          <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">{dt('Hapi')} {index + 1}</p>
           <h2 className="mt-1 text-base font-black text-slate-900 dark:text-white">{dt(step.title)}</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{dt(step.text)}</p>
         </li>
@@ -331,7 +331,7 @@ function ReportView({ report }: { report: PublicTrackView }) {
         <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Track ID')}</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">{dt('Track ID')}</span>
               <button
                 type="button"
                 onClick={() => copy(report.trackingId, dt('Track ID u kopjua.'))}
@@ -360,9 +360,9 @@ function ReportView({ report }: { report: PublicTrackView }) {
               <span className={cn('h-2 w-2 rounded-full', tone.dot)} aria-hidden="true" /> {statusLabel(report.status)}
             </span>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs lg:text-right">
-              <dt className="font-bold text-slate-400">{dt('Dërguar')}</dt>
+              <dt className="font-bold text-slate-600 dark:text-slate-400">{dt('Dërguar')}</dt>
               <dd className="font-black text-slate-800 dark:text-slate-100">{formatDate(report.createdAt)}</dd>
-              <dt className="font-bold text-slate-400">{dt('Përditësuar')}</dt>
+              <dt className="font-bold text-slate-600 dark:text-slate-400">{dt('Përditësuar')}</dt>
               <dd className="font-black text-slate-800 dark:text-slate-100">{formatDate(report.lastUpdate, true)}</dd>
             </dl>
           </div>
@@ -389,7 +389,7 @@ function ReportView({ report }: { report: PublicTrackView }) {
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
           <InstitutionCard report={report} />
           <PrivacyCard report={report} />
-          <p className="px-1 text-center text-[11px] text-slate-400">
+          <p className="px-1 text-center text-xs text-slate-600 dark:text-slate-400">
             {dt('Keni një problem tjetër?')}{' '}
             <Link to="/raporto" className="font-bold text-blue-700 hover:underline dark:text-blue-300">{dt('Raporto një problem')}</Link>
           </p>
@@ -402,7 +402,7 @@ function ReportView({ report }: { report: PublicTrackView }) {
 function Chip({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800">
-      <Icon className="h-3.5 w-3.5 text-slate-400" /> {children}
+      <Icon className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" /> {children}
     </span>
   );
 }
@@ -440,7 +440,7 @@ function StepDot({ step, index }: { step: JourneyStep; index: number }) {
 function Journey({ steps, current }: { steps: JourneyStep[]; current: JourneyStep }) {
   return (
     <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-5 dark:border-white/10 dark:bg-slate-800/30 sm:px-7">
-      <p className="mb-4 text-xs font-bold text-slate-500 dark:text-slate-400">
+      <p className="mb-4 text-xs font-bold text-slate-600 dark:text-slate-400">
         {dt('Faza aktuale')}: <span className="font-black text-slate-900 dark:text-white">{dt(current.label)}</span>
         {current.date ? <span> · {formatDate(current.date)}</span> : null}
       </p>
@@ -455,7 +455,7 @@ function Journey({ steps, current }: { steps: JourneyStep[]; current: JourneySte
               <StepDot step={step} index={index} />
               <div className="min-w-0 pt-1.5">
                 <p className={cn('text-sm font-black leading-tight', step.state === 'upcoming' ? 'text-slate-400' : 'text-slate-900 dark:text-white')}>{dt(step.label)}</p>
-                <p className="mt-0.5 text-[11px] text-slate-400">{step.date && step.state !== 'upcoming' ? formatDate(step.date) : step.state === 'upcoming' ? dt('Në pritje') : ''}</p>
+                <p className="mt-0.5 text-xs text-slate-400">{step.date && step.state !== 'upcoming' ? formatDate(step.date) : step.state === 'upcoming' ? dt('Në pritje') : ''}</p>
               </div>
             </li>
           );
@@ -472,7 +472,7 @@ function Journey({ steps, current }: { steps: JourneyStep[]; current: JourneySte
               )}
             </div>
             <p className={cn('mt-2.5 pr-2 text-xs font-black leading-tight', step.state === 'upcoming' ? 'text-slate-400' : 'text-slate-900 dark:text-white')}>{dt(step.label)}</p>
-            <p className="mt-0.5 text-[10px] text-slate-400">{step.date && step.state !== 'upcoming' ? formatDate(step.date) : step.state === 'upcoming' ? dt('Në pritje') : ''}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{step.date && step.state !== 'upcoming' ? formatDate(step.date) : step.state === 'upcoming' ? dt('Në pritje') : ''}</p>
           </li>
         ))}
       </ol>
@@ -524,7 +524,7 @@ function Detail({ icon: Icon, label, value }: { icon: React.ComponentType<{ clas
     <div className="flex gap-3 rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-blue-700 dark:text-blue-300" />
       <div className="min-w-0">
-        <dt className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</dt>
+        <dt className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">{label}</dt>
         <dd className="mt-0.5 break-words font-bold text-slate-800 dark:text-slate-100">{value}</dd>
       </div>
     </div>
@@ -538,8 +538,8 @@ function InstitutionCard({ report }: { report: PublicTrackView }) {
   return (
     <Card title={dt('Institucioni përgjegjës')} icon={Building2}>
       <p className="text-sm font-black text-slate-900 dark:text-white">{report.institution.name || dt('Në pritje të caktimit')}</p>
-      {report.institution.office && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{dt('Zyra')}: {report.institution.office}</p>}
-      {report.institution.level && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{dt('Niveli')}: {report.institution.level}</p>}
+      {report.institution.office && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{dt('Zyra')}: {report.institution.office}</p>}
+      {report.institution.level && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{dt('Niveli')}: {report.institution.level}</p>}
       {due && (
         <div className={cn('mt-4 rounded-2xl border p-3.5 text-xs', late ? 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-100' : 'border-blue-100 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100')}>
           <p className="font-black">{finished ? dt('Afati i përgjigjes') : late ? dt('Afati i përgjigjes ka kaluar') : dt('Afati i përgjigjes')}</p>
@@ -581,10 +581,10 @@ function EvidenceCard({ report }: { report: PublicTrackView }) {
 function PrivacyCard({ report }: { report: PublicTrackView }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-      {report.isAnonymous ? <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" /> : <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />}
+      {report.isAnonymous ? <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-slate-600 dark:text-slate-400" aria-hidden="true" /> : <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />}
       <div className="text-xs leading-relaxed">
         <p className="font-black text-slate-900 dark:text-white">{report.isAnonymous ? dt('Raportim anonim') : dt('Të dhënat e raportuesit janë private')}</p>
-        <p className="mt-1 text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-slate-600 dark:text-slate-400">
           {dt('Kjo faqe nuk shfaq emrin, kontaktin ose të dhëna të tjera personale të raportuesit, as shënimet e brendshme të stafit.')}
         </p>
       </div>
@@ -603,7 +603,7 @@ function ResolutionCard({ report }: { report: PublicTrackView }) {
         <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
           {rejection.reason || dt('Nuk është publikuar arsye e detajuar për këtë vendim.')}
         </p>
-        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
           {rejection.institution ? `${rejection.institution} · ` : ''}{formatDate(rejection.date, true)}
         </p>
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50/70 p-3.5 text-xs leading-relaxed text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-100">
@@ -645,13 +645,13 @@ function ResolutionCard({ report }: { report: PublicTrackView }) {
 
       <div className="space-y-4">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
             {dt('Zgjidhja e deklaruar nga institucioni')}{resolution.resolvedBy ? ` · ${resolution.resolvedBy}` : ''}
           </p>
           <p className="mt-1.5 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-300">
             {resolution.explanation || dt('Institucioni nuk ka publikuar shpjegim të detajuar për zgjidhjen.')}
           </p>
-          <p className="mt-1.5 text-xs text-slate-500">{dt('Data e përfundimit')}: {formatDate(resolution.resolvedAt, true)}</p>
+          <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400">{dt('Data e përfundimit')}: {formatDate(resolution.resolvedAt, true)}</p>
         </div>
 
         {resolution.evidenceUrl && (
@@ -659,15 +659,15 @@ function ResolutionCard({ report }: { report: PublicTrackView }) {
             <a href={resolution.evidenceUrl} target="_blank" rel="noreferrer noopener">
               <img src={resolution.evidenceUrl} alt={dt('Dëshmia pas zgjidhjes')} loading="lazy" className="max-h-80 w-full rounded-2xl object-cover" />
             </a>
-            <figcaption className="mt-1.5 text-[11px] text-slate-500">{dt('Foto e dorëzuar si dëshmi e zgjidhjes')}</figcaption>
+            <figcaption className="mt-1.5 text-xs text-slate-600 dark:text-slate-400">{dt('Foto e dorëzuar si dëshmi e zgjidhjes')}</figcaption>
           </figure>
         )}
 
         {resolution.verifiedAt && (
           <div className="border-t border-slate-100 pt-4 dark:border-white/10">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{dt('Verifikimi')}</p>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">{dt('Verifikimi')}</p>
             {resolution.verificationNote && <p className="mt-1.5 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-300">{resolution.verificationNote}</p>}
-            <p className="mt-1.5 text-xs text-slate-500">{formatDate(resolution.verifiedAt, true)}</p>
+            <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400">{formatDate(resolution.verifiedAt, true)}</p>
           </div>
         )}
       </div>
@@ -697,7 +697,7 @@ function OfficialResponses({ report }: { report: PublicTrackView }) {
         <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center dark:border-white/15">
           <Hourglass className="mx-auto h-6 w-6 text-slate-300" aria-hidden="true" />
           <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-200">{dt('Ende nuk është publikuar asnjë përgjigje zyrtare.')}</p>
-          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-slate-600 dark:text-slate-400">
             {dt('Kur institucioni përgjegjës të publikojë një përgjigje për këtë raportim, ajo do të shfaqet këtu me datën dhe përmbajtjen e plotë.')}
           </p>
         </div>
@@ -709,13 +709,13 @@ function OfficialResponses({ report }: { report: PublicTrackView }) {
                 <span className="inline-flex items-center gap-2 text-sm font-black text-slate-900 dark:text-white">
                   <Building2 className="h-4 w-4 text-blue-700 dark:text-blue-300" aria-hidden="true" /> {response.institution}
                 </span>
-                <span className="text-[11px] font-semibold text-slate-500">{formatDate(response.date, true)}</span>
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{formatDate(response.date, true)}</span>
               </div>
               <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700 dark:text-slate-300">{response.text}</p>
               {response.attachments.length > 0 && (
                 <div className="mt-3"><MediaGallery items={response.attachments} size="compact" label={dt('Bashkëngjitje e përgjigjes')} /></div>
               )}
-              <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt('Statusi në atë moment')}: {statusLabel(response.status)}</p>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">{dt('Statusi në atë moment')}: {statusLabel(response.status)}</p>
             </li>
           ))}
         </ul>
@@ -750,31 +750,31 @@ function History({ report }: { report: PublicTrackView }) {
               <article className={cn('overflow-hidden rounded-2xl border', latest ? 'border-blue-200 bg-blue-50/40 dark:border-blue-900/50 dark:bg-blue-950/20' : 'border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900')}>
                 <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-slate-100 px-4 py-3 dark:border-white/10">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-black', tone.badge)}>{statusLabel(event.status)}</span>
-                    {latest && <span className="rounded-full bg-blue-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">{dt('Më e fundit')}</span>}
+                    <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-black', tone.badge)}>{statusLabel(event.status)}</span>
+                    {latest && <span className="rounded-full bg-blue-700 px-2 py-0.5 text-xs font-black uppercase tracking-wide text-white">{dt('Më e fundit')}</span>}
                   </span>
-                  <time dateTime={event.date} className="text-[11px] font-semibold text-slate-500">{formatDate(event.date, true)}</time>
+                  <time dateTime={event.date} className="text-xs font-semibold text-slate-500">{formatDate(event.date, true)}</time>
                 </header>
                 <div className="space-y-3 px-4 py-3.5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <p className="inline-flex items-center gap-1.5 text-xs font-black text-slate-800 dark:text-slate-100">
                       <Building2 className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" aria-hidden="true" /> {event.institution}
                     </p>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{dt(SOURCE_LABEL[event.source] ?? 'Sistemi')}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{dt(SOURCE_LABEL[event.source] ?? 'Sistemi')}</span>
                   </div>
                   {changed ? (
-                    <p className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                    <p className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/5 dark:text-slate-300">
                       {statusLabel(event.previousStatus)} <span aria-hidden="true">→</span> {statusLabel(event.status)}
                     </p>
                   ) : event.previousStatus ? (
-                    <p className="text-[11px] font-semibold text-slate-500">{dt('Përditësim brenda statusit')} “{statusLabel(event.status)}”</p>
+                    <p className="text-xs font-semibold text-slate-500">{dt('Përditësim brenda statusit')} “{statusLabel(event.status)}”</p>
                   ) : null}
                   {event.comment ? (
                     <p className="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 text-sm leading-7 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200">{event.comment}</p>
                   ) : null}
                   {files > 0 && (
                     <div>
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">{files} {dt('bashkëngjitje')}</p>
+                      <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-400">{files} {dt('bashkëngjitje')}</p>
                       <MediaGallery items={event.attachments} size="compact" label={dt('Bashkëngjitje e përditësimit')} />
                     </div>
                   )}

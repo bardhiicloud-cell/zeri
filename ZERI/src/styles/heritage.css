@@ -13,7 +13,7 @@
   --hx-ink: #0b1531;
   --hx-ink-2: #3a4663;
   --hx-ink-3: #66718d;
-  --hx-brass: #9a6f14;
+  --hx-brass: #8a6410;
   --hx-brass-2: #c99a2e;
   --hx-blue: #1c3a8c;
   --hx-rule: #d9cfb6;
@@ -154,6 +154,7 @@
     linear-gradient(180deg, #eef1f8 0%, var(--hx-paper) 38rem);
 }
 .dark .hx-page.hx-state {
+  --hx-brass: #e2bb5e;
   --hx-paper: #070d1e; --hx-paper-2: #0b1430; --hx-card: #0e1834; --hx-rule: #1f2b4f;
   background: radial-gradient(70rem 26rem at 50% -8rem, rgba(60, 100, 210, .2) 0%, transparent 70%), linear-gradient(180deg, #0a1229 0%, var(--hx-paper) 38rem);
 }

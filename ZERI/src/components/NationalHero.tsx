@@ -33,7 +33,7 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
 
       <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between lg:p-9">
         <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-sky-300/60 bg-white/70 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-sky-800 backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200 sm:text-xs">
+          <span className="inline-flex items-center gap-2 rounded-full border border-sky-300/60 bg-white/70 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-sky-800 backdrop-blur dark:border-cyan-300/25 dark:bg-white/5 dark:text-cyan-200 sm:text-xs">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             {dt('Platforma kombëtare e angazhimit qytetar')}
           </span>
@@ -44,7 +44,7 @@ export function NationalHero({ onReport, onViewReports }: { onReport: () => void
               <h1 id="national-hero-title" className="text-[1.7rem] font-black leading-[0.95] tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-[3.4rem]">
                 Zëri <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent dark:from-cyan-300 dark:to-blue-400">Qytetarëve</span>
               </h1>
-              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.32em] text-sky-700 dark:text-cyan-300 sm:text-xs">
+              <p className="mt-2 text-xs font-bold uppercase tracking-[0.32em] text-sky-700 dark:text-cyan-300 sm:text-xs">
                 {dt('Gjithë Kosova')}
               </p>
             </div>

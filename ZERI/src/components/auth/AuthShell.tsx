@@ -68,7 +68,7 @@ export function AuthShell({ title, subtitle, onBack, backLabel, children, footer
           <div className="mb-8 flex flex-col items-center lg:hidden">
             <BrandMark className="h-20 w-20 drop-shadow-[0_0_28px_rgba(34,211,238,0.45)]" />
             <div className="mt-3 text-3xl font-black leading-none tracking-[0.14em]">ZËRI</div>
-            <div className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.45em] text-cyan-300">Qytetarëve</div>
+            <div className="mt-1.5 text-xs font-semibold uppercase tracking-[0.45em] text-cyan-300">Qytetarëve</div>
           </div>
           <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-8">
             <h1 className="text-2xl font-black tracking-tight sm:text-[1.65rem]">{title}</h1>
@@ -107,7 +107,7 @@ export function AuthField({ label, icon: Icon, error, hint, action, id, ...input
           aria-describedby={error ? `${fieldId}-err` : undefined}
           {...input}
           className={cn(
-            'h-12 w-full rounded-xl border bg-slate-950/60 pl-11 pr-4 text-sm font-medium text-white outline-none transition-colors placeholder:text-slate-500 [color-scheme:dark]',
+            'h-12 w-full rounded-xl border bg-slate-950/60 pl-11 pr-4 text-sm font-medium text-white! outline-none transition-colors placeholder:text-slate-500 [color-scheme:dark]',
             'focus:border-cyan-400/70 focus:ring-4 focus:ring-cyan-400/10',
             error ? 'border-rose-400/60' : 'border-white/10 hover:border-white/20'
           )}
@@ -136,7 +136,7 @@ export const authGhostBtn =
 
 export function AuthDivider({ children }: { children: React.ReactNode }) {
   return (
-    <div className="my-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+    <div className="my-5 flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-400">
       <span className="h-px flex-1 bg-white/10" />{children}<span className="h-px flex-1 bg-white/10" />
     </div>
   );

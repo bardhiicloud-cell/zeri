@@ -81,7 +81,7 @@ export function AuraStats({ items }: { items: Array<{ value: React.ReactNode; la
       {items.map(i => (
         <div key={i.label} className="rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur md:flex md:items-baseline md:justify-between md:gap-3">
           <dd className="text-[20px] font-semibold leading-none tabular-nums sm:text-[22px]">{i.value}</dd>
-          <dt className="mt-1 text-[11px] leading-tight text-white/65 md:mt-0 md:text-right">{i.label}</dt>
+          <dt className="mt-1 text-xs leading-tight text-white/65 md:mt-0 md:text-right">{i.label}</dt>
         </div>
       ))}
     </dl>

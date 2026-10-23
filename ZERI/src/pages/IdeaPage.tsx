@@ -99,7 +99,7 @@ export default function IdeaPage() {
         {steps.map((s, i) => (
           <li key={s.t} className="au-tile flex items-center gap-3 p-3.5">
             <span className="au-ico"><s.icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
-            <div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-wide au-sub">0{i + 1}</p><p className="text-[14px] font-semibold leading-tight">{dt(s.t)}</p><p className="au-sub hidden text-[12px] leading-snug sm:block">{dt(s.d)}</p></div>
+            <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide au-sub">0{i + 1}</p><p className="text-[14px] font-semibold leading-tight">{dt(s.t)}</p><p className="au-sub hidden text-[12px] leading-snug sm:block">{dt(s.d)}</p></div>
           </li>
         ))}
       </ol>

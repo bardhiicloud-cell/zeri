@@ -129,7 +129,7 @@ export function AnnouncementBanner() {
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-black uppercase tracking-[0.14em] text-blue-700 dark:text-blue-300">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-black uppercase tracking-[0.14em] text-blue-700 dark:text-blue-300">
                 <span className="inline-flex items-center gap-1">
                   <Bell className="h-3 w-3" aria-hidden="true" />
                   {dt('Njoftim i ri')}
@@ -144,7 +144,7 @@ export function AnnouncementBanner() {
                 {active.title}
               </p>
               {active.summary && (
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-600 dark:text-slate-300">
+                <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-600 dark:text-slate-300">
                   {active.summary}
                 </p>
               )}

@@ -27,8 +27,8 @@ export function Photo({ name, alt, credit, className = '', position = 'center', 
               alt={alt} loading="lazy" decoding="async" style={{ objectPosition: position }} onError={() => setFailed(true)} />
           : <img src={`/heritage/photos/${name}.${ext}`} alt={alt} loading="lazy" decoding="async" style={{ objectPosition: position }} onError={() => setFailed(true)} />}
       {shownCredit && !failed && (found && !credit
-        ? <a href={found.source} target="_blank" rel="noopener noreferrer" className="absolute bottom-0 right-1 z-10 inline-flex min-h-6 max-w-[70%] items-center truncate rounded bg-black/55 px-2 text-[9px] font-semibold text-white/85 hover:text-white">© {shownCredit}</a>
-        : <span className="absolute bottom-1 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold text-white/85">© {shownCredit}</span>)}
+        ? <a href={found.source} target="_blank" rel="noopener noreferrer" className="absolute bottom-0 right-1 z-10 inline-flex min-h-6 max-w-[70%] items-center truncate rounded bg-black/55 px-2 text-xs font-semibold text-white/85 hover:text-white">© {shownCredit}</a>
+        : <span className="absolute bottom-1 right-2 rounded bg-black/55 px-1.5 py-0.5 text-xs font-semibold text-white/85">© {shownCredit}</span>)}
     </div>
   );
 }

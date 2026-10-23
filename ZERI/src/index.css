@@ -833,3 +833,20 @@ html:not(.dark) :where(.text-slate-500, .text-gray-500):not(.luxury-hero *, [cla
 /* Route change: the incoming page eases in. Opacity only, so fixed overlays keep their containing block. */
 @keyframes page-enter { from { opacity: 0; } to { opacity: 1; } }
 .page-enter { animation: page-enter 200ms ease-out backwards; }
+
+/*
+ * Touch targets: on touch screens every button, select and text field is at least 44px tall,
+ * the size a thumb can hit reliably. Map controls and anything inside a Leaflet container keep
+ * their own sizes, and a control can opt out with `data-tap-compact`.
+ */
+@media (pointer: coarse) {
+  button:not([data-tap-compact]):not(.leaflet-container *),
+  [role="button"]:not([data-tap-compact]):not(.leaflet-container *),
+  select:not([data-tap-compact]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([data-tap-compact]) {
+    min-height: 44px;
+  }
+  button:not([data-tap-compact]):not(.leaflet-container *):not(:where(.min-w-0 *, [class*="w-full"], [class*="flex-1"])) {
+    min-width: 44px;
+  }
+}

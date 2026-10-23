@@ -90,7 +90,7 @@ export default function LajmeroPage() {
   };
 
   const input = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 dark:border-white/10 dark:bg-slate-900 dark:text-white';
-  const label = 'mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-500';
+  const label = 'mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400';
   const err = (key: string) => fields[key] ? <p className="mt-1 text-xs font-semibold text-rose-600">{fields[key]}</p> : null;
 
   if (reference) {
@@ -105,7 +105,7 @@ export default function LajmeroPage() {
             <button type="button" onClick={() => { void navigator.clipboard?.writeText(reference); setCopied(true); }} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold dark:border-white/10 dark:text-white"><Copy className="h-4 w-4" aria-hidden="true" />{copied ? dt('U kopjua') : dt('Kopjo kodin')}</button>
             <Link to={`/trackid?id=${reference}`} className="inline-flex min-h-11 items-center rounded-xl bg-blue-700 px-4 text-sm font-bold text-white">{dt('Ndiq lajmin')}</Link>
           </div>
-          <p className="mt-6 text-xs text-slate-500">{dt('Redaksia e shqyrton. Nuk publikohet siç është dërguar: nëse mbahet, e shkruajmë vetë si artikull.')}</p>
+          <p className="mt-6 text-xs text-slate-600 dark:text-slate-400">{dt('Redaksia e shqyrton. Nuk publikohet siç është dërguar: nëse mbahet, e shkruajmë vetë si artikull.')}</p>
         </div>
       </div>
     );
@@ -150,7 +150,7 @@ export default function LajmeroPage() {
         <div>
           <label className={label} htmlFor="tip-body">{dt('Çfarë dini? Kush, çfarë, ku, kur')}</label>
           <textarea id="tip-body" className={input} rows={8} maxLength={6000} value={form.body} onChange={e => set('body', e.target.value)} />
-          <p className="mt-1 text-[11px] text-slate-500">{form.body.trim().length}/40+ {dt('shenja')}</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{form.body.trim().length}/40+ {dt('shenja')}</p>
           {err('body')}
         </div>
         <div>
@@ -168,11 +168,11 @@ export default function LajmeroPage() {
               </div>
             ))}
             {media.length < MAX_MEDIA && (
-              <button type="button" data-tour="tip-media" onClick={() => fileRef.current?.click()} className="flex h-24 w-32 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-xs font-bold text-slate-500 hover:border-blue-500 dark:border-white/20"><ImagePlus className="h-5 w-5" aria-hidden="true" />{dt('Shto')}</button>
+              <button type="button" data-tour="tip-media" onClick={() => fileRef.current?.click()} className="flex h-24 w-32 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-xs font-bold text-slate-600 dark:text-slate-400 hover:border-blue-500 dark:border-white/20"><ImagePlus className="h-5 w-5" aria-hidden="true" />{dt('Shto')}</button>
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple className="hidden" onChange={e => void addFiles(e.target.files)} />
-          <p className="mt-1 text-[11px] text-slate-500">{Math.round(total / 1024)} KB · {dt('fotot zvogëlohen automatikisht')}</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{Math.round(total / 1024)} KB · {dt('fotot zvogëlohen automatikisht')}</p>
           {err('media')}
         </div>
 
@@ -188,7 +188,7 @@ export default function LajmeroPage() {
               <input className={input} placeholder={dt('Telefoni')} value={form.contactPhone} onChange={e => set('contactPhone', e.target.value)} />
             </div>
           )}
-          <p className="mt-2 text-[11px] text-slate-500">{dt('Kontakti, nëse e jepni, e sheh vetëm redaksia dhe nuk publikohet kurrë.')}</p>
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{dt('Kontakti, nëse e jepni, e sheh vetëm redaksia dhe nuk publikohet kurrë.')}</p>
         </fieldset>
 
         {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">{error}</p>}

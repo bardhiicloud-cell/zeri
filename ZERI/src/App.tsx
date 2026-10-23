@@ -6,7 +6,9 @@ import { dt } from '@/src/lib/dt';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import ReactGA from 'react-ga4';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { isKnownPagePath, isLocalePrefix } from './lib/knownRoutes';
+import { DEFAULT_DESCRIPTION, ROUTE_DESCRIPTIONS } from './lib/routeDescriptions';
 import { usePageMeta } from './lib/usePageMeta';
 import { parseLocalePath } from './lib/seo';
 import { analyzeTheme } from './lib/themePreference';
@@ -143,7 +145,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/detailed-registry': 'Regjistri i Raporteve',
   '/regjistri': 'Regjistri i Raporteve',
   '/registry': 'Regjistri i Raporteve',
-  '/trackid': 'Raportet e mia',
+  '/trackid': 'Gjej raportin me Track ID',
   '/lajmero': 'Lajmëro',
   '/moderimi-im': 'Moderimi i llogarisë sime',
   '/verifikimi': 'Kërko verifikimin',
@@ -204,6 +206,16 @@ export function RuntimeTranslation() {
   return null;
 }
 
+/**
+ * The shell for `/:lang/...`. `:lang` matches any single segment, so without this
+ * check `/nuk-ekziston` rendered the home page (a soft 404). A segment that is not
+ * a language prefix gets the real 404 page inside the same shell.
+ */
+function LangScope() {
+  const { lang } = useParams();
+  return <AppLayout>{isLocalePrefix(lang) ? undefined : <NotFoundPage />}</AppLayout>;
+}
+
 export function RouteTitle() {
   const { pathname } = useLocation();
   // Subscribing to the language re-renders this on a language switch, so the
@@ -215,7 +227,7 @@ export function RouteTitle() {
   const key = pagePath.length > 1 ? pagePath.replace(/\/+$/, '') : pagePath;
   // Chapters and entries of the Kosovo archives set their own, more specific title; this is the fallback.
   const title = ROUTE_TITLES[key] ?? (key.startsWith('/kosova/') ? ROUTE_TITLES['/kosova'] : key.startsWith('/historia-e-uck/') ? ROUTE_TITLES['/historia-e-uck'] : undefined);
-  usePageMeta(dt(title ?? 'Faqja nuk u gjet', language));
+  usePageMeta(dt(title ?? 'Faqja nuk u gjet', language), title === undefined ? undefined : dt(ROUTE_DESCRIPTIONS[key] ?? (key.startsWith('/kosova/') ? ROUTE_DESCRIPTIONS['/kosova'] : key.startsWith('/historia-e-uck/') ? ROUTE_DESCRIPTIONS['/historia-e-uck'] : DEFAULT_DESCRIPTION), language), { noindex: title === undefined && !isKnownPagePath(pathname) });
   return null;
 }
 
@@ -855,12 +867,11 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/forum" element={<Navigate to="/" replace />} />
               <Route path="/detailed-registry" element={<DetailedRegistryPage />} />
               {/* One page for "Raportet e mia" and the Track ID search; the full history stays at /trackid/detaje. */}
-              <Route path="/trackid" element={<ReportsHubPage />} />
+              <Route path="/trackid" element={<ReportsHubPage mode="track" />} />
               <Route path="/trackid/detaje" element={<TrackIdPage />} />
-              <Route path="/raportet-e-mia" element={<ReportsHubPage />} />
+              <Route path="/raportet-e-mia" element={<ReportsHubPage mode="mine" />} />
               <Route path="/lajmero" element={<LajmeroPage />} />
               <Route path="/moderimi-im" element={<MyModerationPage />} />
               <Route path="/verifikimi" element={<VerificationRequestPage />} />
@@ -875,7 +886,6 @@ export default function App() {
               <Route path="/semundjet" element={<HealthRegistryPage />} />
               <Route path="/sondazhet" element={<PollsPage />} />
               <Route path="/sondazhe" element={<PollsPage />} />
-              <Route path="/buxheti" element={<Navigate to="/" replace />} />
               <Route path="/komunat" element={<KomunatPage />} />
               <Route path="/sherbimet" element={<SherbimetPage />} />
               <Route path="/Idea" element={<IdeaPage />} />
@@ -913,13 +923,12 @@ export default function App() {
               is validated by LanguageUrlSync, and an unknown prefix falls through
               to the catch-all rather than rendering a half-translated page.
             */}
-            <Route path="/:lang" element={<AppLayout />}>
+            <Route path="/:lang" element={<LangScope />}>
               <Route index element={<Dashboard />} />
-              <Route path="forum" element={<Navigate to="/" replace />} />
               <Route path="detailed-registry" element={<DetailedRegistryPage />} />
-              <Route path="trackid" element={<ReportsHubPage />} />
+              <Route path="trackid" element={<ReportsHubPage mode="track" />} />
               <Route path="trackid/detaje" element={<TrackIdPage />} />
-              <Route path="raportet-e-mia" element={<ReportsHubPage />} />
+              <Route path="raportet-e-mia" element={<ReportsHubPage mode="mine" />} />
               <Route path="lajmero" element={<LajmeroPage />} />
               <Route path="moderimi-im" element={<MyModerationPage />} />
               <Route path="verifikimi" element={<VerificationRequestPage />} />
@@ -933,7 +942,6 @@ export default function App() {
               <Route path="shendetesia" element={<HealthRegistryPage />} />
               <Route path="semundjet" element={<HealthRegistryPage />} />
               <Route path="sondazhet" element={<PollsPage />} />
-              <Route path="buxheti" element={<Navigate to="/" replace />} />
               <Route path="komunat" element={<KomunatPage />} />
               <Route path="sherbimet" element={<SherbimetPage />} />
               <Route path="Idea" element={<IdeaPage />} />
@@ -961,6 +969,7 @@ export default function App() {
               <Route path="lajmet" element={<LajmePage />} />
               <Route path="kontakte" element={<KontaktPage />} />
               <Route path="rreth-nesh" element={<RrethProjektitPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
             <Route path="/komuna-panel" element={<Navigate to="/komuna" replace />} />
             <Route path="/komuna" element={<MunicipalityPanelPage />} />

@@ -109,7 +109,7 @@ export function HealthCaseWizard({
         {STEPS.map((item, index) => (
           <li key={item.id} className="flex flex-1 flex-col gap-1.5" aria-current={index === step ? 'step' : undefined}>
             <span className={cn('h-1.5 rounded-full transition-colors', index <= step ? 'bg-rose-500' : 'bg-slate-200 dark:bg-zinc-700')} />
-            <span className={cn('text-[10px] font-bold uppercase tracking-wider', index === step ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400')}>
+            <span className={cn('text-xs font-bold uppercase tracking-wider', index === step ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400')}>
               {index + 1}. {dt(item.label)}
             </span>
           </li>
@@ -153,7 +153,7 @@ export function HealthCaseWizard({
                     <span className="mt-3 block text-sm font-black text-slate-900 dark:text-white">{dt(option.title)}</span>
                     <ul className="mt-2 space-y-1">
                       {option.points.map((point) => (
-                        <li key={point} className="flex gap-1.5 text-[11.5px] leading-snug text-slate-600 dark:text-slate-400">
+                        <li key={point} className="flex gap-1.5 text-xs leading-snug text-slate-600 dark:text-slate-400">
                           <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" aria-hidden="true" />{dt(point)}
                         </li>
                       ))}
@@ -162,7 +162,7 @@ export function HealthCaseWizard({
                 );
               })}
             </div>
-            <p className="flex gap-2 rounded-xl bg-slate-50 p-3 text-[11.5px] leading-relaxed text-slate-600 dark:bg-zinc-800/60 dark:text-slate-400">
+            <p className="flex gap-2 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600 dark:bg-zinc-800/60 dark:text-slate-400">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
               {dt('Rasti nuk publikohet kurrë. Të dhënat mjekësore shihen vetëm nga stafi i autorizuar. Mos shkruani emra në përshkrim.')}
             </p>
@@ -222,7 +222,7 @@ export function HealthCaseWizard({
                   )}
                 </div>
               ) : (
-                <p className="self-end rounded-xl bg-slate-50 p-3 text-[11.5px] leading-snug text-slate-500 dark:bg-zinc-800/60">
+                <p className="self-end rounded-xl bg-slate-50 p-3 text-xs leading-snug text-slate-500 dark:bg-zinc-800/60">
                   {dt('Në regjistrimin anonim ruhet vetëm komuna, që rasti të drejtohet te institucioni i duhur.')}
                 </p>
               )}
@@ -241,12 +241,12 @@ export function HealthCaseWizard({
                     <button key={item.id} type="button" role="radio" aria-checked={selected} onClick={() => set('category', item.id)}
                       className={cn('flex flex-col items-center gap-1.5 rounded-xl border-2 p-2.5 text-center transition', selected ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30' : 'border-slate-200 hover:border-slate-300 dark:border-zinc-700')}>
                       <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg', item.tile)}><item.icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
-                      <span className="text-[11px] font-bold leading-tight text-slate-800 dark:text-slate-200">{dt(item.name)}</span>
+                      <span className="text-xs font-bold leading-tight text-slate-800 dark:text-slate-200">{dt(item.name)}</span>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-1.5 text-[11px] text-slate-500">{dt(cat.hint)}</p>
+              <p className="mt-1.5 text-xs text-slate-500">{dt(cat.hint)}</p>
             </div>
 
             <div>
@@ -260,7 +260,7 @@ export function HealthCaseWizard({
                       <span className="flex items-center gap-2 text-xs font-black text-slate-900 dark:text-white">
                         <span className={cn('h-2.5 w-2.5 rounded-full', item.dot)} />{dt(item.label)}
                       </span>
-                      <span className="mt-1 block text-[11px] leading-snug text-slate-500">{dt(item.description)}</span>
+                      <span className="mt-1 block text-xs leading-snug text-slate-500">{dt(item.description)}</span>
                     </button>
                   );
                 })}
@@ -283,7 +283,7 @@ export function HealthCaseWizard({
               {needs.length > 0 && (
                 <ul className="mb-2 flex flex-wrap gap-1.5">
                   {needs.map((need) => (
-                    <li key={need} className="inline-flex items-center gap-1 rounded-full bg-rose-50 py-1 pl-2.5 pr-1.5 text-[11.5px] font-bold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                    <li key={need} className="inline-flex items-center gap-1 rounded-full bg-rose-50 py-1 pl-2.5 pr-1.5 text-xs font-bold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                       {need}
                       <button type="button" onClick={() => setNeeds(needs.filter((item) => item !== need))} aria-label={`${dt('Hiq')} ${need}`} className="rounded-full p-0.5 hover:bg-rose-100 dark:hover:bg-rose-900/50"><X className="h-3 w-3" /></button>
                     </li>
@@ -298,7 +298,7 @@ export function HealthCaseWizard({
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {NEED_SUGGESTIONS[form.category].filter((s) => !needs.includes(s)).map((suggestion) => (
-                  <button key={suggestion} type="button" onClick={() => addNeed(suggestion)} className="rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-rose-400 hover:text-rose-700 dark:border-zinc-600 dark:text-slate-300">
+                  <button key={suggestion} type="button" onClick={() => addNeed(suggestion)} className="rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:border-rose-400 hover:text-rose-700 dark:border-zinc-600 dark:text-slate-300">
                     + {dt(suggestion)}
                   </button>
                 ))}
@@ -325,14 +325,14 @@ export function HealthCaseWizard({
                         {form.documentType === 'pdf' ? <FileText className="h-4 w-4 shrink-0 text-rose-600" /> : <Camera className="h-4 w-4 shrink-0 text-rose-600" />}
                         <span className="truncate">{form.documentName || dt('Dokumenti u ngarkua')}</span>
                       </span>
-                      <button type="button" onClick={() => setForm((prev) => ({ ...prev, imageUrl: '', documentName: '' }))} className="text-[11px] font-bold text-rose-600 hover:underline">{dt('Hiqe')}</button>
+                      <button type="button" onClick={() => setForm((prev) => ({ ...prev, imageUrl: '', documentName: '' }))} className="text-xs font-bold text-rose-600 hover:underline">{dt('Hiqe')}</button>
                     </div>
                   ) : (
                     <button type="button" disabled={isUploadingDocument} onClick={() => fileRef.current?.click()}
                       className="flex w-full flex-col items-center gap-1 rounded-xl border-2 border-dashed border-slate-300 p-4 text-center hover:border-rose-400 dark:border-zinc-600">
                       <Upload className="h-5 w-5 text-slate-400" aria-hidden="true" />
                       <span className="text-xs font-bold">{isUploadingDocument ? dt('Duke ngarkuar…') : dt('Ngarko epikrizë ose recetë')}</span>
-                      <span className="text-[10px] text-slate-400">{dt('JPG, PNG, WEBP ose PDF · deri 5MB · private')}</span>
+                      <span className="text-xs text-slate-400">{dt('JPG, PNG, WEBP ose PDF · deri 5MB · private')}</span>
                     </button>
                   )}
                 </div>
@@ -364,9 +364,9 @@ export function HealthCaseWizard({
                 <span className={cn('flex h-11 w-11 items-center justify-center rounded-xl', cat.tile)}><cat.icon className="h-5 w-5" aria-hidden="true" /></span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-slate-900 dark:text-white">{form.diagnosis || '—'}</p>
-                  <p className="text-[11px] text-slate-500">{dt(cat.name)}</p>
+                  <p className="text-xs text-slate-500">{dt(cat.name)}</p>
                 </div>
-                <span className={cn('rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider', urg.pill)}>{dt(urg.label)}</span>
+                <span className={cn('rounded-full border px-2.5 py-1 text-xs font-black uppercase tracking-wider', urg.pill)}>{dt(urg.label)}</span>
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 p-3 text-xs sm:grid-cols-3">
                 {[
@@ -378,7 +378,7 @@ export function HealthCaseWizard({
                   [dt('Nevojat'), needs.length ? needs.join(', ') : '—'],
                 ].map(([k, v]) => (
                   <div key={k} className="min-w-0">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{k}</dt>
+                    <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{k}</dt>
                     <dd className="mt-0.5 truncate font-semibold text-slate-800 dark:text-slate-200" title={v}>{v}</dd>
                   </div>
                 ))}
