@@ -47,7 +47,7 @@
     "hpp": "^0.2.3",
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
-    "lucide-react": "^0.546.0",
+    "lucide-react": "^1.61.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-ga4": "^3.0.1",
