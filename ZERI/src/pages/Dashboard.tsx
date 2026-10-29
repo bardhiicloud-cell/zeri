@@ -1,7 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { BrandMark } from '@/src/components/BrandLogo';
 import { NationalHero } from '@/src/components/NationalHero';
-const HeritageHomeBand = React.lazy(() => import('@/src/components/heritage/HomeBand').then((m) => ({ default: m.HeritageHomeBand })));
 import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
@@ -31,6 +30,8 @@ import { QuickAccessGrid } from '../components/dashboard/QuickAccessGrid';
 import { DashboardEngagementBlock } from '../components/dashboard/DashboardEngagementBlock.tsx';
 import { SocialFollowBlock } from '../components/SocialFollowBlock';
 import { getReportTopicLabel } from '../lib/reportTopics';
+
+const HeritageHomeBand = React.lazy(() => import('@/src/components/heritage/HomeBand').then((m) => ({ default: m.HeritageHomeBand })));
 
 /**
  * Do not download below-the-fold modules until the visitor approaches them.
