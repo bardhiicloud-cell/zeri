@@ -6,7 +6,6 @@ import { useStore } from '../../lib/store';
 import { useLanguage } from '../../lib/LanguageContext';
 import { NetworkStatus } from './NetworkStatus';
 import { NearbyAlerts } from './NearbyAlerts';
-import { InstallPrompt } from './InstallPrompt';
 import { AppFooter } from '../AppFooter.tsx';
 import AdBanner from '../AdBanner.tsx';
 import { TopNavbar } from './TopNavbar.tsx';
@@ -158,7 +157,6 @@ export function AppLayout({ children }: { children?: ReactNode } = {}) {
       </div>
 
       {!isForumPage && !isNewsPage && <NearbyAlerts />}
-      <InstallPrompt />
 
       {/*
         The top bar exists on desktop only. On mobile the brand, the search and
