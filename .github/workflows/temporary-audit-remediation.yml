@@ -22,7 +22,7 @@ jobs:
         run: npm ci
       - name: Apply non-breaking security updates
         working-directory: ZERI
-        run: npm audit fix
+        run: npm audit fix --omit=dev
       - name: Verify production dependency audit
         working-directory: ZERI
         run: npm audit --omit=dev --audit-level=high
