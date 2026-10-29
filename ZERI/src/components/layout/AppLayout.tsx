@@ -1,12 +1,11 @@
 import { dt } from '@/src/lib/dt';
-import { InstallAppBanner } from '../InstallAppPrompt';
+import { InstallPrompt } from './InstallPrompt';
 import { Suspense, lazy, useState, useEffect, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../../lib/store';
 import { useLanguage } from '../../lib/LanguageContext';
 import { NetworkStatus } from './NetworkStatus';
 import { NearbyAlerts } from './NearbyAlerts';
-import { InstallPrompt } from './InstallPrompt';
 import { AppFooter } from '../AppFooter.tsx';
 import AdBanner from '../AdBanner.tsx';
 import { TopNavbar } from './TopNavbar.tsx';
@@ -158,7 +157,6 @@ export function AppLayout({ children }: { children?: ReactNode } = {}) {
       </div>
 
       {!isForumPage && !isNewsPage && <NearbyAlerts />}
-      <InstallPrompt />
 
       {/*
         The top bar exists on desktop only. On mobile the brand, the search and
@@ -248,7 +246,7 @@ export function AppLayout({ children }: { children?: ReactNode } = {}) {
             </Suspense>
           </div>
           <BroadcastPopup />
-          <InstallAppBanner />
+          <InstallPrompt />
           {!isForumPage && !isNewsPage && <AppFooter />}
         </div>
       </main>
