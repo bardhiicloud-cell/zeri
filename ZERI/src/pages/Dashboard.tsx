@@ -1,6 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { BrandMark } from '@/src/components/BrandLogo';
-const NationalHero = React.lazy(() => import('@/src/components/NationalHero').then((m) => ({ default: m.NationalHero })));
+import { NationalHero } from '@/src/components/NationalHero';
 const HeritageHomeBand = React.lazy(() => import('@/src/components/heritage/HomeBand').then((m) => ({ default: m.HeritageHomeBand })));
 import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../lib/store';
@@ -271,12 +271,10 @@ export default function Dashboard() {
         </form>
 
         {isNationalScope ? (
-          <React.Suspense fallback={<div className="min-h-[300px] sm:min-h-[340px] rounded-[28px] bg-slate-100 dark:bg-slate-900" aria-hidden="true" />}>
-            <NationalHero
-              onReport={() => navigate('/raporto')}
-              onViewReports={() => document.getElementById('recent-reports-table')?.scrollIntoView({ behavior: 'smooth' })}
-            />
-          </React.Suspense>
+          <NationalHero
+            onReport={() => navigate('/raporto')}
+            onViewReports={() => document.getElementById('recent-reports-table')?.scrollIntoView({ behavior: 'smooth' })}
+          />
         ) : (
         <div className="luxury-hero relative w-full min-h-[210px] sm:min-h-[230px] lg:min-h-[250px] rounded-[28px] overflow-hidden text-white flex flex-col justify-start p-4 sm:p-5 lg:p-6">
 
