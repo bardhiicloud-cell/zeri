@@ -45,21 +45,8 @@ export function InstallAppBanner() {
   // Decided once, on arrival: recording the offer must not close the sheet that is showing it.
   const shouldOffer = useRef(mayOfferNow).current;
 
-  const eligible = shouldOffer && (needsManual || inAppBrowser);
-
-  // Android/Chrome: no banner at all. Browsers only open the install dialog from a real touch, so the
-  // first tap after arrival opens the system "Add to Home screen" dialog by itself.
-  useEffect(() => {
-    if (!shouldOffer || !canPrompt) return undefined;
-    const onTouch = () => {
-      document.removeEventListener('pointerup', onTouch, true);
-      // Asked once: whatever the answer, the system dialog is not opened again.
-      markOffered();
-      void install();
-    };
-    document.addEventListener('pointerup', onTouch, true);
-    return () => document.removeEventListener('pointerup', onTouch, true);
-  }, [shouldOffer, canPrompt, install, markOffered]);
+  // One deliberate, delayed offer on phones. Desktop users keep the footer install control.
+  const eligible = shouldOffer && (canPrompt || needsManual || inAppBrowser);
 
   useEffect(() => {
     if (!eligible) return undefined;
@@ -108,6 +95,16 @@ export function InstallAppBanner() {
 
         {!inAppBrowser && (
           <div className="mt-3 flex items-center gap-2">
+            {canPrompt && (
+              <button
+                type="button"
+                onClick={() => { markOffered(); void install(); close(); }}
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 text-sm font-extrabold text-white"
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {dt('Instalo aplikacionin')}
+              </button>
+            )}
             {needsManual && (
               <button
                 type="button"
