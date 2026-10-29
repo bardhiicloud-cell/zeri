@@ -119,7 +119,7 @@ export default function Dashboard() {
             Kthe te Pamja Kryesore ↗
           </button>
         </div>
-        <React.Suspense fallback={<div className="min-h-[60vh]" aria-label={dt('Duke ngarkuar pamjen rezervë...')} />}>
+        <React.Suspense fallback={<div className="min-h-[60vh]" aria-label={dt('Duke ngarkuar seksionin...')} />}>
           <DashboardFeed />
         </React.Suspense>
       </div>
