@@ -1,5 +1,5 @@
 import { dt } from '@/src/lib/dt';
-import { InstallAppBanner } from '../InstallAppPrompt';
+import { InstallPrompt } from './InstallPrompt';
 import { Suspense, lazy, useState, useEffect, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../../lib/store';
@@ -246,7 +246,7 @@ export function AppLayout({ children }: { children?: ReactNode } = {}) {
             </Suspense>
           </div>
           <BroadcastPopup />
-          <InstallAppBanner />
+          <InstallPrompt />
           {!isForumPage && !isNewsPage && <AppFooter />}
         </div>
       </main>
