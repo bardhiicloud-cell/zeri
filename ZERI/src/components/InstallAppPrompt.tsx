@@ -83,7 +83,7 @@ export function InstallAppBanner() {
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
               {inAppBrowser
                 ? dt('Hape këtë faqe në Safari ose Chrome për ta shtuar në ekranin kryesor.')
-                : dt('Shto Zërin në ekranin kryesor për qasje më të shpejtë. Kjo është kërkesa e vetme automatike.')}
+                : dt('Hape nga ekrani kryesor, pa shiritin e shfletuesit, me njoftime dhe më shpejt.')}
             </p>
           </div>
           <button type="button" onClick={close} aria-label={dt('Mbyll')} className="-mr-1 -mt-1 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10">
@@ -102,7 +102,7 @@ export function InstallAppBanner() {
                 className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 text-sm font-extrabold text-white"
               >
                 <Download className="h-4 w-4" aria-hidden="true" />
-                {dt('Instalo Zërin')}
+                {dt('Instalo aplikacionin')}
               </button>
             )}
             {needsManual && (
