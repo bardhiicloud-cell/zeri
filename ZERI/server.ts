@@ -2920,6 +2920,10 @@ Kthe VETËM JSON me çelësin "alerts", që përmban një array të stringjeve.`
         const normalized = filePath.replace(/\\/g, '/');
         if (normalized.includes('/assets/') || normalized.includes('/fonts/')) {
           res.setHeader('Cache-Control', immutableMaxAge);
+        } else if (/\.(?:avif|gif|jpe?g|png|svg|webp|ico)$/i.test(normalized)) {
+          // Public root images have stable names, so cache them for a month but
+          // allow background revalidation instead of marking them immutable.
+          res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
         } else if (normalized.endsWith('/index.html')) {
           res.setHeader('Cache-Control', revalidate);
         }
