@@ -45,21 +45,8 @@ export function InstallAppBanner() {
   // Decided once, on arrival: recording the offer must not close the sheet that is showing it.
   const shouldOffer = useRef(mayOfferNow).current;
 
-  const eligible = shouldOffer && (needsManual || inAppBrowser);
-
-  // Android/Chrome: no banner at all. Browsers only open the install dialog from a real touch, so the
-  // first tap after arrival opens the system "Add to Home screen" dialog by itself.
-  useEffect(() => {
-    if (!shouldOffer || !canPrompt) return undefined;
-    const onTouch = () => {
-      document.removeEventListener('pointerup', onTouch, true);
-      // Asked once: whatever the answer, the system dialog is not opened again.
-      markOffered();
-      void install();
-    };
-    document.addEventListener('pointerup', onTouch, true);
-    return () => document.removeEventListener('pointerup', onTouch, true);
-  }, [shouldOffer, canPrompt, install, markOffered]);
+  // One deliberate, delayed offer on phones. Desktop users keep the footer install control.
+  const eligible = shouldOffer && (canPrompt || needsManual || inAppBrowser);
 
   useEffect(() => {
     if (!eligible) return undefined;
@@ -96,7 +83,7 @@ export function InstallAppBanner() {
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
               {inAppBrowser
                 ? dt('Hape këtë faqe në Safari ose Chrome për ta shtuar në ekranin kryesor.')
-                : dt('Hape nga ekrani kryesor, pa shiritin e shfletuesit, me njoftime dhe më shpejt.')}
+                : dt('Shto Zërin në ekranin kryesor për qasje më të shpejtë. Kjo është kërkesa e vetme automatike.')}
             </p>
           </div>
           <button type="button" onClick={close} aria-label={dt('Mbyll')} className="-mr-1 -mt-1 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10">
@@ -108,6 +95,16 @@ export function InstallAppBanner() {
 
         {!inAppBrowser && (
           <div className="mt-3 flex items-center gap-2">
+            {canPrompt && (
+              <button
+                type="button"
+                onClick={() => { markOffered(); void install(); close(); }}
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 text-sm font-extrabold text-white"
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {dt('Instalo Zërin')}
+              </button>
+            )}
             {needsManual && (
               <button
                 type="button"
