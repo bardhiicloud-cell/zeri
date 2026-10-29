@@ -67,7 +67,7 @@ function DeferredSection({
 
   return (
     <div ref={ref} className={className}>
-      {visible ? children : <div aria-hidden="true" className="min-h-inherit" />}
+      {visible ? children : <div aria-hidden="true" />}
     </div>
   );
 }
