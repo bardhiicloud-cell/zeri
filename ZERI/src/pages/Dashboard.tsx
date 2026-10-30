@@ -1,7 +1,6 @@
 import { dt } from '@/src/lib/dt';
 import { BrandMark } from '@/src/components/BrandLogo';
 import { NationalHero } from '@/src/components/NationalHero';
-import { HeritageHomeBand } from '@/src/components/heritage/HomeBand';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
@@ -18,10 +17,10 @@ import { cn } from '../lib/utils';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import ReportDetailModal from '../components/ReportDetailModal.tsx';
 import { Report } from '../types';
-import { KosovoDashboardMap } from '../components/KosovoDashboardMap';
+const KosovoDashboardMap = React.lazy(() => import('../components/KosovoDashboardMap').then((m) => ({ default: m.KosovoDashboardMap })));
+const DashboardFeed = React.lazy(() => import('./DashboardFeed'));
 import { useLanguage } from '../lib/LanguageContext';
 import toast from 'react-hot-toast';
-import DashboardFeed from './DashboardFeed';
 import { MunicipalityShield } from '../components/MunicipalityShield';
 import { getMunicipalityHeroImage } from '../lib/municipalityHeroImages';
 import { getMunicipalityPhoto } from '../lib/municipalityPhotos';
@@ -31,6 +30,48 @@ import { QuickAccessGrid } from '../components/dashboard/QuickAccessGrid';
 import { DashboardEngagementBlock } from '../components/dashboard/DashboardEngagementBlock.tsx';
 import { SocialFollowBlock } from '../components/SocialFollowBlock';
 import { getReportTopicLabel } from '../lib/reportTopics';
+
+const HeritageHomeBand = React.lazy(() => import('@/src/components/heritage/HomeBand').then((m) => ({ default: m.HeritageHomeBand })));
+
+/**
+ * Do not download below-the-fold modules until the visitor approaches them.
+ * A fixed minimum height reserves layout space, avoiding a blank-to-content CLS jump.
+ */
+function DeferredSection({
+  children,
+  className = '',
+  rootMargin = '250px 0px',
+}: {
+  children: React.ReactNode;
+  className?: string;
+  rootMargin?: string;
+}) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const node = ref.current;
+    if (!node || visible) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    }, { rootMargin });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible, rootMargin]);
+
+  return (
+    <div ref={ref} className={className}>
+      {visible ? children : <div aria-hidden="true" />}
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { t, language } = useLanguage();
@@ -79,7 +120,9 @@ export default function Dashboard() {
             Kthe te Pamja Kryesore ↗
           </button>
         </div>
-        <DashboardFeed />
+        <React.Suspense fallback={<div className="min-h-[60vh]" aria-label={dt('Duke ngarkuar seksionin...')} />}>
+          <DashboardFeed />
+        </React.Suspense>
       </div>
     );
   }
@@ -324,8 +367,12 @@ export default function Dashboard() {
         </div>
         )}
 
-        {/* Kosovo identity & history archive and the KLA archive: directly under the reporting hero. */}
-        <HeritageHomeBand />
+        {/* Below-the-fold archive cards are loaded only as the visitor approaches them. */}
+        <DeferredSection className="min-h-[220px]" rootMargin="250px 0px">
+          <React.Suspense fallback={<div className="grid min-h-[220px] grid-cols-1 gap-3 md:grid-cols-3 md:gap-4" aria-hidden="true"><div className="min-h-[210px] rounded-2xl bg-slate-100 dark:bg-slate-900" /><div className="min-h-[210px] rounded-2xl bg-slate-100 dark:bg-slate-900" /><div className="min-h-[210px] rounded-2xl bg-slate-100 dark:bg-slate-900" /></div>}>
+            <HeritageHomeBand />
+          </React.Suspense>
+        </DeferredSection>
 
         {/* Primary actions replaced the four KPI counters: those numbers now live on /statistikat. */}
         <QuickAccessGrid />
@@ -426,24 +473,28 @@ export default function Dashboard() {
 
           {/* Left Column (7 cols): Raportimet në hartë (Accurate Kosovo Map) */}
           <div className="lg:col-span-7 flex flex-col">
-            <KosovoDashboardMap
-              reports={scopedReports}
-              selectedMunicipality={activeMunicipality}
-              onMunicipalityChange={handleMunicipalityChange}
-              /**
-               * The link carries the *active* scope, never the hero fallback.
-               * `heroMunicipality` defaults to Prishtinë when nothing is chosen,
-               * so a citizen who had never picked a municipality used to be
-               * handed `/harta?municipality=Prishtinë` — a map filtered to a
-               * city they had not chosen. When the scope is the whole country,
-               * the query string is omitted entirely so the map opens on all 38.
-               */
-              onNavigateToMap={() => navigate(
-                activeMunicipality
-                  ? `/harta?municipality=${encodeURIComponent(activeMunicipality)}`
-                  : '/harta'
-              )}
-            />
+            <DeferredSection className="min-h-[520px]" rootMargin="250px 0px">
+              <React.Suspense fallback={<div className="min-h-[520px] rounded-2xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-900" aria-hidden="true" />}>
+                <KosovoDashboardMap
+                  reports={scopedReports}
+                  selectedMunicipality={activeMunicipality}
+                  onMunicipalityChange={handleMunicipalityChange}
+                  /**
+                   * The link carries the *active* scope, never the hero fallback.
+                   * `heroMunicipality` defaults to Prishtinë when nothing is chosen,
+                   * so a citizen who had never picked a municipality used to be
+                   * handed `/harta?municipality=Prishtinë` — a map filtered to a
+                   * city they had not chosen. When the scope is the whole country,
+                   * the query string is omitted entirely so the map opens on all 38.
+                   */
+                  onNavigateToMap={() => navigate(
+                    activeMunicipality
+                      ? `/harta?municipality=${encodeURIComponent(activeMunicipality)}`
+                      : '/harta'
+                  )}
+                />
+              </React.Suspense>
+            </DeferredSection>
           </div>
 
           {/* Right Column (5 cols): Raportimet më të fundit Table */}

@@ -331,13 +331,13 @@ export default function GuidedTour() {
               : dt('Ju tregojmë shkurt çfarë bën çdo pjesë e kësaj faqeje.')}
           </p>
         </div>
-        <button type="button" onClick={() => { markSeen(ask.id); setAsk(null); bump(n => n + 1); }} aria-label={dt('Mbyll')} className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+        <button type="button" onClick={() => { writeFlag(TOUR_MUTED_KEY); markSeen(ask.id); setAsk(null); bump(n => n + 1); }} aria-label={dt('Mbyll')} className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button type="button" onClick={() => start(ask)} className="min-h-11 rounded-xl bg-blue-700 px-3 text-sm font-black text-white hover:bg-blue-800">{dt('Po, më trego')}</button>
-        <button type="button" onClick={() => { markSeen(ask.id); setAsk(null); bump(n => n + 1); }} className="hidden min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 sm:block dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Jo, faleminderit')}</button>
+        <button type="button" onClick={() => { writeFlag(TOUR_MUTED_KEY); markSeen(ask.id); setAsk(null); bump(n => n + 1); }} className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800">{dt('Jo, faleminderit')}</button>
       </div>
       <div className="mt-2.5 hidden items-center justify-between sm:flex gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
         <span>{dt('Butoni “?” mbetet gjithmonë këtu poshtë.')}</span>
