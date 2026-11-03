@@ -58,7 +58,7 @@
     "react-router-dom": "^7.18.4",
     "recharts": "^3.10.0",
     "sanitize-html": "^2.17.7",
-    "tailwind-merge": "^3.5.0",
+    "tailwind-merge": "^3.7.0",
     "vite": "^6.2.3",
     "zustand": "^5.0.16"
   },
