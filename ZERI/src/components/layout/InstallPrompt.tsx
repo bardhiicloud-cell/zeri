@@ -23,9 +23,9 @@ import { Plus, Share, SquarePlus, X, Check } from 'lucide-react';
  */
 
 const STORAGE_KEY = 'zeri-install-prompt';
-const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
+const GLOBAL_INSTALL_STATE_KEY = 'zeri_install_state_v2';
 const VISITS_BEFORE_PROMPT = 2;
-const MIN_DWELL_MS = 20_000;
+const MIN_DWELL_MS = 25_000;
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -36,24 +36,36 @@ interface Stored {
   visits: number;
   snoozedUntil: number;
   installed: boolean;
+  offered: boolean;
 }
 
 function readStored(): Stored {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const globalRaw = JSON.parse(localStorage.getItem(GLOBAL_INSTALL_STATE_KEY) || '{}');
     return {
       visits: Number(raw.visits) || 0,
       snoozedUntil: Number(raw.snoozedUntil) || 0,
-      installed: raw.installed === true,
+      installed: raw.installed === true || globalRaw.installed === true,
+      offered: raw.offered === true || globalRaw.offered === true || Number(globalRaw.dismissals) > 0 || Number(raw.snoozedUntil) > 0,
     };
   } catch {
-    return { visits: 0, snoozedUntil: 0, installed: false };
+    return { visits: 0, snoozedUntil: 0, installed: false, offered: false };
   }
 }
 
 function writeStored(patch: Partial<Stored>) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...readStored(), ...patch }));
+    const next = { ...readStored(), ...patch };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    if (patch.offered || patch.installed) {
+      const globalRaw = JSON.parse(localStorage.getItem(GLOBAL_INSTALL_STATE_KEY) || '{}');
+      localStorage.setItem(GLOBAL_INSTALL_STATE_KEY, JSON.stringify({
+        ...globalRaw,
+        offered: true,
+        ...(patch.installed ? { installed: true } : { dismissals: (Number(globalRaw.dismissals) || 0) + 1 }),
+      }));
+    }
   } catch {
     /* private mode: the prompt just falls back to once per page load */
   }
@@ -137,7 +149,7 @@ export function InstallPrompt() {
     const isPhone = window.matchMedia('(max-width: 767px)').matches && window.matchMedia('(pointer: coarse)').matches;
     const stored = readStored();
     writeStored({ visits: stored.visits + 1 });
-    if (!isPhone || stored.installed || stored.snoozedUntil > Date.now()) return;
+    if (!isPhone || stored.installed || stored.offered) return;
     setEligible(stored.visits + 1 >= VISITS_BEFORE_PROMPT);
   }, []);
 
@@ -147,7 +159,7 @@ export function InstallPrompt() {
       setDeferred(e as BeforeInstallPromptEvent);
     };
     const onInstalled = () => {
-      writeStored({ installed: true });
+      writeStored({ installed: true, offered: true });
       setDeferred(null);
       setDone(true);
       setOpen(true);
@@ -175,13 +187,18 @@ export function InstallPrompt() {
           localStorage.getItem('zeri_age_verified_v1') === 'passed' &&
           localStorage.getItem(CONSENT_STORAGE_KEY) !== null;
       } catch { /* storage blocked: stay quiet */ }
-      if (gatesDone) { window.clearInterval(id); setOpen(true); }
+      if (gatesDone) {
+        window.clearInterval(id);
+        writeStored({ offered: true });
+        setOpen(true);
+      }
     }, 2000);
     return () => window.clearInterval(id);
   }, [eligible, canInstall, done, locationAnswered]);
 
   const snooze = useCallback(() => {
-    writeStored({ snoozedUntil: Date.now() + SNOOZE_MS });
+    writeStored({ offered: true, snoozedUntil: Number.MAX_SAFE_INTEGER });
+    setEligible(false);
     setOpen(false);
   }, []);
 

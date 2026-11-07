@@ -114,22 +114,11 @@ export default function GuidedTour() {
   useEffect(() => { setTour(null); setAsk(null); setMenuOpen(false); }, [pathname]);
   useEffect(() => { setAsk(null); }, [available?.id]);
 
-  // First visit: ask once, after the page has settled. The platform tour is offered before any page guide.
+  // Tutorials never auto-popup uninvited: citizens open the guide only when they
+  // explicitly click the "?" launcher button or trigger OPEN_TOUR_EVENT from Help.
   useEffect(() => {
-    if (!available || tour || ask || asked.current || readMuted()) return;
-    const offer = !readSeen(PLATFORM_TOUR_ID)
-      ? tourById(PLATFORM_TOUR_ID)
-      : (!available.generic && !readSeen(available.id) ? available : null);
-    if (!offer) return;
-    const timer = window.setInterval(() => {
-      // Never over another dialog (the age gate, a consent prompt): retry until it is gone.
-      if (document.querySelector('[aria-modal="true"], [role="dialog"]:not([data-tour-ui])')) return;
-      asked.current = true;
-      setAsk(offer);
-      window.clearInterval(timer);
-    }, 1500);
-    return () => window.clearInterval(timer);
-  }, [available, tour, ask]);
+    if (ask && readMuted()) setAsk(null);
+  }, [ask]);
 
   // Anything can open a tour: the help page, a link, the "?" menu.
   useEffect(() => {
@@ -302,11 +291,9 @@ export default function GuidedTour() {
         aria-expanded={menuOpen}
         aria-label={dt('Udhëzues: ') + dt(available.label)}
         title={dt('Udhëzues')}
-        className={`relative flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-lg ring-2 ring-white transition active:scale-95 dark:ring-slate-900 ${platformSeen ? 'w-11' : 'w-11 lg:w-auto lg:px-4'}`}
+        className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-lg ring-2 ring-white transition active:scale-95 dark:ring-slate-900"
       >
-        {!platformSeen && !touring && <span aria-hidden="true" className="absolute inset-0 rounded-full bg-blue-400/40 motion-safe:animate-ping motion-safe:[animation-duration:2.6s]" />}
         <HelpCircle className="relative h-6 w-6" aria-hidden="true" />
-        {!platformSeen && <span className="relative hidden text-xs font-black lg:inline">{dt('Udhëzues')}</span>}
       </button>
     </div>
   );

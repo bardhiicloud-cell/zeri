@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import {
-  AlertTriangle, Building2, CalendarDays, Check, CheckCircle2, ChevronRight, Copy, FileText, FolderOpen, HeartPulse,
-  Loader2, MapPin, Megaphone, MessageSquareText, PlusCircle, Search, Tag, Wallet, X, XCircle,
+  AlertTriangle, Building2, CalendarDays, Camera, Check, CheckCircle2, ChevronRight, Copy, FileText, FolderOpen, HeartPulse,
+  Loader2, MapPin, Megaphone, MessageSquareText, PlusCircle, Search, Sparkles, Tag, Wallet, X, XCircle,
 } from 'lucide-react';
 import { dt } from '@/src/lib/dt';
 import { auth, db } from '../lib/firebase';
@@ -15,6 +15,7 @@ import { lookupTrackingId, normalizeTrackingId, TRACKING_ID_PATTERN, TrackLookup
 import { lookupDonationDirect } from '../lib/directSubmissions';
 import { apiReady } from '../lib/apiAvailability';
 import { fetchWithTimeout, isJsonResponse } from '../lib/timeouts';
+import { scanImageForTrackId } from '../lib/aiMediaScanner';
 
 /**
  * "Raportet e mia" and "Gjej raportin me Track ID", one page.
@@ -222,8 +223,10 @@ export default function ReportsHubPage({ mode = 'mine' }: { mode?: 'track' | 'mi
   const [searchParams, setSearchParams] = useSearchParams();
   const [input, setInput] = useState(searchParams.get('id') || '');
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
+  const [scanningPhoto, setScanningPhoto] = useState(false);
   const resultRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const photoScanInputRef = useRef<HTMLInputElement | null>(null);
 
   const [deviceRows] = useState<Row[]>(() => getGuestReportHistory().map(item => ({
     trackingId: item.trackingId,
@@ -292,13 +295,40 @@ export default function ReportsHubPage({ mode = 'mine' }: { mode?: 'track' | 'mi
   const close = () => { setPhase({ kind: 'idle' }); setSearchParams({}, { replace: true }); };
   const openId = phase.kind === 'found' ? phase.report.trackingId : phase.kind === 'sector' ? phase.status.reference : phase.kind === 'loading' ? phase.id : null;
 
+  const handlePhotoTrackIdScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setScanningPhoto(true);
+    setPhase({ kind: 'idle' });
+    try {
+      const res = await scanImageForTrackId(file);
+      if (!res.ok || !res.trackingId) {
+        setPhase({
+          kind: 'error',
+          message: res.reasonSq || dt('Nuk u gjet asnjë kod Track ID (ZQ- / LJ- / DN- / HC-) në këtë foto apo dokument.'),
+        });
+        return;
+      }
+      setInput(res.trackingId);
+      void search(res.trackingId);
+    } catch (err) {
+      setPhase({
+        kind: 'error',
+        message: err instanceof Error ? err.message : dt('Skanimi i fotos me AI nuk u krye. Provoni përsëri.'),
+      });
+    } finally {
+      setScanningPhoto(false);
+    }
+  };
+
   return (
     <div className="page-shell min-h-screen bg-slate-50 px-4 pb-32 pt-6 dark:bg-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl space-y-5">
         <header className="rounded-3xl bg-gradient-to-br from-[#0b1b3f] via-[#13306b] to-[#1d4ed8] p-5 text-white shadow-lg">
           <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-blue-200"><FolderOpen className="h-4 w-4" aria-hidden="true" />{mode === 'track' ? dt('Ndjekja e raportit') : dt('Llogaria ime')}</p>
           <h1 className="mt-1.5 text-2xl font-black">{mode === 'track' ? dt('Gjej raportin me Track ID') : dt('Raportet e mia')}</h1>
-          <p className="mt-1 text-sm text-blue-100">{mode === 'track' ? dt('Shkruani Track ID-në që morët kur dërguat raportin dhe shihni se ku ndodhet. Nuk duhet llogari.') : dt('Ndiqni çdo raport me Track ID. Prekni një raport për të parë ku ndodhet.')}</p>
+          <p className="mt-1 text-sm text-blue-100">{mode === 'track' ? dt('Shkruani Track ID-në ose skanoni me Gemini AI foton/dokumentin ku gjendet kodi juaj.') : dt('Ndiqni çdo raport me Track ID ose me skanim inteligjent të fotos.')}</p>
           <form onSubmit={e => { e.preventDefault(); void search(input); }} className="mt-4 flex gap-2" role="search">
             <label htmlFor="hub-track" className="sr-only">{dt('Track ID')}</label>
             <div className="relative flex-1">
@@ -315,11 +345,30 @@ export default function ReportsHubPage({ mode = 'mine' }: { mode?: 'track' | 'mi
                 className="h-12 w-full rounded-2xl bg-white pl-10 pr-3 font-mono text-sm font-bold text-slate-900! outline-none ring-2 ring-transparent focus:ring-blue-300"
               />
             </div>
-            <button type="submit" aria-label={dt('Kërko')} disabled={phase.kind === 'loading'} className="inline-flex h-12 min-w-12 items-center justify-center gap-2 rounded-2xl bg-white/15 px-4 text-sm font-black text-white ring-1 ring-white/30 hover:bg-white/25 disabled:opacity-60">
+            <button type="submit" aria-label={dt('Kërko')} disabled={phase.kind === 'loading' || scanningPhoto} className="inline-flex h-12 min-w-12 items-center justify-center gap-2 rounded-2xl bg-white/15 px-4 text-sm font-black text-white ring-1 ring-white/30 hover:bg-white/25 disabled:opacity-60">
               {phase.kind === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
               <span className="hidden sm:inline">{dt('Kërko')}</span>
             </button>
           </form>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-1">
+            <input
+              ref={photoScanInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoTrackIdScan}
+              className="hidden"
+            />
+            <button
+              type="button"
+              disabled={scanningPhoto || phase.kind === 'loading'}
+              onClick={() => photoScanInputRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-extrabold text-blue-100 ring-1 ring-white/25 transition hover:bg-white/20 disabled:opacity-60"
+            >
+              {scanningPhoto ? <Loader2 className="h-4 w-4 animate-spin text-amber-300" /> : <Camera className="h-4 w-4 text-amber-300" />}
+              <span>{scanningPhoto ? dt('Gemini AI po skanon foton & ligjshmërinë...') : dt('Skano Foto / Screenshot me Gemini AI për Track ID')}</span>
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+            </button>
+          </div>
         </header>
 
         <div ref={resultRef} className="scroll-mt-24">

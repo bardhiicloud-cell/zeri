@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   LEGENDARY_FAMILIES, LIBERATION_POINTS, MARTYRS, PLACES, PLACE_KINDS, ageAtDeath, formatMemorialDate,
-  type Martyr, type PlaceKind,
+  type Martyr, type PlaceKind, type L,
 } from '../../lib/heritage/memorial';
 import type { HeritageLang } from '../../lib/heritage/types';
 import { PlateArt } from './HeritageArt';
@@ -419,6 +419,128 @@ export function WhyVisitSection({ lang }: { lang: HeritageLang }) {
             </li>
           ))}
         </ul>
+      </div>
+    </section>
+  );
+}
+
+
+/* ── Mbrojtja e Luftës së Pastër: Çlirimtarët në Hagë ───────────────────── */
+
+export interface HagueLeader {
+  id: string;
+  name: string;
+  role: L;
+  standing: L;
+  quote: L;
+  photoKey: string;
+}
+
+export const HAGUE_LEADERS: readonly HagueLeader[] = [
+  {
+    id: 'hashim-thaci',
+    name: 'Hashim Thaçi',
+    role: {
+      sq: 'Drejtor Politik i UÇK-së · Kryeministër i Shpalljes së Pavarësisë · President i Republikës së Kosovës',
+      en: 'Political Director of the KLA · Prime Minister of the Independence Declaration · President of the Republic of Kosovo',
+    },
+    standing: {
+      sq: 'Udhëhoqi delegacionin e Kosovës në Rambuje dhe shpalli Pavarësinë më 17 Shkurt 2008. Përballet me drejtësinë ndërkombëtare me kokën lart, duke mbrojtur legjitimitetin historik dhe dinjitetin e luftës çlirimtare.',
+      en: 'Led the Kosovo delegation at Rambouillet and declared Independence on 17 February 2008. Stands tall in international proceedings defending the historical legitimacy and dignity of the liberation struggle.',
+    },
+    quote: {
+      sq: '«Lufta e UÇK-së ishte e drejtë, e pastër dhe e pashmangshme përballë gjenocidit të Millosheviqit. Asnjë pretendim nuk mund ta rishkruajë historinë tonë të lirisë.»',
+      en: '“The KLA war was just, pure and inevitable in the face of Milošević’s genocide. No allegation can rewrite our history of freedom.”',
+    },
+    photoKey: 'haga-hashim-thaci',
+  },
+  {
+    id: 'kadri-veseli',
+    name: 'Kadri Veseli',
+    role: {
+      sq: 'Bashkëthemelues i UÇK-së · Drejtues i Shërbimit Informativ të Kosovës (SHIK) · Kryetar i Kuvendit të Kosovës',
+      en: 'Co-founder of the KLA · Head of the Kosovo Intelligence Service (SHIK) · Speaker of the Assembly of Kosovo',
+    },
+    standing: {
+      sq: 'Ndër organizatorët e parë të celulave të armatosura të lirisë pranë Adem Jasharit e Zahir Pajazitit. Ka mbrojtur me përkushtim të palëkundur pastërtinë e rezistencës çlirimtare.',
+      en: 'Among the earliest organizers of armed liberation units alongside Adem Jashari and Zahir Pajaziti. Has staunchly defended the purity of the liberation resistance.',
+    },
+    quote: {
+      sq: '«Ne nuk patëm armë moderne, por patëm të drejtën e Zotit dhe të popullit për të jetuar të lirë në shtëpitë tona.»',
+      en: '“We lacked modern weapons, but we possessed the sacred right of our people to live free in our ancestral homes.”',
+    },
+    photoKey: 'haga-kadri-veseli',
+  },
+  {
+    id: 'jakup-krasniqi',
+    name: 'Jakup Krasniqi',
+    role: {
+      sq: 'Zëdhënës i Shtabit të Përgjithshëm të UÇK-së · Kryetar i Kuvendit të Kosovës · President në Detyrë',
+      en: 'Spokesperson of the KLA General Staff · Speaker of the Assembly of Kosovo · Acting President',
+    },
+    standing: {
+      sq: 'Zëri i së vërtetës së Kosovës para botës gjatë ditëve më të rënda të luftës. Inte 범electual dhe simbol i vendosmërisë qytetare e politike kundër shtypjes brutale.',
+      en: 'The voice of Kosovo’s truth before the world during the darkest hours of war. An intellectual and symbol of civic and political resolve against brutal oppression.',
+    },
+    quote: {
+      sq: '«UÇK-ja lindi nga dhembja dhe padrejtësia shekullore. Ne nuk ishim agresorët; ne ishim populli që po mbrohej nga zhdukja.»',
+      en: '“The KLA was born of century-long suffering and injustice. We were never aggressors; we were a people defending ourselves from annihilation.”',
+    },
+    photoKey: 'haga-jakup-krasniqi',
+  },
+  {
+    id: 'rexhep-selimi',
+    name: 'Rexhep Selimi',
+    role: {
+      sq: 'Anëtar i Shtabit të Përgjithshëm të UÇK-së · Komandant «Dhjetëshi» · Deputet i Kuvendit',
+      en: 'Member of the KLA General Staff · Commander “Number Ten” · Member of Parliament',
+    },
+    standing: {
+      sq: 'Një nga tre luftëtarët që dolën publikisht për herë të parë me uniformën dhe emblemën e UÇK-së në Llaushë më 28 Nëntor 1997. Simbol i trimërisë së paepur në fushëbetejë.',
+      en: 'One of the three fighters who first appeared publicly in KLA uniform and insignia in Llaushë on 28 November 1997. A symbol of unflinching battlefield courage.',
+    },
+    quote: {
+      sq: '«UÇK-ja është emblema më e pastër e kombit tonë. Ajo i takon popullit të Kosovës dhe askush nuk mund t’ia zbehë dritën.»',
+      en: '“The KLA is the purest badge of our nation. It belongs to the people of Kosovo and no one can dim its light.”',
+    },
+    photoKey: 'haga-rexhep-selimi',
+  },
+];
+
+export function HagueLeadersSection({ lang }: { lang: HeritageLang }) {
+  const sq = lang === 'sq';
+  return (
+    <section id="hx-hague" aria-labelledby="hx-hague-h" className="hx-uck-hero hx-grain relative isolate scroll-mt-24 overflow-hidden rounded-[28px] p-6 sm:p-10">
+      <header className="max-w-3xl space-y-3">
+        <p className="hx-eyebrow" style={{ color: '#ff8a98' }}>{sq ? 'Mbrojtja e Luftës Çlirimtare' : 'Defence of the Liberation War'}</p>
+        <h2 id="hx-hague-h" className="hx-serif text-3xl font-black leading-[1.02] text-white sm:text-5xl">
+          {sq ? 'Udhëheqësit e UÇK-së dhe e Vërteta Historike' : 'KLA Leaders and the Historical Truth'}
+        </h2>
+        <p className="text-[15px] leading-relaxed text-slate-200">
+          {sq
+            ? 'Lufta e Ushtrisë Çlirimtare të Kosovës ishte kryengritje e pastër popullore për liri, dinjitet dhe mbijetesë ndaj aparatit gjenocidal të Millosheviqit. Përballja e drejtuesve të UÇK-së me proceset gjyqësore në Dhomat e Specializuara në Hagë dëshmon gatishmërinë e Kosovës për drejtësi, teksa populli i Kosovës qëndron i palëkundur në mbrojtje të pastërtisë së luftës çlirimtare dhe pafajësisë së heronjve të saj.'
+            : 'The war of the Kosovo Liberation Army was a pure popular uprising for freedom, dignity and survival against Milošević’s genocidal state machine. The appearance of KLA leaders before the Specialist Chambers in The Hague proves Kosovo’s commitment to international scrutiny, while the people of Kosovo stand unwavering in defending the purity of their liberation struggle and the innocence of its heroes.'}
+        </p>
+      </header>
+
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        {HAGUE_LEADERS.map((leader) => (
+          <article key={leader.id} className="rounded-2xl border border-white/15 bg-white/[0.07] p-5 backdrop-blur transition hover:border-[#ff4d63]/60 sm:p-6">
+            <div className="flex gap-4">
+              <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl border border-white/20 shadow-md">
+                <Photo name={leader.photoKey} alt={leader.name} bare className="!h-full !w-full object-cover" position="top" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="hx-serif text-xl font-black leading-tight text-white">{leader.name}</h3>
+                <p className="mt-1 text-xs font-bold text-[#ff8a98]">{leader.role[lang]}</p>
+              </div>
+            </div>
+            <p className="mt-3.5 text-xs leading-relaxed text-slate-300 sm:text-sm">{leader.standing[lang]}</p>
+            <blockquote className="mt-3.5 border-l-2 border-[#ff4d63] pl-3 italic text-xs leading-relaxed text-slate-100 sm:text-sm">
+              {leader.quote[lang]}
+            </blockquote>
+          </article>
+        ))}
       </div>
     </section>
   );

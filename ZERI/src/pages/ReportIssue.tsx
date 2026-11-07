@@ -20,6 +20,7 @@ import { KOSOVO_MUNICIPALITIES, MUNICIPALITY_COORDINATES } from '../lib/constant
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
 import { isSpecificScope, scopeKey } from '../lib/municipalityScope';
 import { compressImage, looksLikeImage } from '../lib/imageCompress';
+import { scanMediaWithGemini, type CaptureSource, type MediaVerificationResult } from '../lib/aiMediaScanner';
 import { uploadReportPhotoViaApi } from '../lib/reportPhotoUpload';
 import { auth, db, uploadFileToStorage, MAX_UPLOAD_BYTES, MAX_REPORT_VIDEO_BYTES, REPORT_MEDIA_LIMITS, formatBytes } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
@@ -475,7 +476,16 @@ export default function ReportIssue() {
     // Users will click the GPS button to allow location
   }, []);
 
-  const [mediaItems, setMediaItems] = useState<{file: File, url: string, type: 'image' | 'video' | 'document' | 'audio'}[]>([]);
+  const [mediaItems, setMediaItems] = useState<{
+    id: string;
+    file: File;
+    url: string;
+    type: 'image' | 'video' | 'document' | 'audio';
+    captureSource: CaptureSource;
+    scanStatus?: 'scanning' | 'verified' | 'rejected';
+    scanInfo?: MediaVerificationResult;
+  }[]>([]);
+  const [aiRejectionAlerts, setAiRejectionAlerts] = useState<Array<{ fileName: string; reason: string; code: string }>>([]);
 
   /*
    * The text of an unfinished report is kept on this device (photos cannot be), so a
@@ -530,60 +540,51 @@ export default function ReportIssue() {
   };
 
   const analyzeWithAI = async () => {
-    // AI vision analysis only makes sense for a photo; a video, document or
-    // voice note has no frame to read, so pick the first image explicitly.
-    const imageMedia = mediaItems.find(m => m.type === 'image');
-    if (!imageMedia) {
-      toast.error(dt("Ju lutem ngarkoni të paktën një foto për t'u analizuar nga AI."));
+    const targetMedia = mediaItems.find(m => m.type === 'image') ?? mediaItems.find(m => m.type === 'video');
+    if (!targetMedia) {
+      toast.error(dt("Ju lutem ngarkoni të paktën një foto ose video për t'u analizuar nga Gemini AI."));
       return;
     }
 
-    const imageFile = imageMedia.file;
     setIsAnalyzing(true);
-    
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(imageFile);
-      
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-      });
-      
-      const base64DataUrl = await base64Promise;
-      const parts = base64DataUrl.split(';');
-      const mimeType = parts[0].split(':')[1];
-      const imageBase64 = parts[1].split(',')[1];
-      
-      const res = await fetch('/api/analyze-issue', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          imageBase64,
-          mimeType,
+      const scanResult = await scanMediaWithGemini({
+        file: targetMedia.file,
+        mediaType: targetMedia.type,
+        captureSource: targetMedia.captureSource,
+        context: {
+          title,
+          description,
+          municipality,
           lat: coordinates[0],
           lng: coordinates[1],
-          descriptionText: description
-        })
+        },
       });
-      
-      if (!res.ok) {
-        throw new Error("Dështoi analiza AI");
+
+      if (!scanResult.approved || scanResult.shouldDelete) {
+        if (targetMedia.url) URL.revokeObjectURL(targetMedia.url);
+        setMediaItems(prev => prev.filter(item => item.id !== targetMedia.id));
+        setAiRejectionAlerts(prev => [
+          { fileName: targetMedia.file.name, reason: scanResult.reasonSq, code: scanResult.rejectionCode },
+          ...prev.slice(0, 4),
+        ]);
+        toast.error(scanResult.reasonSq, { duration: 9000 });
+        return;
       }
-      
-      const data = await res.json();
-      
-       if (data?.degraded) {
+
+      if (scanResult.degraded) {
         toast.error(dt('Analiza AI nuk është e disponueshme tani. Plotësoni fushat vetë.'));
-      } else if (data && (data.category || data.title)) {
-        if (data.title) setTitle(data.title);
-        if (data.description) setDescription(data.description);
-        if (data.category) setCategory(data.category);
-        if (data.urgency) setUrgency(data.urgency);
-        setAiInsights(data);
       } else {
-        toast.error("Nuk arritëm të gjejmë kategorinë e duhur për këtë problem.");
+        if (scanResult.suggestedTitle) setTitle(scanResult.suggestedTitle);
+        if (scanResult.suggestedDescription) setDescription(scanResult.suggestedDescription);
+        if (scanResult.suggestedCategory) setCategory(scanResult.suggestedCategory);
+        if (scanResult.suggestedUrgency) setUrgency(scanResult.suggestedUrgency);
+        setAiInsights({
+          authenticityScore: scanResult.authenticityScore,
+          forensicsReport: scanResult.forensicsSummary,
+          routingReason: scanResult.reasonSq,
+        });
+        toast.success(dt('Gemini AI verifikoi dëshminë dhe plotësoi detajet e raportit!'));
       }
     } catch (e) {
       console.error(e);
@@ -604,14 +605,17 @@ export default function ReportIssue() {
     probe.src = url;
   });
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, explicitSource?: CaptureSource) => {
     const files = Array.from(e.target.files ?? []);
+    const hasCaptureAttr = e.target.hasAttribute('capture');
     // Allow re-selecting the same file after a validation error.
     e.target.value = '';
     const limits = REPORT_MEDIA_LIMITS;
     let images = mediaItems.filter(m => m.type === 'image').length;
     let videos = mediaItems.filter(m => m.type === 'video').length;
     for (const picked of files) {
+      const inferredSource: CaptureSource =
+        explicitSource ?? (hasCaptureAttr || (picked.lastModified > 0 && Date.now() - picked.lastModified < 90_000) ? 'camera' : 'gallery');
       // Photos are shrunk to ~1600 px JPEG first (HEIC included): seconds to upload on 4G instead of minutes.
       const file = looksLikeImage(picked) ? await compressImage(picked) : picked;
       const mime = file.type || '';
@@ -645,13 +649,64 @@ export default function ReportIssue() {
       } else if (type === 'image') {
         images++;
       }
-      setMediaItems(prev => [...prev, { file, url, type }].slice(0, 16));
+      const itemId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      setMediaItems(prev => [
+        ...prev,
+        { id: itemId, file, url, type, captureSource: inferredSource, scanStatus: 'scanning' as const },
+      ].slice(0, 16));
       setMediaError(false);
+
+      // Automatically scan every uploaded photo, video, or document with Gemini AI
+      void (async () => {
+        const scanResult = await scanMediaWithGemini({
+          file,
+          mediaType: type,
+          captureSource: inferredSource,
+          context: {
+            title,
+            description,
+            municipality,
+            lat: coordinates[0],
+            lng: coordinates[1],
+          },
+        });
+
+        if (!scanResult.approved || scanResult.shouldDelete) {
+          if (url) URL.revokeObjectURL(url);
+          setMediaItems(prev => prev.filter(item => item.id !== itemId));
+          setAiRejectionAlerts(prev => [
+            { fileName: picked.name || file.name, reason: scanResult.reasonSq, code: scanResult.rejectionCode },
+            ...prev.slice(0, 4),
+          ]);
+          toast.error(scanResult.reasonSq, { duration: 9000 });
+          return;
+        }
+
+        setMediaItems(prev =>
+          prev.map(item => (item.id === itemId ? { ...item, scanStatus: 'verified', scanInfo: scanResult } : item)),
+        );
+
+        if (!scanResult.degraded) {
+          if (scanResult.suggestedTitle) setTitle(prev => prev || scanResult.suggestedTitle || '');
+          if (scanResult.suggestedDescription) setDescription(prev => prev || scanResult.suggestedDescription || '');
+          if (scanResult.suggestedCategory) setCategory(prev => prev || scanResult.suggestedCategory || '');
+          if (scanResult.suggestedUrgency) setUrgency(scanResult.suggestedUrgency);
+          setAiInsights((prev: any) => prev ?? {
+            authenticityScore: scanResult.authenticityScore,
+            forensicsReport: scanResult.forensicsSummary,
+            routingReason: scanResult.reasonSq,
+          });
+        }
+      })();
     }
   };
 
   const removeMedia = (index: number) => {
-    setMediaItems(prev => prev.filter((_, i) => i !== index));
+    setMediaItems(prev => {
+      const target = prev[index];
+      if (target?.url) URL.revokeObjectURL(target.url);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -1048,24 +1103,62 @@ export default function ReportIssue() {
           
           <div className="space-y-6 md:space-y-8">
             <div>
-               <div data-tour="report-upload" className="border-2 border-dashed border-slate-300 dark:border-white/20 p-4 md:p-8 flex flex-col items-center justify-center bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800/50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors relative h-40 sm:h-56 md:h-72 group cursor-pointer overflow-hidden mb-4 rounded-2xl">
-                 <div className="w-12 h-12 md:w-20 md:h-20 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl flex items-center justify-center mb-3 md:mb-6 group-hover:-translate-y-2 transition-transform">
-                   <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900" />
+               <div data-tour="report-upload" className="border-2 border-dashed border-slate-300 dark:border-white/20 p-4 md:p-8 flex flex-col items-center justify-center bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900/50 hover:bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:hover:bg-slate-800/50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors relative h-40 sm:h-56 md:h-64 group cursor-pointer overflow-hidden mb-3 rounded-2xl">
+                 <div className="w-12 h-12 md:w-16 md:h-16 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-2xl flex items-center justify-center mb-3 md:mb-4 group-hover:-translate-y-1 transition-transform">
+                   <Camera className="w-6 h-6 md:w-8 md:h-8 text-blue-900 dark:text-blue-300" />
                  </div>
                  <span className="text-xs md:text-lg font-bold text-[var(--color-text)] dark:text-white mb-1 uppercase tracking-wide title-serif text-center">{dt(`Ngarko Dëshminë (Foto/Video/Dokument/Audio)`)}</span>
-                 <span className="text-xs md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[220px] md:max-w-[320px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
-                 <span className="text-xs md:text-xs text-slate-600 dark:text-slate-300 mt-2 text-center">{dt(`Deri në ${REPORT_MEDIA_LIMITS.images} foto dhe ${REPORT_MEDIA_LIMITS.videos} video (secila deri në ${REPORT_MEDIA_LIMITS.videoSeconds} sekonda)`)}</span>
-                 <input type="file" multiple aria-label={dt('Shto foto, video ose dokumente')} accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                 <span className="text-xs md:text-xs font-mono text-slate-700 dark:text-slate-200 dark:text-[var(--color-text-muted)] max-w-[260px] md:max-w-[380px] text-center uppercase">{dt(`JPG, PNG, MP4, MOV, PDF, DOC, MP3 · foto max ${formatBytes(MAX_UPLOAD_BYTES.reports)} · video max ${formatBytes(MAX_REPORT_VIDEO_BYTES)}`)}</span>
+                 <span className="text-xs md:text-xs text-slate-600 dark:text-slate-300 mt-1.5 text-center">{dt(`Çdo foto, video dhe dokument skanohet nga Gemini AI: fotot me AI ose nga shtete të huaja fshihen automatikisht.`)}</span>
+                 <input type="file" multiple aria-label={dt('Shto foto, video ose dokumente')} accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={(e) => void handleImageUpload(e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                </div>
 
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                 <label className="relative flex min-h-12 cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-3 text-xs font-extrabold text-blue-900 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-950/40 dark:text-blue-200 dark:hover:bg-blue-900/50">
+                   <Camera className="h-4 w-4 shrink-0 text-blue-700 dark:text-blue-300" aria-hidden="true" />
+                   <span>{dt('Shkrep Direkt me Kamerë (Live në Terren)')}</span>
+                   <input type="file" accept="image/*,video/*" capture="environment" onChange={(e) => void handleImageUpload(e, 'camera')} className="sr-only" />
+                 </label>
+                 <label className="relative flex min-h-12 cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800">
+                   <FileText className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                   <span>{dt('Zgjidh nga Galeria ose Dokument (Verifikim me AI)')}</span>
+                   <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={(e) => void handleImageUpload(e, 'gallery')} className="sr-only" />
+                 </label>
+               </div>
+
+               {aiRejectionAlerts.length > 0 && (
+                 <div className="mb-4 space-y-2" role="alert">
+                   {aiRejectionAlerts.map((alert, i) => (
+                     <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-rose-300 bg-rose-50 p-3.5 text-rose-900 dark:border-rose-500/40 dark:bg-rose-950/50 dark:text-rose-100">
+                       <div className="flex items-start gap-2.5 min-w-0">
+                         <ShieldAlert className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" aria-hidden="true" />
+                         <div className="min-w-0 text-xs">
+                           <p className="font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                             {dt('Skedari u fshi nga Gemini AI Forensics')}: {alert.fileName}
+                           </p>
+                           <p className="mt-1 font-semibold leading-relaxed">{alert.reason}</p>
+                         </div>
+                       </div>
+                       <button
+                         type="button"
+                         onClick={() => setAiRejectionAlerts(prev => prev.filter((_, idx) => idx !== i))}
+                         className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:text-rose-200 dark:hover:bg-rose-900/50"
+                       >
+                         {dt('Mbyll')}
+                       </button>
+                     </div>
+                   ))}
+                 </div>
+               )}
+
                {mediaItems.length > 0 && (
-                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-6">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
                    {mediaItems.map((media, idx) => (
-                     <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200/60 dark:border-white/10">
+                     <div key={media.id || idx} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-200/60 dark:border-white/10">
                        {media.type === 'image' ? (
-                         <img src={media.url} alt="Preview" className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition" />
+                         <img src={media.url} alt="Preview" className="w-full h-full object-cover transition" />
                        ) : media.type === 'video' ? (
-                         <video src={media.url} className="w-full h-full object-cover mix-blend-luminosity group-hover:mix-blend-normal transition" muted playsInline />
+                         <video src={media.url} className="w-full h-full object-cover transition" muted playsInline />
                        ) : (
                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[var(--color-surface-subtle)] p-2 text-center">
                            {media.type === 'audio'
@@ -1074,6 +1167,20 @@ export default function ReportIssue() {
                            <span className="text-xs font-bold text-[var(--color-text)] dark:text-white truncate w-full">{media.file.name}</span>
                          </div>
                        )}
+                       <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between gap-1 pointer-events-none">
+                         <span className="rounded-md bg-slate-900/80 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                           {media.captureSource === 'camera' ? dt('Kamerë Live') : dt('Galeri')}
+                         </span>
+                         {media.scanStatus === 'scanning' ? (
+                           <span className="inline-flex items-center gap-1 rounded-md bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                             <Loader2 className="h-3 w-3 animate-spin" /> {dt('AI Skanim...')}
+                           </span>
+                         ) : media.scanStatus === 'verified' ? (
+                           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600/95 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                             <CheckCircle2 className="h-3 w-3" /> {dt('AI Kosovë ✓')}
+                           </span>
+                         ) : null}
+                       </div>
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                          <button type="button" onClick={() => removeMedia(idx)} className="text-white text-xs font-bold uppercase border-b-2 border-indigo-600 pb-0.5 hover:text-rose-400">{t('remove')}</button>
                        </div>
@@ -1083,9 +1190,13 @@ export default function ReportIssue() {
                )}
                
                {mediaItems.length > 0 && (
-                 <div className="bg-blue-900 border-l-4 border-red-500 rounded-l-xl p-3 md:p-5 flex gap-3 text-white items-start">
-                   <Sparkles className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-[#C5A059]" />
-                   <p className="text-xs md:text-xs font-bold tracking-wide leading-relaxed">{t('report_ai_analysis_msg')}</p>
+                 <div className="bg-blue-900 border-l-4 border-emerald-400 rounded-l-xl p-3 md:p-5 flex gap-3 text-white items-start">
+                   <Sparkles className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-emerald-300" />
+                   <p className="text-xs md:text-xs font-bold tracking-wide leading-relaxed">
+                     {mediaItems.some(m => m.scanStatus === 'scanning')
+                       ? dt('Gemini AI po skanon dëshminë tuaj për autenticitet gjeografik në Kosovë, detektim kundër AI dhe përputhshmëri ligjore...')
+                       : dt('Dëshmitë u kontrolluan nga Gemini AI (autentike nga Kosova dhe në përputhje me ligjin). Mund të vazhdoni te hapi tjetër.')}
+                   </p>
                  </div>
                )}
             </div>
@@ -1103,6 +1214,10 @@ export default function ReportIssue() {
                 if (mediaItems.length === 0) {
                   setMediaError(true);
                   setTimeout(() => setMediaError(false), 5000);
+                  return;
+                }
+                if (mediaItems.some(m => m.scanStatus === 'scanning')) {
+                  toast(dt('Ju lutem prisni disa sekonda sa Gemini AI të përfundojë verifikimin e fotos/videos.'));
                   return;
                 }
                 setStep(2);

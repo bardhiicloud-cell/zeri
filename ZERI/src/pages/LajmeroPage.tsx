@@ -7,6 +7,7 @@ import { CheckCircle2, Copy, ImagePlus, Loader2, Megaphone, ShieldCheck, X } fro
 import { dt } from '@/src/lib/dt';
 import { KOSOVO_MUNICIPALITIES } from '../lib/constants';
 import SubmissionOverlay from '../components/SubmissionOverlay';
+import { scanMediaWithGemini } from '../lib/aiMediaScanner';
 
 /**
  * "Lajmëro": a citizen sends a news tip (corruption, propaganda, anything of public interest)
@@ -55,6 +56,19 @@ export default function LajmeroPage() {
       const next = [...media];
       for (const file of Array.from(list)) {
         if (next.length >= MAX_MEDIA) break;
+        const verdict = await scanMediaWithGemini({
+          file,
+          mediaType: file.type.startsWith('video/') ? 'video' : 'image',
+          captureSource: 'gallery',
+          context: {
+            municipality: form.municipality,
+            title: form.title,
+            description: form.body,
+          },
+        });
+        if (!verdict.approved || verdict.shouldDelete) {
+          throw new Error(verdict.reasonSq || dt('Skedari u refuzua dhe u fshi nga Gemini AI (AI-gjeneruar, jashtë Kosovës ose në kundërshtim me ligjin).'));
+        }
         const url = await toDataUri(file);
         next.push({ name: file.name, url });
       }

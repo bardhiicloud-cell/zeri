@@ -12,7 +12,7 @@ import { Chronicle } from '../../components/heritage/Chronicle';
 import { Photo } from '../../components/heritage/Photo';
 import { photoCreditText } from '../../lib/heritage/photoCredits';
 import NotFoundPage from '../NotFoundPage';
-import { AccountabilitySection, FamiliesSection, JashariSection, LiberationSection, MartyrsSection } from '../../components/heritage/Memorial';
+import { AccountabilitySection, FamiliesSection, HagueLeadersSection, JashariSection, LiberationSection, MartyrsSection } from '../../components/heritage/Memorial';
 
 /**
  * /historia-e-uck and /historia-e-uck/:section — the KLA historical archive.
@@ -130,7 +130,7 @@ export default function UckArchivePage() {
               </p>
               {!section && (
                 <nav aria-label={lang === 'sq' ? 'Në këtë faqe' : 'On this page'} className="flex flex-wrap gap-2 pt-1">
-                  {[['#hx-lib', lang === 'sq' ? 'Jo terrorizëm' : 'Not terrorism'], ['#hx-jashari', 'Adem Jashari'], ['#hx-martyrs', lang === 'sq' ? 'Dëshmorët' : 'Martyrs'], ['#hx-fam', lang === 'sq' ? 'Familjet legjendare' : 'Legendary families'], ['#hx-serbia', lang === 'sq' ? 'Drejtësi' : 'Justice'], ['#hx-chap', lang === 'sq' ? 'Kapitujt' : 'Chapters']].map(([href, label]) => (
+                  {[['#hx-lib', lang === 'sq' ? 'Jo terrorizëm' : 'Not terrorism'], ['#hx-jashari', 'Adem Jashari'], ['#hx-martyrs', lang === 'sq' ? 'Dëshmorët' : 'Martyrs'], ['#hx-hague', lang === 'sq' ? 'Çlirimtarët në Hagë' : 'Liberators in The Hague'], ['#hx-fam', lang === 'sq' ? 'Familjet legjendare' : 'Legendary families'], ['#hx-serbia', lang === 'sq' ? 'Drejtësi' : 'Justice'], ['#hx-chap', lang === 'sq' ? 'Kapitujt' : 'Chapters']].map(([href, label]) => (
                     <a key={href} href={href} className="inline-flex min-h-10 items-center rounded-full border border-white/25 bg-white/5 px-3.5 text-xs font-black text-white backdrop-blur transition hover:border-[#ff4d63] hover:text-[#ff8a98]">{label}</a>
                   ))}
                 </nav>
@@ -165,6 +165,7 @@ export default function UckArchivePage() {
                 <LiberationSection lang={lang} />
                 <JashariSection lang={lang} />
                 <MartyrsSection lang={lang} />
+                <HagueLeadersSection lang={lang} />
                 <FamiliesSection lang={lang} />
                 <AccountabilitySection lang={lang} />
 

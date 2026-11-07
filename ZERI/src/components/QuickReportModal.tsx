@@ -1,7 +1,8 @@
 import { dt } from '@/src/lib/dt';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Camera, MapPin, Loader2, Send } from 'lucide-react';
+import { X, Plus, Camera, MapPin, Loader2, Send, ShieldCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useStore } from '../lib/store';
 import { uploadFileToStorage } from '../lib/firebase';
 import { authHeaders } from '../lib/apiAuth';
@@ -10,6 +11,7 @@ import { saveGuestReportHistory } from '../lib/session';
 import { isSpecificScope } from '../lib/municipalityScope';
 import { useNavigate } from 'react-router-dom';
 import { getReportTopicValueLabel, REPORT_TOPICS } from '../lib/reportTopics';
+import { scanMediaWithGemini } from '../lib/aiMediaScanner';
 
 interface QuickReportModalProps {
   isOpen: boolean;
@@ -26,21 +28,52 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
   const [category, setCategory] = useState('Infrastrukturë');
   const [topicCategory, setTopicCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScanningMedia, setIsScanningMedia] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   
   if (!isOpen) return null;
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsScanningMedia(true);
+    try {
+      const verdict = await scanMediaWithGemini({
+        file,
+        mediaType: 'image',
+        captureSource: 'gallery',
+        context: {
+          municipality,
+          title,
+          description,
+        },
+      });
+      if (!verdict.approved || verdict.shouldDelete) {
+        setImageFile(null);
+        toast.error(verdict.reasonSq || dt('Fotoja u refuzua dhe u fshi nga Gemini AI (AI-gjeneruar ose jashtë Kosovës).'));
+        return;
+      }
+      setImageFile(file);
+      toast.success(verdict.reasonSq || dt('Fotoja u verifikua me sukses nga Gemini AI.'));
+    } catch {
+      setImageFile(file);
+    } finally {
+      setIsScanningMedia(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) {
-      alert("Ju lutem kyçuni për të raportuar.");
+      toast.error(dt("Ju lutem kyçuni për të raportuar."));
       return;
     }
     
     // The server needs a municipality to route the report; this form has no
     // location picker, so it uses the one the citizen already chose.
     if (!isSpecificScope(municipality)) {
-      alert("Zgjidhni komunën tuaj nga menyja e komunave para se të dërgoni një raportim të shpejtë.");
+      toast.error(dt("Zgjidhni komunën tuaj nga menyja e komunave para se të dërgoni një raportim të shpejtë."));
       return;
     }
 
@@ -94,7 +127,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
         createdAt: new Date().toISOString(),
       });
 
-      alert(`Raportimi u dërgua me sukses! Track ID: ${trackingId}\nRuajeni për ta ndjekur statusin.`);
+      toast.success(`${dt('Raportimi u dërgua me sukses! Track ID')}: ${trackingId}`);
       onClose();
       // Reset form
       setTitle('');
@@ -105,7 +138,7 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
       navigate(`/trackid?id=${encodeURIComponent(trackingId)}`);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error && error.message ? error.message : "Pati një gabim gjatë dërgimit.");
+      toast.error(error instanceof Error && error.message ? error.message : dt("Pati një gabim gjatë dërgimit."));
     } finally {
       setIsSubmitting(false);
     }
@@ -194,18 +227,24 @@ export function QuickReportModal({ isOpen, onClose }: QuickReportModalProps) {
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">{dt(`Foto (Opsionale)`)}</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">{dt(`Foto (Skanohet me Gemini AI)`)}</label>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center justify-center gap-2 w-full h-12 bg-blue-50 border border-blue-200 border-dashed rounded-xl cursor-pointer hover:bg-blue-100 transition-colors">
-                    <Camera className="w-5 h-5 text-blue-600" />
+                    {isScanningMedia ? (
+                      <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                    ) : imageFile ? (
+                      <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <Camera className="w-5 h-5 text-blue-600" />
+                    )}
                     <span className="text-sm font-semibold text-blue-700">
-                      {imageFile ? imageFile.name : 'Ngarko Foto'}
+                      {isScanningMedia ? dt('Gemini AI po verifikon foton...') : imageFile ? `${imageFile.name} (AI ✓)` : dt('Ngarko Foto')}
                     </span>
                     <input 
                       type="file" 
                       accept="image/*" 
                       className="hidden" 
-                      onChange={e => setImageFile(e.target.files?.[0] || null)}
+                      onChange={handleImageSelect}
                     />
                   </label>
                 </div>

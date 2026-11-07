@@ -61,6 +61,7 @@ import { registerTeamOverviewRoutes } from './server/teamOverview';
 import { registerTransparencyRoutes } from './server/transparency';
 import { registerReportCaseRoutes } from './server/reportCase';
 import { registerTrackLookupRoutes } from './server/trackLookup';
+import { registerAiMediaScannerRoutes } from './server/aiMediaScanner';
 import { startRejectedPurge } from './server/rejectedPurge';
 import { registerPublicReportRoutes } from './server/publicReports';
 import { registerGuestNumberRoutes } from './server/guestNumbers';
@@ -518,7 +519,12 @@ async function startServer() {
   const defaultJson = express.json({ limit: '1mb' });
   const imageJson = express.json({ limit: '12mb' });
   // A cropped report photo also arrives as an image in JSON (server/reportPhotoEdit.ts).
-  const isImageRoute = (path: string) => path === '/api/analyze-issue' || path === '/api/v1/report-photos' || /^\/api\/v1\/reports\/[^/]+\/media\/crop$/.test(path);
+  const isImageRoute = (path: string) =>
+    path === '/api/analyze-issue' ||
+    path === '/api/v1/report-photos' ||
+    path === '/api/v1/ai/verify-media' ||
+    path === '/api/v1/ai/scan-trackid' ||
+    /^\/api\/v1\/reports\/[^/]+\/media\/crop$/.test(path);
   app.use((req, res, next) => (isImageRoute(req.path) ? imageJson : defaultJson)(req, res, next));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
@@ -2231,6 +2237,7 @@ registerTeamOverviewRoutes(app, { requireAuth, db, actingUser });
 registerTransparencyRoutes(app, { db });
 registerReportCaseRoutes(app, { requireAuth, db, actingUser, audit });
 registerTrackLookupRoutes(app, { db, verifyToken: async (token) => (await authAdmin().verifyIdToken(token)).uid });
+registerAiMediaScannerRoutes(app, { generateContent: generateContentWithFallback });
 registerPublicReportRoutes(app, { db });
 registerGuestNumberRoutes(app, { requireAuth, db });
 registerReportPhotoRoutes(app, { requireAuth, db });
@@ -2524,10 +2531,12 @@ Përgjigju VETËM me tekstin e përgjigjes zyrtare.`;
         "Komuna - Parqet dhe Hapësirat e gjelbra"
       ];
 
-      const prompt = `Ti je AI Forenzik dhe Delegues Automatik Super-Inteligjent i platformës publike.
-Analizo këtë imazh (dhe tekstin e raportuar nëse ka) për një problem publik.
+      const captureSource = req.body?.captureSource === 'camera' ? 'camera' : 'gallery';
+      const prompt = `Ti je AI Forenzik, Verifikues Gjeografik (Kosovë vs Jashtë) dhe Delegues Automatik Super-Inteligjent i platformës publike.
+Analizo këtë imazh (dhe tekstin e raportuar nëse ka) për një problem publik në Republikën e Kosovës.
+Burimi i fotos: ${captureSource === 'camera' ? 'Kamerë direkte' : 'Galeria e telefonit (Kontrollo nëse është foto reale nga Kosova apo e shkarkuar nga shtete të huaja si Kina, SHBA, India ose Stock Photo)'}.
 Detyrat e tua:
-1. "Detektivi i Imazheve (Forensics)": Kontrollo me saktësi absolute nëse imazhi është real, i modifikuar, i gjeneruar nga AI, apo marrë nga interneti. Jep një shkallë besueshmërie (authenticityScore) nga 0 në 100. Shpjego arsyetimin thellë.
+1. "Detektivi i Imazheve (Forensics)": Kontrollo me saktësi absolute nëse imazhi është real nga Kosova, i gjeneruar nga AI (isAiGenerated), apo marrë nga interneti/shtete të huaja si Kina/SHBA/India (isForeignOrStock), dhe nëse përputhet me ligjin (isLegallyCompliant). Jep një shkallë besueshmërie (authenticityScore) nga 0 në 100 (nëse është AI ose nga shtet i huaj, jep authenticityScore < 20). Shpjego arsyetimin thellë në forensicsReport.
 2. "Deleguesi Automatik (Auto-Routing)": Përcakto SAKTËSISHT drejtorinë/departamentin kompetent bazuar në listë. Jep një shpjegim thelbësor pse u zgjodh ai departament.
 3. Gjenero një titull (title) dhe përshkrim (description) profesional e të detajuar për tu përdorur në portalin zyrtar.
 
@@ -2557,6 +2566,9 @@ Koordinatat: ${Number.isFinite(Number(lat)) ? Number(lat) : 'Nuk ka'}, ${Number.
               category: { type: Type.STRING },
               urgency: { type: Type.STRING },
               authenticityScore: { type: Type.INTEGER },
+              isAiGenerated: { type: Type.BOOLEAN },
+              isForeignOrStock: { type: Type.BOOLEAN },
+              isLegallyCompliant: { type: Type.BOOLEAN },
               forensicsReport: { type: Type.STRING },
               routingReason: { type: Type.STRING }
             },

@@ -5,9 +5,9 @@ import { lookupDonationDirect } from '../lib/directSubmissions';
 import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  AlertTriangle, ArrowRight, BadgeCheck, Building2, Calendar, CheckCircle2, ChevronDown, ChevronUp, Clock3,
+  AlertTriangle, ArrowRight, BadgeCheck, Building2, Calendar, Camera, CheckCircle2, ChevronDown, ChevronUp, Clock3,
   Copy, FileSearch, Hourglass, Link2, Loader2, Lock, MapPin, MessageSquareText, Search, ShieldCheck, ShieldOff,
-  Tag, Timer, Trash2, WifiOff, XCircle,
+  Sparkles, Tag, Timer, Trash2, WifiOff, XCircle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { statusLabel, statusMeta, TONE_CLASSES } from '../lib/reportStatus';
@@ -16,6 +16,7 @@ import {
   buildJourney, lookupTrackingId, normalizeTrackingId, TrackLookupError, TRACKING_ID_PATTERN,
   type JourneyStep, type PublicTrackView,
 } from '../lib/trackApi';
+import { scanImageForTrackId } from '../lib/aiMediaScanner';
 import { MediaGallery } from '../components/reports/MediaGallery';
 import { PageHero } from '../components/layout/PageHero';
 import CitizenCaseCard from '../components/reports/CitizenCaseCard';
@@ -67,8 +68,10 @@ export default function TrackIdPage() {
   const [input, setInput] = useState(searchParams.get('id') || '');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
+  const [scanningPhoto, setScanningPhoto] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+  const photoScanInputRef = useRef<HTMLInputElement | null>(null);
   const myReports = React.useMemo(() => getGuestReportHistory().slice(0, 8), []);
 
   const search = useCallback(async (value: string) => {
@@ -140,6 +143,32 @@ export default function TrackIdPage() {
 
   const loading = phase.kind === 'loading';
 
+  const handlePhotoTrackIdScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setScanningPhoto(true);
+    setFieldError(null);
+    try {
+      const res = await scanImageForTrackId(file);
+      if (!res.ok || !res.trackingId) {
+        const msg = res.reasonSq || dt('Nuk u gjet asnjë kod Track ID në këtë foto ose dokument.');
+        setFieldError(msg);
+        toast.error(msg);
+        return;
+      }
+      toast.success(res.reasonSq || `${dt('Track ID u lexua me Gemini AI')}: ${res.trackingId}`);
+      setInput(res.trackingId);
+      void search(res.trackingId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : dt('Skanimi me AI nuk u krye. Provoni përsëri.');
+      setFieldError(msg);
+      toast.error(msg);
+    } finally {
+      setScanningPhoto(false);
+    }
+  };
+
   return (
     <div className="page-shell min-h-screen bg-slate-50 px-4 py-8 dark:bg-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -182,11 +211,28 @@ export default function TrackIdPage() {
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || scanningPhoto}
               className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-blue-700 px-8 text-sm font-black text-white shadow-lg shadow-blue-700/25 transition hover:bg-blue-800 disabled:cursor-wait disabled:opacity-70"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
               {loading ? dt('Duke kërkuar…') : dt('Kërko raportimin')}
+            </button>
+            <input
+              ref={photoScanInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoTrackIdScan}
+              className="hidden"
+            />
+            <button
+              type="button"
+              disabled={loading || scanningPhoto}
+              onClick={() => photoScanInputRef.current?.click()}
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-5 text-xs font-black text-indigo-800 transition hover:bg-indigo-100 disabled:opacity-60 dark:border-indigo-500/30 dark:bg-indigo-950/50 dark:text-indigo-200"
+            >
+              {scanningPhoto ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Camera className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}
+              <span>{scanningPhoto ? dt('Skanim me AI...') : dt('Skano Foto / Dokument')}</span>
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
             </button>
           </div>
           {fieldError ? (

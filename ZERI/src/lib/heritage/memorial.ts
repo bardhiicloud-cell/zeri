@@ -158,6 +158,15 @@ export const LEGENDARY_FAMILIES: readonly Family[] = [
   { id: 'fazliu', name: 'Familja Fazliu', place: 'Llaushë, Podujevë',
     body: { sq: 'Fahriu ra në Prishtinë më 1989; nëntë vjet më vonë, në maj 1998, ra edhe vëllai i tij më i vogël, Bahriu, si luftëtar i UÇK-së.', en: 'Fahri fell in Prishtina in 1989; nine years later, in May 1998, his younger brother Bahri fell as a KLA fighter.' },
     members: ['fahri-fazliu', 'bahri-fazliu'], source: 'https://en.wikipedia.org/wiki/Bahri_Fazliu' },
+  { id: 'pajaziti', name: 'Familja Pajaziti', place: 'Orllan, Podujevë',
+    body: { sq: 'Familja e Zahir Pajazitit, një nga strumbullarët e parë të armatosur në Llap. Shtëpia e tyre ishte bazë logjistike dhe strehë e sigurt për bërthamat e para të UÇK-së.', en: 'The family of Zahir Pajaziti, one of the first armed strongholds in Llap. Their home was a logistics base and safe haven for early KLA units.' },
+    members: ['zahir-pajaziti'], source: 'https://en.wikipedia.org/wiki/Zahir_Pajaziti' },
+  { id: 'ramadani', name: 'Familja Ramadani', place: 'Zhegër, Gjilan',
+    body: { sq: 'Familja e Agim Ramadanit «Katana», arkitektit të thyerjes së kufirit shqiptaro-shqiptar në Kosharë. Emri dhe sakrifica e kësaj familjeje janë gdhendur në historinë e lirisë.', en: 'The family of Agim Ramadani “Katana”, architect of breaking the Albanian-Albanian border at Koshare. Their name and sacrifice are etched in the history of freedom.' },
+    members: ['agim-ramadani'], source: 'https://en.wikipedia.org/wiki/Agim_Ramadani' },
+  { id: 'krasniqi', name: 'Familja Krasniqi', place: 'Çabiq, Klinë',
+    body: { sq: 'Familja e Mujë Krasniqit «Kapuçi», komandantit të Brigadës 113. Bashkë me vëllezërit dhe bashkëfshatarët bënë që Çabiqi dhe Drenica të bëheshin mburojë e pathyeshme.', en: 'The family of Mujë Krasniqi “Kapuçi”, commander of the 113th Brigade. With his brothers and village comrades, Çabiq and Drenica became an unbroken shield.' },
+    members: ['muje-krasniqi'], source: 'https://en.wikipedia.org/wiki/Muj%C3%AB_Krasniqi' },
 ];
 
 /** The case that the UÇK fought a war of liberation — each point a fact with its source. */

@@ -1,5 +1,15 @@
 {
- "missing": [],
+ "missing": [
+  "Shkrep Direkt me Kamerë (Live në Terren)",
+  "Shkruani Track ID-në ose skanoni me Gemini AI foton/dokumentin ku gjendet kodi juaj.",
+  "Skanimi i fotos me AI nuk u krye. Provoni përsëri.",
+  "Skanimi me AI nuk u krye. Provoni përsëri.",
+  "Skedari u fshi nga Gemini AI Forensics",
+  "Skedari u refuzua dhe u fshi nga Gemini AI (AI-gjeneruar, jashtë Kosovës ose në kundërshtim me ligjin).",
+  "Zgjidh nga Galeria ose Dokument (Verifikim me AI)",
+  "Zgjidhni komunën tuaj nga menyja e komunave para se të dërgoni një raportim të shpejtë.",
+  "Çdo foto, video dhe dokument skanohet nga Gemini AI: fotot me AI ose nga shtete të huaja fshihen automatikisht."
+ ],
  "problems": [
   "ar|script| && \"bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900\",\n                    prj.status === ",
   "ar|script| && \"bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900\",\n                    prj.status === ",

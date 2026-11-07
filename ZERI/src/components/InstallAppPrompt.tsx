@@ -39,7 +39,7 @@ export function InstallAppButton() {
  * button. Once shown it never returns on its own, and neither does it after an install.
  */
 export function InstallAppBanner() {
-  const { canPrompt, needsManual, inAppBrowser, platform, shouldOffer: mayOfferNow, returning, install, markOffered } = useInstallApp();
+  const { canPrompt, needsManual, inAppBrowser, platform, shouldOffer: mayOfferNow, returning, install, dismiss, markOffered } = useInstallApp();
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
   // Decided once, on arrival: recording the offer must not close the sheet that is showing it.
@@ -50,7 +50,7 @@ export function InstallAppBanner() {
 
   useEffect(() => {
     if (!eligible) return undefined;
-    const timer = window.setTimeout(() => setReady(true), returning ? 6_000 : 20_000);
+    const timer = window.setTimeout(() => setReady(true), returning ? 15_000 : 30_000);
     return () => window.clearTimeout(timer);
   }, [eligible, returning]);
 
@@ -64,6 +64,7 @@ export function InstallAppBanner() {
   if (!ready || !eligible) return null;
 
   const close = () => {
+    dismiss();
     setVisible(false);
     window.setTimeout(() => setReady(false), 250);
   };

@@ -44,9 +44,16 @@ export function validateComment(text: string): { valid: boolean; error?: string 
 }
 
 export async function validateReportByAI(title: string, description: string): Promise<{ valid: boolean; error?: string }> {
+  const combined = `${title} ${description}`.trim();
+  if (hasProfanity(combined)) {
+    return { valid: false, error: 'Raporti përmban gjuhë të papërshtatshme ose fyese. Ju lutem përdorni gjuhë qytetare dhe ligjore.' };
+  }
+  if (isSpam(title) || isSpam(description)) {
+    return { valid: false, error: 'Teksti u identifikua si i pavlefshëm ose spam. Përshkruani qartë problemin real.' };
+  }
   return { valid: true };
 }
 
 export async function forensicCheck(text: string): Promise<{ valid: boolean; error?: string }> {
-  return { valid: true };
+  return validateComment(text);
 }
