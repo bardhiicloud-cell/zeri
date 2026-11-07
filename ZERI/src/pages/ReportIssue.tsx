@@ -1177,8 +1177,8 @@ export default function ReportIssue() {
                              <Loader2 className="h-3 w-3 animate-spin" /> {dt('AI Skanim...')}
                            </span>
                          ) : media.scanStatus === 'verified' ? (
-                           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600/95 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-                             <CheckCircle2 className="h-3 w-3" /> {dt('AI Kosovë ✓')}
+                           <span className={`inline-flex items-center gap-1 rounded-md ${media.scanInfo?.degraded ? 'bg-slate-700/90' : 'bg-emerald-600/95'} px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm`}>
+                             <CheckCircle2 className="h-3 w-3" /> {media.scanInfo?.degraded ? dt('Ngarkuar ✓') : dt('AI Kosovë ✓')}
                            </span>
                          ) : null}
                        </div>
@@ -1196,7 +1196,9 @@ export default function ReportIssue() {
                    <p className="text-xs md:text-xs font-bold tracking-wide leading-relaxed">
                      {mediaItems.some(m => m.scanStatus === 'scanning')
                        ? dt('Gemini AI po skanon dëshminë tuaj për autenticitet gjeografik në Kosovë, detektim kundër AI dhe përputhshmëri ligjore...')
-                       : dt('Dëshmitë u kontrolluan nga Gemini AI (autentike nga Kosova dhe në përputhje me ligjin). Mund të vazhdoni te hapi tjetër.')}
+                       : mediaItems.every(m => m.scanInfo?.degraded)
+                         ? dt('Dëshmia kaloi kontrollin bazik të sigurisë. Mund të vazhdoni te hapi tjetër.')
+                         : dt('Dëshmitë u kontrolluan nga Gemini AI (autentike nga Kosova dhe në përputhje me ligjin). Mund të vazhdoni te hapi tjetër.')}
                    </p>
                  </div>
                )}

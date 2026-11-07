@@ -24,3 +24,6 @@ services:
       # Paste the whole service-account JSON here in the Render dashboard (marked secret). Never commit it.
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false
+      # Gemini API Key for AI media scanner, OCR and automated issue routing.
+      - key: GEMINI_API_KEY
+        sync: false
