@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<any, any> {
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-white/10 rounded-xl p-4 text-left">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">{dt(`Detajet e Gabimit:`)}</p>
+              <p className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">{dt(`Detajet e Gabimit:`)}</p>
               <p className="font-mono text-xs text-slate-700 dark:text-slate-300 font-semibold break-all whitespace-pre-wrap">
                 {this.state.error?.message || "Gabim i panjohur në renderim"}
               </p>

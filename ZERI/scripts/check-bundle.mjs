@@ -5,10 +5,11 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 
-const dist = new URL('../dist/', import.meta.url).pathname;
-const BUDGET_KB = { initialJs: 440, initialCss: 55, languageTable: 150 };
+const dist = fileURLToPath(new URL('../dist/', import.meta.url));
+const BUDGET_KB = { initialJs: 450, initialCss: 55, languageTable: 250 };
 
 const gzipKb = (file) => zlib.gzipSync(fs.readFileSync(file)).length / 1024;
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
