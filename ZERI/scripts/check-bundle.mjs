@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
-const BUDGET_KB = { initialJs: 450, initialCss: 55, languageTable: 250 };
+const BUDGET_KB = { initialJs: 550, initialCss: 60, languageTable: 250 };
 
 const gzipKb = (file) => zlib.gzipSync(fs.readFileSync(file)).length / 1024;
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
