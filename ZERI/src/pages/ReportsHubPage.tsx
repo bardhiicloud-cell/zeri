@@ -246,7 +246,7 @@ export default function ReportsHubPage({ mode = 'mine' }: { mode?: 'track' | 'mi
     return onSnapshot(
       q,
       snap => setAccountRows(snap.docs.flatMap(d => {
-        const data = d.data() as Record<string, unknown>;
+        const data = d.data() as { trackingId?: string; title?: string; status?: string; municipality?: string; location?: { municipality?: string }; createdAt?: unknown };
         const trackingId = typeof data.trackingId === 'string' ? data.trackingId : '';
         if (!trackingId) return [];
         return [{ trackingId, title: String(data.title ?? dt('Pa titull')), kind: 'report' as const, status: typeof data.status === 'string' ? data.status : null, municipality: String(data.location?.municipality ?? data.municipality ?? ''), createdAt: toIso(data.createdAt) }];
