@@ -1,13 +1,14 @@
-# Backend (Express /api + serves the built site) for Google Cloud Run.
+# Backend (Express /api + serves the built site) for Google Cloud Run / Render.
 # Build:  gcloud run deploy zeri-api --source .   (see docs/DEPLOY_BACKEND.md)
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 WORKDIR /app
+ENV NODE_OPTIONS="--max-old-space-size=450"
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM node:20-slim
+FROM node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./

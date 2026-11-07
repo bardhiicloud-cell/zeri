@@ -316,21 +316,6 @@ export default function ReportIssue() {
     topRef.current?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' });
   }, [step, isSubmitting]);
 
-  if (isBanned) {
-    return (
-      <div className="max-w-md mx-auto my-12 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-indigo-600 rounded-[2rem] p-8 text-center space-y-6 shadow-xl animate-fade-in">
-        <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center text-indigo-600 mx-auto animate-pulse">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl font-extrabold text-[var(--color-text)] dark:text-white uppercase">{dt(`Raportimi u Bllokua`)}</h2>
-        <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] font-bold leading-relaxed">{dt(`Sistemi i Sigurisë (AI Guard) ka bllokuar këtë pajisje (IP:`)} {currentIP}{dt(`) për shkak të shkeljes së kushteve të përdorimit ose dyshimit për spam të vazhdueshëm.`)}
-        </p>
-        <div className="border-t border-slate-100 dark:border-white/5 pt-4">
-          <p className="text-xs text-[var(--color-text-muted)] font-mono">{dt(`CODE: BAN_IP_PREVENT_SUBMIT`)}</p>
-        </div>
-      </div>
-    );
-  }
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiInsights, setAiInsights] = useState<any>(null);
   const [mediaError, setMediaError] = useState(false);
@@ -1061,6 +1046,22 @@ export default function ReportIssue() {
       setSubmitStage('');
     }
   };
+
+  if (isBanned) {
+    return (
+      <div className="max-w-md mx-auto my-12 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] dark:bg-slate-900 border border-indigo-600 rounded-[2rem] p-8 text-center space-y-6 shadow-xl animate-fade-in">
+        <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center text-indigo-600 mx-auto animate-pulse">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-extrabold text-[var(--color-text)] dark:text-white uppercase">{dt('Raportimi u Bllokua')}</h2>
+        <p className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)] font-bold leading-relaxed">{dt('Sistemi i Sigurisë (AI Guard) ka bllokuar këtë pajisje (IP:')} {currentIP}{dt(') për shkak të shkeljes së kushteve të përdorimit ose dyshimit për spam të vazhdueshëm.')}
+        </p>
+        <div className="border-t border-slate-100 dark:border-white/5 pt-4">
+          <p className="text-xs text-[var(--color-text-muted)] font-mono">{dt('CODE: BAN_IP_PREVENT_SUBMIT')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -324,10 +324,10 @@ export async function scanImageForTrackId(file: File): Promise<TrackIdScanRespon
       };
     }
     return body;
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       ok: false,
-      error: err?.message || 'Fotoja nuk u lexua dot. Provoni një foto më të qartë ose shkruani kodin manualisht.',
+      error: (err as Error)?.message || 'Fotoja nuk u lexua dot. Provoni një foto më të qartë ose shkruani kodin manualisht.',
     };
   }
 }

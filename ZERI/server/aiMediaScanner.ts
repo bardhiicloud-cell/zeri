@@ -96,7 +96,7 @@ const STOCK_FILENAME_PATTERNS = [
 
 const FOREIGN_FILENAME_PATTERNS = [
   /(?:^|[^a-z0-9])(china|beijing|shanghai|shenzhen|guangzhou|india|mumbai|delhi|bangalore|pakistan|karachi|bangladesh|dhaka|indonesia|jakarta|philippines|manila|vietnam|thailand|bangkok|nigeria|lagos|kenya|egypt|cairo|new[-_]?york|california|texas|chicago|florida|toronto|sydney|melbourne|london|manchester|moscow|petersburg|tokyo|osaka|brazil|sao[-_]?paulo|mexico|argentina|colombia|peru|chile)(?:$|[^a-z0-9])/i,
-  /[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0900-\u097F\u0E00-\u0E7F]/, // Foreign scripts (CJK, Devanagari, Thai) in filename
+  /(?:[\u4E00-\u9FFF]|[\u3040-\u30FF]|[\uAC00-\uD7AF]|[\u0900-\u097F]|[\u0E00-\u0E7F])/u, // Foreign scripts (CJK, Devanagari, Thai) in filename
 ];
 
 const SCREENSHOT_SOCIAL_PATTERNS = [
@@ -361,8 +361,8 @@ export function extractTrackingIdsFromText(text: string): string[] {
 
 export interface AiScannerDeps {
   generateContent: (options: {
-    contents: any;
-    config?: any;
+    contents: unknown;
+    config?: unknown;
     defaultModel?: string;
     fallbackModels?: string[];
   }) => Promise<{ text?: string; degraded?: boolean }>;
@@ -547,8 +547,8 @@ ${SECTOR_CATEGORIES.join('\n')}`;
       const parsed = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : null;
       const result = normalizeScannerVerdict(parsed, captureSource, heuristics);
       return res.json(result);
-    } catch (error: any) {
-      console.error('[AI_MEDIA_SCANNER] verify-media failed:', error?.message || error);
+    } catch (error: unknown) {
+      console.error('[AI_MEDIA_SCANNER] verify-media failed:', (error as Error)?.message || error);
       return res.status(500).json({ error: 'Gabim gjatë skanimit me Gemini AI. Ju lutem provoni përsëri.' });
     }
   });
@@ -646,8 +646,8 @@ Detyra jote:
         documentType: String(parsed.documentType || 'Dëshmi / Screenshot'),
         reasonSq: String(parsed.reasonSq || `Track ID (${bestId}) u lexua dhe u verifikua me sukses nga Gemini AI.`),
       });
-    } catch (error: any) {
-      console.error('[AI_MEDIA_SCANNER] scan-trackid failed:', error?.message || error);
+    } catch (error: unknown) {
+      console.error('[AI_MEDIA_SCANNER] scan-trackid failed:', (error as Error)?.message || error);
       return res.status(500).json({
         ok: false,
         error: 'Skanimi i fotos nuk u krye. Provoni përsëri ose shkruani kodin manualisht.',

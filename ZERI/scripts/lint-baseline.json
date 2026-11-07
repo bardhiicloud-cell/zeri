@@ -11,5 +11,5 @@
  "prefer-const": 2,
  "preserve-caught-error": 5,
  "react-hooks/exhaustive-deps": 39,
- "react-hooks/rules-of-hooks": 40
+ "react-hooks/rules-of-hooks": 1
 }
